@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   isAppOwnedCopyChord,
+  isMacNativeMenuChord,
   shouldBypassXtermKeyboardEvent,
   shouldPreventDefaultTerminalImeCandidateKey,
   shouldSuppressTerminalImeKeyboardEvent
@@ -65,6 +66,7 @@ describe('shouldBypassXtermKeyboardEvent — macOS', () => {
     // Why: this policy is narrowly scoped to clipboard chords. Cmd+F, Cmd+D,
     // Cmd+K, Cmd+W, Cmd+Arrow, Cmd+Backspace are handled in keyboard-handlers.ts
     // with stopImmediatePropagation before xterm's textarea listener fires.
+    // Native-menu-only chords (Quit/Hide/Minimize) are covered separately below.
     // Cmd+A is claimed by keyboard-handlers.ts before xterm, including when
     // Kitty keyboard reporting replaces xterm's legacy select-all evaluator.
     const cases = [
@@ -73,6 +75,39 @@ describe('shouldBypassXtermKeyboardEvent — macOS', () => {
     ]
     for (const e of cases) {
       expect(shouldBypassXtermKeyboardEvent(e, opts)).toBe(false)
+    }
+  })
+
+  it.each([
+    ['Cmd+Q', { key: 'q', code: 'KeyQ', metaKey: true }],
+    ['Cmd+H', { key: 'h', code: 'KeyH', metaKey: true }],
+    ['Cmd+Option+H', { key: 'h', code: 'KeyH', metaKey: true, altKey: true }],
+    ['Cmd+M', { key: 'm', code: 'KeyM', metaKey: true }]
+  ])('bubbles native-menu-only %s even when Kitty reporting would encode it', (_name, chord) => {
+    // Why: xterm's Kitty encoder would CSI-u encode and preventDefault these, so
+    // Electron's menu role (quit/hide/hideOthers/minimize) never fires.
+    for (const kittyKeyboardFlags of [0, 1, 31]) {
+      for (const type of ['keydown', 'keyup']) {
+        expect(
+          shouldBypassXtermKeyboardEvent(event({ type, ...chord }), {
+            ...noSel,
+            kittyKeyboardFlags
+          })
+        ).toBe(true)
+      }
+    }
+  })
+
+  it('leaves Cmd+Comma and modified Cmd+Q to the terminal', () => {
+    const kitty = { ...noSel, kittyKeyboardFlags: 1 }
+    for (const e of [
+      event({ key: ',', code: 'Comma', metaKey: true }),
+      event({ key: 'Q', code: 'KeyQ', metaKey: true, shiftKey: true }),
+      event({ key: 'q', code: 'KeyQ', metaKey: true, altKey: true }),
+      event({ key: 'h', code: 'KeyH', metaKey: true, shiftKey: true }),
+      event({ key: 'q', code: 'KeyQ', ctrlKey: true })
+    ]) {
+      expect(shouldBypassXtermKeyboardEvent(e, kitty)).toBe(false)
     }
   })
 
@@ -209,6 +244,19 @@ describe('isAppOwnedCopyChord', () => {
     expect(isAppOwnedCopyChord({ ...cmdC, shiftKey: true }, kittyApp)).toBe(false)
     const ctrlShiftC = event({ key: 'C', code: 'KeyC', ctrlKey: true, shiftKey: true })
     expect(isAppOwnedCopyChord(ctrlShiftC, { ...kittyApp, isMac: false })).toBe(false)
+  })
+})
+
+describe('isMacNativeMenuChord', () => {
+  const cmdQ = event({ key: 'q', code: 'KeyQ', metaKey: true })
+
+  it('is macOS only', () => {
+    expect(isMacNativeMenuChord(cmdQ, { isMac: true })).toBe(true)
+    expect(isMacNativeMenuChord(cmdQ, { isMac: false })).toBe(false)
+  })
+
+  it('ignores non-key events', () => {
+    expect(isMacNativeMenuChord({ ...cmdQ, type: 'keypress' }, { isMac: true })).toBe(false)
   })
 })
 
