@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+import { _setLayoutMapForTests } from '../../lib/keyboard-layout/layout-base-character'
 import {
   isAppOwnedCopyChord,
   isMacNativeMenuChord,
@@ -257,6 +258,32 @@ describe('isMacNativeMenuChord', () => {
 
   it('ignores non-key events', () => {
     expect(isMacNativeMenuChord({ ...cmdQ, type: 'keypress' }, { isMac: true })).toBe(false)
+  })
+
+  describe('Cmd+Option Hide Others', () => {
+    const opt = { isMac: true }
+    afterEach(() => _setLayoutMapForTests(null))
+
+    it('falls back to physical KeyH when no layout map is available', () => {
+      expect(
+        isMacNativeMenuChord(event({ key: '˙', code: 'KeyH', metaKey: true, altKey: true }), opt)
+      ).toBe(true)
+    })
+
+    it('follows the layout base character on a remapped layout (Dvorak)', () => {
+      _setLayoutMapForTests(
+        new Map([
+          ['KeyH', 'd'],
+          ['KeyJ', 'h']
+        ])
+      )
+      expect(
+        isMacNativeMenuChord(event({ key: '˙', code: 'KeyJ', metaKey: true, altKey: true }), opt)
+      ).toBe(true)
+      expect(
+        isMacNativeMenuChord(event({ key: '∂', code: 'KeyH', metaKey: true, altKey: true }), opt)
+      ).toBe(false)
+    })
   })
 })
 

@@ -316,7 +316,14 @@ export function isMacNativeMenuChord(
   }
   const key = event.key.toLowerCase()
   if (event.altKey) {
-    // Why: Option rewrites `key` on macOS (Option+H -> ˙), so Hide Others also checks the physical key.
+    // Why: Option rewrites `key` on macOS (Option+H -> ˙), so Hide Others resolves the physical key
+    // through the layout map; physical KeyH is only the fallback when the layout cannot answer.
+    const layoutBaseKey = event.code
+      ? getLayoutBaseCharacterForCode(event.code)?.toLowerCase()
+      : undefined
+    if (layoutBaseKey !== undefined && isLatinLetterKey(layoutBaseKey)) {
+      return layoutBaseKey === 'h'
+    }
     return key === 'h' || event.code === 'KeyH'
   }
   return key === 'q' || key === 'h' || key === 'm'
