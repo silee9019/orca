@@ -26,7 +26,13 @@ function androidConfig(android) {
 
 module.exports = ({ config }) => ({
   ...config,
-  ...(ANDROID_DEV_BUILD ? { name: 'Orca Dev', scheme: 'orca-dev' } : {}),
+  ...(ANDROID_DEV_BUILD
+    ? {
+        name: 'Orca Dev',
+        scheme: 'orca-dev',
+        extra: { ...config.extra, androidDevBuild: true }
+      }
+    : {}),
   android: androidConfig(config.android),
   ios: {
     ...config.ios,
