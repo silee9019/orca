@@ -18,6 +18,7 @@ import { validateWarpThemeImportSource } from './warp-theme-import-source-valida
 import { filesFromAutoDirectories } from './auto-discovered-theme-files'
 import { filesFromDirectory, type ThemeSourceSelection } from './theme-source-selection'
 import {
+  createManualWarpThemeFileCandidates,
   chooseManualWarpThemeFiles,
   chooseManualWarpThemeFolderPath,
   manualWarpThemeContentDiscriminator
@@ -40,6 +41,22 @@ async function resolveThemeSource(
       const budget = createPreviewOperationBudget(options)
       return { selection: await filesFromAutoDirectories(budget), budget }
     }
+    case 'files': {
+      const budget = createPreviewOperationBudget(options)
+      return {
+        selection: {
+          canceled: false,
+          sourceLabel: 'Selected Warp themes',
+          files: createManualWarpThemeFileCandidates(source.paths),
+          skippedFiles: []
+        },
+        budget
+      }
+    }
+    case 'folder': {
+      const budget = createPreviewOperationBudget(options)
+      return { selection: await filesFromDirectory(source.path, undefined, budget), budget }
+    }
     case 'chooseFile': {
       const selection = await chooseManualWarpThemeFiles(webContents)
       return { selection, budget: createPreviewOperationBudget(options) }
@@ -58,7 +75,7 @@ async function resolveThemeSource(
 }
 
 export async function previewWarpThemeImport(
-  _store: Store,
+  _store: Pick<Store, 'getSettings'>,
   source: unknown = { kind: 'auto' },
   webContents?: WebContents,
   options: WarpThemePreviewOptions = {}

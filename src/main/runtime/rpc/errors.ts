@@ -68,6 +68,7 @@ const RUNTIME_PASSTHROUGH_CODES: ReadonlySet<string> = new Set([
   AGENT_LAUNCH_SESSION_ALREADY_EXISTS_CODE,
   'agent_launch_replay_unsupported',
   'runtime_unavailable',
+  'settings_viewer_unavailable',
   'selector_not_found',
   'selector_ambiguous',
   'terminal_handle_stale',

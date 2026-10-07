@@ -1,17 +1,63 @@
+import type { CliWarpThemeImportSource } from '../../shared/rpc-contract/settings-control-params'
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
 import { OrcaRuntimeWithResolveWaiter } from './orca-runtime-resolve-waiter'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
 import { registerWorktreeChangeInvalidator } from '../ipc/worktree-change-invalidators'
 import { registerDetectedWorktreeScanInvalidation } from '../ipc/worktrees/listing/register-detected-worktree-scan-invalidation'
+import type { RuntimeSettingsActions } from './runtime-settings-actions'
+import type { KeybindingActionId } from '../../shared/keybindings'
+import type { GlobalSettings } from '../../shared/global-settings-types'
 
 class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
+  private readonly settingsActions: RuntimeSettingsActions | undefined
+
   constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithResolveWaiter>) {
     super(...args)
+    this.settingsActions = args[2]?.settingsActions
     // Why: the runtime listing re-runs a scan the worktree-change generation overtook and re-lists
     // through this runtime's scan cache, so a worktree change must reach both. The desktop IPC
     // module registers the generation bump at load; a headless host never loads it.
     registerDetectedWorktreeScanInvalidation()
     registerWorktreeChangeInvalidator((repoId) => this.invalidateWorktreeCatalog(repoId))
+  }
+
+  previewSettingsGhosttyImport() {
+    return this.requireSettingsActions().previewGhosttyImport()
+  }
+
+  previewSettingsWarpThemes(source: CliWarpThemeImportSource) {
+    return this.requireSettingsActions().previewWarpThemes(source)
+  }
+
+  getSettingsKeybindings() {
+    return this.requireSettingsActions().getKeybindings()
+  }
+
+  getDesktopControlSettings() {
+    return this.requireSettingsActions().getDesktopSettings()
+  }
+
+  updateDesktopControlSettings(updates: Partial<GlobalSettings>) {
+    return this.requireSettingsActions().updateDesktopSettings(updates)
+  }
+
+  reloadSettingsKeybindings() {
+    return this.requireSettingsActions().reloadKeybindings()
+  }
+
+  setSettingsKeybinding(actionId: KeybindingActionId, bindings: string[] | null) {
+    return this.requireSettingsActions().setKeybinding(actionId, bindings)
+  }
+
+  listSettingsFonts() {
+    return this.requireSettingsActions().listFonts()
+  }
+
+  private requireSettingsActions(): RuntimeSettingsActions {
+    if (!this.settingsActions) {
+      throw new Error('settings_viewer_unavailable')
+    }
+    return this.settingsActions
   }
 }
 type OrcaRuntimeServiceExport = RuntimeCommandSurfaceHost<OrcaRuntimeService>
