@@ -1,9 +1,6 @@
-import type { PluginMarketplaceParentReadback } from './plugin-marketplace-parent-readback'
-import type {
-  PluginHostListEntry,
-  PluginMarketplaceHostInstallPreview,
-  PluginMarketplaceHostListing
-} from '../../../../preload/api-types'
+import { publicMarketplaceReview } from './plugin-marketplace-install-receipt'
+import { usePluginMarketplaceInstallRequest } from './use-plugin-marketplace-install-request'
+import type { CatalogOwner } from './plugin-marketplace-catalog-owner'
 import { useEffect, useRef, useState } from 'react'
 import { PluginMarketplaceViewerCommand } from '../../../../shared/rpc-contract/plugin-marketplace-viewer-params'
 import {
@@ -12,36 +9,6 @@ import {
 } from '@/runtime/plugin-marketplace-request'
 import { requirePluginMarketplaceViewer } from '@/runtime/plugin-marketplace-viewer-actions'
 
-type CatalogOwner = {
-  search: string
-  filter: 'all' | 'installed'
-  visibleCount: number
-  installedCount: number
-  loading: boolean
-  errorPresent: boolean
-  reload: () => Promise<(() => boolean) | undefined>
-  refresh: () => Promise<(() => boolean) | undefined>
-  isRefreshBusy: () => boolean
-  readParent?: () => PluginMarketplaceParentReadback
-  sourcesOpen: boolean
-  previewOpen: boolean
-  preview: PluginMarketplaceHostInstallPreview | null
-  previewBusy: boolean
-  isPreviewBusy: () => boolean
-  installBusy: boolean
-  visibleListings: PluginMarketplaceHostListing[]
-  installedByKey: ReadonlyMap<string, PluginHostListEntry>
-  openPreview: (
-    listing: PluginMarketplaceHostListing,
-    update: boolean,
-    canApply: (value: PluginMarketplaceHostInstallPreview) => boolean
-  ) => Promise<(() => boolean) | undefined>
-  closePreview: () => void
-  setSourcesOpen: (value: boolean) => void
-  closeSources: () => boolean
-  setSearch: (value: string) => void
-  setFilter: (value: 'all' | 'installed') => void
-}
 export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
   const current = useRef(owner)
   current.current = owner
@@ -52,6 +19,15 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
   const refreshReceipt = useRef<(() => boolean) | undefined>(undefined)
   const reloadReceipt = useRef<(() => boolean) | undefined>(undefined)
   const [, publishCompletion] = useState(0)
+  const installation = usePluginMarketplaceInstallRequest({
+    current,
+    pending,
+    ready,
+    expectedParentGeneration,
+    publishCompletion
+  })
+  const installRequest = useRef(installation)
+  installRequest.current = installation
   const finishCommitted = (): void => {
     const request = pending.current
     if (!request || !ready.current) {
@@ -77,6 +53,13 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
     }
     if (request.command.action === 'preview' && !previewReceipt.current?.()) {
       request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
+      return
+    }
+    if (
+      request.command.action === 'install-preview' &&
+      !installRequest.current.committed(request.command)
+    ) {
+      request.finish(new Error('plugin_marketplace_install_failed_effect_unknown'))
       return
     }
     if (request.command.action === 'refresh') {
@@ -116,7 +99,8 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
         loading: next.loading,
         errorPresent: next.errorPresent,
         sourcesOpen: next.sourcesOpen,
-        previewOpen: next.previewOpen
+        previewOpen: next.previewOpen,
+        review: publicMarketplaceReview(next.preview)
       })
     }
   }
@@ -137,7 +121,9 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
           requirePluginMarketplaceViewer()
           if (
             command.action !== 'status' &&
-            ((current.current.previewOpen && command.action !== 'preview-close') ||
+            ((current.current.previewOpen &&
+              command.action !== 'preview-close' &&
+              command.action !== 'install-preview') ||
               (current.current.sourcesOpen &&
                 command.action !== 'sources-open' &&
                 command.action !== 'sources-close'))
@@ -158,7 +144,9 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
             throw new Error('plugin_marketplace_preview_target_mismatch')
           }
           if (
-            (command.action === 'preview' || command.action === 'preview-close') &&
+            (command.action === 'preview' ||
+              command.action === 'preview-close' ||
+              command.action === 'install-preview') &&
             (current.current.isPreviewBusy() ||
               current.current.previewBusy ||
               current.current.installBusy)
@@ -174,6 +162,9 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
               throw new Error('plugin_marketplace_parent_unavailable')
             }
             expectedParentGeneration.current = parent.currentGeneration + 1
+          }
+          if (command.action === 'install-preview') {
+            installRequest.current.validate(command)
           }
           pending.current = request
           ready.current = true
@@ -270,6 +261,8 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
                 }
                 request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
               })
+          } else if (command.action === 'install-preview') {
+            installRequest.current.start(request)
           } else if (command.action === 'preview-close') {
             current.current.closePreview()
           } else if (command.action === 'sources-open' && !current.current.sourcesOpen) {

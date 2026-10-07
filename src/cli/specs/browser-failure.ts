@@ -4,7 +4,7 @@ export const BROWSER_FAILURE_COMMAND_SPECS: CommandSpec[] = [
     path: ['browser', 'failure'],
     summary: 'Apply an exact visible local or client-hosted browser failure action',
     usage:
-      'orca browser failure --viewer host --page <page> --worktree <workspace> --placement <local|client-hosted> [--runtime-environment <id>] --url <current-displayed-url> --error-code <code> --action <copy-address|open-external|certificate-proceed> [--challenge <id>] [--confirm] [--json]',
+      'orca browser failure --viewer host --page <page> --worktree <workspace> --placement <local|client-hosted> [--runtime-environment <id>] --url <current-displayed-url> --error-code <code> --action <copy-address|open-external|certificate-proceed|retry> [--challenge <id>] [--confirm] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'viewer',

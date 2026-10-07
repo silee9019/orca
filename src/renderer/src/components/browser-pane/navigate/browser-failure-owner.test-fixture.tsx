@@ -5,10 +5,12 @@ import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 export function BrowserFailureFixtureOwner({
   placement,
-  notice
+  notice,
+  localViewportOverrides
 }: {
   placement: 'local' | 'client-hosted'
   notice: Dispatch<SetStateAction<string | null>>
+  localViewportOverrides?: Partial<ComponentProps<typeof BrowserPageViewportOverlays>>
 }) {
   const page = useAppStore((state) =>
     Object.values(state.browserPagesByWorkspace)
@@ -118,7 +120,7 @@ export function BrowserFailureFixtureOwner({
   }
   return (
     <TooltipProvider>
-      <BrowserPageViewportOverlays {...props} />
+      <BrowserPageViewportOverlays {...props} {...localViewportOverrides} />
     </TooltipProvider>
   )
 }

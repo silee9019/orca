@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { BrowserFailureFixtureOwner } from './browser-failure-owner.test-fixture'
+import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
 import { BrowserLoadFailureOverlay } from './browser-load-failure-overlay'
 import { requestBrowserFailure, BrowserFailureEvent } from '@/runtime/browser-failure-request'
 import { useAppStore } from '@/store'
@@ -233,4 +235,99 @@ it('locks the shared certificate submission before React commits a second UI cli
   await act(async () => {
     finish?.({ ok: true })
   })
+})
+
+it('reuses retry and requires a committed loading transition rather than a void callback', async () => {
+  const { props, view, run } = seed()
+  useAppStore.getState().updateBrowserPageState('page', { loading: false })
+  const retry = vi.fn(() =>
+    useAppStore
+      .getState()
+      .updateBrowserPageState('page', { loading: true, title: props.loadError.validatedUrl })
+  )
+  view.rerender(<BrowserLoadFailureOverlay {...props} onRetry={retry} />)
+  await act(async () => {
+    await expect(run('retry')).resolves.toMatchObject({ action: 'retry', accepted: true })
+  })
+  expect(retry).toHaveBeenCalledOnce()
+  expect(
+    Object.values(useAppStore.getState().browserPagesByWorkspace)
+      .flat()
+      .find((page) => page.id === 'page')?.loading
+  ).toBe(true)
+})
+it('refuses retry without a new loading transition or while loading already holds', async () => {
+  const { props, view, run } = seed()
+  useAppStore.getState().updateBrowserPageState('page', { loading: false })
+  const retry = vi.fn()
+  view.rerender(<BrowserLoadFailureOverlay {...props} onRetry={retry} />)
+  await act(async () => {
+    await expect(run('retry')).rejects.toThrow('retry_effect_unverifiable')
+  })
+  expect(retry).toHaveBeenCalledOnce()
+  useAppStore.getState().updateBrowserPageState('page', { loading: true })
+  retry.mockClear()
+  await act(async () => {
+    await expect(run('retry')).rejects.toThrow('retry_already_loading')
+  })
+  expect(retry).not.toHaveBeenCalled()
+})
+
+it.each([false, true])(
+  'reuses the actual native failure parent retry and loading forwarding, guestRecovery=%s',
+  async (recovery) => {
+    const { view, run } = seed()
+    view.unmount()
+    const recover = vi.fn()
+    const guest = Object.assign(document.createElement('webview'), { src: '' })
+    const page = Object.values(useAppStore.getState().browserPagesByWorkspace)
+      .flat()
+      .find((entry) => entry.id === 'page')
+    if (!page?.loadError) {
+      throw new Error('missing failed page')
+    }
+    const code = recovery ? BROWSER_GUEST_RECOVERY_ERROR_CODE : page.loadError.code
+    useAppStore
+      .getState()
+      .updateBrowserPageState('page', { loading: false, loadError: { ...page.loadError, code } })
+    // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The native Retry owner reads and assigns only the DOM webview src supplied by this fixture.
+    const webviewRef = { current: guest as unknown as Electron.WebviewTag }
+    render(
+      <BrowserFailureFixtureOwner
+        placement="local"
+        notice={() => {}}
+        localViewportOverrides={{ webviewRef, retryGuestRecoveryRef: { current: recover } }}
+      />
+    )
+    await act(async () => {
+      await expect(run('retry', { errorCode: code })).resolves.toMatchObject({
+        action: 'retry',
+        accepted: true
+      })
+    })
+    const after = Object.values(useAppStore.getState().browserPagesByWorkspace)
+      .flat()
+      .find((entry) => entry.id === 'page')
+    expect(after?.loading).toBe(true)
+    if (recovery) {
+      expect(recover).toHaveBeenCalledOnce()
+      expect(guest.getAttribute('src')).toBeNull()
+    } else {
+      expect(guest.src).toBe(page.loadError.validatedUrl)
+      expect(after?.title).toBe(page.loadError.validatedUrl)
+      expect(recover).not.toHaveBeenCalled()
+    }
+  }
+)
+
+it('refuses unavailable retry targets before the original callback', async () => {
+  const { props, view, run } = seed()
+  const loadError = { ...props.loadError, validatedUrl: 'javascript:blocked' }
+  useAppStore.getState().updateBrowserPageState('page', { loading: false, loadError })
+  const retry = vi.fn()
+  view.rerender(<BrowserLoadFailureOverlay {...props} loadError={loadError} onRetry={retry} />)
+  await act(async () => {
+    await expect(run('retry')).rejects.toThrow('retry_target_unavailable')
+  })
+  expect(retry).not.toHaveBeenCalled()
 })

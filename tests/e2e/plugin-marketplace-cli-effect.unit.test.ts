@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { marketplaceViewerArguments } from './plugin-marketplace-cli-arguments.fixture'
+import { verifyMarketplaceInstall } from './plugin-marketplace-install-story.fixture'
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import {
   readFixtureMarketplaceListings,
@@ -11,7 +13,6 @@ import {
 } from './plugin-marketplace-refresh-story.fixture'
 import {
   fixtureMarketplacePreviewApi,
-  marketplaceViewerArguments,
   notifyFixtureInstalledChanged,
   verifyMarketplacePreview
 } from './plugin-marketplace-preview-story.fixture'
@@ -57,13 +58,13 @@ it.skipIf(process.platform === 'win32')(
     const providerCalls: string[] = []
     let releaseSourceRefresh: (() => void) | undefined
     const source: PluginMarketplaceHostSourceState = {
-      id: 'fixture-source',
+      id: 'a'.repeat(32),
       source: { kind: 'git', url: 'https://example.invalid/catalog.git', ref: 'main' },
       addedAt: 1,
       marketplace: {
         name: 'Fixture catalog',
         owner: 'Fixture publisher',
-        resolvedCommit: 'fixture-commit',
+        resolvedCommit: 'b'.repeat(40),
         fetchedAt: 1
       },
       stale: false,
@@ -73,7 +74,7 @@ it.skipIf(process.platform === 'win32')(
       marketplaceSourceId: source.id,
       marketplaceName: 'Fixture catalog',
       marketplaceOwner: 'Fixture publisher',
-      marketplaceCommit: 'fixture-commit',
+      marketplaceCommit: 'b'.repeat(40),
       pluginKey: `fixture.${name}`,
       source: source.source,
       description: name === 'alpha' ? 'private-fixture-query' : 'Other listing',
@@ -189,7 +190,7 @@ it.skipIf(process.platform === 'win32')(
     const invoke = async (
       action: string,
       value?: string,
-      target?: { source: string; plugin: string }
+      target?: { source: string; plugin: string; review?: string[] }
     ): Promise<void> => {
       const specs = PLUGIN_MARKETPLACE_VIEWER_SPECS
       const parsed = parseArgs(
@@ -375,6 +376,10 @@ it.skipIf(process.platform === 'win32')(
       )
       expect(container.querySelector('input')?.value).toBe('deadline-query')
       await invoke('search', '')
+      await verifyMarketplaceInstall(invoke, source.id, directory, async () => {
+        await renderOwner(false)
+        await renderOwner()
+      })
       await renderOwner(false)
       await expect(invoke('status')).rejects.toThrow('plugin_marketplace_owner_unavailable')
     } finally {

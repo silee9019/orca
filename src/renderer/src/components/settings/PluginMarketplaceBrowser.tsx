@@ -1,4 +1,8 @@
-import type { PluginMarketplaceParentReadback } from './plugin-marketplace-parent-readback'
+import { usePluginMarketplaceInstall } from './use-plugin-marketplace-install'
+import type {
+  PluginMarketplaceParentReadback,
+  PluginMarketplaceMutationReceipt
+} from './plugin-marketplace-parent-readback'
 import { usePluginMarketplaceRefresh } from './use-plugin-marketplace-refresh'
 import { usePluginMarketplaceCatalog } from './use-plugin-marketplace-catalog'
 import { usePluginMarketplaceRequest } from './use-plugin-marketplace-request'
@@ -25,7 +29,7 @@ import { PluginMarketplaceSourceDialog } from './PluginMarketplaceSourceDialog'
 
 type PluginMarketplaceBrowserProps = {
   installedPlugins: readonly PluginHostListEntry[]
-  onInstalled: (pluginKey: string) => Promise<void>
+  onInstalled: (pluginKey: string, receipt?: PluginMarketplaceMutationReceipt) => Promise<void>
   onRefreshInstalled?: () => Promise<void>
   readMarketplaceParent?: () => PluginMarketplaceParentReadback
   renderInstalledContent?: (search: string) => React.ReactNode
@@ -63,10 +67,25 @@ export function PluginMarketplaceBrowser({
   const [preview, setPreview] = useState<PluginMarketplaceHostInstallPreview | null>(null)
   const [previewMode, setPreviewMode] = useState<PluginMarketplacePreviewMode>('install')
   const [previewBusyKey, setPreviewBusyKey] = useState<string | null>(null)
-  const [installBusy, setInstallBusy] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
   const previewRequestRef = useRef(0)
   const previewOperationsRef = useRef(0)
+
+  const { installPreview, installBusy, actionError, setActionError } = usePluginMarketplaceInstall({
+    preview,
+    mountedRef,
+    previewRequestRef,
+    previewOperationsRef,
+    setPreview,
+    onInstalled,
+    formatError: (cause) =>
+      marketplaceError(
+        cause,
+        translate(
+          'auto.components.settings.PluginMarketplaceBrowser.installFailed',
+          'Could not install this plugin. The reviewed source may have changed.'
+        )
+      )
+  })
 
   useEffect(() => {
     mountedRef.current = true
@@ -159,45 +178,6 @@ export function PluginMarketplaceBrowser({
     return undefined
   }
 
-  const installPreview = async (): Promise<void> => {
-    if (!preview || installBusy) {
-      return
-    }
-    previewOperationsRef.current++
-    setInstallBusy(true)
-    setActionError(null)
-    try {
-      const result = await window.api.plugins.installMarketplacePlugin({
-        marketplaceSourceId: preview.marketplaceSourceId,
-        marketplaceCommit: preview.marketplaceCommit,
-        pluginKey: preview.pluginKey,
-        resolvedCommit: preview.resolvedCommit
-      })
-      if (!result.ok) {
-        throw new Error(result.error)
-      }
-      setPreview(null)
-      await onInstalled(result.pluginKey)
-    } catch (cause) {
-      if (mountedRef.current) {
-        setActionError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.installFailed',
-              'Could not install this plugin. The reviewed source may have changed.'
-            )
-          )
-        )
-      }
-    } finally {
-      previewOperationsRef.current--
-      if (mountedRef.current) {
-        setInstallBusy(false)
-      }
-    }
-  }
-
   usePluginMarketplaceRequest({
     search,
     filter,
@@ -215,6 +195,7 @@ export function PluginMarketplaceBrowser({
     previewBusy: previewBusyKey !== null,
     isPreviewBusy: () => previewOperationsRef.current > 0,
     installBusy,
+    installPreview,
     visibleListings,
     installedByKey,
     openPreview,

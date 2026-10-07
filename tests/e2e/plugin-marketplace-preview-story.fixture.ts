@@ -10,6 +10,19 @@ import type {
 } from '../../src/preload/api-types'
 
 let nextPreview: (() => Promise<PluginMarketplaceHostInstallPreview>) | undefined
+type FixtureInstall = typeof window.api.plugins.installMarketplacePlugin
+let installOverride: FixtureInstall | undefined
+let listOverride: typeof window.api.plugins.list | undefined
+export function configureMarketplaceInstallFixture(
+  install?: FixtureInstall,
+  list?: typeof window.api.plugins.list
+): void {
+  installOverride = install
+  listOverride = list
+}
+export function fixtureMarketplaceInstalled(entries: PluginHostListEntry[]): void {
+  installedPlugins = entries
+}
 let installedPlugins: PluginHostListEntry[] = []
 const installedListeners = new Set<() => void>()
 export function notifyFixtureInstalledChanged(): void {
@@ -20,7 +33,7 @@ export function notifyFixtureInstalledChanged(): void {
 let releaseInstall: (() => void) | undefined
 export function fixtureMarketplacePreviewApi(listings: PluginMarketplaceHostListing[]) {
   return {
-    list: async () => [...installedPlugins],
+    list: async () => (listOverride ? await listOverride() : [...installedPlugins]),
     onChanged: (listener: () => void) => {
       installedListeners.add(listener)
       return () => installedListeners.delete(listener)
@@ -39,7 +52,10 @@ export function fixtureMarketplacePreviewApi(listings: PluginMarketplaceHostList
     }),
     previewMarketplacePlugin: async (target: { marketplaceSourceId: string; pluginKey: string }) =>
       nextPreview ? await nextPreview() : await fixtureMarketplacePreview(listings, target),
-    installMarketplacePlugin: async () => {
+    installMarketplacePlugin: async (identity: Parameters<FixtureInstall>[0]) => {
+      if (installOverride) {
+        return await installOverride(identity)
+      }
       await new Promise<void>((resolve) => {
         releaseInstall = resolve
       })
@@ -62,8 +78,8 @@ async function fixtureMarketplacePreview(
   return {
     ...listing,
     resolvedCommit: 'c'.repeat(40),
-    contentHash: 'fixture-content',
-    consentFingerprint: 'fixture-consent',
+    contentHash: 'd'.repeat(64),
+    consentFingerprint: 'e'.repeat(64),
     manifest: {
       manifestVersion: 1,
       id: 'alpha',
@@ -264,22 +280,4 @@ export async function verifyMarketplacePreview(
     nextPreview = undefined
     await publishInstalled([])
   }
-}
-
-export function marketplaceViewerArguments(
-  action: string,
-  value?: string,
-  target?: { source: string; plugin: string }
-): string[] {
-  return [
-    'plugins',
-    'marketplace',
-    'viewer',
-    '--viewer',
-    'host',
-    '--action',
-    action,
-    ...(value === undefined ? [] : ['--value', value]),
-    ...(target ? ['--source', target.source, '--plugin', target.plugin] : [])
-  ]
 }

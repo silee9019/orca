@@ -1,3 +1,5 @@
+import { normalizeBrowserNavigationUrl } from '../../../../../shared/browser-url'
+import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
 import { openBrowserTabExternallyVerified } from '@/components/tab-bar/browser-tab-external-open'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
@@ -42,6 +44,7 @@ type Owner = {
   challenge: string | null
   disabled: boolean
   copy: () => void | Promise<void>
+  retry: () => void
   external?: () => void | Promise<void>
   proceed: () => Promise<BrowserCertificateProceedResult>
 }
@@ -106,6 +109,17 @@ export function useBrowserFailureCommands(owner: Owner): void {
         if (command.action === 'open-external' && !before.external) {
           throw new Error('browser_failure_external_unavailable')
         }
+        const retryUrl = normalizeBrowserNavigationUrl(before.error.validatedUrl)
+        const recoveryRetry = before.error.code === BROWSER_GUEST_RECOVERY_ERROR_CODE
+        if (command.action === 'retry' && !recoveryRetry && !retryUrl) {
+          throw new Error('browser_failure_retry_target_unavailable')
+        }
+        if (
+          command.action === 'retry' &&
+          findPage(useAppStore.getState().browserPagesByWorkspace, event.page)?.loading
+        ) {
+          throw new Error('browser_failure_retry_already_loading')
+        }
         let timer: ReturnType<typeof setTimeout> | undefined
         try {
           return await new Promise<BrowserFailureState>((resolve, reject) => {
@@ -115,7 +129,16 @@ export function useBrowserFailureCommands(owner: Owner): void {
               Math.max(0, event.expiresAt - Date.now())
             )
             const perform = async (): Promise<void> => {
-              if (command.action === 'copy-address') {
+              if (command.action === 'retry') {
+                before.retry()
+                const retriedPage = findPage(
+                  useAppStore.getState().browserPagesByWorkspace,
+                  event.page
+                )
+                if (!retriedPage?.loading || (!recoveryRetry && retriedPage.title !== retryUrl)) {
+                  throw new Error('browser_failure_retry_effect_unverifiable')
+                }
+              } else if (command.action === 'copy-address') {
                 await before.copy()
               } else if (command.action === 'open-external') {
                 await before.external?.()

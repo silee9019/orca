@@ -5,7 +5,7 @@ export const BrowserFailureTarget = z.object({
   environmentId: z.string().min(1).nullable(),
   expectedUrl: z.string().min(1),
   errorCode: z.number().int(),
-  action: z.enum(['copy-address', 'open-external', 'certificate-proceed']),
+  action: z.enum(['copy-address', 'open-external', 'certificate-proceed', 'retry']),
   challengeId: z.string().min(1).optional()
 })
 export type BrowserFailureTarget = z.infer<typeof BrowserFailureTarget>

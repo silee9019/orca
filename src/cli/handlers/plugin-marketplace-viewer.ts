@@ -9,7 +9,16 @@ export const PLUGIN_MARKETPLACE_VIEWER_HANDLERS: Record<string, CommandHandler> 
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const parsed = PluginMarketplaceViewerCommand.safeParse({
       action,
-      ...(action === 'preview' || action === 'preview-close'
+      ...(action === 'install-preview'
+        ? {
+            confirm: getRequiredStringFlag(ctx.flags, 'confirm'),
+            contentHash: getRequiredStringFlag(ctx.flags, 'content-hash'),
+            consentFingerprint: getRequiredStringFlag(ctx.flags, 'consent-fingerprint'),
+            marketplaceCommit: getRequiredStringFlag(ctx.flags, 'marketplace-commit'),
+            resolvedCommit: getRequiredStringFlag(ctx.flags, 'resolved-commit')
+          }
+        : {}),
+      ...(action === 'preview' || action === 'preview-close' || action === 'install-preview'
         ? {
             source: getRequiredStringFlag(ctx.flags, 'source'),
             plugin: getRequiredStringFlag(ctx.flags, 'plugin')
