@@ -1,6 +1,6 @@
 import { sortWorktrees } from '../worktree/workspace-list-ordering'
 import { isWorktreePinned, type Worktree } from '../worktree/workspace-list-sections'
-import { worktreeSessionPath } from './mobile-session-route'
+import type { SessionTarget } from './session-switch-history'
 
 export type DropdownEntry =
   | { kind: 'row'; item: Worktree; pinned: boolean; current: boolean }
@@ -36,19 +36,18 @@ export function sessionDropdownEntries(
   ]
 }
 
-export type DropdownSelection = { kind: 'close' } | { kind: 'switch'; href: string }
+export type DropdownSelection = { kind: 'close' } | { kind: 'switch'; target: SessionTarget }
 
 export function resolveDropdownSelection(args: {
-  hostId: string
   currentWorktreeId: string
   item: Worktree
 }): DropdownSelection {
-  const { hostId, currentWorktreeId, item } = args
+  const { currentWorktreeId, item } = args
   if (item.worktreeId === currentWorktreeId) {
     return { kind: 'close' }
   }
   return {
     kind: 'switch',
-    href: worktreeSessionPath(hostId, item.worktreeId, item.displayName || item.repo)
+    target: { worktreeId: item.worktreeId, name: item.displayName || item.repo }
   }
 }

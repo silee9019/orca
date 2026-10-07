@@ -1,4 +1,4 @@
-import { createElement } from 'react'
+import { createElement, type ReactNode } from 'react'
 import { act, create } from 'react-test-renderer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -34,29 +34,43 @@ import {
   useMobileSessionMarkdownActions,
   type MobileSessionMarkdownActionsScope
 } from './use-mobile-session-markdown-actions'
+import { SessionHistoryContext } from './session-history-context'
+import type { SessionHistory } from './session-switch-history'
 import type { MarkdownDocState } from './mobile-session-route-types'
 
-const leaves: { back: (() => void) | null; replaced: string[] } = { back: null, replaced: [] }
+const leaves: {
+  back: (() => void) | null
+  replaced: string[]
+  params: Record<string, string>[]
+} = { back: null, replaced: [], params: [] }
 
-/** The three members the hook calls, which is all a probe of it can honestly stand behind. */
-const probeRouter: { canGoBack: () => boolean; back: () => void; replace: (href: string) => void } =
-  {
-    canGoBack: () => true,
-    back: () => {
-      leaves.back?.()
-    },
-    replace: (href: string) => {
-      leaves.replaced.push(href)
-    }
+/** The four members the hook calls, which is all a probe of it can honestly stand behind. */
+const probeRouter: {
+  canGoBack: () => boolean
+  back: () => void
+  replace: (href: string) => void
+  setParams: (params: Record<string, string>) => void
+} = {
+  setParams: (params: Record<string, string>) => {
+    leaves.params.push(params)
+  },
+  canGoBack: () => true,
+  back: () => {
+    leaves.back?.()
+  },
+  replace: (href: string) => {
+    leaves.replaced.push(href)
   }
+}
 
 function scopeWith(markdownDocs: Map<string, MarkdownDocState>): MobileSessionMarkdownActionsScope {
   return {
     hostId: 'host-1',
     worktreeId: 'wt-1',
+    worktreeName: 'one',
     /**
      * SAFETY: expo-router's `Router` carries members this probe has no use for, and the hook calls
-     * exactly the three above. A call to any other is a TypeError this probe fails on rather than
+     * exactly the four above. A call to any other is a TypeError this probe fails on rather than
      * passes through, which is the invariant the assertion stands on.
      */
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: stated above.
@@ -109,6 +123,7 @@ beforeEach(() => {
   native.dismiss.mockClear()
   leaves.back = null
   leaves.replaced = []
+  leaves.params = []
 })
 
 /**
@@ -197,6 +212,9 @@ describe("the session's hardware back gate", () => {
  * Switching sessions from the title dropdown is a leave, so it takes the same draft confirmation
  * as the Back key instead of silently dropping phone-only markdown edits.
  */
+const wt2 = { worktreeId: 'wt-2', name: 'two' }
+const wt2Params = { worktreeId: 'wt-2', name: 'two', created: '', warning: '', paneKey: '' }
+
 describe('switching sessions with unsaved markdown', () => {
   function renderSwitcher(docs: Map<string, MarkdownDocState>) {
     const setLeaveDrafts = vi.fn()
@@ -208,7 +226,13 @@ describe('switching sessions with unsaved markdown', () => {
       return null
     }
     act(() => {
-      create(createElement(SwitchProbe))
+      create(
+        createElement(
+          SessionHistoryContext.Provider,
+          { value: { current: [] } },
+          createElement(SwitchProbe)
+        )
+      )
     })
     if (api.current === null) {
       throw new Error('the probe did not render')
@@ -216,10 +240,11 @@ describe('switching sessions with unsaved markdown', () => {
     return { api: api.current, setLeaveDrafts }
   }
 
-  it('replaces to the target straight away when nothing is dirty', () => {
+  it('switches in place without navigating when nothing is dirty', () => {
     const { api, setLeaveDrafts } = renderSwitcher(new Map())
-    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
-    expect(leaves.replaced).toEqual(['/h/host-1/session/wt-2'])
+    act(() => api.requestSwitchSession(wt2))
+    expect(leaves.params).toEqual([{ ...wt2Params }])
+    expect(leaves.replaced).toEqual([])
     expect(setLeaveDrafts).not.toHaveBeenCalled()
   })
 
@@ -227,23 +252,71 @@ describe('switching sessions with unsaved markdown', () => {
     const { api, setLeaveDrafts } = renderSwitcher(
       new Map([['tab-1', readyDoc('saved', 'edited')]])
     )
-    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
-    expect(leaves.replaced).toEqual([])
+    act(() => api.requestSwitchSession(wt2))
+    expect(leaves.params).toEqual([])
     expect(native.dismiss).toHaveBeenCalledTimes(1)
     expect(setLeaveDrafts).toHaveBeenCalledTimes(1)
 
     act(() => api.leaveSession())
-    expect(leaves.replaced).toEqual(['/h/host-1/session/wt-2'])
+    expect(leaves.params).toEqual([{ ...wt2Params }])
   })
 
   it('a Back press after a cancelled switch leaves instead of switching', () => {
     const { api } = renderSwitcher(new Map([['tab-1', readyDoc('saved', 'edited')]]))
     const left = vi.fn()
     leaves.back = left
-    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
+    act(() => api.requestSwitchSession(wt2))
     act(() => api.requestLeaveSession())
     act(() => api.leaveSession())
     expect(left).toHaveBeenCalledTimes(1)
+    expect(leaves.params).toEqual([])
+  })
+})
+
+/** Back after dropdown switches walks the visited sessions without stacking routes. */
+describe('Back after switching sessions', () => {
+  it('returns to the previous session, without animation, until the history is empty', () => {
+    const history: { current: SessionHistory } = { current: [] }
+    const api: { current: ReturnType<typeof useMobileSessionMarkdownActions> | null } = {
+      current: null
+    }
+    function Switcher({ id }: { id: string }): null {
+      api.current = useMobileSessionMarkdownActions({
+        ...scopeWith(new Map()),
+        worktreeId: id,
+        worktreeName: id
+      })
+      return null
+    }
+    const wrap = (id: string): ReactNode =>
+      createElement(
+        SessionHistoryContext.Provider,
+        { value: history },
+        createElement(Switcher, { id })
+      )
+    let renderer: ReturnType<typeof create> | null = null
+    act(() => {
+      renderer = create(wrap('wt-1'))
+    })
+    act(() => api.current?.requestSwitchSession({ worktreeId: 'wt-2', name: 'wt-2' }))
+    act(() => renderer?.update(wrap('wt-2')))
+    act(() => api.current?.requestSwitchSession({ worktreeId: 'wt-3', name: 'wt-3' }))
+    act(() => renderer?.update(wrap('wt-3')))
+    act(() => api.current?.requestSwitchSession({ worktreeId: 'wt-2', name: 'wt-2' }))
+    act(() => renderer?.update(wrap('wt-2')))
+    // wt-1 -> wt-2 -> wt-3 -> wt-2: the revisited wt-2 is not stacked twice.
+    expect(history.current.map((e) => e.worktreeId)).toEqual(['wt-1', 'wt-3'])
+
+    act(() => api.current?.requestLeaveSession())
+    act(() => renderer?.update(wrap('wt-3')))
+    act(() => api.current?.requestLeaveSession())
+    expect(leaves.params.slice(-2).map((p) => p.worktreeId)).toEqual(['wt-3', 'wt-1'])
     expect(leaves.replaced).toEqual([])
+
+    act(() => renderer?.update(wrap('wt-1')))
+    const left = vi.fn()
+    leaves.back = left
+    act(() => api.current?.requestLeaveSession())
+    expect(left).toHaveBeenCalledTimes(1)
   })
 })

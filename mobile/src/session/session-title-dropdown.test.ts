@@ -125,27 +125,23 @@ describe('resolveDropdownSelection', () => {
   const other = worktree({ worktreeId: 'b', displayName: 'Beta' })
 
   it('only closes when the open session is picked', () => {
-    expect(
-      resolveDropdownSelection({ hostId: 'h', currentWorktreeId: 'a', item: current })
-    ).toEqual({
+    expect(resolveDropdownSelection({ currentWorktreeId: 'a', item: current })).toEqual({
       kind: 'close'
     })
   })
 
-  it('switches to another session through the session route', () => {
-    expect(resolveDropdownSelection({ hostId: 'h', currentWorktreeId: 'a', item: other })).toEqual({
+  it('switches to another session with its id and label', () => {
+    expect(resolveDropdownSelection({ currentWorktreeId: 'a', item: other })).toEqual({
       kind: 'switch',
-      href: '/h/h/session/b?name=Beta'
+      target: { worktreeId: 'b', name: 'Beta' }
     })
   })
 
   it('falls back to the repo name when the row has no display name', () => {
     const unnamed = worktree({ worktreeId: 'c', displayName: '', repo: 'orca' })
-    expect(
-      resolveDropdownSelection({ hostId: 'h', currentWorktreeId: 'a', item: unnamed })
-    ).toEqual({
+    expect(resolveDropdownSelection({ currentWorktreeId: 'a', item: unnamed })).toEqual({
       kind: 'switch',
-      href: '/h/h/session/c?name=orca'
+      target: { worktreeId: 'c', name: 'orca' }
     })
   })
 })

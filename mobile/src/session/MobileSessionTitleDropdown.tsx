@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { ChevronDown } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { colors } from '../theme/mobile-theme'
+import { colors, radii, spacing } from '../theme/mobile-theme'
 import type { Worktree } from '../worktree/workspace-list-sections'
 import { SessionDropdownDivider, SessionDropdownRow } from './SessionDropdownRow'
 import { resolveDropdownSelection, sessionDropdownEntries } from './session-title-dropdown'
@@ -44,10 +44,10 @@ export function MobileSessionTitleDropdown({
 
   const entries = sessionDropdownEntries(dropdown.worktrees, worktreeId, dropdown.localPins)
   const select = (item: Worktree) => {
-    const selection = resolveDropdownSelection({ hostId, currentWorktreeId: worktreeId, item })
+    const selection = resolveDropdownSelection({ currentWorktreeId: worktreeId, item })
     dropdown.hide()
     if (selection.kind === 'switch') {
-      requestSwitchSession(selection.href)
+      requestSwitchSession(selection.target)
     }
   }
 
@@ -55,7 +55,7 @@ export function MobileSessionTitleDropdown({
     <>
       <Pressable
         ref={titleRef}
-        style={dropdownStyles.titleButton}
+        style={[dropdownStyles.titleButton, dropdown.open && dropdownStyles.titleButtonOpen]}
         onPress={() => {
           titleRef.current?.measureInWindow((_x, y, _w, h) => {
             // The header's native safe-area padding is not in the measured y.
@@ -68,7 +68,12 @@ export function MobileSessionTitleDropdown({
         accessibilityState={{ expanded: dropdown.open }}
       >
         <View style={dropdownStyles.titleText}>{title}</View>
-        <ChevronDown size={14} color={colors.textSecondary} strokeWidth={2.2} />
+        <ChevronDown
+          size={14}
+          color={dropdown.open ? colors.textPrimary : colors.textSecondary}
+          strokeWidth={2.2}
+          style={dropdown.open ? dropdownStyles.chevronOpen : undefined}
+        />
       </Pressable>
       <Modal
         visible={dropdown.open}
@@ -77,8 +82,14 @@ export function MobileSessionTitleDropdown({
         statusBarTranslucent
         onRequestClose={dropdown.hide}
       >
+        {/* The scrim starts below the title, so the title stays lit and tapping it closes the list. */}
         <Pressable
-          style={dropdownStyles.backdrop}
+          style={[dropdownStyles.headerHit, { height: anchorTop }]}
+          onPress={dropdown.hide}
+          accessibilityLabel="Close session list"
+        />
+        <Pressable
+          style={[dropdownStyles.backdrop, { top: anchorTop }]}
           onPress={dropdown.hide}
           accessibilityLabel="Close session list"
         />
@@ -110,10 +121,24 @@ const dropdownStyles = StyleSheet.create({
   titleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4
+    gap: spacing.xs,
+    borderRadius: radii.button,
+    paddingHorizontal: spacing.xs
+  },
+  titleButtonOpen: {
+    backgroundColor: colors.bgRaised
+  },
+  chevronOpen: {
+    transform: [{ rotate: '180deg' }]
   },
   titleText: {
     flexShrink: 1
+  },
+  headerHit: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -121,10 +146,16 @@ const dropdownStyles = StyleSheet.create({
   },
   panel: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: spacing.sm,
+    right: spacing.sm,
     backgroundColor: colors.bgPanel,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle
+    borderBottomLeftRadius: radii.card,
+    borderBottomRightRadius: radii.card,
+    overflow: 'hidden',
+    shadowColor: colors.bgBase,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8
   }
 })
