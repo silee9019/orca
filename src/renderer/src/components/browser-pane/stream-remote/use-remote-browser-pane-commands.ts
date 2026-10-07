@@ -24,6 +24,11 @@ type RemotePaneOwner = {
     isCurrent: () => boolean
   ) => Promise<void>
   performInput?: (command: BrowserRemotePaneInputCommand, isCurrent: () => boolean) => Promise<void>
+  performMenu?: (
+    command: Extract<BrowserRemotePaneCommand, { action: 'menu' }>,
+    isCurrent: () => boolean,
+    expiresAt: number
+  ) => Promise<Pick<BrowserRemotePaneState, 'menu'>>
   performMarkup?: (
     command: Extract<BrowserRemotePaneCommand, { action: 'markup' | 'markup-editor' }>,
     isCurrent: () => boolean,
@@ -108,9 +113,13 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
         request.command.markupAction === 'cancel' &&
         (inputPending.current?.command.action === 'markup' ||
           inputPending.current?.command.action === 'markup-editor')
+      const dismissingMenu =
+        request.command.action === 'menu' &&
+        request.command.menuAction === 'dismiss' &&
+        inputPending.current?.command.action === 'menu'
       if (
         (pending.current && !pending.current.request.isSettled()) ||
-        (inputPending.current && !cancellingMarkup)
+        (inputPending.current && !cancellingMarkup && !dismissingMenu)
       ) {
         request.finish(new Error('remote_browser_pane_busy'))
         return
@@ -120,14 +129,17 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
         request.command.action === 'key' ||
         request.command.action === 'navigate' ||
         request.command.action === 'markup' ||
-        request.command.action === 'markup-editor'
+        request.command.action === 'markup-editor' ||
+        request.command.action === 'menu'
       ) {
         if (
-          request.command.action === 'markup' || request.command.action === 'markup-editor'
-            ? !value.performMarkup
-            : request.command.action === 'navigate'
-              ? !value.performNavigation
-              : !value.performInput || value.streamStatus.kind !== 'live'
+          request.command.action === 'menu'
+            ? !value.performMenu
+            : request.command.action === 'markup' || request.command.action === 'markup-editor'
+              ? !value.performMarkup
+              : request.command.action === 'navigate'
+                ? !value.performNavigation
+                : !value.performInput || value.streamStatus.kind !== 'live'
         ) {
           request.finish(new Error('remote_browser_input_unavailable'))
           return
@@ -146,11 +158,13 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
           )
         }
         const operation =
-          request.command.action === 'markup' || request.command.action === 'markup-editor'
-            ? value.performMarkup?.(request.command, isCurrent, request.expiresAt)
-            : request.command.action === 'navigate'
-              ? value.performNavigation?.(request.command, isCurrent)
-              : value.performInput?.(request.command, isCurrent)
+          request.command.action === 'menu'
+            ? value.performMenu?.(request.command, isCurrent, request.expiresAt)
+            : request.command.action === 'markup' || request.command.action === 'markup-editor'
+              ? value.performMarkup?.(request.command, isCurrent, request.expiresAt)
+              : request.command.action === 'navigate'
+                ? value.performNavigation?.(request.command, isCurrent)
+                : value.performInput?.(request.command, isCurrent)
         if (!operation) {
           request.finish(new Error('remote_browser_input_unavailable'))
           inputPending.current = null

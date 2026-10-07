@@ -58,6 +58,41 @@ export const BrowserRemoteFailureState = z.object({
     .optional()
 })
 export type BrowserRemoteFailureState = z.infer<typeof BrowserRemoteFailureState>
+export const BrowserRemoteMenuCommand = z
+  .object({
+    action: z.literal('menu'),
+    menuAction: z.enum([
+      'open',
+      'status',
+      'dismiss',
+      'copy-link',
+      'copy-page',
+      'copy-selection',
+      'external-link',
+      'external-page',
+      'open-orca',
+      'back',
+      'forward',
+      'reload'
+    ]),
+    x: z.number().finite().nonnegative().optional(),
+    y: z.number().finite().nonnegative().optional()
+  })
+  .refine(
+    (command) =>
+      command.menuAction !== 'open' || (command.x !== undefined && command.y !== undefined),
+    { message: 'open requires viewport coordinates' }
+  )
+export type BrowserRemoteMenuCommand = z.infer<typeof BrowserRemoteMenuCommand>
+export const BrowserRemoteMenuState = z.object({
+  open: z.boolean(),
+  hasLink: z.boolean(),
+  hasSelection: z.boolean(),
+  inspected: z.boolean().optional(),
+  clipboardRequested: z.literal(true).optional(),
+  externalRequested: z.literal(true).optional()
+})
+export type BrowserRemoteMenuState = z.infer<typeof BrowserRemoteMenuState>
 export const BrowserRemotePaneCommand = z.intersection(
   z.object({
     environmentId: z.string().min(1),
@@ -69,6 +104,7 @@ export const BrowserRemotePaneCommand = z.intersection(
     BrowserRemotePaneNavigationCommand,
     z.object({ action: z.literal('address'), address: BrowserAddressCommand }),
     BrowserRemoteFailureCommand,
+    BrowserRemoteMenuCommand,
     z.object({ action: z.literal('markup'), markupAction: z.enum(['start', 'cancel', 'status']) }),
     z.object({ action: z.literal('markup-editor'), editor: BrowserMarkupEditorCommand })
   ])
@@ -85,6 +121,7 @@ export const BrowserRemotePaneState = z.object({
   navigationApplied: z.boolean().optional(),
   address: BrowserAddressState.optional(),
   failure: BrowserRemoteFailureState.optional(),
+  menu: BrowserRemoteMenuState.optional(),
   markup: z
     .object({ state: z.enum(['idle', 'capturing', 'drawing', 'composing']), hasImage: z.boolean() })
     .optional(),

@@ -6,7 +6,7 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
     summary:
       'Read, reconnect or send bounded input to an exact remote browser pane in the host viewer',
     usage:
-      'orca browser remote-pane --viewer host --page <local-page> --runtime-environment <id> --remote-page <id|none> --action <status|reconnect|click|key|navigate|address|failure|markup|markup-editor> [--x <n> --y <n> --button <left|middle> | --key <key> --meta --ctrl --alt --shift] [--json]',
+      'orca browser remote-pane --viewer host --page <local-page> --runtime-environment <id> --remote-page <id|none> --action <status|reconnect|click|key|navigate|address|failure|markup|markup-editor|menu> [--x <n> --y <n> --button <left|middle> | --key <key> --meta --ctrl --alt --shift] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'viewer',
@@ -14,6 +14,7 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
       'runtime-environment',
       'remote-page',
       'action',
+      'menu-action',
       'markup-action',
       'editor-action',
       'value',
@@ -34,6 +35,7 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
       'shift'
     ],
     notes: [
+      'Menu reuses the visible remote context menu: --menu-action <open|status|dismiss|copy-link|copy-page|copy-selection|external-link|external-page|open-orca|back|forward|reload>. Open requires --x and --y in screenshot CSS pixels.',
       'Markup reuses the mounted remote capture and editor: --markup-action <start|cancel|status>; --editor-action <status|tool|color|width|font-size|undo|redo|clear|text-commit|text-cancel|copy> [--value <value> --text <text>]. Copy requires an explicit clipboard acknowledgment.',
       'Failure reuses the visible load failure owner: --failure-action <copy-address|open-external|certificate-proceed>. Certificate proceed requires --challenge <current-id> and the host certificate-trust capability.',
       'Address reuses the mounted address bar: --address-action <draft|submit|open|dismiss|status|preview|select|highlight|next|previous> [--text <draft> --index <n>]. Submission receipts report navigation requested; they do not claim completed navigation.',

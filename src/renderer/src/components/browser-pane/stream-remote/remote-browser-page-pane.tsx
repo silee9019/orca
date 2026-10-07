@@ -4,8 +4,7 @@ import { BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY } from '../../../../../sha
 import type { BrowserPage as BrowserPageState } from '../../../../../shared/browser-workspace-types'
 import { runtimeEnvironmentSupportsCapability } from '@/runtime/runtime-rpc-client'
 import { convertBrowserPageToWorkspaceDoc } from '@/lib/file-preview'
-import { openWorkspaceBrowserTab } from '@/lib/workspace-browser-tab-open'
-import { resolveBrowserSourceUnifiedTab } from '@/lib/browser-workspace-source-resolution'
+import { openRemoteContextMenuLink } from './open-remote-context-menu-link'
 import { useBrowserPageChromeFocus } from '../assemble-chrome/use-browser-page-chrome-focus'
 import { useBrowserAddressBarEditSession } from '../assemble-chrome/use-browser-address-bar-edit-session'
 import { useElementGuestFocus } from '../assemble-chrome/browser-page-guest-focus'
@@ -291,21 +290,6 @@ export function RemoteBrowserPagePane({
     remotePageId: lifecycle.tokens.remotePage
   })
 
-  useRemoteBrowserPaneCommands({
-    page: browserTab.id,
-    environmentId: activeRuntimeEnvironmentId,
-    remotePageId: lifecycle.tokens.remotePage,
-    active: isActive,
-    staged: stagedPage,
-    streamStatus,
-    reconnectGeneration,
-    reconnect: reconnectRemoteStream,
-    performInput: performRemoteInput,
-    performMarkup: markup.performCommand,
-    performNavigation: (command, isCurrent) =>
-      runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
-  })
-
   useRemoteBrowserPageWheel({
     busy,
     imageRef,
@@ -326,7 +310,34 @@ export function RemoteBrowserPagePane({
     remoteWheelInFlightRef
   })
 
-  const { contextMenu, setContextMenu, handleRemoteContextMenu } = useRemoteBrowserPageContextMenu({
+  const {
+    contextMenu,
+    handleRemoteContextMenu,
+    actions: contextMenuActions,
+    performMenu
+  } = useRemoteBrowserPageContextMenu({
+    commandOwner: {
+      page: browserTab.id,
+      active: isActive && !stagedPage,
+      environmentId: activeRuntimeEnvironmentId,
+      remotePageId: lifecycle.tokens.remotePage
+    },
+    onNavigate: (method) => {
+      const page = lifecycle.tokens.remotePage
+      return runRemoteNavigation(
+        method,
+        undefined,
+        () => mountedRef.current && lifecycle.tokens.remotePage === page
+      )
+    },
+    onOpenLink: (linkUrl) =>
+      openRemoteContextMenuLink(
+        browserTab.id,
+        worktreeId,
+        runtimeEnvironmentId,
+        linkUrl,
+        setPaneNotice
+      ),
     busy,
     browserTabUrl: browserTab.url,
     imageRef,
@@ -342,6 +353,22 @@ export function RemoteBrowserPagePane({
     setPaneNotice
   })
 
+  useRemoteBrowserPaneCommands({
+    page: browserTab.id,
+    environmentId: activeRuntimeEnvironmentId,
+    remotePageId: lifecycle.tokens.remotePage,
+    active: isActive,
+    staged: stagedPage,
+    streamStatus,
+    reconnectGeneration,
+    reconnect: reconnectRemoteStream,
+    performInput: performRemoteInput,
+    performMarkup: markup.performCommand,
+    performMenu,
+    performNavigation: (command, isCurrent) =>
+      runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
+  })
+
   return (
     // The testid scopes E2E queries to this pane: a workspace can hold more than one browser pane,
     // and controls like the address bar are otherwise ambiguous across them.
@@ -350,38 +377,7 @@ export function RemoteBrowserPagePane({
       className="relative flex h-full min-h-0 flex-1 flex-col bg-background"
     >
       {contextMenu ? (
-        <RemoteBrowserPageContextMenu
-          contextMenu={contextMenu}
-          onDismiss={() => setContextMenu(null)}
-          onOpenLinkInOrcaBrowser={() => {
-            const linkUrl = contextMenu.linkUrl!
-            setContextMenu(null)
-            const sourceUnifiedTab = resolveBrowserSourceUnifiedTab(
-              useAppStore.getState(),
-              browserTab.id,
-              worktreeId
-            )
-            void openWorkspaceBrowserTab({
-              workspaceId: worktreeId,
-              url: linkUrl,
-              ...(sourceUnifiedTab ? { afterTabId: sourceUnifiedTab.id } : {}),
-              focusOnCreate: false,
-              selectWorktree: false,
-              intent: { kind: 'url' },
-              expectedRuntimeEnvironmentId: runtimeEnvironmentId,
-              placementPreference: 'server'
-            }).catch((error) => {
-              setPaneNotice({
-                kind: 'direct',
-                text: error instanceof Error ? error.message : String(error)
-              })
-            })
-          }}
-          onNavigate={(method) => {
-            void runRemoteNavigation(method)
-            setContextMenu(null)
-          }}
-        />
+        <RemoteBrowserPageContextMenu contextMenu={contextMenu} actions={contextMenuActions} />
       ) : null}
       <RemoteBrowserPageToolbar
         commandOwner={{ page: browserTab.id, active: isActive && !stagedPage }}
