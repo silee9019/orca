@@ -4,7 +4,7 @@ import { vi } from 'vitest'
 import { useAppStore } from '@/store'
 import { getDefaultSettings } from '../../../shared/constants'
 import type { BrowserWebAuthnAccountRequest } from '../../../shared/browser-webauthn-account'
-export function installWebAuthnDialogFixture() {
+export function installWebAuthnDialogFixture(clientHosted = false) {
   const requests = new Set<(request: BrowserWebAuthnAccountRequest) => void>()
   const closures = new Set<(event: { requestId: string }) => void>()
   const accepted: { requestId: string; credentialId: string | null }[] = []
@@ -30,9 +30,22 @@ export function installWebAuthnDialogFixture() {
     persistedUIReady: true,
     activeWorktreeId: 'folder:fixture'
   })
-  useAppStore
-    .getState()
-    .createBrowserTab('folder:fixture', 'https://fixture.invalid/', { browserPageId: 'page' })
+  useAppStore.getState().createBrowserTab('folder:fixture', 'https://fixture.invalid/', {
+    browserPageId: 'page',
+    ...(clientHosted ? { browserRuntimeEnvironmentId: 'environment' } : {})
+  })
+  if (clientHosted) {
+    useAppStore.getState().setRemoteBrowserPageHandle('page', {
+      environmentId: 'environment',
+      remotePageId: 'remote-page',
+      placement: {
+        kind: 'client',
+        browserHostClientId: 'fixture',
+        browserHostGeneration: 3,
+        pageHostGeneration: 7
+      }
+    })
+  }
   const push = (requestId = 'request', relyingPartyId = 'fixture.invalid') => {
     act(() => {
       for (const callback of requests) {

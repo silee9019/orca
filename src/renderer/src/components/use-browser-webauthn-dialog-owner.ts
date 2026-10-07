@@ -1,3 +1,4 @@
+import { matchesBrowserClientPageCommandTarget } from '@/runtime/browser-client-page-command-target'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { findPage } from '@/store/slices/browser-page-records'
@@ -97,7 +98,14 @@ export function useBrowserWebAuthnDialogOwner() {
             generation.current === epoch &&
             page?.worktreeId === command.worktreeId &&
             (page.browserRuntimeEnvironmentId ?? null) === command.environmentId &&
-            !state.remoteBrowserPageHandlesByPageId[command.page] &&
+            (command.environmentId === null
+              ? command.clientTarget === undefined &&
+                !state.remoteBrowserPageHandlesByPageId[command.page]
+              : matchesBrowserClientPageCommandTarget(
+                  state.remoteBrowserPageHandlesByPageId[command.page],
+                  command.environmentId,
+                  command.clientTarget
+                )) &&
             state.activeModal === 'none'
           )
         }
@@ -138,6 +146,7 @@ export function useBrowserWebAuthnDialogOwner() {
                     worktreeId: command.worktreeId,
                     environmentId: command.environmentId,
                     relyingPartyId: command.relyingPartyId,
+                    ...(command.clientTarget ? { clientTarget: command.clientTarget } : {}),
                     action: command.credentialId === null ? 'cancel' : 'select',
                     accepted: true,
                     removed: true

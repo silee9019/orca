@@ -1,5 +1,5 @@
 import {
-  createBrowserFailureOwner,
+  createBrowserFailureOwner as createFailureOwner,
   openBrowserFailureExternalUrl
 } from './navigate/use-browser-failure-commands'
 import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
@@ -399,7 +399,7 @@ export function ClientHostedBrowserPagePane({
         />
         {showFailureOverlay && browserTab.loadError ? (
           <BrowserLoadFailureOverlay
-            commandOwner={createBrowserFailureOwner(browserTab, runtimeEnvironmentId, isActive)}
+            commandOwner={createFailureOwner(browserTab, runtimeEnvironmentId, isActive, placement)}
             loadError={browserTab.loadError}
             currentUrl={toDisplayUrl(failedNavigationUrl)}
             httpsRecoveryUrl={toHttpsRecoveryUrl(failedNavigationUrl)}

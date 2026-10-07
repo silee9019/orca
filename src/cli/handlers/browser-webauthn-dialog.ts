@@ -37,6 +37,16 @@ export const BROWSER_WEBAUTHN_DIALOG_HANDLERS: Record<string, CommandHandler> = 
       }
     }
     const target = BrowserWebAuthnDialogTarget.safeParse({
+      clientTarget: ctx.flags.has('remote-page')
+        ? {
+            remotePageId: getRequiredStringFlag(ctx.flags, 'remote-page'),
+            browserHostClientId: getRequiredStringFlag(ctx.flags, 'browser-host-client'),
+            browserHostGeneration: Number(
+              getRequiredStringFlag(ctx.flags, 'browser-host-generation')
+            ),
+            pageHostGeneration: Number(getRequiredStringFlag(ctx.flags, 'page-host-generation'))
+          }
+        : undefined,
       requestId: getRequiredStringFlag(ctx.flags, 'request'),
       page: getRequiredStringFlag(ctx.flags, 'page'),
       worktreeId: getRequiredStringFlag(ctx.flags, 'worktree'),
@@ -49,6 +59,12 @@ export const BROWSER_WEBAUTHN_DIALOG_HANDLERS: Record<string, CommandHandler> = 
     })
     if (!target.success) {
       throw new RuntimeClientError('invalid_argument', 'Invalid dialog target.')
+    }
+    if ((target.data.environmentId !== null) !== Boolean(target.data.clientTarget)) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Client-hosted dialogs require the exact materialized client target.'
+      )
     }
     let response
     try {

@@ -15,6 +15,16 @@ export const BROWSER_FAILURE_HANDLERS: Record<string, CommandHandler> = {
       )
     }
     const selection = BrowserFailureTarget.safeParse({
+      clientTarget: ctx.flags.has('remote-page')
+        ? {
+            remotePageId: getRequiredStringFlag(ctx.flags, 'remote-page'),
+            browserHostClientId: getRequiredStringFlag(ctx.flags, 'browser-host-client'),
+            browserHostGeneration: Number(
+              getRequiredStringFlag(ctx.flags, 'browser-host-generation')
+            ),
+            pageHostGeneration: Number(getRequiredStringFlag(ctx.flags, 'page-host-generation'))
+          }
+        : undefined,
       worktreeId: getRequiredStringFlag(ctx.flags, 'worktree'),
       placement: getRequiredStringFlag(ctx.flags, 'placement'),
       environmentId:
@@ -29,6 +39,15 @@ export const BROWSER_FAILURE_HANDLERS: Record<string, CommandHandler> = {
     })
     if (!selection.success) {
       throw new RuntimeClientError('invalid_argument', 'Invalid failure target.')
+    }
+    if (
+      (selection.data.placement === 'client-hosted') !== (selection.data.environmentId !== null) ||
+      (selection.data.placement === 'client-hosted') !== Boolean(selection.data.clientTarget)
+    ) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Client-hosted failure controls require the exact materialized client target.'
+      )
     }
     if (selection.data.action === 'certificate-proceed' && ctx.flags.get('confirm') !== true) {
       throw new RuntimeClientError(

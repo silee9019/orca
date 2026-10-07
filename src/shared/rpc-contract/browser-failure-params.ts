@@ -1,3 +1,4 @@
+import { BrowserClientPageTarget } from './browser-client-page-target'
 import { z } from 'zod'
 export const BrowserFailureTarget = z.object({
   worktreeId: z.string().min(1),
@@ -5,8 +6,9 @@ export const BrowserFailureTarget = z.object({
   environmentId: z.string().min(1).nullable(),
   expectedUrl: z.string().min(1),
   errorCode: z.number().int(),
-  action: z.enum(['copy-address', 'open-external', 'certificate-proceed', 'retry']),
-  challengeId: z.string().min(1).optional()
+  action: z.enum(['copy-address', 'open-external', 'certificate-proceed', 'retry', 'try-https']),
+  challengeId: z.string().min(1).optional(),
+  clientTarget: BrowserClientPageTarget.optional()
 })
 export type BrowserFailureTarget = z.infer<typeof BrowserFailureTarget>
 export const BrowserFailureState = BrowserFailureTarget.extend({ accepted: z.literal(true) })

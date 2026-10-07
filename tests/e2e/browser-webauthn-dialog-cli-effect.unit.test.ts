@@ -39,85 +39,102 @@ afterEach(() => {
     Reflect.deleteProperty(window, 'api')
   }
 })
-it('executes cancel and selection from parser/socket through the actual dialog and accepted provider read-back', async () => {
-  const provider = installWebAuthnDialogFixture()
-  render(createElement(BrowserWebAuthnAccountDialog))
-  provider.push()
-  const fixtureWindow = new BrowserWindow()
-  const runtime = new OrcaRuntimeService()
-  runtime.setNotifier({
-    browserViewer: (command) => requestBrowserViewerFromRenderer(fixtureWindow, command)
-  })
-  vi.mocked(fixtureWindow.webContents.send).mockImplementation(
-    (_channel, request: BrowserViewerRequest) => {
-      void applyBrowserViewerRequest(request).then(
-        (result) =>
-          ipcMain.emit(
-            'ui:browserViewerResponse',
-            { sender: fixtureWindow.webContents },
-            { id: request.id, ok: true, result }
-          ),
-        (error: unknown) =>
-          ipcMain.emit(
-            'ui:browserViewerResponse',
-            { sender: fixtureWindow.webContents },
-            {
-              id: request.id,
-              ok: false,
-              error: error instanceof Error ? error.message : String(error)
-            }
-          )
-      )
-    }
-  )
-  const cli = await createRemotePaneCliSocket(runtime)
-  const dir = await mkdtemp(path.join(tmpdir(), 'orca-webauthn-fixture-'))
-  const credentialFile = path.join(dir, 'credential.txt')
-  const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-  const run = (extra = ['--cancel']) =>
-    cli.runWebAuthnDialog([
-      '--page',
-      'page',
-      '--worktree',
-      'folder:fixture',
-      '--request',
-      'request',
-      '--relying-party',
-      'fixture.invalid',
-      '--confirm',
-      ...extra
-    ])
-  try {
-    provider.respond.mockResolvedValueOnce(false)
-    await act(async () => {
-      await expect(run()).rejects.toThrow('response_refused')
-    })
-    expect(screen.queryByRole('dialog')).not.toBeNull()
-    await act(async () => {
-      await run()
-    })
-    expect(provider.accepted).toEqual([{ requestId: 'request', credentialId: null }])
-    expect(screen.queryByRole('dialog')).toBeNull()
+it.each([false, true])(
+  'executes cancel and selection through the actual dialog with materialized client=%s',
+  async (clientHosted) => {
+    const provider = installWebAuthnDialogFixture(clientHosted)
+    render(createElement(BrowserWebAuthnAccountDialog))
     provider.push()
-    await writeFile(credentialFile, 'fixture-credential')
-    await act(async () => {
-      await run(['--credential-file', credentialFile])
+    const fixtureWindow = new BrowserWindow()
+    const runtime = new OrcaRuntimeService()
+    runtime.setNotifier({
+      browserViewer: (command) => requestBrowserViewerFromRenderer(fixtureWindow, command)
     })
-    expect(provider.accepted).toEqual([
-      { requestId: 'request', credentialId: null },
-      { requestId: 'request', credentialId: 'fixture-credential' }
-    ])
-    expect(screen.queryByRole('dialog')).toBeNull()
-    expect(output.mock.calls.map((call) => String(call[0])).join('')).not.toContain(
-      'fixture-credential'
+    vi.mocked(fixtureWindow.webContents.send).mockImplementation(
+      (_channel, request: BrowserViewerRequest) => {
+        void applyBrowserViewerRequest(request).then(
+          (result) =>
+            ipcMain.emit(
+              'ui:browserViewerResponse',
+              { sender: fixtureWindow.webContents },
+              { id: request.id, ok: true, result }
+            ),
+          (error: unknown) =>
+            ipcMain.emit(
+              'ui:browserViewerResponse',
+              { sender: fixtureWindow.webContents },
+              {
+                id: request.id,
+                ok: false,
+                error: error instanceof Error ? error.message : String(error)
+              }
+            )
+        )
+      }
     )
-    expect(output.mock.lastCall?.[0]).toContain('"removed": true')
-    provider.push()
-    cli.useLegacyPeer()
-    await expect(run()).rejects.toThrow('does not support mounted WebAuthn')
-    expect(provider.accepted).toHaveLength(2)
-  } finally {
-    await cli.close()
-    await rm(dir, { recursive: true, force: true })
+    const cli = await createRemotePaneCliSocket(runtime)
+    const dir = await mkdtemp(path.join(tmpdir(), 'orca-webauthn-fixture-'))
+    const credentialFile = path.join(dir, 'credential.txt')
+    const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const run = (extra = ['--cancel']) =>
+      cli.runWebAuthnDialog([
+        '--page',
+        'page',
+        '--worktree',
+        'folder:fixture',
+        '--request',
+        'request',
+        '--relying-party',
+        'fixture.invalid',
+        '--confirm',
+        ...(clientHosted
+          ? [
+              '--runtime-environment',
+              'environment',
+              '--remote-page',
+              'remote-page',
+              '--browser-host-client',
+              'fixture',
+              '--browser-host-generation',
+              '3',
+              '--page-host-generation',
+              '7'
+            ]
+          : []),
+        ...extra
+      ])
+    try {
+      provider.respond.mockResolvedValueOnce(false)
+      await act(async () => {
+        await expect(run()).rejects.toThrow('response_refused')
+      })
+      expect(screen.queryByRole('dialog')).not.toBeNull()
+      await act(async () => {
+        await run()
+      })
+      expect(provider.accepted).toEqual([{ requestId: 'request', credentialId: null }])
+      expect(screen.queryByRole('dialog')).toBeNull()
+      provider.push()
+      await writeFile(credentialFile, 'fixture-credential')
+      await act(async () => {
+        await run(['--credential-file', credentialFile])
+      })
+      expect(provider.accepted).toEqual([
+        { requestId: 'request', credentialId: null },
+        { requestId: 'request', credentialId: 'fixture-credential' }
+      ])
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(output.mock.calls.map((call) => String(call[0])).join('')).not.toContain(
+        'fixture-credential'
+      )
+      expect(output.mock.lastCall?.[0]).toContain('"removed": true')
+      provider.push()
+      cli.useLegacyPeer()
+      await expect(run()).rejects.toThrow('does not support mounted WebAuthn')
+      expect(provider.accepted).toHaveLength(2)
+    } finally {
+      await cli.close()
+      await rm(dir, { recursive: true, force: true })
+    }
   }
-})
+)

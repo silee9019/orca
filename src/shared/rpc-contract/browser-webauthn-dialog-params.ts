@@ -1,3 +1,4 @@
+import { BrowserClientPageTarget } from './browser-client-page-target'
 import { z } from 'zod'
 export const BrowserWebAuthnDialogTarget = z.object({
   requestId: z.string().min(1),
@@ -5,7 +6,8 @@ export const BrowserWebAuthnDialogTarget = z.object({
   worktreeId: z.string().min(1),
   environmentId: z.string().min(1).nullable(),
   relyingPartyId: z.string().min(1),
-  credentialId: z.string().min(1).max(4096).nullable()
+  credentialId: z.string().min(1).max(4096).nullable(),
+  clientTarget: BrowserClientPageTarget.optional()
 })
 export type BrowserWebAuthnDialogTarget = z.infer<typeof BrowserWebAuthnDialogTarget>
 export const BrowserWebAuthnDialogState = BrowserWebAuthnDialogTarget.omit({

@@ -1,4 +1,9 @@
-import { normalizeBrowserNavigationUrl } from '../../../../../shared/browser-url'
+import { matchesBrowserClientPageCommandTarget } from '@/runtime/browser-client-page-command-target'
+import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
+import {
+  normalizeBrowserNavigationUrl,
+  toHttpsRecoveryUrl
+} from '../../../../../shared/browser-url'
 import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
 import { openBrowserTabExternallyVerified } from '@/components/tab-bar/browser-tab-external-open'
 import { useEffect, useLayoutEffect, useRef } from 'react'
@@ -21,11 +26,13 @@ export type BrowserFailureOwner = {
   worktreeId: string
   placement: 'local' | 'client-hosted'
   environmentId: string | null
+  clientPlacement?: RuntimeBrowserClientPlacement | null
 }
 export function createBrowserFailureOwner(
   page: Pick<BrowserPage, 'id' | 'worktreeId'>,
   environmentId: string | null = null,
-  active = true
+  active = true,
+  clientPlacement?: RuntimeBrowserClientPlacement | null
 ): BrowserFailureOwner | undefined {
   if (!active) {
     return undefined
@@ -34,7 +41,8 @@ export function createBrowserFailureOwner(
     page: page.id,
     worktreeId: page.worktreeId,
     placement: environmentId ? 'client-hosted' : 'local',
-    environmentId
+    environmentId,
+    clientPlacement
   }
 }
 type Owner = {
@@ -45,6 +53,8 @@ type Owner = {
   disabled: boolean
   copy: () => void | Promise<void>
   retry: () => void
+  httpsUrl: string | null
+  tryHttps: (url: string) => void
   external?: () => void | Promise<void>
   proceed: () => Promise<BrowserCertificateProceedResult>
 }
@@ -75,7 +85,16 @@ export function useBrowserFailureCommands(owner: Owner): void {
             page &&
             page.worktreeId === command.worktreeId &&
             state.activeWorktreeId === command.worktreeId &&
-            !state.remoteBrowserPageHandlesByPageId[event.page] &&
+            (command.placement === 'local'
+              ? command.environmentId === null &&
+                command.clientTarget === undefined &&
+                !state.remoteBrowserPageHandlesByPageId[event.page]
+              : matchesBrowserClientPageCommandTarget(
+                  state.remoteBrowserPageHandlesByPageId[event.page],
+                  command.environmentId,
+                  command.clientTarget,
+                  value.identity.clientPlacement ?? null
+                )) &&
             (page.browserRuntimeEnvironmentId ?? null) === command.environmentId &&
             state.activeModal === 'none' &&
             page.loadError?.code === command.errorCode &&
@@ -108,6 +127,44 @@ export function useBrowserFailureCommands(owner: Owner): void {
         }
         if (command.action === 'open-external' && !before.external) {
           throw new Error('browser_failure_external_unavailable')
+        }
+        if (command.action === 'try-https') {
+          const httpsUrl = toHttpsRecoveryUrl(before.error.validatedUrl)
+          if (!httpsUrl || httpsUrl !== before.httpsUrl) {
+            throw new Error('browser_failure_https_unavailable')
+          }
+          const initialPage = findPage(useAppStore.getState().browserPagesByWorkspace, event.page)
+          if (!initialPage || initialPage.loading) {
+            throw new Error('browser_failure_https_effect_unverifiable')
+          }
+          before.tryHttps(httpsUrl)
+          const state = useAppStore.getState()
+          const navigated = findPage(state.browserPagesByWorkspace, event.page)
+          if (
+            Date.now() >= event.expiresAt ||
+            !navigated?.loading ||
+            navigated.url !== httpsUrl ||
+            navigated.worktreeId !== command.worktreeId ||
+            (navigated.browserRuntimeEnvironmentId ?? null) !== command.environmentId ||
+            state.activeWorktreeId !== command.worktreeId ||
+            state.activeModal !== 'none' ||
+            (command.placement === 'local'
+              ? command.environmentId !== null ||
+                command.clientTarget !== undefined ||
+                Boolean(state.remoteBrowserPageHandlesByPageId[event.page])
+              : !matchesBrowserClientPageCommandTarget(
+                  state.remoteBrowserPageHandlesByPageId[event.page],
+                  command.environmentId,
+                  command.clientTarget,
+                  before.identity?.clientPlacement ?? null
+                )) ||
+            !state.browserTabsByWorktree[command.worktreeId]?.some(
+              (tab) => tab.activePageId === event.page
+            )
+          ) {
+            throw new Error('browser_failure_https_effect_unverifiable')
+          }
+          return { ...command, accepted: true }
         }
         const retryUrl = normalizeBrowserNavigationUrl(before.error.validatedUrl)
         const recoveryRetry = before.error.code === BROWSER_GUEST_RECOVERY_ERROR_CODE

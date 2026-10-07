@@ -7,6 +7,12 @@ import { getDefaultSettings } from '../../src/shared/constants'
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { BrowserFailureFixtureOwner } from '../../src/renderer/src/components/browser-pane/navigate/browser-failure-owner.test-fixture'
 import { installClientHostedPaneApi } from '../../src/renderer/src/components/browser-pane/client-hosted-browser-pane-test-rig'
+vi.mock(
+  '../../src/renderer/src/components/browser-pane/stream-remote/remote-browser-page-pane',
+  () => ({
+    RemoteBrowserPagePane: () => createElement('div', { 'data-testid': 'server-browser-pane' })
+  })
+)
 const guest = vi.hoisted(() => ({ attach: vi.fn() }))
 vi.mock(
   '../../src/renderer/src/components/browser-pane/browser-client-page-renderer-installation',
@@ -118,6 +124,18 @@ it.each(['local', 'client-hosted'] as const)(
       browserPageId: 'page',
       browserRuntimeEnvironmentId: placement === 'client-hosted' ? 'environment' : null
     })
+    if (placement === 'client-hosted') {
+      useAppStore.getState().setRemoteBrowserPageHandle('page', {
+        environmentId: 'environment',
+        remotePageId: 'remote-page',
+        placement: {
+          kind: 'client',
+          browserHostClientId: 'fixture',
+          browserHostGeneration: 3,
+          pageHostGeneration: 7
+        }
+      })
+    }
     useAppStore.getState().updateBrowserPageState('page', {
       loadError: { code: -202, description: 'ERR_CERT_AUTHORITY_INVALID', validatedUrl: url }
     })
@@ -179,7 +197,20 @@ it.each(['local', 'client-hosted'] as const)(
         'folder:fixture',
         '--placement',
         placement,
-        ...(placement === 'client-hosted' ? ['--runtime-environment', 'environment'] : []),
+        ...(placement === 'client-hosted'
+          ? [
+              '--runtime-environment',
+              'environment',
+              '--remote-page',
+              'remote-page',
+              '--browser-host-client',
+              'fixture',
+              '--browser-host-generation',
+              '3',
+              '--page-host-generation',
+              '7'
+            ]
+          : []),
         '--url',
         url,
         '--error-code=-202',
@@ -188,6 +219,18 @@ it.each(['local', 'client-hosted'] as const)(
         ...(action === 'certificate-proceed' ? ['--confirm'] : []),
         ...extra
       ])
+    if (placement === 'client-hosted') {
+      const clipboard = vi.spyOn(window.api.ui, 'writeClipboardText')
+      for (const extra of [
+        ['--remote-page', 'wrong'],
+        ['--browser-host-client', 'wrong'],
+        ['--browser-host-generation', '4'],
+        ['--page-host-generation', '8']
+      ]) {
+        await expect(run('copy-address', extra)).rejects.toThrow('owner_changed')
+      }
+      expect(clipboard).not.toHaveBeenCalled()
+    }
     try {
       await act(async () => {
         await expect(run('copy-address')).rejects.toThrow('clipboard_provider_failed')
@@ -201,6 +244,69 @@ it.each(['local', 'client-hosted'] as const)(
       expect(provider.clipboard).toBe(url)
       if (placement === 'local') {
         expect(provider.notice).toContain('Copied')
+      }
+      if (placement === 'client-hosted') {
+        const original = useAppStore.getState().remoteBrowserPageHandlesByPageId['page']
+        const clipboard = vi.spyOn(window.api.ui, 'writeClipboardText')
+        clipboard.mockClear()
+        const connecting = [
+          {
+            environmentId: 'environment',
+            remotePageId: 'remote-page',
+            staged: true as const,
+            stagedClientHosted: true as const
+          },
+          {
+            environmentId: 'environment',
+            remotePageId: 'remote-page',
+            restoredFromSession: true as const,
+            restoredClientHosted: true as const
+          },
+          { environmentId: 'environment', remotePageId: 'remote-page' },
+          {
+            environmentId: 'environment',
+            remotePageId: 'remote-page',
+            placement: { kind: 'server' as const }
+          }
+        ]
+        for (const handle of connecting) {
+          act(() => useAppStore.getState().setRemoteBrowserPageHandle('page', handle))
+          await expect(run('copy-address')).rejects.toThrow()
+        }
+        expect(clipboard).not.toHaveBeenCalled()
+        act(() => useAppStore.getState().setRemoteBrowserPageHandle('page', original))
+        expect(screen.getByRole('button', { name: 'Copy Address' })).not.toBeNull()
+        let signalStarted = () => {}
+        const started = new Promise<void>((resolve) => {
+          signalStarted = resolve
+        })
+        let finish = () => {}
+        clipboard.mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve) => {
+              finish = resolve
+              signalStarted()
+            })
+        )
+        const pending = run('copy-address')
+        const rejected = expect(pending).rejects.toThrow('effect_unknown')
+        await started
+        act(() =>
+          useAppStore.getState().setRemoteBrowserPageHandle('page', {
+            ...original,
+            placement: {
+              kind: 'client',
+              browserHostClientId: 'fixture',
+              browserHostGeneration: 3,
+              pageHostGeneration: 8
+            }
+          })
+        )
+        await act(async () => {
+          finish()
+          await rejected
+        })
+        act(() => useAppStore.getState().setRemoteBrowserPageHandle('page', original))
       }
       const verifiedExternal = window.api.shell.openVerifiedUrl
       Reflect.deleteProperty(window.api.shell, 'openVerifiedUrl')

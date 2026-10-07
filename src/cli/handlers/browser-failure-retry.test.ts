@@ -20,7 +20,7 @@ const target = {
   action: 'retry'
 }
 afterEach(() => vi.restoreAllMocks())
-async function run() {
+async function run(action = 'retry') {
   const parsed = parseArgs([
     'browser',
     'failure',
@@ -37,7 +37,7 @@ async function run() {
     '--error-code',
     String(target.errorCode),
     '--action',
-    'retry'
+    action
   ])
   validateCommandAndFlags(BROWSER_FAILURE_COMMAND_SPECS, parsed)
   await BROWSER_FAILURE_HANDLERS['browser failure']({
@@ -76,4 +76,36 @@ it.each([
     result: { applied: true, page: 'page', failureState }
   })
   await expect(run()).rejects.toMatchObject({ code: 'runtime_error' })
+})
+
+it('routes HTTPS recovery with the exact action receipt and rejects a retry receipt', async () => {
+  const call = vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'fixture' },
+    result: {
+      applied: true,
+      page: 'page',
+      failureState: { ...target, action: 'try-https', accepted: true }
+    }
+  })
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  await run('try-https')
+  expect(call).toHaveBeenCalledWith('ui.browserViewer', {
+    viewer: 'host',
+    operation: 'load-failure',
+    page: 'page',
+    command: { ...target, action: 'try-https' }
+  })
+  call.mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'fixture' },
+    result: {
+      applied: true,
+      page: 'page',
+      failureState: { ...target, accepted: true }
+    }
+  })
+  await expect(run('try-https')).rejects.toMatchObject({ code: 'runtime_error' })
 })

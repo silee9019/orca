@@ -1,6 +1,6 @@
 import type { ComponentProps, Dispatch, SetStateAction } from 'react'
 import { BrowserPageViewportOverlays } from '../assemble-chrome/browser-page-viewport-overlays'
-import { ClientHostedBrowserPagePane } from '../ClientHostedBrowserPagePane'
+import BrowserPane from '../assemble-chrome/browser-workspace-pane'
 import { useAppStore } from '@/store'
 import { TooltipProvider } from '@/components/ui/tooltip'
 export function BrowserFailureFixtureOwner({
@@ -21,24 +21,15 @@ export function BrowserFailureFixtureOwner({
     throw new Error('Missing fixture page')
   }
   if (placement === 'client-hosted') {
+    const workspace = useAppStore
+      .getState()
+      .browserTabsByWorktree[page.worktreeId]?.find((tab) => tab.id === page.workspaceId)
+    if (!workspace) {
+      throw new Error('Missing fixture workspace')
+    }
     return (
       <TooltipProvider>
-        <ClientHostedBrowserPagePane
-          browserTab={page}
-          workspaceId={page.workspaceId}
-          runtimeEnvironmentId="environment"
-          worktreeId={page.worktreeId}
-          placement={{
-            kind: 'client',
-            browserHostClientId: 'fixture',
-            browserHostGeneration: 1,
-            pageHostGeneration: 1
-          }}
-          isActive
-          chromeShortcutScope="focused"
-          onUpdatePageState={useAppStore.getState().updateBrowserPageState}
-          onSetUrl={useAppStore.getState().setBrowserPageUrl}
-        />
+        <BrowserPane browserTab={workspace} isActive chromeShortcutScope="focused" />
       </TooltipProvider>
     )
   }

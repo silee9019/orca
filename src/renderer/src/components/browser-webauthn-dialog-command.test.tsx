@@ -172,3 +172,136 @@ it('uses the same cancel response when the dialog dismisses with Escape', async 
   expect(fixture.accepted).toEqual([{ requestId: 'request', credentialId: null }])
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
+it('accepts a materialized client-hosted request with its authoritative host and page generations', async () => {
+  const fixture = installWebAuthnDialogFixture()
+  useAppStore.setState((state) => ({
+    browserPagesByWorkspace: Object.fromEntries(
+      Object.entries(state.browserPagesByWorkspace).map(([key, pages]) => [
+        key,
+        pages.map((page) => ({ ...page, browserRuntimeEnvironmentId: 'environment' }))
+      ])
+    )
+  }))
+  useAppStore.getState().setRemoteBrowserPageHandle('page', {
+    environmentId: 'environment',
+    remotePageId: 'remote-page',
+    placement: {
+      kind: 'client',
+      browserHostClientId: 'fixture',
+      browserHostGeneration: 3,
+      pageHostGeneration: 7
+    }
+  })
+  render(<BrowserWebAuthnAccountDialog />)
+  fixture.push()
+  const clientTarget = {
+    remotePageId: 'remote-page',
+    browserHostClientId: 'fixture',
+    browserHostGeneration: 3,
+    pageHostGeneration: 7
+  }
+  await act(async () => {
+    await requestBrowserWebAuthnDialog(
+      { ...target, environmentId: 'environment', clientTarget },
+      Date.now() + 5000
+    )
+  })
+  expect(fixture.accepted).toEqual([{ requestId: 'request', credentialId: null }])
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('rejects wrong client identity and staged/restored/server/old-peer handles before responding', async () => {
+  const fixture = installWebAuthnDialogFixture(true)
+  render(<BrowserWebAuthnAccountDialog />)
+  fixture.push()
+  const clientTarget = {
+    remotePageId: 'remote-page',
+    browserHostClientId: 'fixture',
+    browserHostGeneration: 3,
+    pageHostGeneration: 7
+  }
+  const command = { ...target, environmentId: 'environment', clientTarget }
+  for (const delta of [
+    { remotePageId: 'wrong' },
+    { browserHostClientId: 'wrong' },
+    { browserHostGeneration: 4 },
+    { pageHostGeneration: 8 }
+  ]) {
+    await expect(
+      requestBrowserWebAuthnDialog(
+        { ...command, clientTarget: { ...clientTarget, ...delta } },
+        Date.now() + 5000
+      )
+    ).rejects.toThrow('target_changed')
+  }
+  const handles = [
+    {
+      environmentId: 'environment',
+      remotePageId: 'remote-page',
+      staged: true as const,
+      stagedClientHosted: true as const
+    },
+    {
+      environmentId: 'environment',
+      remotePageId: 'remote-page',
+      restoredFromSession: true as const,
+      restoredClientHosted: true as const
+    },
+    { environmentId: 'environment', remotePageId: 'remote-page' },
+    {
+      environmentId: 'environment',
+      remotePageId: 'remote-page',
+      placement: { kind: 'server' as const }
+    }
+  ]
+  for (const handle of handles) {
+    useAppStore.getState().setRemoteBrowserPageHandle('page', handle)
+    await expect(requestBrowserWebAuthnDialog(command, Date.now() + 5000)).rejects.toThrow(
+      'target_changed'
+    )
+  }
+  expect(fixture.respond).not.toHaveBeenCalled()
+})
+it('rejects a captured request after client generation changes and an asynchronous accepted response after ownership changes', async () => {
+  const fixture = installWebAuthnDialogFixture(true)
+  render(<BrowserWebAuthnAccountDialog />)
+  fixture.push()
+  const clientTarget = {
+    remotePageId: 'remote-page',
+    browserHostClientId: 'fixture',
+    browserHostGeneration: 3,
+    pageHostGeneration: 7
+  }
+  const command = { ...target, environmentId: 'environment', clientTarget }
+  const original = useAppStore.getState().remoteBrowserPageHandlesByPageId['page']
+  const changed = {
+    ...original,
+    placement: {
+      kind: 'client' as const,
+      browserHostClientId: 'fixture',
+      browserHostGeneration: 4,
+      pageHostGeneration: 7
+    }
+  }
+  const event = new BrowserWebAuthnDialogEvent(command, Date.now() + 5000)
+  window.dispatchEvent(event)
+  useAppStore.getState().setRemoteBrowserPageHandle('page', changed)
+  await expect(event.offers[0]()).rejects.toThrow('target_changed')
+  expect(fixture.respond).not.toHaveBeenCalled()
+  useAppStore.getState().setRemoteBrowserPageHandle('page', original)
+  let finish: (accepted: boolean) => void = () => {}
+  fixture.respond.mockImplementationOnce(
+    () =>
+      new Promise<boolean>((resolve) => {
+        finish = resolve
+      })
+  )
+  const pending = requestBrowserWebAuthnDialog(command, Date.now() + 5000)
+  const rejected = expect(pending).rejects.toThrow('effect_unknown')
+  useAppStore.getState().setRemoteBrowserPageHandle('page', changed)
+  await act(async () => {
+    finish(true)
+    await rejected
+  })
+  expect(fixture.respond).toHaveBeenCalledTimes(1)
+})

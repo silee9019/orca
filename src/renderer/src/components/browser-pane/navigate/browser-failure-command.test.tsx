@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { navigateBrowserPageToUrl } from './navigate-browser-page-url'
 import { BrowserFailureFixtureOwner } from './browser-failure-owner.test-fixture'
 import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
 import { BrowserLoadFailureOverlay } from './browser-load-failure-overlay'
@@ -330,4 +331,116 @@ it('refuses unavailable retry targets before the original callback', async () =>
     await expect(run('retry')).rejects.toThrow('retry_target_unavailable')
   })
   expect(retry).not.toHaveBeenCalled()
+})
+
+it('uses the existing HTTPS recovery callback and observes navigation before the failure owner unmounts', async () => {
+  const { props, view, run } = seed()
+  const loadError = { ...props.loadError, validatedUrl: 'http://localhost:3443/' }
+  useAppStore.getState().updateBrowserPageState('page', { loading: false, loadError })
+  const httpsRecoveryUrl = 'https://localhost:3443/'
+  const navigate = vi.fn((url: string) => {
+    useAppStore.getState().setBrowserPageUrl('page', url)
+    useAppStore.getState().updateBrowserPageState('page', { loading: true, loadError: null })
+  })
+  view.rerender(
+    <BrowserLoadFailureOverlay
+      {...props}
+      loadError={loadError}
+      httpsRecoveryUrl={httpsRecoveryUrl}
+      onTryHttps={navigate}
+    />
+  )
+  await act(async () => {
+    await expect(run('try-https')).resolves.toMatchObject({ action: 'try-https', accepted: true })
+  })
+  expect(navigate).toHaveBeenCalledExactlyOnceWith(httpsRecoveryUrl)
+})
+it('refuses missing, unrelated or unobserved HTTPS recovery callbacks', async () => {
+  const { props, view, run } = seed()
+  const loadError = { ...props.loadError, validatedUrl: 'http://localhost:3443/' }
+  useAppStore.getState().updateBrowserPageState('page', { loading: false, loadError })
+  const navigate = vi.fn()
+  view.rerender(
+    <BrowserLoadFailureOverlay
+      {...props}
+      loadError={loadError}
+      httpsRecoveryUrl={null}
+      onTryHttps={navigate}
+    />
+  )
+  await act(async () => {
+    await expect(run('try-https')).rejects.toThrow('https_unavailable')
+  })
+  view.rerender(
+    <BrowserLoadFailureOverlay
+      {...props}
+      loadError={loadError}
+      httpsRecoveryUrl="https://elsewhere.invalid/"
+      onTryHttps={navigate}
+    />
+  )
+  await act(async () => {
+    await expect(run('try-https')).rejects.toThrow('https_unavailable')
+  })
+  expect(navigate).not.toHaveBeenCalled()
+  view.rerender(
+    <BrowserLoadFailureOverlay
+      {...props}
+      loadError={loadError}
+      httpsRecoveryUrl="https://localhost:3443/"
+      onTryHttps={navigate}
+    />
+  )
+  await act(async () => {
+    await expect(run('try-https')).rejects.toThrow('https_effect_unverifiable')
+  })
+  expect(navigate).toHaveBeenCalledOnce()
+})
+
+it('navigates HTTPS through the actual native viewport parent and clears its failure overlay', async () => {
+  const { props, view, run } = seed()
+  view.unmount()
+  const loadError = { ...props.loadError, validatedUrl: 'http://localhost:3443/' }
+  useAppStore.getState().setBrowserPageUrl('page', loadError.validatedUrl)
+  useAppStore.getState().updateBrowserPageState('page', { loading: false, loadError })
+  const guest = Object.assign(document.createElement('webview'), { src: '' })
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The navigation owner uses only the DOM fixture's src property; focus is supplied separately.
+  const webviewRef = { current: guest as unknown as Electron.WebviewTag }
+  const focus = vi.fn(() => true)
+  const navigateToUrl = (url: string) =>
+    navigateBrowserPageToUrl({
+      url,
+      browserTabId: 'page',
+      worktreeId: 'folder:fixture',
+      activeLoadFailureRef: { current: loadError },
+      lastKnownWebviewUrlRef: { current: null },
+      trackNextLoadingEventRef: { current: false },
+      recoveryNavigationValidationRef: { current: null },
+      webviewRef,
+      onSetUrlRef: { current: useAppStore.getState().setBrowserPageUrl },
+      onUpdatePageStateRef: { current: useAppStore.getState().updateBrowserPageState },
+      setAddressBarValue: () => {},
+      setResourceNotice: () => {},
+      focusWebviewNow: focus
+    })
+  render(
+    <BrowserFailureFixtureOwner
+      placement="local"
+      notice={() => {}}
+      localViewportOverrides={{ webviewRef, navigateToUrl }}
+    />
+  )
+  await act(async () => {
+    await expect(run('try-https', { expectedUrl: loadError.validatedUrl })).resolves.toMatchObject({
+      action: 'try-https',
+      accepted: true
+    })
+  })
+  const after = Object.values(useAppStore.getState().browserPagesByWorkspace)
+    .flat()
+    .find((page) => page.id === 'page')
+  expect(after).toMatchObject({ url: 'https://localhost:3443/', loading: true, loadError: null })
+  expect(guest.src).toBe('https://localhost:3443/')
+  expect(focus).toHaveBeenCalledOnce()
+  expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
 })
