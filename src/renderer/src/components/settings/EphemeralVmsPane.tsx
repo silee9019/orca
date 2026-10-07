@@ -1,3 +1,4 @@
+import { EPHEMERAL_VM_SETUP_PROMPT } from '../../../../shared/ephemeral-vm-setup-prompt'
 import { ArrowRight, Check, Copy, Loader2, RefreshCw, Server } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -26,8 +27,7 @@ type RecipeCatalogEntry = Awaited<
 
 // Why: the pane leans on the skill, so the nudge is one line — the skill carries
 // provider choice, prerequisites, the snapshot build, agent auth, and validation.
-const AGENT_PROMPT =
-  'Use the orca-per-workspace-env skill to set up a per-workspace environment for this repo.'
+
 
 export function EphemeralVmsPane(): React.JSX.Element {
   const openModal = useAppStore((state) => state.openModal)
@@ -125,7 +125,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
 
   const copyPrompt = async (): Promise<void> => {
     try {
-      await window.api.ui.writeClipboardText(AGENT_PROMPT)
+      await window.api.ui.writeClipboardText(EPHEMERAL_VM_SETUP_PROMPT)
       useAppStore.getState().recordFeatureInteraction('ephemeral-vm-setup')
       if (!mountedRef.current) {
         return
@@ -221,7 +221,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
           </div>
           <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-3 py-2">
             <code className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
-              {AGENT_PROMPT}
+              {EPHEMERAL_VM_SETUP_PROMPT}
             </code>
             <Button
               type="button"

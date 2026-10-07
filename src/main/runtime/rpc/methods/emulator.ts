@@ -1,4 +1,6 @@
 import { defineMethod } from '../core'
+import { EMULATOR_CONTROL_METHODS } from './emulator-control'
+import { EMULATOR_OBSERVATION_METHODS } from './emulator-observation'
 import path from 'node:path'
 import { z } from 'zod'
 import {
@@ -33,6 +35,8 @@ const InstallParams = z.object({
 })
 
 export const EMULATOR_METHODS = [
+  ...EMULATOR_OBSERVATION_METHODS,
+  ...EMULATOR_CONTROL_METHODS,
   defineMethod({
     name: 'emulator.list',
     params: ListParams,

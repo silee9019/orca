@@ -87,7 +87,13 @@ export function BrowserPageViewportOverlays({
         currentUrl={browserTab.url}
       />
       <BrowserPageZoomIndicator state={browserZoomIndicatorState} percent={browserZoomPercent} />
-      <BrowserFind isOpen={findOpen} onClose={() => setFindOpen(false)} webviewRef={webviewRef} />
+      <BrowserFind
+        browserPageId={browserTab.id}
+        onOpen={() => setFindOpen(true)}
+        isOpen={findOpen}
+        onClose={() => setFindOpen(false)}
+        webviewRef={webviewRef}
+      />
       {showFailureOverlay && browserTab.loadError ? (
         <BrowserLoadFailureOverlay
           loadError={browserTab.loadError}

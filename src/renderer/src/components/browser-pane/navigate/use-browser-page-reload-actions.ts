@@ -1,4 +1,6 @@
-import { useCallback, useMemo, useState, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from 'react'
+import { normalizeBrowserNavigationUrl } from '../../../../../shared/browser-url'
+import { BROWSER_TOOLBAR_COMMAND_EVENT } from '@/runtime/browser-toolbar-request'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { translate } from '@/i18n/i18n'
 import type { BrowserPage as BrowserPageState } from '../../../../../shared/browser-workspace-types'
@@ -44,7 +46,7 @@ export function useBrowserPageReloadActions({
     (ignoreCache: boolean) => {
       const webview = webviewRef.current
       if (!webview) {
-        return
+        return false
       }
       if (trackNextLoadingEventRef) {
         trackNextLoadingEventRef.current = true
@@ -52,6 +54,7 @@ export function useBrowserPageReloadActions({
       const result = reloadBrowserPageWebview(webview, { ignoreCache })
       if (result === 'reloaded') {
         onUpdatePageStateRef.current(browserTab.id, { loading: true })
+        return true
       } else if (result === 'guest-missing') {
         if (trackNextLoadingEventRef) {
           trackNextLoadingEventRef.current = false
@@ -59,9 +62,11 @@ export function useBrowserPageReloadActions({
         // Why: reload cannot revive a destroyed guest (STA-3448) — recreate it instead.
         onUpdatePageStateRef.current(browserTab.id, { loading: true })
         retryGuestRecoveryRef.current()
+        return true
       } else if (trackNextLoadingEventRef) {
         trackNextLoadingEventRef.current = false
       }
+      return false
     },
     [
       browserTab.id,
@@ -75,9 +80,11 @@ export function useBrowserPageReloadActions({
     (trigger: BrowserReloadTrigger) => {
       const webview = webviewRef.current
       if (!webview) {
-        return
+        return null
       }
-      switch (resolveBrowserReloadIntent(trigger, reloadState)) {
+      const intent = resolveBrowserReloadIntent(trigger, reloadState)
+      let accepted = true
+      switch (intent) {
         case 'stop':
           webview.stop()
           break
@@ -86,15 +93,19 @@ export function useBrowserPageReloadActions({
           retryGuestRecoveryRef.current()
           break
         case 'retry-load':
+          accepted = Boolean(
+            normalizeBrowserNavigationUrl(browserTab.loadError?.validatedUrl ?? browserTab.url)
+          )
           retryBrowserTabLoad(webview, browserTab, onUpdatePageStateRef.current)
           break
         case 'hard-reload':
-          reloadWebviewOrRecoverGuest(true)
+          accepted = reloadWebviewOrRecoverGuest(true)
           break
         case 'reload':
-          reloadWebviewOrRecoverGuest(false)
+          accepted = reloadWebviewOrRecoverGuest(false)
           break
       }
+      return accepted ? intent : null
     },
     [
       browserTab,
@@ -105,6 +116,38 @@ export function useBrowserPageReloadActions({
       webviewRef
     ]
   )
+
+  useEffect(() => {
+    const receive = (event: WindowEventMap['orca:browser-toolbar-command']): void => {
+      const request = event.detail
+      if (
+        request.page !== browserTab.id ||
+        request.action === 'back' ||
+        request.action === 'forward' ||
+        !request.claim()
+      ) {
+        return
+      }
+      if (Date.now() >= request.expiresAt) {
+        request.finish(new Error('request_expired'))
+        return
+      }
+      try {
+        const intent = runReloadTrigger(
+          request.action === 'reload-button' ? 'button' : request.action
+        )
+        if (!intent) {
+          request.finish(new Error('browser_guest_not_ready'))
+        } else {
+          request.finish(undefined, { action: request.action, intent })
+        }
+      } catch {
+        request.finish(new Error('browser_toolbar_action_failed'))
+      }
+    }
+    window.addEventListener(BROWSER_TOOLBAR_COMMAND_EVENT, receive)
+    return () => window.removeEventListener(BROWSER_TOOLBAR_COMMAND_EVENT, receive)
+  }, [browserTab.id, runReloadTrigger])
 
   // Keep the accessible name honest: the same button is Stop mid-load and Retry after a failure.
   const reloadButtonLabelKind = resolveBrowserReloadButtonLabelKind(reloadState)

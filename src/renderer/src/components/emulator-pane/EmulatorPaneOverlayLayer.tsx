@@ -43,6 +43,7 @@ const SimulatorOverlaySlot = memo(function SimulatorOverlaySlot({
   return (
     <div
       style={style}
+      data-emulator-tab-id={tab.id}
       className="orca-emulator-overlay-slot min-h-0 min-w-0 overflow-hidden"
       onPointerDownCapture={() => {
         if (groupId && onFocusOwningGroup) {

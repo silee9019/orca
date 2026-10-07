@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { requestBrowserGrab, type BrowserGrabState } from '@/runtime/browser-grab-request'
 import { useLayoutEffect } from 'react'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -40,7 +41,7 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'api')
 })
 
-function mount(invalidateBeforePendingEffect = false) {
+function mount(invalidateBeforePendingEffect = false, isActive = false) {
   const selection = deferred<BrowserGrabResult>()
   const screenshot = deferred<BrowserCaptureSelectionScreenshotResult>()
   const awaitGrabSelection = vi
@@ -68,7 +69,7 @@ function mount(invalidateBeforePendingEffect = false) {
     const grab = useGrabMode('page-1')
     const annotations = useBrowserPageGrabAnnotations({
       browserTabId: 'page-1',
-      isActive: false,
+      isActive,
       grab,
       containerRef,
       webviewRef,
@@ -188,4 +189,44 @@ describe('capture cancellation on a document boundary', () => {
       saved?.[0].id
     ])
   })
+})
+
+it.each(['copy', 'annotate'] as const)(
+  'uses the existing intent owner for explicit %s picker starts',
+  async (intent) => {
+    const h = mount(false, true)
+    const clipboard = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(window.api, 'ui', {
+      value: { writeClipboardText: clipboard },
+      configurable: true
+    })
+    let started: Promise<BrowserGrabState> | undefined
+    await act(async () => {
+      started = requestBrowserGrab('page-1', 'intent-start', Date.now() + 9000, intent).then(() =>
+        requestBrowserGrab('page-1', 'await-ready', Date.now() + 9000)
+      )
+      void started.catch(() => {})
+    })
+    expect(await started).toMatchObject({ state: 'awaiting' })
+    expect(h.result.current.annotations.grabIntent).toBe(intent)
+    await act(async () => {
+      h.selection.resolve(selected())
+      h.screenshot.resolve({ ok: false, reason: 'fixture' })
+    })
+    await waitFor(() => expect(h.result.current.grab.state).toBe('confirming'))
+    if (intent === 'annotate') {
+      expect(h.result.current.annotations.pendingAnnotationPayload).not.toBeNull()
+      expect(clipboard).not.toHaveBeenCalled()
+    } else {
+      expect(h.result.current.annotations.pendingAnnotationPayload).toBeNull()
+      expect(clipboard).toHaveBeenCalledOnce()
+    }
+  }
+)
+it('refuses explicit intent starts in inactive viewers before native selection begins', async () => {
+  const h = mount()
+  await expect(
+    requestBrowserGrab('page-1', 'intent-start', Date.now() + 9000, 'copy')
+  ).rejects.toThrow('browser_grab_viewer_inactive')
+  expect(h.awaitGrabSelection).not.toHaveBeenCalled()
 })

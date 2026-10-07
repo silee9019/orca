@@ -8,6 +8,7 @@ import {
   type MutableRefObject,
   type SetStateAction
 } from 'react'
+import { useBrowserGrabIntentCommands } from './use-browser-grab-intent-commands'
 import { translate } from '@/i18n/i18n'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
@@ -203,6 +204,8 @@ export function useBrowserPageGrabAnnotations({
     },
     [grab, grabIntent, recordFeatureInteraction, setBrowserAnnotationTrayOpen]
   )
+
+  useBrowserGrabIntentCommands(toolTargetId, isActive, grab, startGrabIntent)
 
   // C / S copy the hovered element without clicking: extract via IPC while armed/awaiting, else use the captured payload.
   const handleGrabActionShortcut = useCallback(

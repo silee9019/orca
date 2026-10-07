@@ -1,0 +1,183 @@
+import { readFile, stat } from 'node:fs/promises'
+import type { CommandHandler, HandlerContext } from '../dispatch'
+import { getRequiredStringFlag, getRequiredStringFlagAllowingEmpty } from '../flags'
+import { printResult } from '../format'
+import { RuntimeClientError } from '../runtime-client'
+import { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
+
+async function runViewerCommand(ctx: HandlerContext, command: unknown): Promise<void> {
+  const parsed = BrowserViewerCommand.safeParse(command)
+  if (!parsed.success) {
+    throw new RuntimeClientError(
+      'invalid_argument',
+      'Invalid browser viewer command; specify --viewer host and valid command flags.'
+    )
+  }
+  const result = await ctx.client.call<BrowserViewerResult>('ui.browserViewer', parsed.data)
+  if (!result.result.applied) {
+    throw new RuntimeClientError('runtime_error', 'Browser viewer did not apply the command.')
+  }
+  printResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+}
+
+function confirmed(ctx: HandlerContext): void {
+  if (ctx.flags.get('confirm') !== true) {
+    throw new RuntimeClientError('invalid_argument', 'Pass --confirm to approve this operation.')
+  }
+}
+
+function runFindCommand(
+  ctx: HandlerContext,
+  action: 'open' | 'next' | 'previous' | 'close' | 'status'
+): Promise<void> {
+  return runViewerCommand(ctx, {
+    viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+    operation: 'find',
+    page: getRequiredStringFlag(ctx.flags, 'page'),
+    action
+  })
+}
+function runGrabCommand(
+  ctx: HandlerContext,
+  action: 'start' | 'cancel' | 'rearm' | 'exit' | 'status'
+): Promise<void> {
+  return runViewerCommand(ctx, {
+    viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+    operation: 'grab',
+    page: getRequiredStringFlag(ctx.flags, 'page'),
+    action,
+    ...(action === 'start' ? { intent: getRequiredStringFlag(ctx.flags, 'intent') } : {})
+  })
+}
+
+export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser grab start': (ctx) => runGrabCommand(ctx, 'start'),
+  'browser grab cancel': (ctx) => runGrabCommand(ctx, 'cancel'),
+  'browser grab rearm': (ctx) => runGrabCommand(ctx, 'rearm'),
+  'browser grab exit': (ctx) => runGrabCommand(ctx, 'exit'),
+  'browser grab status': (ctx) => runGrabCommand(ctx, 'status'),
+  'browser toolbar-nav': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      operation: 'toolbar-navigation',
+      action: getRequiredStringFlag(ctx.flags, 'action')
+    }),
+  'browser find-ui open': (ctx) => runFindCommand(ctx, 'open'),
+  'browser find-ui next': (ctx) => runFindCommand(ctx, 'next'),
+  'browser find-ui previous': (ctx) => runFindCommand(ctx, 'previous'),
+  'browser find-ui close': (ctx) => runFindCommand(ctx, 'close'),
+  'browser find-ui status': (ctx) => runFindCommand(ctx, 'status'),
+  'browser find-ui query': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'find-query',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      query: getRequiredStringFlagAllowingEmpty(ctx.flags, 'query')
+    }),
+  'browser zoom': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'zoom',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      direction: getRequiredStringFlag(ctx.flags, 'direction')
+    }),
+  'browser download cancel': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'download-cancel',
+      downloadId: getRequiredStringFlag(ctx.flags, 'download')
+    })
+  },
+  'browser devtools open': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'devtools-open',
+      page: getRequiredStringFlag(ctx.flags, 'page')
+    })
+  },
+  'browser webauthn cancel': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'webauthn-respond',
+      requestId: getRequiredStringFlag(ctx.flags, 'request'),
+      credentialId: null
+    })
+  },
+  'browser webauthn respond': async (ctx) => {
+    confirmed(ctx)
+    const viewer = getRequiredStringFlag(ctx.flags, 'viewer')
+    const requestId = getRequiredStringFlag(ctx.flags, 'request')
+    const file = getRequiredStringFlag(ctx.flags, 'credential-file')
+    let credentialId: string
+    try {
+      if ((await stat(file)).size > 4096) {
+        throw new Error('credential file too large')
+      }
+      credentialId = (await readFile(file, 'utf8')).trim()
+    } catch {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'Could not read credential file (maximum 4096 bytes).'
+      )
+    }
+    return runViewerCommand(ctx, { viewer, operation: 'webauthn-respond', requestId, credentialId })
+  },
+  'browser annotation list': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-list',
+      page: getRequiredStringFlag(ctx.flags, 'page')
+    }),
+  'browser annotation update': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-update',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      annotationId: getRequiredStringFlag(ctx.flags, 'annotation'),
+      comment: getRequiredStringFlagAllowingEmpty(ctx.flags, 'comment'),
+      intent: getRequiredStringFlag(ctx.flags, 'intent')
+    }),
+  'browser annotation rm': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-delete',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      annotationId: getRequiredStringFlag(ctx.flags, 'annotation')
+    })
+  },
+  'browser annotation clear': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-clear',
+      page: getRequiredStringFlag(ctx.flags, 'page')
+    })
+  },
+  'browser history list': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'history-list'
+    }),
+  'browser history clear': (ctx) => {
+    confirmed(ctx)
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'history-clear'
+    })
+  },
+  'browser viewport-preset set': (ctx) => {
+    const preset = getRequiredStringFlag(ctx.flags, 'preset')
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'viewport-preset',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      preset: preset === 'default' ? null : preset
+    })
+  }
+}

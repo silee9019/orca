@@ -1,4 +1,6 @@
-import type { BrowserWindow } from 'electron'
+import { requestEmulatorFocus } from '../emulator/emulator-focus-request-relay'
+import type { RuntimeEmulatorCommandHost } from './runtime-emulator-command-host'
+export type { RuntimeEmulatorCommandHost } from './runtime-emulator-command-host'
 import type { EmulatorBridge } from '../emulator/emulator-bridge'
 import { EmulatorError } from '../emulator/emulator-errors'
 import {
@@ -11,22 +13,6 @@ import type { EmulatorGesturePoint } from '../emulator/emulator-gesture-sender'
 import type { EmulatorSessionInfo } from '../emulator/emulator-types'
 import type { SimulatorDevice } from '../emulator/simctl-simulator-devices'
 import type { EmulatorDevice } from '../emulator/backends/emulator-backend'
-import type { GlobalSettings } from '../../shared/global-settings-types'
-
-// Settings slice the emulator surface needs; keeps the host contract honest (no widening cast).
-type EmulatorHostSettings = Pick<
-  GlobalSettings,
-  'mobileEmulatorEnabled' | 'mobileEmulatorDefaultDeviceUdid' | 'androidSdkPath'
->
-
-// Why: dedicated file for "one surface" separation (emulator), parallel to orca-runtime-browser.ts. Keeps OrcaRuntimeService focused; emulator routing easy to scan. No max-lines disable (split further if grows; per AGENTS + plan Phase 3).
-export type RuntimeEmulatorCommandHost = {
-  getEmulatorBridge(): EmulatorBridge | null
-  resolveEmulatorWorkspaceId(selector: string): Promise<string>
-  resolveEmulatorCleanupWorkspaceId(selector: string): Promise<string>
-  getAuthoritativeWindow(): BrowserWindow
-  getSettings(): EmulatorHostSettings
-}
 
 type EmulatorTargetParams = { device?: string; emulator?: string; worktree?: string }
 
@@ -43,10 +29,8 @@ export class RuntimeEmulatorCommands {
     return bridge
   }
 
-  // Why: RPC envelopes require a serializable `result` field; void/undefined omits it and breaks CLI schema validation.
   private static readonly OK = { ok: true as const }
 
-  // High-level delegation (mirror browser* methods).
   async emulatorTap(
     params: EmulatorTargetParams & { x: number; y: number }
   ): Promise<{ ok: true }> {
@@ -193,6 +177,23 @@ export class RuntimeEmulatorCommands {
     return { attached: true, info }
   }
 
+  async emulatorFocus(params: { worktree: string }, signal?: AbortSignal) {
+    const worktreeId = await this.host.resolveEmulatorWorkspaceId(params.worktree)
+    return requestEmulatorFocus(this.host.getAuthoritativeWindow(), worktreeId, signal)
+  }
+
+  async emulatorStreamInfo(params: { worktree: string }): Promise<EmulatorSessionInfo> {
+    const worktreeId = await this.resolveWorktreeId(params.worktree)
+    const session = this.requireEmulatorBridge().getActiveForWorktree(worktreeId)
+    if (!session) {
+      throw new EmulatorError(
+        'emulator_no_active',
+        'No active emulator for this workspace. Attach it first.'
+      )
+    }
+    return session
+  }
+
   async emulatorList(_params: { worktree?: string } = {}): Promise<unknown> {
     const bridge = this.requireEmulatorBridge()
     return bridge.listRunningHelpers()
@@ -208,10 +209,6 @@ export class RuntimeEmulatorCommands {
   }
 
   async emulatorListSimulators(_params: { worktree?: string } = {}): Promise<SimulatorDevice[]> {
-    // Why: exposed for the EmulatorPane auto-flow on "New Mobile Emulator" tab creation.
-    // Returns the full simctl list (including Shutdown devices) so the pane can choose a default and
-    // rely on startHelperForDevice + ensureDeviceBooted to boot if needed. Worktree param ignored
-    // (simulators are host-local, not per-worktree).
     const bridge = this.requireEmulatorBridge()
     return bridge.listSimulators()
   }
@@ -220,8 +217,6 @@ export class RuntimeEmulatorCommands {
     return inspectEmulatorAvailability(this.requireEmulatorBridge())
   }
 
-  // Why: unified device inventory across backends (iOS simulators + Android
-  // devices/AVDs) for the cross-platform `orca emulator devices` command.
   async emulatorListDevices(_params: { worktree?: string } = {}): Promise<EmulatorDevice[]> {
     return this.requireEmulatorBridge().listAllDevices()
   }
@@ -339,13 +334,7 @@ export class RuntimeEmulatorCommands {
     this.sendToRenderer('ui:emulatorAutoAttach', { worktreeId, info })
   }
 
-  // Raw for extensibility.
-  async emulatorExecRaw(params: {
-    command: string
-    device?: string
-    emulator?: string
-    worktree?: string
-  }): Promise<unknown> {
+  async emulatorExecRaw(params: EmulatorTargetParams & { command: string }): Promise<unknown> {
     return this.emulatorExec(params)
   }
 }

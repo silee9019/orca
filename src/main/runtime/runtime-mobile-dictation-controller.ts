@@ -1,3 +1,4 @@
+import type { SttEventSink } from '../speech/stt-service'
 import { getDefaultVoiceSettings } from '../../shared/constants'
 import { getSpeechModelManager, getSpeechSttService } from '../speech/speech-runtime-service'
 import type { RuntimeStore } from './runtime-store-contract'
@@ -21,6 +22,7 @@ export class RuntimeMobileDictationController {
   async start(params: {
     dictationId: string
     modelId?: string
+    onEvent?: SttEventSink
     clientId?: string
     connectionId?: string
   }): Promise<{ dictationId: string; modelId: string }> {
@@ -58,7 +60,12 @@ export class RuntimeMobileDictationController {
     try {
       await getSpeechSttService(store).startDictation(
         modelId,
-        (event) => this.acceptEvent(params.dictationId, event),
+        (event) => {
+          this.acceptEvent(params.dictationId, event)
+          if (this.session?.id === params.dictationId) {
+            params.onEvent?.(event)
+          }
+        },
         undefined,
         owner
       )

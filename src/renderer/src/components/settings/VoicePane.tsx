@@ -1,3 +1,4 @@
+import { attachVoiceKeyDialogRequest } from '@/runtime/voice-key-dialog-request'
 import { UnsealedCredentialNotice } from './UnsealedCredentialNotice'
 import type { SecretAtRestProtection } from '../../../../shared/secret-at-rest-protection'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -150,11 +151,28 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
     (settingsSearchQuery.trim() !== '' &&
       matchesSettingsSearch(settingsSearchQuery, getOpenaiTranscriptionSearchEntry()))
 
-  const openOpenAiDialog = (modelId: string | null = null): void => {
+  const openOpenAiDialog = useCallback((modelId: string | null = null): void => {
     setPendingCloudModelId(modelId)
     setOpenAiApiKeyDraft('')
     setOpenAiDialogOpen(true)
-  }
+  }, [])
+
+  useEffect(
+    () =>
+      attachVoiceKeyDialogRequest((open) => {
+        if (openAiKeyPending) {
+          return
+        }
+        if (open) {
+          openOpenAiDialog()
+        } else {
+          setOpenAiDialogOpen(false)
+          setOpenAiApiKeyDraft('')
+          setPendingCloudModelId(null)
+        }
+      }),
+    [openAiKeyPending, openOpenAiDialog]
+  )
 
   const saveOpenAiApiKey = async (): Promise<void> => {
     setOpenAiKeyPending(true)
@@ -219,7 +237,7 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
   }
 
   return (
-    <div ref={handlePaneRef} className="space-y-1">
+    <div ref={handlePaneRef} data-voice-settings-pane className="space-y-1">
       <VoiceDictationSettingsSection
         voiceSettings={voiceSettings}
         permissionPending={permissionPending}

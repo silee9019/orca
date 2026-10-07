@@ -387,6 +387,8 @@ export function ClientHostedBrowserPagePane({
           percent={zoom.browserZoomPercent}
         />
         <BrowserFind
+          browserPageId={browserTab.id}
+          onOpen={() => setFindOpen(true)}
           isOpen={findOpen}
           onClose={() => setFindOpen(false)}
           webviewRef={webviewRef}

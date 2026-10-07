@@ -3,6 +3,56 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['emulator', 'focus'],
+    summary: 'Focus the host viewer simulator pane and await rendered state read-back',
+    usage: 'orca emulator focus --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'key'],
+    summary: 'Send a named or printable key using the active device control stream',
+    usage: 'orca emulator key <key> --worktree <selector> [--shift] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'key', 'worktree', 'shift'],
+    positionalArgs: ['key']
+  },
+  {
+    path: ['emulator', 'control'],
+    summary: 'Run bounded key, touch, wait and blur events with held input released on completion',
+    usage: 'orca emulator control (--text <json> | --text-stdin) --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'text', 'text-stdin', 'worktree']
+  },
+  {
+    path: ['emulator', 'stream'],
+    summary: 'Stream JSON frame events until the duration expires or SIGINT cancels observation',
+    usage:
+      'orca emulator stream --codec <mjpeg|h264> --worktree <selector> [--timeout-ms <1..60000>]',
+    allowedFlags: [...GLOBAL_FLAGS, 'codec', 'worktree', 'timeout-ms']
+  },
+  {
+    path: ['emulator', 'observe'],
+    summary: 'Capture a JPEG frame or an H264 keyframe with codec metadata from the active device',
+    usage: 'orca emulator observe --worktree <selector> [--timeout-ms <1..60000>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'timeout-ms']
+  },
+  {
+    path: ['emulator', 'availability'],
+    summary: 'Check emulator backend availability on the execution host',
+    usage: 'orca emulator availability [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'simulators'],
+    summary: 'List iOS simulators on the execution host',
+    usage: 'orca emulator simulators [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'detach'],
+    summary: 'Remove the workspace active-device association without stopping the device',
+    usage: 'orca emulator detach --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
     path: ['emulator', 'list'],
     summary: 'List available/running emulators (Orca-managed + raw serve-sim)',
     usage: 'orca emulator list [--worktree <selector>] [--json]',
@@ -31,8 +81,9 @@ export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['emulator', 'type'],
     summary: 'Type text (US ASCII only)',
-    usage: 'orca emulator type <text> [--device <id>] [--worktree <selector>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'text', 'device', 'emulator', 'worktree'],
+    usage:
+      'orca emulator type (<text> | --text-stdin) [--device <id>] [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'text', 'text-stdin', 'device', 'emulator', 'worktree'],
     positionalArgs: ['text']
   },
   {
