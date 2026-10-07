@@ -1,3 +1,4 @@
+import { openBrowserTabExternallyVerified } from './browser-tab-external-open'
 import { useBrowserTabUiCommands } from './use-browser-tab-ui-commands'
 import { useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
@@ -124,6 +125,12 @@ export default function BrowserTab({
       worktree: dragData.worktreeId,
       group: dragData.groupId,
       unifiedTab: dragData.unifiedTabId
+    },
+    openExternalVerified: () => {
+      if (!isHttpUrl) {
+        return Promise.reject(new Error('browser_tab_external_url_unsupported'))
+      }
+      return openBrowserTabExternallyVerified(window.api.shell, openInBrowserUrl)
     },
     menuOpen,
     menuPoint,

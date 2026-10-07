@@ -1,3 +1,4 @@
+import { BrowserMarkupNormalizedPoints } from '../../../../../shared/rpc-contract/browser-markup-editor-params'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   BROWSER_MARKUP_EDITOR_COMMAND_EVENT,
@@ -15,6 +16,7 @@ function snapshot(editor: Editor): BrowserMarkupEditorState {
     fontSize: editor.fontSize,
     shapeCount: editor.shapes.length,
     pendingText: editor.pendingText !== null,
+    gestureActive: editor.hasGesture,
     canUndo: editor.canUndo,
     canRedo: editor.canRedo
   }
@@ -115,7 +117,38 @@ export function useBrowserMarkupEditorCommands(
         return
       }
       let check: (value: Editor) => boolean
-      if (command.action === 'text-commit' || command.action === 'text-cancel') {
+      if (command.action === 'gesture') {
+        if (
+          !BrowserMarkupNormalizedPoints.safeParse(command.points).success ||
+          before.hasGesture ||
+          before.pendingText ||
+          !before.runNormalizedGesture(command.points, command.cancel)
+        ) {
+          request.finish(new Error('browser_markup_gesture_unavailable'))
+          return
+        }
+        const first = command.points[0]
+        const last = command.points.at(-1)
+        const empty =
+          before.tool !== 'pen' &&
+          before.tool !== 'highlight' &&
+          first?.x === last?.x &&
+          first?.y === last?.y
+        check = (value) =>
+          !value.hasGesture &&
+          (before.tool === 'text'
+            ? value.pendingText !== null
+            : command.cancel || (empty && before.tool !== 'eraser')
+              ? value.shapes === before.shapes
+              : before.tool === 'eraser'
+                ? value.shapes.every((shape) => before.shapes.some((old) => old.id === shape.id))
+                : value.shapes.length === before.shapes.length + 1 &&
+                  value.shapes.some(
+                    (shape) =>
+                      shape.kind === before.tool &&
+                      !before.shapes.some((old) => old.id === shape.id)
+                  ))
+      } else if (command.action === 'text-commit' || command.action === 'text-cancel') {
         if (!before.pendingText) {
           request.finish(new Error('browser_markup_text_not_pending'))
           return

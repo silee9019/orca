@@ -1,4 +1,4 @@
-import { useState, type RefObject } from 'react'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
 import {
   BrowserChromeToolbar,
   type BrowserChromeElementTools
@@ -17,6 +17,8 @@ import { DocPreviewOverflowMenu } from './doc-preview-overflow-menu'
 export function DocPreviewToolbar({
   identity,
   submitAddressRef,
+  reloadMenuOpen,
+  setReloadMenuOpen,
   isActive = true,
   previewId,
   worktreeId,
@@ -34,6 +36,8 @@ export function DocPreviewToolbar({
   markupDisabled
 }: {
   submitAddressRef?: RefObject<(() => boolean) | null>
+  reloadMenuOpen: boolean
+  setReloadMenuOpen: Dispatch<SetStateAction<boolean>>
   isActive?: boolean
   identity: DocPreviewDocumentIdentity
   /** The browser page this preview is open in — what an address commit converts. */
@@ -53,7 +57,6 @@ export function DocPreviewToolbar({
   onToggleMarkup: () => void
   markupDisabled: boolean
 }): React.JSX.Element {
-  const [reloadMenuOpen, setReloadMenuOpen] = useState(false)
   const reloadLabel = translate(
     'auto.components.editor.HtmlDocPreview.reloadPreviewControl',
     'Reload preview'

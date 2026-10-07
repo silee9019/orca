@@ -5,6 +5,7 @@ export const BROWSER_TAB_UI_HANDLERS: Record<string, CommandHandler> = {
   'browser tab-ui': (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     if (
+      action === 'open-external' ||
       action === 'close' ||
       action === 'close-others' ||
       action === 'close-left' ||

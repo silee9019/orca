@@ -11,6 +11,8 @@ export const BrowserDocumentCommand = z.discriminatedUnion('action', [
       'open-source',
       'open-external',
       'address-submit',
+      'reload-menu-open',
+      'reload-menu-close',
       'directory-dismiss'
     ])
   }),
@@ -29,6 +31,8 @@ export const BrowserDocumentState = z.object({
   grantReady: z.boolean(),
   pendingPaths: z.array(z.string().max(8192)).max(32),
   busy: z.boolean(),
+  reloadMenuOpen: z.boolean().optional(),
+  menuChangeRequested: z.boolean().optional(),
   navigationRequested: z.boolean().optional(),
   openedFileId: z.string().optional()
 })

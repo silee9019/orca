@@ -70,6 +70,7 @@ export function HtmlDocPreview({
   const webviewRef = useRef<Electron.WebviewTag | null>(null)
   const reloadRef = useRef<(() => void) | null>(null)
   const submitAddressRef = useRef<(() => boolean) | null>(null)
+  const [reloadMenuOpen, setReloadMenuOpen] = useState(false)
   const [state, setState] = useState<PreviewState>('loading')
   const [failureReason, setFailureReason] = useState<DocPreviewFileFailureReason | null>(null)
   const [assetFailures, setAssetFailures] = useState<DocPreviewFileFailure[]>([])
@@ -324,7 +325,9 @@ export function HtmlDocPreview({
     allow: allowDirectoryAccess,
     getPendingPaths,
     reloadRef,
-    submitAddressRef
+    submitAddressRef,
+    reloadMenuOpen,
+    setReloadMenuOpen
   })
 
   // Nothing rendered on an unavailable preview, so a notice strip would be a footnote on a blank page.
@@ -338,6 +341,8 @@ export function HtmlDocPreview({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-editor-surface">
       <DocPreviewToolbar
+        reloadMenuOpen={reloadMenuOpen}
+        setReloadMenuOpen={setReloadMenuOpen}
         submitAddressRef={submitAddressRef}
         isActive={isActive}
         identity={identity}

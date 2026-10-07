@@ -31,6 +31,7 @@ async function run(args: string[]) {
 }
 afterEach(() => vi.restoreAllMocks())
 it.each([
+  'open-external',
   'activate',
   'close',
   'close-others',
@@ -47,7 +48,12 @@ it.each([
     result: { applied: true, rendered: false, persisted: false }
   })
   vi.spyOn(process.stdout, 'write').mockReturnValue(true)
-  await run([...flags, '--action', action, ...(action.startsWith('close') ? ['--confirm'] : [])])
+  await run([
+    ...flags,
+    '--action',
+    action,
+    ...(action.startsWith('close') || action === 'open-external' ? ['--confirm'] : [])
+  ])
   expect(call).toHaveBeenCalledWith('ui.browserViewer', {
     viewer: 'host',
     operation: 'tab-ui',
@@ -55,7 +61,7 @@ it.each([
     action
   })
 })
-it.each(['close', 'close-others', 'close-left', 'close-right'])(
+it.each(['open-external', 'close', 'close-others', 'close-left', 'close-right'])(
   'requires confirmation for %s before RPC',
   async (action) => {
     const call = vi.spyOn(client, 'call')

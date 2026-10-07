@@ -15,6 +15,8 @@ export function useBrowserDocumentCommands(owner: {
   grantReady: boolean
   requests: DocPreviewFileFailure[]
   busy: boolean
+  reloadMenuOpen: boolean
+  setReloadMenuOpen: (open: boolean) => void
   absolutePath: string
   relativePath: string
   reload: () => void
@@ -49,10 +51,17 @@ export function useBrowserDocumentCommands(owner: {
           phase: owner.phase,
           grantReady: owner.grantReady,
           pendingPaths: owner.requests.map((item) => item.relativePath),
-          busy: owner.busy
+          busy: owner.busy,
+          reloadMenuOpen: owner.reloadMenuOpen
         }
         switch (request.command.action) {
           case 'status':
+            break
+          case 'reload-menu-open':
+          case 'reload-menu-close':
+            owner.setReloadMenuOpen(request.command.action === 'reload-menu-open')
+            delete state.reloadMenuOpen
+            state.menuChangeRequested = true
             break
           case 'reload':
             if (owner.phase !== 'unavailable' && !owner.reloadRef.current) {

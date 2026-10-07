@@ -5,7 +5,7 @@ export const BROWSER_TAB_UI_COMMAND_SPECS: CommandSpec[] = [
     summary:
       'Use the native workspace tab row and read back group state; pending close/remote effects are refused',
     usage:
-      'orca browser tab-ui --viewer host --workspace <id> --worktree <id> --group <id> --unified-tab <id> --action <menu-open|menu-close|activate|close|close-others|close-left|close-right|toggle-pin|duplicate|status> [--x <client-x> --y <client-y>] [--confirm] [--json]',
+      'orca browser tab-ui --viewer host --workspace <id> --worktree <id> --group <id> --unified-tab <id> --action <open-external|menu-open|menu-close|activate|close|close-others|close-left|close-right|toggle-pin|duplicate|status> [--x <client-x> --y <client-y>] [--confirm] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'viewer',

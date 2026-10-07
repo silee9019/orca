@@ -7,6 +7,7 @@ export const BrowserTabUiTarget = z.object({
 })
 export type BrowserTabUiTarget = z.infer<typeof BrowserTabUiTarget>
 export const BrowserTabUiAction = z.enum([
+  'open-external',
   'menu-open',
   'menu-close',
   'activate',
@@ -26,7 +27,7 @@ export const BrowserTabUiPoint = z.object({
 export type BrowserTabUiPoint = z.infer<typeof BrowserTabUiPoint>
 export const BrowserTabUiState = z.object({
   target: BrowserTabUiTarget,
-  menu: z.object({ open: z.boolean(), point: BrowserTabUiPoint }),
+  menu: z.object({ open: z.boolean(), point: BrowserTabUiPoint }).optional(),
   exists: z.boolean(),
   pinned: z.boolean(),
   activeGroup: z.string().nullable(),
@@ -35,6 +36,8 @@ export const BrowserTabUiState = z.object({
   activeType: z.string().nullable(),
   tabOrder: z.array(z.string()),
   closedTabs: z.array(z.string()),
+  externalOpenAccepted: z.literal(true).optional(),
+  externalWindowVerified: z.literal(false).optional(),
   duplicatedWorkspace: z.string().optional(),
   guestRegistrationVerified: z.literal(false)
 })

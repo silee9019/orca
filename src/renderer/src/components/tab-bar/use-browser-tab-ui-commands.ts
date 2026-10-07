@@ -20,6 +20,7 @@ type TabUiOwner = {
   closeLeft: () => void
   closeRight: () => void
   togglePin: () => void
+  openExternalVerified: () => Promise<void>
   duplicate?: () => void
 }
 function readTabUi(owner: TabUiOwner): BrowserTabUiState {
@@ -45,6 +46,7 @@ function readTabUi(owner: TabUiOwner): BrowserTabUiState {
     activeType: state.activeTabTypeByWorktree[target.worktree] ?? null,
     tabOrder: [...(group?.tabOrder ?? [])],
     closedTabs: [],
+    externalWindowVerified: false,
     guestRegistrationVerified: false
   }
 }
@@ -151,6 +153,25 @@ export function useBrowserTabUiCommands(owner: TabUiOwner): void {
             pendingMenu.current = request
             owner.menu(request.action === 'menu-open', request.point)
           }
+          return
+        }
+        if (request.action === 'open-external') {
+          void owner.openExternalVerified().then(
+            () => {
+              if (!request.isSettled()) {
+                request.finish(undefined, {
+                  ...readTabUi(current.current),
+                  externalOpenAccepted: true
+                })
+              }
+            },
+            (error) =>
+              request.finish(
+                error instanceof Error
+                  ? error
+                  : new Error('browser_tab_external_open_failed_effect_unknown')
+              )
+          )
           return
         }
         const before = readTabUi(owner)

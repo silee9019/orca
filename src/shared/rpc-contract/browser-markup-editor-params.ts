@@ -8,7 +8,21 @@ export const BrowserMarkupTool = z.enum([
   'text',
   'eraser'
 ])
+export const BrowserMarkupNormalizedPoints = z
+  .array(
+    z.object({
+      x: z.number().finite().min(0).max(1),
+      y: z.number().finite().min(0).max(1)
+    })
+  )
+  .min(1)
+  .max(4096)
 export const BrowserMarkupEditorCommand = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('gesture'),
+    points: BrowserMarkupNormalizedPoints,
+    cancel: z.boolean()
+  }),
   z.object({ action: z.literal('text-commit'), text: z.string().max(16_384) }),
   z.object({ action: z.literal('text-cancel') }),
   z.object({ action: z.literal('tool'), value: BrowserMarkupTool }),
@@ -27,6 +41,7 @@ export const BrowserMarkupEditorState = z.object({
   pendingText: z.boolean(),
   canUndo: z.boolean(),
   canRedo: z.boolean(),
+  gestureActive: z.boolean().optional(),
   copied: z.literal(true).optional()
 })
 export type BrowserMarkupEditorState = z.infer<typeof BrowserMarkupEditorState>

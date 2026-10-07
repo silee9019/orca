@@ -99,6 +99,24 @@ describe('HtmlDocPreview browser chrome', () => {
     expect(hasLiveBrowserGuest('preview-1')).toBe(false)
   })
 
+  it('opens and closes the actual reload menu through the document owner', async () => {
+    await renderPreview(container, root)
+    for (const [action, open] of [
+      ['reload-menu-open', true],
+      ['reload-menu-close', false]
+    ] as const) {
+      await act(async () => {
+        await expect(
+          requestBrowserDocument('preview-1', { action }, Date.now() + 1000)
+        ).resolves.toMatchObject({ menuChangeRequested: true })
+      })
+      expect(document.querySelector('[role="menu"]') !== null).toBe(open)
+      await expect(
+        requestBrowserDocument('preview-1', { action: 'status' }, Date.now() + 1000)
+      ).resolves.toMatchObject({ reloadMenuOpen: open })
+    }
+  })
+
   it('uses the document owner for reload, clipboard read-back and source opening', async () => {
     const guest = await renderPreview(container, root)
     stubHistory(guest, { canGoBack: false, canGoForward: false })
