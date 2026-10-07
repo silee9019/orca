@@ -1,0 +1,421 @@
+{
+  "version": 1,
+  "bundles": [
+    {
+      "id": "project-filter-state",
+      "phase": 2,
+      "dependsOn": [],
+      "conflictFiles": [
+        "src/cli/specs/index.ts",
+        "src/cli/handler-group-manifest.ts",
+        "src/main/runtime/rpc/methods/client-ui.ts",
+        "src/main/window/runtime-window-lifecycle.ts",
+        "src/main/runtime/runtime-notifier-contract.ts"
+      ]
+    }
+  ],
+  "scopes": [
+    {
+      "id": "plugin-commands",
+      "status": "classified",
+      "boundary": "src/shared/plugins/plugin-manifest.ts commandContributionSchema → PluginService.invokeCommand",
+      "fixture": "config/scripts/cli-action-classification.test.mjs: dynamic contributions, generated menus, OS/flags and forwarded JSX retain classified effects"
+    },
+    {
+      "id": "plugin-panels",
+      "status": "classified",
+      "boundary": "src/shared/plugins/plugin-manifest.ts panelContributionSchema; representative panel save/reset are separate effects",
+      "fixture": "config/scripts/cli-action-classification.test.mjs: dynamic contributions, generated menus, OS/flags and forwarded JSX retain classified effects"
+    },
+    {
+      "id": "runtime-generated-menus",
+      "status": "classified",
+      "boundary": "src/main/menu/register-app-menu.ts data-generated menu templates preserve instance target IDs",
+      "fixture": "config/scripts/cli-action-classification.test.mjs: dynamic contributions, generated menus, OS/flags and forwarded JSX retain classified effects"
+    },
+    {
+      "id": "platform-and-flags",
+      "status": "classified",
+      "boundary": "src/main/menu platform/native role and feature-flag alternatives are classified as a union",
+      "fixture": "config/scripts/cli-action-classification.test.mjs: dynamic contributions, generated menus, OS/flags and forwarded JSX retain classified effects"
+    },
+    {
+      "id": "jsx-spread-handlers",
+      "status": "classified",
+      "boundary": "JSX spread source → owning component surface effect; forwarded callbacks remain internal",
+      "fixture": "config/scripts/cli-action-classification.test.mjs: dynamic contributions, generated menus, OS/flags and forwarded JSX retain classified effects"
+    }
+  ],
+  "actions": [
+    {
+      "id": "ui.project-filter.get",
+      "effect": "현재 프로젝트 필터 ID와 적용된 목록을 조회합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "project-filter-state",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "api:ui.get",
+          "fingerprint": "5676604018d2235328ab3e02f36dea15bb7c34c84c403f4dd4ef0c10b2399641"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.set",
+      "effect": "정확한 프로젝트 ID 목록으로 현재 필터를 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "project-filter-state",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 같은 set 두 번과 새 repo 추가 뒤 select-all을 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "api:ui.set",
+          "fingerprint": "ed06540ce98c5324a284af70b5239cc3cc4e978b1dff4285d1dff18eb0fed5ff"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:92920d440c56b89fc4d1",
+          "fingerprint": "92920d440c56b89fc4d1c6e2eb333dd5ac19d5a02f6a80165998ad0f74f1b783"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:1d8686bf3a89b953f0be",
+          "fingerprint": "1d8686bf3a89b953f0bed29d2489f71f3365426302ff5f75b09bebe2881ccc75"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.clear",
+      "effect": "프로젝트 필터만 빈 목록으로 해제합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "project-filter-state",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 다른 sleeping/host 필터를 보존합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarRepositoryFilterSection.tsx:5623f8697cdc6744ceb3",
+          "fingerprint": "5623f8697cdc6744ceb3eea19e067b62087396cd632fb056cab52348727aa4ee"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:5623f8697cdc6744ceb3",
+          "fingerprint": "5623f8697cdc6744ceb3eea19e067b62087396cd632fb056cab52348727aa4ee"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.remove",
+      "effect": "선택한 프로젝트 하나를 필터에서 제거합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 마지막 pill 제거 뒤 빈 배열 의미를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:d828621a78c71daca630",
+          "fingerprint": "d828621a78c71daca6309c28d8fd08af7721093747cd5a7c8d6bfbf8c1dc913f"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:f45f9b7db1433b133ba0",
+          "fingerprint": "f45f9b7db1433b133ba02817305616e84ee6cfe8c45f846b6c73aa9f13dac7fb"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.toggle",
+      "effect": "프로젝트 선택 여부를 토글합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 중복 ID 없이 선택과 해제를 확인합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:918b0f8ee63eed9c2ff3",
+          "fingerprint": "918b0f8ee63eed9c2ff3e86878dfee563f8cf6458bb2f8ba10bbcbed87f6790e"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.search",
+      "effect": "프로젝트 선택 목록에서 검색합니다.",
+      "owner": "SidebarProjectFilterPanel / SidebarFilter local query → searchRepos",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "검색 결과 ID와 label, 빈 결과, 선택 목록 제외를 검사합니다. 필터 저장값은 검색만으로 바뀌지 않아야 합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:5162cb4b961f7aa7d62d",
+          "fingerprint": "5162cb4b961f7aa7d62d2e4613d85589adcf44fcf825bbcb045d2e69d00bcbfb"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:b3634dcbaa11d534aefe",
+          "fingerprint": "b3634dcbaa11d534aefee94382577f40d66c3bd78bfaf83285cc06da2b98f4b1"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.highlight",
+      "effect": "프로젝트 선택 목록의 현재 강조 항목을 지정합니다.",
+      "owner": "SidebarProjectFilterPanel / SidebarFilter local highlighted ID",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "명시한 result ID와 Enter 선택 대상이 일치해야 합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:292c6a5a91518a5a41ef",
+          "fingerprint": "292c6a5a91518a5a41ef62f1090aff1bd5ed068d0167bfcad6f700606938cf47"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:ec153ce20bbbbd4c5d65",
+          "fingerprint": "ec153ce20bbbbd4c5d6584a9857018981979b527f7193e143592a341df2c479f"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.keyboard-selection",
+      "effect": "검색 목록에서 Enter 선택과 빈 입력의 Backspace 제거를 수행합니다.",
+      "owner": "handleInputKeyDown → handleSelectRepo / handleRemoveProject",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "Enter 선택·Backspace 제거를 해당 set/remove 효과와 대조하고 native keyboard event 합성 없이 명시 대상 행동으로 연결합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:8e3fd223181b43449785",
+          "fingerprint": "8e3fd223181b4344978588659dfb4e5797dfbc68aebc0bfe4f0db038a77a732d"
+        }
+      ]
+    },
+    {
+      "id": "ui.project-filter.input-focus",
+      "effect": "프로젝트 검색과 pill 제거 중 입력 위치를 보존합니다.",
+      "owner": "SidebarProjectFilterPanel / SidebarFilter focus and dropdown propagation",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "컴포넌트 내부 focus/propagation 보조 동작은 검색/선택 명령의 동일 효과에 연결합니다. visible native-focus 증거는 격리 display/CI에서만 확보합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarProjectFilterPanel.tsx:519f84c617b3b0d16e27",
+          "fingerprint": "519f84c617b3b0d16e27f0ae997da912c9b2c25e8a8e7ae6b359fa4b2ce42b4e"
+        },
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:01069a221d7ea493a2e4",
+          "fingerprint": "01069a221d7ea493a2e43deca48995e30ae7e68fac2466b1adefc38d403b0b56"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.sleeping",
+      "effect": "잠든 workspace 표시를 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:377cff6dfd03b4b1b2ed",
+          "fingerprint": "377cff6dfd03b4b1b2ed58b85631019f514a957258e46843119d39f1cc613287"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.default-branch-exemption",
+      "effect": "sleeping 필터의 기본 브랜치 예외를 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:ddbc1d768de579bf671e",
+          "fingerprint": "ddbc1d768de579bf671efa729d18f3aeea7ff6bf3be7852d431c5a351ac925c6"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.hide-default-branch",
+      "effect": "기본 브랜치 숨김을 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:a7110ef20a9c49b46665",
+          "fingerprint": "a7110ef20a9c49b46665d1561b81c31a0e47ca900da0948586dd6738190f97fb"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.hide-automation-created",
+      "effect": "automation 생성 workspace 숨김을 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:46ef982de1c819b64bf6",
+          "fingerprint": "46ef982de1c819b64bf653d8d1e4fae44020070de92a8130f663a805a206c112"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.hide-cli-created",
+      "effect": "CLI 생성 workspace 숨김을 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:d2ecc8b4cdd236d1951f",
+          "fingerprint": "d2ecc8b4cdd236d1951fd74a5a784fbd67150ec18da6d0cfedd6ed33fb3073da"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.hide-detached-head",
+      "effect": "detached HEAD workspace 숨김을 설정합니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:a2e54fc474d6138c602c",
+          "fingerprint": "a2e54fc474d6138c602c1500259b75254cd80e95cc83a35e31c9ba1dedfdfe1a"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.reset",
+      "effect": "SidebarFilter의 프로젝트·sleeping·생성경로·기본브랜치 필터를 기본값으로 되돌립니다.",
+      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 프로젝트 필터만 해제하는 clear와 범위를 구분합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:39b1a0304ce650a64945",
+          "fingerprint": "39b1a0304ce650a6494588b813c01f42e3dac98e48834495bccca6faf85eea6f"
+        }
+      ]
+    },
+    {
+      "id": "ui.workspace-filter.menu",
+      "effect": "workspace 필터 메뉴를 열거나 닫습니다.",
+      "owner": "SidebarFilter local open/query state",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "verification": "대상 viewer 메뉴 상태를 확인하고 닫을 때 검색어가 초기화되는지 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:0aac7945b6d2d17df5b1",
+          "fingerprint": "0aac7945b6d2d17df5b1c6fd7251f8da93f7b08824fac734c70a25544a1d3e27"
+        }
+      ]
+    },
+    {
+      "id": "project.add-from-filter",
+      "effect": "필터 메뉴에서 프로젝트 추가 절차를 시작합니다.",
+      "owner": "useAppStore.addRepo",
+      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
+      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
+      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "phase": 5,
+      "bundle": "workspace-data",
+      "verification": "경로 인수의 직접 등록과 OS picker 절차를 기존 addRepo 정책으로 연결합니다. 취소·0/1 repo·SSH·folder 조건을 검사합니다.",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:5b75134d516ce173e114",
+          "fingerprint": "5b75134d516ce173e1149fe4ccc356a6e7cbe191621f35c75bc9979fc2457bc6"
+        }
+      ]
+    }
+  ]
+}

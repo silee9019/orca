@@ -21,6 +21,7 @@
     "audit:react-doctor": "pnpm dlx react-doctor@0.9.14 . --yes --no-supply-chain --no-telemetry --blocking none",
     "audit:dead-code": "pnpm dlx knip@5.88.1 --config config/knip.json",
     "check:code-quality:changed": "node config/scripts/check-changed-code-quality.mjs",
+    "check:cli-action-coverage": "node config/scripts/cli-action-coverage.mjs",
     "check:dead-classes": "oxlint --config config/oxlint-dead-classes.json src/renderer",
     "lint:design-system": "oxlint --config config/oxlint-design-system.json src/renderer",
     "check:react-doctor:changed": "node config/scripts/check-react-doctor-changed.mjs",
