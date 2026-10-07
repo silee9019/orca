@@ -1,3 +1,8 @@
+import {
+  createCodexLoginObserver,
+  createRateLimitObserver,
+  createTccThresholdObserver
+} from './account-observation-transport'
 import { randomUUID } from 'node:crypto'
 import type { CliStatusResult, RuntimeStatus } from '../../shared/runtime-types'
 import { runtimeHostConnectionState } from '../../shared/runtime-host-connection-state'
@@ -45,6 +50,9 @@ const LONG_POLL_CLIENT_GRACE_MS = 10_000
 const loadWebSocketTransport = async () => await import('./websocket-transport.js')
 
 export class RuntimeClient {
+  readonly observeCodexLogin: ReturnType<typeof createCodexLoginObserver>
+  readonly observeRateLimits: ReturnType<typeof createRateLimitObserver>
+  readonly observeTccThreshold: ReturnType<typeof createTccThresholdObserver>
   private readonly userDataPath: string
   private readonly requestTimeoutMs: number
   private readonly remotePairing: PairingOffer | null
@@ -74,6 +82,9 @@ export class RuntimeClient {
     this.cliExecutable = cliExecutable
     this.originalArgs = originalArgs ? [...originalArgs] : undefined
     this.remotePairing = resolveRemotePairing(userDataPath, remotePairingCode, environmentSelector)
+    this.observeCodexLogin = createCodexLoginObserver(userDataPath, this.remotePairing)
+    this.observeRateLimits = createRateLimitObserver(userDataPath, this.remotePairing)
+    this.observeTccThreshold = createTccThresholdObserver(userDataPath, this.remotePairing)
     this.remoteCompat = new RemoteRuntimeCompatGate(userDataPath, environmentSelector)
   }
 

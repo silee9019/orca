@@ -5,21 +5,19 @@ import { COMMAND_SPECS } from './specs'
 import type { RuntimeClient } from './runtime-client'
 import { RuntimeClientError } from './runtime-client'
 
-const call = vi
-  .fn()
-  .mockResolvedValue({
-    id: 'r',
-    ok: true,
-    _meta: { runtimeId: 'selected-host' },
-    result: {
-      viewer: 'host',
-      viewerId: 42,
-      repoIds: ['a'],
-      persisted: true,
-      applied: true,
-      visibleWorktreeIds: ['a::worktree']
-    }
-  })
+const call = vi.fn().mockResolvedValue({
+  id: 'r',
+  ok: true,
+  _meta: { runtimeId: 'selected-host' },
+  result: {
+    viewer: 'host',
+    viewerId: 42,
+    repoIds: ['a'],
+    persisted: true,
+    applied: true,
+    visibleWorktreeIds: ['a::worktree']
+  }
+})
 // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: These handlers only call the runtime RPC method, supplied by this double.
 const client = { call } as unknown as RuntimeClient
 const output = vi.spyOn(console, 'log').mockImplementation(() => {})

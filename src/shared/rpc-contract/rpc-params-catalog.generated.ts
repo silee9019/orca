@@ -28,6 +28,14 @@ import {
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
 import { pluginConsentRequestSchema } from '../plugins/plugin-consent-request'
 import {
+  AccountCredentialSaveParams,
+  AccountCredentialStatusParams
+} from './account-credentials-params'
+import { AccountInspectionParams } from './account-inspection-params'
+import { AccountLoginProviderParams, AccountLoginStartParams } from './account-login-params'
+import { AccountPreferenceParams } from './account-preference-params'
+import { AccountSecretSettingParams } from './account-secret-settings-params'
+import {
   AccountsUnsubscribeParams,
   AddClaudeFromConfigDirParams,
   AddCodexFromHomeParams,
@@ -40,8 +48,10 @@ import {
   SelectCodexAccountForTargetParams,
   SelectDataAccountParams
 } from './accounts-params'
+import { AccountsViewerParams } from './accounts-viewer-params'
 import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
+import { AgentPermissionModeParams } from './agent-permission-mode-params'
 import { CreateAgentSessionParams, EnsureAgentSessionParams } from './agent-session-params'
 import {
   AiVaultListSessionsParams,
@@ -411,6 +421,20 @@ import {
 import { WorkerStartParams } from './orchestration-worker-start-params'
 import { WorkerDispatchParams as WorkerDispatchParamsOfOrchestrationWorkerStopParams } from './orchestration-worker-stop-params'
 import {
+  DeveloperPermissionRequestParams,
+  DeveloperPermissionSettingsParams,
+  NotificationDismissParams,
+  NotificationDispatchParams,
+  NotificationProbeParams,
+  NotificationSoundParams,
+  OsPermissionConfirmedParams,
+  OsPermissionEmptyParams,
+  OsPermissionViewerParams,
+  TccPromptClaimParams,
+  TccPromptOwnerParams,
+  TccPromptReleaseParams
+} from './os-permissions-params'
+import {
   PluginInvokeCommandParams,
   PluginReadPanelEntryParams,
   PluginSetEnabledParams,
@@ -421,6 +445,7 @@ import {
   PreflightDetectRemoteAgents,
   PreflightDetectRemoteWindowsTerminalCapabilities
 } from './preflight-params'
+import { ProfileAuthControlParams } from './profile-auth-params'
 import { ProjectFilterParams } from './project-filter-params'
 import {
   ProjectHostSetupClone,
@@ -447,6 +472,7 @@ import {
   RepoSparsePresetSave,
   RepoUpdate
 } from './repo-params'
+import { ResourceManagerViewerParams } from './resource-manager-params'
 import { BrowserTarget } from './rpc-param-primitives'
 import { ClientCapabilitiesUpdate } from './runtime-client-capabilities-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
@@ -536,6 +562,17 @@ import {
   TerminalUpdateViewport
 } from './terminal-viewport-schemas-params'
 import { UpdaterCheckParams } from './updater-params'
+import {
+  RateLimitPollingParams,
+  RateLimitTargetParams,
+  UsageBreakdownParams,
+  UsageEnabledParams,
+  UsageProviderParams,
+  UsageQueryParams,
+  UsageRefreshParams,
+  UsageSessionsParams,
+  UsageViewerParams
+} from './usage-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
@@ -569,6 +606,11 @@ import {
 // matches the dispatcher. Clients must import it for types only — parsing a params
 // schema client-side runs the coercing transforms and rewrites the wire bytes.
 export const RPC_PARAMS_BY_METHOD = {
+  'accountCredentials.clear': AccountCredentialStatusParams,
+  'accountCredentials.save': AccountCredentialSaveParams,
+  'accountCredentials.status': AccountCredentialStatusParams,
+  'accountPreference.control': AccountPreferenceParams,
+  'accountSecretSettings.apply': AccountSecretSettingParams,
   'accounts.addClaudeFromConfigDir': AddClaudeFromConfigDirParams,
   'accounts.addCodexFromHome': AddCodexFromHomeParams,
   'accounts.addDataFromHome': AddDataAccountParams,
@@ -577,20 +619,29 @@ export const RPC_PARAMS_BY_METHOD = {
   'accounts.antigravityRemove': AntigravityAccountMutationParams,
   'accounts.antigravitySelect': AntigravityAccountMutationParams,
   'accounts.consumeCodexResetCredit': ConsumeCodexResetCreditParams,
+  'accounts.inspect': AccountInspectionParams,
   'accounts.list': ListAccountsParams,
   'accounts.listData': null,
+  'accounts.loginCancel': AccountLoginProviderParams,
+  'accounts.loginStart': AccountLoginStartParams,
+  'accounts.loginStatus': AccountLoginProviderParams,
+  'accounts.loginUrl': null,
+  'accounts.observeCodexLogin': null,
   'accounts.removeClaude': RemoveAccountParams,
   'accounts.removeCodex': RemoveAccountParams,
   'accounts.removeData': RemoveDataAccountParams,
   'accounts.selectClaude': SelectAccountParams,
+  'accounts.selectClaudeForTarget': SelectCodexAccountForTargetParams,
   'accounts.selectCodex': SelectAccountParams,
   'accounts.selectCodexForTarget': SelectCodexAccountForTargetParams,
   'accounts.selectData': SelectDataAccountParams,
   'accounts.subscribe': null,
   'accounts.unsubscribe': AccountsUnsubscribeParams,
+  'accounts.viewerAction': AccountsViewerParams,
   'agent.launch': AgentLaunch,
   'agent.launchReplay': AgentLaunchReplay,
   'agentHooks.prepareCodexForWslPane': PrepareCodexForWslPaneParams,
+  'agentPermissionMode.control': AgentPermissionModeParams,
   'agentSession.agents': AgentsParams,
   'agentSession.cancel': CancelParams,
   'agentSession.close': OptionsParams,
@@ -752,11 +803,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'computer.pasteText': PasteText,
   'computer.performSecondaryAction': PerformSecondaryAction,
   'computer.permissions': ComputerPermissions,
+  'computer.permissionsReset': OsPermissionConfirmedParams,
   'computer.permissionsStatus': ComputerPermissionsStatusParams,
   'computer.pressKey': PressKey,
   'computer.scroll': ScrollOfComputerSchemasParams,
   'computer.setValue': SetValue,
   'computer.typeText': TypeText,
+  'developerPermissions.getStatus': OsPermissionEmptyParams,
+  'developerPermissions.openSettings': DeveloperPermissionSettingsParams,
+  'developerPermissions.request': DeveloperPermissionRequestParams,
   'diagnostics.memory': null,
   'emulator.attach': AttachParamsOfEmulatorParams,
   'emulator.availability': EmulatorAvailabilityParams,
@@ -997,6 +1052,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.teamStates': TeamId,
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
+  'macosTccPrompts.acknowledgePending': TccPromptClaimParams,
+  'macosTccPrompts.consumePending': TccPromptOwnerParams,
+  'macosTccPrompts.dismiss': OsPermissionConfirmedParams,
+  'macosTccPrompts.getStatus': OsPermissionEmptyParams,
+  'macosTccPrompts.observeThreshold': null,
+  'macosTccPrompts.releasePending': TccPromptReleaseParams,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
   'mobileWeb.bundle.chunk': MobileWebBundleChunkParamsSchema,
@@ -1006,7 +1067,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'nativeChat.subscribe': NativeChatSession,
   'nativeChat.unsubscribe': NativeChatUnsubscribe,
   'network.browserTunnel': BrowserNetworkTunnelAttachParams,
+  'notifications.dismiss': NotificationDismissParams,
+  'notifications.dispatch': NotificationDispatchParams,
+  'notifications.getDesktopAwayState': OsPermissionViewerParams,
   'notifications.getMissedSince': NotificationGetMissedSinceParams,
+  'notifications.getPermissionStatus': OsPermissionViewerParams,
+  'notifications.openSystemSettings': OsPermissionConfirmedParams,
+  'notifications.playSound': NotificationSoundParams,
+  'notifications.probeDelivery': NotificationProbeParams,
   'notifications.registerPush': NotificationRegisterPushParams,
   'notifications.subscribe': NotificationsSubscribeParams,
   'notifications.testPush': null,
@@ -1068,6 +1136,7 @@ export const RPC_PARAMS_BY_METHOD = {
     PreflightDetectRemoteWindowsTerminalCapabilities,
   'preflight.refreshAgents': null,
   'preflight.zcodeInteractiveCapability': null,
+  'profileAuth.control': ProfileAuthControlParams,
   'project.list': null,
   'project.update': ProjectUpdate,
   'projectGroup.create': ProjectGroupCreate,
@@ -1083,6 +1152,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'projectHostSetup.list': null,
   'projectHostSetup.setupExistingFolder': ProjectHostSetupExistingFolder,
   'projectHostSetup.update': ProjectHostSetupUpdate,
+  'pty.macTccAttribution': OsPermissionEmptyParams,
+  'rateLimits.fetchInactiveClaudeAccounts': null,
+  'rateLimits.fetchInactiveCodexAccounts': null,
+  'rateLimits.get': null,
+  'rateLimits.refresh': null,
+  'rateLimits.refreshClaudeForTarget': RateLimitTargetParams,
+  'rateLimits.refreshCodexForTarget': RateLimitTargetParams,
+  'rateLimits.refreshGrok': null,
+  'rateLimits.refreshMiniMax': null,
+  'rateLimits.setPollingInterval': RateLimitPollingParams,
+  'rateLimits.subscribe': null,
   'repo.add': RepoPath,
   'repo.baseRefDefault': RepoSelector,
   'repo.clone': RepoClone,
@@ -1102,6 +1182,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'repo.show': RepoSelector,
   'repo.sparsePresets': RepoSelector,
   'repo.update': RepoUpdate,
+  'resourceManager.viewer': ResourceManagerViewerParams,
   'runtime.clientCapabilities.update': ClientCapabilitiesUpdate,
   'runtime.clientEvents.subscribe': null,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
@@ -1211,6 +1292,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'updater.download': null,
   'updater.getStatus': null,
   'updater.install': null,
+  'usage.getBreakdown': UsageBreakdownParams,
+  'usage.getDaily': UsageQueryParams,
+  'usage.getRecentSessions': UsageSessionsParams,
+  'usage.getScanState': UsageProviderParams,
+  'usage.getSnapshot': UsageSessionsParams,
+  'usage.getSummary': UsageQueryParams,
+  'usage.refresh': UsageRefreshParams,
+  'usage.setEnabled': UsageEnabledParams,
+  'usage.viewerAction': UsageViewerParams,
   'workspacePorts.kill': WorkspacePortKillParams,
   'workspacePorts.scan': WorkspacePortScanParams,
   'worktree.activate': WorktreeActivate,

@@ -35,6 +35,22 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
     }
 
     try {
+      if (
+        (request.method === 'accounts.observeCodexLogin' ||
+          request.method === 'rateLimits.subscribe' ||
+          request.method === 'macosTccPrompts.observeThreshold') &&
+        context?.streamReply
+      ) {
+        await this.dispatcher.dispatchStreaming(request, context.streamReply, {
+          signal: context.signal
+        })
+        return {
+          id: request.id,
+          ok: true,
+          result: { type: 'end' },
+          _meta: { runtimeId: this.runtime.getRuntimeId() }
+        }
+      }
       return await this.dispatcher.dispatch(request, {
         signal: longPoll ? context?.signal : undefined
       })

@@ -1,3 +1,12 @@
+import { SETTINGS_HANDLER_GROUPS } from './settings-handler-groups'
+import { TCC_THRESHOLD_OBSERVE_HANDLER_GROUPS } from './tcc-threshold-observe-handler-groups'
+import { CODEX_ACCOUNT_OBSERVE_HANDLER_GROUPS } from './codex-account-observe-handler-groups'
+import { OS_PERMISSION_HANDLER_GROUPS } from './os-permission-handler-groups'
+import { RESOURCE_MANAGER_HANDLER_GROUPS } from './resource-manager-handler-groups'
+import { ACCOUNT_INSPECTION_HANDLER_GROUPS } from './account-inspection-handler-groups'
+import { ACCOUNT_HANDLER_GROUPS } from './account-handler-groups'
+import { ACCOUNT_VIEWER_HANDLER_GROUPS } from './account-viewer-handler-groups'
+import { USAGE_HANDLER_GROUPS } from './usage-handler-groups'
 import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 
@@ -12,33 +21,20 @@ export type HandlerGroup = {
 // Why: `keys` mirrors each group's exported record and is verified against the
 // real exports by handler-group-manifest.test.ts, so drift fails CI, not dispatch.
 export const HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...TCC_THRESHOLD_OBSERVE_HANDLER_GROUPS,
+  ...CODEX_ACCOUNT_OBSERVE_HANDLER_GROUPS,
+  ...OS_PERMISSION_HANDLER_GROUPS,
+  ...RESOURCE_MANAGER_HANDLER_GROUPS,
+  ...ACCOUNT_INSPECTION_HANDLER_GROUPS,
+  ...ACCOUNT_HANDLER_GROUPS,
+  ...ACCOUNT_VIEWER_HANDLER_GROUPS,
+  ...USAGE_HANDLER_GROUPS,
   {
     name: 'project-filter',
     keys: ['ui project-filter get', 'ui project-filter set', 'ui project-filter clear'],
     load: async () => (await import('./handlers/project-filter.js')).PROJECT_FILTER_HANDLERS
   },
-  {
-    name: 'settings',
-    keys: [
-      'settings fields',
-      'settings import ghostty',
-      'settings import warp',
-      'settings desktop get',
-      'settings desktop update',
-      'settings fonts',
-      'settings keybindings get',
-      'settings keybindings reload',
-      'settings keybindings set',
-      'settings preflight check',
-      'settings agents detect',
-      'settings agents refresh',
-      'settings agents zcode-capability',
-      'settings get',
-      'settings update',
-      'settings review-bot'
-    ],
-    load: async () => (await import('./handlers/settings.js')).SETTINGS_HANDLERS
-  },
+  ...SETTINGS_HANDLER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],

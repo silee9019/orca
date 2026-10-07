@@ -1,4 +1,5 @@
 import { attachProjectFilterBridge } from '@/runtime/project-filter-bridge'
+import { registerAccountViewerBridge } from '../../runtime/account-viewer-bridge'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/runtime-host-status'
 import { getTabIdsAwaitingHostHydrationRemount } from '@/lib/parked-terminal-host-hydration'
 import { emitAutomationsChangedWindowEvent } from '@/lib/automations-changed-window-event'
@@ -121,6 +122,9 @@ export function installAppLifetimeIpcEvents(
   registerTerminalRequestIpcBridge(unsubs)
   registerPtySourceDisownedIpcBridge(unsubs)
   registerTerminalUiRoutingIpcBridge(unsubs)
+  if (window.api.accountViewer) {
+    registerAccountViewerBridge(window.api.accountViewer, unsubs)
+  }
   registerSessionTabIpcBridge(unsubs)
   registerMobileAndTerminalCloseIpcBridge(unsubs, backgroundWakeDispatcher.request)
   registerUpdaterStatusIpcBridge(unsubs)

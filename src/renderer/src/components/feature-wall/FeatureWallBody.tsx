@@ -62,7 +62,9 @@ export function FeatureWallBody(props: {
   const isReview = selected.id === 'review'
   const isAgentsUsage = isAgents && agentsActiveStep?.id === 'usage'
   useEffect(() => {
-    if (isAgentsUsage) {return registerUsageAccountStateRefresh(onUsageAccountStateChange)}
+    if (isAgentsUsage) {
+      return registerUsageAccountStateRefresh(onUsageAccountStateChange)
+    }
     return undefined
   }, [isAgentsUsage, onUsageAccountStateChange])
   const isAgentsStatuses = isAgents && agentsActiveStep?.id === 'statuses'

@@ -1,4 +1,10 @@
 import type { CliWarpThemeImportSource } from '../../shared/rpc-contract/settings-control-params'
+import { AccountInspectionController } from './account-inspection-controller'
+import { RuntimeUsageController, type RuntimeUsageProviders } from './runtime-usage-controller'
+import {
+  RuntimeRateLimitController,
+  type RuntimeRateLimitService
+} from './runtime-rate-limit-controller'
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
 import { OrcaRuntimeWithResolveWaiter } from './orca-runtime-resolve-waiter'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
@@ -10,6 +16,40 @@ import type { GlobalSettings } from '../../shared/global-settings-types'
 
 class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
   private readonly settingsActions: RuntimeSettingsActions | undefined
+  private accountInspectionController: AccountInspectionController | null = null
+  setAccountInspectionServices(
+    ...args: ConstructorParameters<typeof AccountInspectionController>
+  ): void {
+    this.accountInspectionController = new AccountInspectionController(...args)
+  }
+  getAccountInspectionController(): AccountInspectionController {
+    if (!this.accountInspectionController) {
+      throw new Error('Account inspection services are unavailable on this runtime')
+    }
+    return this.accountInspectionController
+  }
+
+  private usageController: RuntimeUsageController | null = null
+  private rateLimitController: RuntimeRateLimitController | null = null
+
+  setUsageServices(providers: RuntimeUsageProviders, rateLimits: RuntimeRateLimitService): void {
+    this.usageController = new RuntimeUsageController(providers)
+    this.rateLimitController = new RuntimeRateLimitController(rateLimits)
+  }
+
+  getUsageController(): RuntimeUsageController {
+    if (!this.usageController) {
+      throw new Error('Usage services are not configured on this runtime')
+    }
+    return this.usageController
+  }
+
+  getRateLimitController(): RuntimeRateLimitController {
+    if (!this.rateLimitController) {
+      throw new Error('Rate-limit services are not configured on this runtime')
+    }
+    return this.rateLimitController
+  }
 
   constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithResolveWaiter>) {
     super(...args)

@@ -1,4 +1,19 @@
 import { SETTINGS_CONTROL_METHODS } from './settings-control'
+import { TCC_THRESHOLD_OBSERVATION_METHODS } from './tcc-threshold-observation'
+import { CODEX_LOGIN_OBSERVATION_METHODS } from './codex-login-observation'
+import { ACCOUNT_PREFERENCE_METHODS } from './account-preference'
+import { RESOURCE_MANAGER_METHODS } from './resource-manager'
+import { AGENT_PERMISSION_MODE_METHODS } from './agent-permission-mode'
+import { ACCOUNT_INSPECTION_METHODS } from './account-inspection'
+import { PROFILE_AUTH_METHODS } from './profile-auth'
+import { ACCOUNT_SECRET_SETTING_METHODS } from './account-secret-settings'
+import { ACCOUNTS_VIEWER_METHODS } from './accounts-viewer'
+import { USAGE_VIEWER_METHODS } from './usage-viewer'
+import { ACCOUNT_CREDENTIAL_METHODS } from './account-credentials'
+import { ACCOUNT_LOGIN_METHODS } from './account-login'
+import { OS_PERMISSION_METHODS } from './os-permissions'
+import { USAGE_METHODS } from './usage'
+import { RATE_LIMIT_METHODS } from './rate-limits'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -57,6 +72,19 @@ import { AGENT_LAUNCH_METHODS } from './agent-launch'
 // auditing the security boundary or wiring new CLI commands.
 export const ALL_RPC_METHODS = [
   ...SETTINGS_CONTROL_METHODS,
+  ...RESOURCE_MANAGER_METHODS,
+  ...AGENT_PERMISSION_MODE_METHODS,
+  ...TCC_THRESHOLD_OBSERVATION_METHODS,
+  ...CODEX_LOGIN_OBSERVATION_METHODS,
+  ...ACCOUNT_INSPECTION_METHODS,
+  ...ACCOUNT_PREFERENCE_METHODS,
+  ...PROFILE_AUTH_METHODS,
+  ...ACCOUNT_SECRET_SETTING_METHODS,
+  ...ACCOUNTS_VIEWER_METHODS,
+  ...USAGE_VIEWER_METHODS,
+  ...ACCOUNT_CREDENTIAL_METHODS,
+  ...ACCOUNT_LOGIN_METHODS,
+  ...OS_PERMISSION_METHODS,
   ...STATUS_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
@@ -82,6 +110,8 @@ export const ALL_RPC_METHODS = [
   ...STATS_METHODS,
   ...DIAGNOSTICS_METHODS,
   ...ACCOUNT_METHODS,
+  ...USAGE_METHODS,
+  ...RATE_LIMIT_METHODS,
   ...ANTIGRAVITY_ACCOUNT_METHODS,
   ...PREFLIGHT_METHODS,
   ...COMPUTER_METHODS,

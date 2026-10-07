@@ -222,7 +222,12 @@ export class UnixSocketTransport implements RpcTransport {
 
     this.messageHandler?.(rawMessage, reply, {
       signal: abortController.signal,
-      startKeepalive
+      startKeepalive,
+      streamReply: (response) => {
+        if (!replied && !socket.destroyed && socket.writable) {
+          socket.write(`${response}\n`)
+        }
+      }
     })
   }
 }

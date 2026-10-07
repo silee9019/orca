@@ -40,6 +40,11 @@ import { RuntimeSettingsActions } from '../runtime/runtime-settings-actions'
 import { broadcastKeybindingsChanged } from '../ipc/keybindings'
 import { listSystemFontFamilies } from '../system-fonts'
 import { applyDesktopSettingsUpdate } from '../ipc/desktop-settings-update'
+import { setAccountPreferenceAccess } from '../runtime/account-preference-access'
+import { setAccountSecretSettingsWriter } from '../runtime/account-secret-settings-writer'
+import { setAgentPermissionModeAccess } from '../runtime/agent-permission-mode-access'
+import { isWslAvailableAsync, listWslDistrosAsync } from '../wsl'
+import type { GlobalSettings } from '../../shared/global-settings-types'
 
 export function getDesktopWindowStatus(): RuntimeDesktopWindowStatus {
   const activation = state.desktopActivationGate
@@ -56,6 +61,30 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
   if (!store || !stats) {
     throw new Error('Store and stats must be initialized before runtime')
   }
+  const applySettings = async (updates: Partial<GlobalSettings>) => {
+    const settings = await applyDesktopSettingsUpdate(
+      store,
+      updates,
+      state.agentAwakeService ?? undefined
+    )
+    await store.flushPendingOrThrowAsync({ drainToStableGeneration: true })
+    return settings
+  }
+  const read = () => store.getSettings()
+  setAccountSecretSettingsWriter(applySettings)
+  setAgentPermissionModeAccess({ read, write: applySettings })
+  setAccountPreferenceAccess({
+    read,
+    write: applySettings,
+    validateWslTarget: async (distro) => {
+      if (process.platform !== 'win32' || !(await isWslAvailableAsync())) {
+        throw new Error('WSL is not available on this host.')
+      }
+      if (distro !== null && !(await listWslDistrosAsync()).includes(distro)) {
+        throw new Error('The requested WSL distro is not available on this host.')
+      }
+    }
+  })
   const orchestrationEnvironmentTransport: OrchestrationEnvironmentTransport = {
     resolve: (selector) => {
       const environment = resolveEnvironment(app.getPath('userData'), selector)
@@ -92,15 +121,7 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
       },
       listFonts: listSystemFontFamilies,
       getSettings: () => store.getSettings(),
-      applySettings: async (updates) => {
-        const settings = await applyDesktopSettingsUpdate(
-          store,
-          updates,
-          state.agentAwakeService ?? undefined
-        )
-        await store.flushPendingOrThrowAsync({ drainToStableGeneration: true })
-        return settings
-      }
+      applySettings
     }),
     prepareClaudeAuth: (target) => state.claudeRuntimeAuth!.prepareForClaudeLaunch(target),
     agentSessionClaimSigner: loadAgentSessionClaimSigner(
@@ -225,6 +246,15 @@ export function configureRuntimeServices(runtime: OrcaRuntimeService): void {
   )
   runtime.setSkillCloudService(new SkillCloudService(app.getPath('userData')))
   runtime.setAccountServices({ claudeAccounts, codexAccounts, rateLimits })
+  runtime.setAccountInspectionServices(() => store.getSettings(), codexAccounts.runtimeHomeService)
+  const { claudeUsage, codexUsage, openCodeUsage, museUsage } = state
+  if (!claudeUsage || !codexUsage || !openCodeUsage || !museUsage) {
+    throw new Error('Usage stores must be initialized before runtime wiring')
+  }
+  runtime.setUsageServices(
+    { claude: claudeUsage, codex: codexUsage, opencode: openCodeUsage, muse: museUsage },
+    rateLimits
+  )
   runtime.setCommitMessageAgentEnvironmentResolvers({
     // Why: Codex hooks/auth live in Orca's managed runtime home even for the default path, so every launch must resolve CODEX_HOME via runtime-home.
     prepareForCodexLaunch: prepareCodexRuntimeHomeForLaunch,

@@ -41,6 +41,11 @@ export type RuntimeServiceCommandSurface = {
   registerMobilePushDevice: RuntimeMobileNotificationController['registerPushDevice']
   unregisterMobilePushDevice: RuntimeMobileNotificationController['unregisterPushDevice']
   setAccountServices: RuntimeAccountController['setServices']
+  manageAccountCredential: RuntimeAccountController['manageCredential']
+  manageAccountLogin: RuntimeAccountController['manageLogin']
+  getCodexLoginUrl: RuntimeAccountController['getCodexLoginUrl']
+  configureProfileAuth: RuntimeAccountController['configureProfileAuth']
+  manageProfileAuth: RuntimeAccountController['manageProfileAuth']
   getDataAccountsSnapshot: RuntimeAccountController['dataAccountsSnapshot']
   setCommitMessageAgentEnvironmentResolvers: RuntimeAccountController['setCommitMessageAgentEnvironment']
   getCommitMessageAgentEnvironmentResolvers: RuntimeAccountController['getCommitMessageAgentEnvironment']
@@ -48,6 +53,7 @@ export type RuntimeServiceCommandSurface = {
   refreshAccountsForMobile: RuntimeAccountController['refreshForMobile']
   refreshAccountsForMobileSubscriber: RuntimeAccountController['refreshForMobileSubscriber']
   selectClaudeAccount: RuntimeAccountController['selectClaude']
+  selectClaudeAccountForTarget: RuntimeAccountController['selectClaudeForTarget']
   selectCodexAccount: RuntimeAccountController['selectCodex']
   selectCodexAccountForTarget: RuntimeAccountController['selectCodexForTarget']
   consumeCodexRateLimitResetCredit: RuntimeAccountController['consumeCodexResetCredit']
@@ -59,6 +65,7 @@ export type RuntimeServiceCommandSurface = {
   selectDataAccount: RuntimeAccountController['selectData']
   removeDataAccount: RuntimeAccountController['removeData']
   onAccountsChanged: RuntimeAccountController['onChanged']
+  observeCodexLogin: RuntimeAccountController['observeCodexLogin']
   listMobileSpeechModels: RuntimeMobileSpeechCatalog['list']
   downloadMobileSpeechModel: RuntimeMobileSpeechCatalog['download']
   deleteMobileSpeechModel: RuntimeMobileSpeechCatalog['delete']
@@ -136,6 +143,11 @@ export function installRuntimeServiceCommandSurface(
     registerMobilePushDevice: notifications.registerPushDevice.bind(notifications),
     unregisterMobilePushDevice: notifications.unregisterPushDevice.bind(notifications),
     setAccountServices: accounts.setServices.bind(accounts),
+    manageAccountCredential: accounts.manageCredential.bind(accounts),
+    manageAccountLogin: accounts.manageLogin.bind(accounts),
+    getCodexLoginUrl: accounts.getCodexLoginUrl.bind(accounts),
+    configureProfileAuth: accounts.configureProfileAuth.bind(accounts),
+    manageProfileAuth: accounts.manageProfileAuth.bind(accounts),
     getDataAccountsSnapshot: accounts.dataAccountsSnapshot.bind(accounts),
     setCommitMessageAgentEnvironmentResolvers:
       accounts.setCommitMessageAgentEnvironment.bind(accounts),
@@ -145,6 +157,7 @@ export function installRuntimeServiceCommandSurface(
     refreshAccountsForMobile: accounts.refreshForMobile.bind(accounts),
     refreshAccountsForMobileSubscriber: accounts.refreshForMobileSubscriber.bind(accounts),
     selectClaudeAccount: accounts.selectClaude.bind(accounts),
+    selectClaudeAccountForTarget: accounts.selectClaudeForTarget.bind(accounts),
     selectCodexAccount: accounts.selectCodex.bind(accounts),
     selectCodexAccountForTarget: accounts.selectCodexForTarget.bind(accounts),
     consumeCodexRateLimitResetCredit: accounts.consumeCodexResetCredit.bind(accounts),
@@ -156,6 +169,7 @@ export function installRuntimeServiceCommandSurface(
     selectDataAccount: accounts.selectData.bind(accounts),
     removeDataAccount: accounts.removeData.bind(accounts),
     onAccountsChanged: accounts.onChanged.bind(accounts),
+    observeCodexLogin: accounts.observeCodexLogin.bind(accounts),
     listMobileSpeechModels: speech.list.bind(speech),
     downloadMobileSpeechModel: speech.download.bind(speech),
     deleteMobileSpeechModel: speech.delete.bind(speech),
