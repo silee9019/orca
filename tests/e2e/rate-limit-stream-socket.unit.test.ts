@@ -20,7 +20,8 @@ it.skipIf(process.env.ORCA_USAGE_CLI_SMOKE !== '1')(
     const server = createServer((socket) => {
       socket.setEncoding('utf8')
       let input = ''
-      socket.once('close', () => runtime.cleanupSubscriptionsForConnection('stream-fixture'))
+      const controller = new AbortController()
+      socket.once('close', () => controller.abort())
       socket.on('data', (chunk) => {
         input += chunk.toString()
         if (!input.includes('\n')) {
@@ -38,7 +39,7 @@ it.skipIf(process.env.ORCA_USAGE_CLI_SMOKE !== '1')(
           return
         }
         void method
-          .handler(null, { runtime, connectionId: 'stream-fixture' }, (result) => {
+          .handler(null, { runtime, signal: controller.signal }, (result) => {
             if (!socket.destroyed) {
               socket.write(
                 `${JSON.stringify({
@@ -107,7 +108,6 @@ it.skipIf(process.env.ORCA_USAGE_CLI_SMOKE !== '1')(
       await vi.waitFor(() => expect(remove).toHaveBeenCalledOnce())
       expect(rates.refresh).not.toHaveBeenCalled()
     } finally {
-      runtime.cleanupSubscriptionsForConnection('stream-fixture')
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve()))
       )
