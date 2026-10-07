@@ -182,7 +182,7 @@ export function useSshWorkspaceBrowserRoute(
  * SSH target carries the skip; clearing it flips the route hooks back to
  * probing, which resurfaces the classified card if forwarding is still blocked.
  */
-export function useSshWorkspaceProbeSkipRecheck(worktreeId: string): (() => void) | null {
+export function useSshWorkspaceProbeSkipRecheck(worktreeId: string): (() => Promise<void>) | null {
   const executionHostId = useAppStore((s) => getExecutionHostIdForWorktree(s, worktreeId))
   const browserRoutingSettings = useAppStore((s) => s.settings)
   const probeSkippedTargetIds = useAppStore(

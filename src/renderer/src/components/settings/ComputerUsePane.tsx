@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useComputerPermissionRefresh } from './use-computer-permission-refresh'
+import { useComputerPermissionsViewerOwner } from './use-computer-permissions-viewer-owner'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Accessibility, Camera, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import type {
@@ -139,42 +141,24 @@ export function ComputerUsePane(): React.JSX.Element {
     }
   }, [])
 
-  const refresh = useCallback(async (): Promise<void> => {
-    if (resettingRef.current) {
-      return
-    }
-
-    const operationId = ++permissionOperationSequence.current
-    setLoading(true)
-    try {
-      const result = await window.api.computerUsePermissions.getStatus()
-      if (operationId !== permissionOperationSequence.current) {
-        return
-      }
-      if (!mountedRef.current) {
-        return
-      }
-      setPlatform(result.platform)
-      setStates(result.permissions)
-      setHelperUnavailableReason(result.helperUnavailableReason)
-    } catch (error) {
-      if (operationId !== permissionOperationSequence.current || !mountedRef.current) {
-        return
-      }
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.ComputerUsePane.2168fa5ab0',
-              'Could not load Computer Use permissions'
-            )
-      )
-    } finally {
-      if (operationId === permissionOperationSequence.current && mountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [])
+  const refresh = useComputerPermissionRefresh({
+    mountedRef,
+    resettingRef,
+    permissionOperationSequence,
+    setLoading,
+    setPlatform,
+    setStates,
+    setHelperUnavailableReason,
+    read: () => ({ platform, states, helperUnavailableReason })
+  })
+  useComputerPermissionsViewerOwner({
+    platform,
+    states,
+    loading,
+    helperUnavailableReason,
+    isResetting: () => resettingRef.current,
+    refresh
+  })
 
   useEffect(() => {
     void refresh()
@@ -285,7 +269,7 @@ export function ComputerUsePane(): React.JSX.Element {
   const isMac = platform === null || platform === 'darwin'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-computer-permission-settings-pane>
       {isMac ? (
         <>
           <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-border/60 bg-muted/25 px-4 py-3">

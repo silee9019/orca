@@ -100,3 +100,68 @@ it('keeps a newer route state readable while refusing a malformed state', () => 
   expect(BrowserSshRouteReceipt.parse(receipt).routeState).toBe('error')
   expect(BrowserSshRouteReceipt.safeParse({ ...receipt, routeState: 1 }).success).toBe(false)
 })
+
+it('routes confirmed recheck with the exact failed URL and code, without a routing error kind', async () => {
+  const recheck = {
+    worktreeId: target.worktreeId,
+    page: target.page,
+    targetId: target.targetId,
+    profileId: target.profileId,
+    action: 'recheck',
+    expectedUrl: 'http://localhost/',
+    errorCode: -105
+  }
+  const call = vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'fixture' },
+    result: {
+      applied: true,
+      sshRoute: { ...recheck, accepted: true, attempt: 0, routeState: 'preparing' }
+    }
+  })
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  const parsed = parseArgs([
+    'browser',
+    'ssh-route',
+    '--viewer',
+    'host',
+    '--worktree',
+    target.worktreeId,
+    '--page',
+    target.page,
+    '--target',
+    target.targetId,
+    '--profile',
+    target.profileId,
+    '--action',
+    'recheck',
+    '--url',
+    recheck.expectedUrl,
+    '--error-code',
+    '-105',
+    '--confirm'
+  ])
+  validateCommandAndFlags(BROWSER_SSH_ROUTE_COMMAND_SPECS, parsed)
+  await BROWSER_SSH_ROUTE_HANDLERS['browser ssh-route']({
+    flags: parsed.flags,
+    client,
+    cwd: tmpdir(),
+    json: true
+  })
+  expect(call).toHaveBeenCalledWith('ui.browserViewer', {
+    viewer: 'host',
+    operation: 'ssh-route',
+    target: recheck
+  })
+  parsed.flags.delete('confirm')
+  await expect(
+    BROWSER_SSH_ROUTE_HANDLERS['browser ssh-route']({
+      flags: parsed.flags,
+      client,
+      cwd: tmpdir(),
+      json: true
+    })
+  ).rejects.toMatchObject({ code: 'invalid_argument' })
+  expect(call).toHaveBeenCalledOnce()
+})

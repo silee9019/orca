@@ -3,6 +3,7 @@ import { useAppStore } from '@/store'
 import { findPage } from '@/store/slices/browser-page-records'
 import { BrowserSshRouteEvent } from '@/runtime/browser-ssh-route-request'
 import type { BrowserSshRouteReceipt } from '../../../../shared/rpc-contract/browser-ssh-route-params'
+import type { BrowserLoadError } from '../../../../shared/browser-workspace-types'
 import type { SshWorkspaceBrowserRouteState } from './use-ssh-workspace-browser-route'
 type Owner = {
   worktreeId: string
@@ -13,9 +14,11 @@ type Owner = {
   attempt: number
   retry: () => void
   tryWithoutProbe: () => void
+  recheck: (() => Promise<void>) | null
   browseFromThisDevice: () => void
 }
 type Pending = {
+  failure: BrowserLoadError | null
   event: BrowserSshRouteEvent
   attempt: number
   resolve: (value: BrowserSshRouteReceipt) => void
@@ -68,13 +71,24 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
     if (!task) {
       return
     }
-    if (Date.now() >= task.event.expiresAt || !matches(owner, task.event)) {
+    const failureChanged =
+      task.event.command.action === 'recheck' &&
+      findPage(useAppStore.getState().browserPagesByWorkspace, task.event.command.page)
+        ?.loadError !== task.failure
+    if (Date.now() >= task.event.expiresAt || !matches(owner, task.event) || failureChanged) {
       finish(new Error('browser_ssh_route_owner_changed_effect_unknown'))
       return
     }
     const settings = useAppStore.getState().settings
     const target = task.event.command
-    if (target.action === 'browse-local') {
+    if (target.action === 'recheck') {
+      if (
+        settings?.browserSshWorkspaceRoutingProbeSkippedTargetIds?.includes(target.targetId) ===
+        false
+      ) {
+        finish()
+      }
+    } else if (target.action === 'browse-local') {
       if (
         owner.state.kind === 'unrouted' &&
         settings?.browserSshWorkspaceRoutingDisabledTargetIds?.includes(target.targetId)
@@ -99,22 +113,31 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
         if (pending.current) {
           return Promise.reject(new Error('browser_ssh_route_busy'))
         }
-        if (
-          Date.now() >= event.expiresAt ||
-          !matches(before, event) ||
-          before.state.kind !== 'error' ||
-          before.state.errorKind !== event.command.errorKind
-        ) {
+        const page = findPage(useAppStore.getState().browserPagesByWorkspace, event.command.page)
+        const recheck = event.command.action === 'recheck'
+        const correctState = recheck
+          ? before.state.kind === 'ready' &&
+            before.recheck !== null &&
+            page?.loadError?.code === event.command.errorCode &&
+            page?.loadError?.validatedUrl === event.command.expectedUrl &&
+            useAppStore
+              .getState()
+              .settings?.browserSshWorkspaceRoutingProbeSkippedTargetIds?.includes(
+                event.command.targetId
+              ) === true
+          : before.state.kind === 'error' && before.state.errorKind === event.command.errorKind
+        if (Date.now() >= event.expiresAt || !matches(before, event) || !correctState) {
           return Promise.reject(new Error('browser_ssh_route_state_changed'))
         }
         if (
           event.command.action === 'try-without-probe' &&
-          before.state.errorKind !== 'forwarding-blocked'
+          (before.state.kind !== 'error' || before.state.errorKind !== 'forwarding-blocked')
         ) {
           return Promise.reject(new Error('browser_ssh_route_probe_override_unavailable'))
         }
         return new Promise<BrowserSshRouteReceipt>((resolve, reject) => {
           pending.current = {
+            failure: page?.loadError ?? null,
             event,
             attempt: before.attempt,
             resolve,
@@ -125,7 +148,11 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
             )
           }
           try {
-            if (event.command.action === 'retry') {
+            if (event.command.action === 'recheck') {
+              void before
+                .recheck?.()
+                .catch(() => finish(new Error('browser_ssh_route_callback_failed_effect_unknown')))
+            } else if (event.command.action === 'retry') {
               before.retry()
             } else if (event.command.action === 'try-without-probe') {
               before.tryWithoutProbe()

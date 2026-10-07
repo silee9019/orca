@@ -1,3 +1,4 @@
+import { ComputerPermissionsViewerState } from './rpc-contract/computer-permissions-viewer-params'
 import { BrowserSshRouteReceipt } from './rpc-contract/browser-ssh-route-params'
 import { BrowserWebAuthnDialogState } from './rpc-contract/browser-webauthn-dialog-params'
 import { BrowserFailureState } from './rpc-contract/browser-failure-params'
@@ -41,6 +42,7 @@ export const BrowserViewerResultSchema = z.object({
   rendered: z.literal(false),
   fileOpenState: WorkspaceFileOpenState.optional(),
   portOpenState: WorkspacePortOpenState.optional(),
+  computerPermissions: ComputerPermissionsViewerState.optional(),
   marketplace: PluginMarketplaceViewerState.optional(),
   paletteState: BrowserPaletteState.optional(),
   page: z.string().optional(),

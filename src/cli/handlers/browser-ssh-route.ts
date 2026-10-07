@@ -1,5 +1,5 @@
 import type { CommandHandler } from '../dispatch'
-import { getRequiredStringFlag } from '../flags'
+import { getRequiredStringFlag, getOptionalStringFlag } from '../flags'
 import { RuntimeClientError } from '../runtime-client'
 import { printResult } from '../format'
 import {
@@ -11,13 +11,19 @@ import { requireBrowserViewerConfirmation } from './browser-viewer-command'
 export const BROWSER_SSH_ROUTE_HANDLERS: Record<string, CommandHandler> = {
   'browser ssh-route': async (ctx) => {
     const viewer = getRequiredStringFlag(ctx.flags, 'viewer')
+    const action = getRequiredStringFlag(ctx.flags, 'action')
     const parsed = BrowserSshRouteTarget.safeParse({
       worktreeId: getRequiredStringFlag(ctx.flags, 'worktree'),
       page: getRequiredStringFlag(ctx.flags, 'page'),
       targetId: getRequiredStringFlag(ctx.flags, 'target'),
       profileId: getRequiredStringFlag(ctx.flags, 'profile'),
-      errorKind: getRequiredStringFlag(ctx.flags, 'error-kind'),
-      action: getRequiredStringFlag(ctx.flags, 'action')
+      ...(action === 'recheck'
+        ? {
+            errorCode: Number(getRequiredStringFlag(ctx.flags, 'error-code')),
+            expectedUrl: getRequiredStringFlag(ctx.flags, 'url')
+          }
+        : { errorKind: getOptionalStringFlag(ctx.flags, 'error-kind') }),
+      action
     })
     if (viewer !== 'host' || !parsed.success) {
       throw new RuntimeClientError(

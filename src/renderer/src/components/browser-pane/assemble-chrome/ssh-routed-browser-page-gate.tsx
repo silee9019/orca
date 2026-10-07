@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { destroyPersistentWebview } from '../host-guest/webview-registry'
 import {
   useSshWorkspaceBrowserRoute,
+  useSshWorkspaceProbeSkipRecheck,
   type SshWorkspaceBrowserRouteErrorKind
 } from '../use-ssh-workspace-browser-route'
 
@@ -31,6 +32,7 @@ export function SshRoutedBrowserPageGate({
 }): React.JSX.Element {
   const { state, targetId, attempt, retry, tryWithoutProbe, browseFromThisDevice } =
     useSshWorkspaceBrowserRoute(worktreeId, sessionProfileId)
+  const recheck = useSshWorkspaceProbeSkipRecheck(worktreeId)
   useBrowserSshRouteCommands({
     worktreeId,
     pageIds,
@@ -39,6 +41,7 @@ export function SshRoutedBrowserPageGate({
     state,
     attempt,
     retry,
+    recheck,
     tryWithoutProbe,
     browseFromThisDevice
   })
