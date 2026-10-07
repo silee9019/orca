@@ -21,9 +21,11 @@ import {
   getUsagePercentageDisplayEntry
 } from './appearance-search'
 import { USAGE_PERCENTAGE_DISPLAY_SETTING_ID } from './appearance-usage-percentage-search'
+import { FloatingSidebarSetting } from './FloatingSidebarSetting'
 import { LeftSidebarAppearanceSetting } from './LeftSidebarAppearanceSetting'
 import {
   getLeftSidebarAppearanceEntry,
+  getFloatingSidebarEntry,
   getShowPinnedWorktreesInGroupsEntry,
   getWorkspaceCardLayoutEntry
 } from './appearance-sidebar-search'
@@ -78,6 +80,7 @@ export function AppearanceWindowSidebarSection({
   const usagePercentageDisplayEntry = getUsagePercentageDisplayEntry()
   const leftSidebarAppearanceEntry = getLeftSidebarAppearanceEntry()
   const sidebarEntries = getSidebarEntries()
+  const floatingSidebarEntry = getFloatingSidebarEntry()
   const workspaceCardLayoutEntry = getWorkspaceCardLayoutEntry()
   const layoutEntries = getLayoutEntries()
   const followSymlinkEntry = getFollowSymlinkedDirectoriesEntry()
@@ -106,6 +109,7 @@ export function AppearanceWindowSidebarSection({
     )
   const sidebarAdvancedMatches = matchesSettingsSearch(searchQuery, [
     workspaceCardLayoutEntry,
+    floatingSidebarEntry,
     ...sidebarEntries
   ])
   const fileExplorerAdvancedMatches = matchesSettingsSearch(searchQuery, layoutEntries)
@@ -241,6 +245,8 @@ export function AppearanceWindowSidebarSection({
                       }
                     />
                   </SearchableSetting>
+
+                  <FloatingSidebarSetting settings={settings} updateSettings={updateSettings} />
 
                   <SearchableSetting
                     title={translate(

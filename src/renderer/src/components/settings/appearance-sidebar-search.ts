@@ -191,3 +191,33 @@ export const getSidebarEntries = createLocalizedCatalog((): SettingsSearchEntry[
   getLeftSidebarAppearanceEntry(),
   getShowPinnedWorktreesInGroupsEntry()
 ])
+
+export const getFloatingSidebarEntry = createLocalizedCatalog((): SettingsSearchEntry => ({
+  title: translate(
+    'auto.components.settings.appearance.search.floatingSidebar.title',
+    'Floating sidebar'
+  ),
+  description: translate(
+    'auto.components.settings.appearance.search.floatingSidebar.description',
+    'When the sidebar is hidden, show it over the content while the pointer touches the left edge.'
+  ),
+  keywords: [
+    ...translateSearchKeyword('auto.components.settings.appearance.search.5bff6a2ef0', 'sidebar'),
+    ...translateSearchKeyword(
+      'auto.components.settings.appearance.search.floatingSidebar.floating',
+      'floating'
+    ),
+    ...translateSearchKeyword(
+      'auto.components.settings.appearance.search.floatingSidebar.hover',
+      'hover'
+    ),
+    ...translateSearchKeyword(
+      'auto.components.settings.appearance.search.floatingSidebar.overlay',
+      'overlay'
+    ),
+    ...translateSearchKeyword(
+      'auto.components.settings.appearance.search.floatingSidebar.autoHide',
+      'auto-hide'
+    )
+  ]
+}))

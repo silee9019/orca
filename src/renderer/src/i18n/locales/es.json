@@ -6789,6 +6789,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "Mostrar también los worktrees fijados en sus listas originales",
             "description": "Los worktrees fijados permanecen en Fijados y también aparecen en Todos, Proyecto, Estado y PR."
+          },
+          "floatingSidebar": {
+            "title": "Barra lateral flotante",
+            "description": "Cuando la barra lateral está oculta, la muestra sobre el contenido mientras el puntero toca el borde izquierdo."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9304,6 +9308,14 @@
               "close": "cerca",
               "notification": "área de notificaciones",
               "background": "fondo"
+            },
+            "floatingSidebar": {
+              "title": "Barra lateral flotante",
+              "description": "Cuando la barra lateral está oculta, la muestra sobre el contenido mientras el puntero toca el borde izquierdo.",
+              "floating": "flotante",
+              "hover": "pasar el cursor",
+              "overlay": "superposición",
+              "autoHide": "ocultar automáticamente"
             }
           }
         },

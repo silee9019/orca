@@ -47,6 +47,8 @@ export function useAppChromeLayout() {
     hasRequestedBackgroundTerminalWorktreeMount
   )
 
+  const floatingSidebar = settings?.floatingSidebar === true
+
   const systemPrefersDark = useSystemPrefersDark()
   const leftSidebarStyle = useMemo(
     () => resolveLeftSidebarStyleVariables(settings, systemPrefersDark),
@@ -125,6 +127,7 @@ export function useAppChromeLayout() {
     effectiveActiveTabId,
     collapsedSidebarHeaderWidth,
     creationLayoutActive,
+    floatingSidebar,
     isFullScreen,
     leftSidebarStyle,
     leftTitlebarChromeLayout,
