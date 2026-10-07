@@ -1,3 +1,5 @@
+import { previewGhosttyImport } from '../ghostty/index'
+import { previewWarpThemeImport } from '../warp-themes'
 import {
   applySessionSearchSettingsChange,
   installChildSessionSearchService
@@ -34,6 +36,10 @@ import {
 } from '../runtime/agent-status-observed-pane-identity'
 import { startAgentStateRulesLiveUpdates } from '../runtime/agent-state-rules/agent-state-rules-live-update'
 import { recordDurableCrashBreadcrumb } from '../crash-reporting/durable-crash-breadcrumb'
+import { RuntimeSettingsActions } from '../runtime/runtime-settings-actions'
+import { broadcastKeybindingsChanged } from '../ipc/keybindings'
+import { listSystemFontFamilies } from '../system-fonts'
+import { applyDesktopSettingsUpdate } from '../ipc/desktop-settings-update'
 
 export function getDesktopWindowStatus(): RuntimeDesktopWindowStatus {
   const activation = state.desktopActivationGate
@@ -76,6 +82,26 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
   // `orca serve`, which never opens one, and the fleet path runs there too.
   const observedPaneIdentities = new AgentStatusObservedPaneIdentities()
   const runtime = new OrcaRuntimeService(store, stats, {
+    settingsActions: new RuntimeSettingsActions({
+      previewGhosttyImport: () => previewGhosttyImport(store),
+      previewWarpThemes: (source) => previewWarpThemeImport(store, source),
+      getKeybindings: () => state.keybindings,
+      onKeybindingsChanged: (snapshot) => {
+        broadcastKeybindingsChanged(snapshot)
+        void state.pluginService?.reconcileActivationState()
+      },
+      listFonts: listSystemFontFamilies,
+      getSettings: () => store.getSettings(),
+      applySettings: async (updates) => {
+        const settings = await applyDesktopSettingsUpdate(
+          store,
+          updates,
+          state.agentAwakeService ?? undefined
+        )
+        await store.flushPendingOrThrowAsync({ drainToStableGeneration: true })
+        return settings
+      }
+    }),
     prepareClaudeAuth: (target) => state.claudeRuntimeAuth!.prepareForClaudeLaunch(target),
     agentSessionClaimSigner: loadAgentSessionClaimSigner(
       getProfileUserDataPath(),

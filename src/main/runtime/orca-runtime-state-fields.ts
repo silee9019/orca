@@ -42,6 +42,7 @@ import { createEphemeralAgentSessionClaimSigner } from './agent-session-claim-id
 import { registerConptyDa1OverrideInstaller } from './terminal-model-query-authority'
 import { registerTerminalViewAttributesApplier } from './terminal-view-attribute-store'
 import { RuntimeMachineName } from './runtime-machine-name'
+import type { RuntimeSettingsActions } from './runtime-settings-actions'
 
 export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
   protected readonly prepareClaudeAuth?: PrepareClaudeAuth
@@ -58,6 +59,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     store: RuntimeStore | null = null,
     stats?: StatsCollector,
     deps?: {
+      settingsActions?: RuntimeSettingsActions
       getLocalProvider?: () => IPtyProvider
       getSshProvider?: (connectionId: string) => IPtyProvider | undefined
       prepareClaudeAuth?: PrepareClaudeAuth
