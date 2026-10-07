@@ -1,8 +1,7 @@
 import { defineMethod, defineStreamingMethod } from '../core'
 import {
   RateLimitTargetParams,
-  RateLimitPollingParams,
-  RateLimitSubscriptionParams
+  RateLimitPollingParams
 } from '../../../../shared/rpc-contract/usage-params'
 
 let subscriptionSequence = 0
@@ -67,30 +66,65 @@ export const RATE_LIMIT_METHODS = [
   defineStreamingMethod({
     name: 'rateLimits.subscribe',
     params: null,
-    handler: async (_, { runtime, connectionId }, emit) => {
-      await new Promise<void>((resolve) => {
+    handler: async (_, { runtime, connectionId, signal }, emit) => {
+      if (signal?.aborted) {
+        return
+      }
+      await new Promise<void>((resolve, reject) => {
         const controller = runtime.getRateLimitController()
-        const unsubscribe = controller.onUpdate((state) => emit({ type: 'snapshot', state }))
         const subscriptionId = `rate-limits-${connectionId ?? 'inproc'}-${++subscriptionSequence}`
+        let closed = false
+        let failure: { error: unknown } | null = null
+        const close = () => runtime.cleanupSubscription(subscriptionId)
+        const unsubscribe = controller.onUpdate((state) => {
+          if (closed) {
+            return
+          }
+          try {
+            emit({ type: 'snapshot', state })
+          } catch (error) {
+            failure = { error }
+            close()
+          }
+        })
         runtime.registerSubscriptionCleanup(
           subscriptionId,
           () => {
-            unsubscribe()
-            emit({ type: 'end' })
-            resolve()
+            if (closed) {
+              return
+            }
+            closed = true
+            signal?.removeEventListener('abort', close)
+            try {
+              unsubscribe()
+            } catch (error) {
+              failure ??= { error }
+            }
+            try {
+              emit({ type: 'end' })
+            } catch (error) {
+              failure ??= { error }
+            }
+            if (failure) {
+              reject(failure.error)
+            } else {
+              resolve()
+            }
           },
           connectionId
         )
-        emit({ type: 'ready', subscriptionId, state: controller.get() })
+        signal?.addEventListener('abort', close, { once: true })
+        if (signal?.aborted) {
+          close()
+          return
+        }
+        try {
+          emit({ type: 'ready', subscriptionId, state: controller.get() })
+        } catch (error) {
+          failure = { error }
+          close()
+        }
       })
-    }
-  }),
-  defineMethod({
-    name: 'rateLimits.unsubscribe',
-    params: RateLimitSubscriptionParams,
-    handler: ({ subscriptionId }, { runtime }) => {
-      runtime.cleanupSubscription(subscriptionId)
-      return { unsubscribed: true }
     }
   })
 ]

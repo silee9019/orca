@@ -15,7 +15,6 @@ export const UsageSessionsParams = UsageQueryParams.extend({
 export const UsageBreakdownParams = UsageQueryParams.extend({ kind: z.enum(['model', 'project']) })
 export const RateLimitTargetParams = z.object({ target: CodexResetTarget }).strict()
 export const RateLimitPollingParams = z.object({ ms: z.number().int().positive() }).strict()
-export const RateLimitSubscriptionParams = z.object({ subscriptionId: z.string().min(1) }).strict()
 
 export const UsageViewerFilterParams = UsageQueryParams.partial({
   scope: true,
