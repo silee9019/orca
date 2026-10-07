@@ -20,6 +20,10 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['open', 'close', 'status'].map((action) => ({
+    args: ['reload-menu', '--page', 'p1', '--action', action],
+    command: { operation: 'reload-menu', page: 'p1', action }
+  })),
   ...['save', 'cancel', 'status'].map((action) => ({
     args: [
       'annotation',

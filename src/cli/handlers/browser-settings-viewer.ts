@@ -12,24 +12,26 @@ export const BROWSER_SETTINGS_VIEWER_HANDLERS: Record<string, CommandHandler> = 
       throw new RuntimeClientError('invalid_argument', 'kagi-clear accepts no link or file input.')
     }
     const extra: Record<string, unknown> =
-      action === 'browser-use-copy-example'
-        ? { index: Number(getRequiredStringFlag(ctx.flags, 'value')) }
-        : action === 'homepage-draft' || action === 'profile-name'
-          ? { value: getRequiredStringFlagAllowingEmpty(ctx.flags, 'value') }
-          : action === 'search-engine'
-            ? { engine: getRequiredStringFlag(ctx.flags, 'value') }
-            : action === 'zoom'
-              ? { value: Number(getRequiredStringFlag(ctx.flags, 'value')) }
-              : action === 'host-select'
-                ? { hostId: getRequiredStringFlag(ctx.flags, 'value') }
-                : action === 'profile-select'
-                  ? {
-                      profileId:
-                        getRequiredStringFlag(ctx.flags, 'profile') === 'default'
-                          ? null
-                          : getRequiredStringFlag(ctx.flags, 'profile')
-                    }
-                  : {}
+      action === 'browser-identity-set'
+        ? { mode: getRequiredStringFlag(ctx.flags, 'value') }
+        : action === 'browser-use-copy-example'
+          ? { index: Number(getRequiredStringFlag(ctx.flags, 'value')) }
+          : action === 'homepage-draft' || action === 'profile-name'
+            ? { value: getRequiredStringFlagAllowingEmpty(ctx.flags, 'value') }
+            : action === 'search-engine'
+              ? { engine: getRequiredStringFlag(ctx.flags, 'value') }
+              : action === 'zoom'
+                ? { value: Number(getRequiredStringFlag(ctx.flags, 'value')) }
+                : action === 'host-select'
+                  ? { hostId: getRequiredStringFlag(ctx.flags, 'value') }
+                  : action === 'profile-select'
+                    ? {
+                        profileId:
+                          getRequiredStringFlag(ctx.flags, 'profile') === 'default'
+                            ? null
+                            : getRequiredStringFlag(ctx.flags, 'profile')
+                      }
+                    : {}
     if (
       [
         'profile-status',

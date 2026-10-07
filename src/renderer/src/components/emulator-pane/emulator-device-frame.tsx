@@ -24,6 +24,7 @@ import { useEmulatorPaneSize } from './use-emulator-pane-size'
 import { useEmulatorScreenKeyboard } from './use-emulator-screen-keyboard'
 import { useEmulatorStreamWindowVisible } from './use-emulator-stream-window-visibility'
 import { useEmulatorFrameCommands } from './use-emulator-frame-commands'
+import { EmulatorPointerCommandEvent } from './emulator-pointer-command'
 
 type EmulatorDeviceFrameProps = {
   previewUrl?: string
@@ -153,7 +154,11 @@ export function EmulatorDeviceFrame({
 
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (!canInteract || event.button !== 0) {
+      if (!canInteract || event.button !== 0 || activePointerIdRef.current !== null) {
+        return
+      }
+      const point = mapEventToScreenPoint(event)
+      if (!point && event.nativeEvent instanceof EmulatorPointerCommandEvent) {
         return
       }
       event.preventDefault()
@@ -161,13 +166,15 @@ export function EmulatorDeviceFrame({
         event.currentTarget.focus({ preventScroll: true })
       } catch {}
       enableKeyboardCapture()
-      const point = mapEventToScreenPoint(event)
       if (!point) {
         return
       }
       activePointerIdRef.current = event.pointerId
       pointerSamplesRef.current = [{ clientX: event.clientX, clientY: event.clientY }]
       lastTouchPointRef.current = point
+      if (event.nativeEvent instanceof EmulatorPointerCommandEvent) {
+        event.nativeEvent.accepted = true
+      }
       liveTouchEdgeRef.current = resolveEmulatorHomeIndicatorEdge(point)
       // Why: serve-sim's native viewer streams touch phases live; replaying the
       // whole drag after pointer-up can be ignored by iOS gesture recognizers.

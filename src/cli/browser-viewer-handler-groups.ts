@@ -31,6 +31,7 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'browser-viewer',
     keys: [
+      'browser reload-menu',
       'browser annotation tray',
       'browser address',
       'browser profile-ui',

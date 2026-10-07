@@ -3,6 +3,20 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['emulator', 'pointer-view'],
+    summary: 'Run a bounded pointer sequence through the exact emulator screen owner',
+    usage:
+      'orca emulator pointer-view --worktree <selector> --tab-id <id> (--text <json> | --text-stdin) [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'text', 'text-stdin']
+  },
+  {
+    path: ['emulator', 'session-view'],
+    summary: 'Attach or shut down through the exact mounted emulator pane owner',
+    usage:
+      'orca emulator session-view --worktree <selector> --tab-id <id> --action <attach|shutdown> --device <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'action', 'device']
+  },
+  {
     path: ['emulator', 'focus-group'],
     summary: 'Focus the exact owning group of an existing simulator tab',
     usage: 'orca emulator focus-group --worktree <selector> --tab-id <id> --group-id <id> [--json]',

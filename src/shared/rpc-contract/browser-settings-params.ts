@@ -28,6 +28,7 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
     filePath: z.string().min(1).max(4096),
     confirmation: z.string().min(1).max(256)
   }),
+  z.object({ action: z.literal('browser-identity-set'), mode: z.enum(['clean', 'native']) }),
   z.object({ action: z.literal('browser-use-enabled'), enabled: z.boolean() }),
   z.object({
     action: z.literal('browser-use-copy-example'),
@@ -81,6 +82,11 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserSettingsCommand = z.infer<typeof BrowserSettingsCommand>
 export const BrowserSettingsState = z.object({
+  identityConfiguredMode: z.enum(['clean', 'native']).nullable().optional(),
+  identityAppliedMode: z.enum(['clean', 'native']).nullable().optional(),
+  identityRestartRequired: z.boolean().optional(),
+  identitySaving: z.boolean().optional(),
+  identityErrorPresent: z.boolean().optional(),
   kagiConfigured: z.boolean().optional(),
   kagiDraftPresent: z.boolean().optional(),
   clipboardCopied: z.boolean().optional(),

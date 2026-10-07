@@ -13,9 +13,35 @@ const WheelAction = z
   .refine((action) => action.deltaX !== 0 || action.deltaY !== 0, 'Wheel delta must be nonzero')
 export const EmulatorFrameActionSchema = z.union([
   WheelAction,
+  z
+    .object({
+      type: z.literal('pointer'),
+      points: z
+        .array(
+          z
+            .object({
+              type: z.enum(['down', 'move', 'up', 'cancel']),
+              clientX: pixel,
+              clientY: pixel
+            })
+            .strict()
+        )
+        .min(2)
+        .max(32)
+    })
+    .strict()
+    .refine(
+      ({ points }) =>
+        points[0]?.type === 'down' &&
+        (points.at(-1)?.type === 'up' || points.at(-1)?.type === 'cancel') &&
+        points.slice(1, -1).every((point) => point.type === 'move'),
+      'Pointer sequence must begin with down and end with up or cancel'
+    ),
   z.object({ type: z.literal('key'), key: z.string().min(1).max(32), shift: z.boolean() }).strict(),
   z.object({ type: z.literal('paste'), text: z.string().min(1).max(4096) }).strict(),
   z.object({ type: z.literal('rotate') }).strict(),
+  z.object({ type: z.literal('attach-view'), device: z.string().min(1).max(512) }).strict(),
+  z.object({ type: z.literal('shutdown-view'), device: z.string().min(1).max(512) }).strict(),
   z.object({ type: z.literal('focus-group'), groupId: z.string().min(1) }).strict(),
   z
     .object({
@@ -34,6 +60,15 @@ export const EmulatorFrameStateSchema = z
     streamError: z.boolean(),
     keyboardCaptureActive: z.boolean().optional(),
     visualOrientation: z.enum(['portrait', 'landscape']).optional(),
+    sessionState: z
+      .object({
+        selectedUdid: z.string().nullable(),
+        isLive: z.boolean(),
+        loading: z.literal(false),
+        displayName: z.string()
+      })
+      .strict()
+      .optional(),
     streamSize: z.object({ width: z.number(), height: z.number() }).nullable()
   })
   .strict()
@@ -69,4 +104,12 @@ export const EmulatorFocusGroupParams = EmulatorFrameParams.refine(
 
 export const EmulatorSelectTabParams = EmulatorFrameParams.refine(
   (params) => params.action.type === 'select-tab'
+)
+
+export const EmulatorSessionViewParams = EmulatorFrameParams.refine(
+  (params) => params.action.type === 'attach-view' || params.action.type === 'shutdown-view'
+)
+
+export const EmulatorPointerViewParams = EmulatorFrameParams.refine(
+  (params) => params.action.type === 'pointer'
 )

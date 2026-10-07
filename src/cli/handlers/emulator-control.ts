@@ -8,6 +8,36 @@ import { getComputerTextActionFlags } from './computer-action-flags'
 import { EmulatorFrameParams } from '../../shared/emulator-frame-command'
 
 export const EMULATOR_CONTROL_HANDLERS: Record<string, CommandHandler> = {
+  'emulator pointer-view': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: {
+        type: 'pointer',
+        points: JSON.parse((await getComputerTextActionFlags(flags)).text)
+      }
+    })
+    const result = await client.call('emulator.pointerView', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator session-view': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const action = getRequiredStringFlag(flags, 'action')
+    if (action !== 'attach' && action !== 'shutdown') {
+      throw new RuntimeClientError('invalid_argument', 'Session action must be attach or shutdown.')
+    }
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: {
+        type: action === 'attach' ? 'attach-view' : 'shutdown-view',
+        device: getRequiredStringFlag(flags, 'device')
+      }
+    })
+    const result = await client.call('emulator.sessionView', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
   'emulator focus-group': async ({ flags, client, cwd, json }) => {
     const target = await getEmulatorCommandTarget(flags, cwd, client)
     const params = EmulatorFrameParams.parse({

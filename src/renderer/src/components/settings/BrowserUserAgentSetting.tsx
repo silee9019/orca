@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
 import type {
   BrowserIdentityModeStatus,
   BrowserUserAgentMode
@@ -19,6 +20,11 @@ export function BrowserUserAgentSetting({
   const [status, setStatus] = useState<BrowserIdentityModeStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
+  const currentOwner = useRef({ hostId })
+  if (currentOwner.current.hostId !== hostId) {
+    currentOwner.current = { hostId }
+  }
   const title = translate('settings.browser.userAgent.title', 'Browser identity')
   const description = translate(
     'settings.browser.userAgent.description',
@@ -50,25 +56,57 @@ export function BrowserUserAgentSetting({
     }
   }, [isLocal])
 
-  const setMode = (mode: BrowserUserAgentMode): void => {
+  const setMode = async (mode: BrowserUserAgentMode): Promise<boolean> => {
+    if (!isLocal || !status || status.identity.configuredMode === null || savingRef.current) {
+      return false
+    }
+    const owner = currentOwner.current
+    savingRef.current = true
     setSaving(true)
     setError(null)
-    void window.api.browser
-      .identitySet(mode)
-      .then((result) => {
-        if (!result) {
-          setError(
-            translate('settings.browser.userAgent.unavailable', 'Browser identity is unavailable.')
-          )
-        } else if (!result.ok) {
-          setError(result.error.message)
-        } else {
-          setStatus({ identity: result.identity, migrationNotice: null })
-        }
-      })
-      .catch((reason) => setError(reason instanceof Error ? reason.message : String(reason)))
-      .finally(() => setSaving(false))
+    try {
+      const result = await window.api.browser.identitySet(mode)
+      if (currentOwner.current !== owner) {
+        return false
+      }
+      if (!result) {
+        setError(
+          translate('settings.browser.userAgent.unavailable', 'Browser identity is unavailable.')
+        )
+        return false
+      }
+      if (!result.ok) {
+        setError(result.error.message)
+        return false
+      }
+      setStatus({ identity: result.identity, migrationNotice: null })
+      return true
+    } catch (reason) {
+      if (currentOwner.current === owner) {
+        setError(reason instanceof Error ? reason.message : String(reason))
+      }
+      return false
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
   }
+  useBrowserSettingsRequest({
+    accepts: (command) => command.action === 'browser-identity-set',
+    apply: async (command) => {
+      if (command.action === 'browser-identity-set' && !(await setMode(command.mode))) {
+        throw new Error('browser_identity_owner_did_not_acknowledge')
+      }
+    },
+    read: () => ({
+      hostId,
+      identityConfiguredMode: status?.identity.configuredMode ?? null,
+      identityAppliedMode: status?.identity.appliedMode ?? null,
+      identityRestartRequired: status?.identity.restartRequired ?? false,
+      identitySaving: saving,
+      identityErrorPresent: error !== null
+    })
+  })
 
   let control: React.JSX.Element
   if (!isLocal) {

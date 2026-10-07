@@ -15,7 +15,9 @@ export async function dispatchEmulatorFrameCommand(
   action: EmulatorFrameAction
 ): Promise<EmulatorFrameState> {
   const owner = slot.querySelector<HTMLElement>(
-    action.type === 'rotate' ? '[data-emulator-pane]' : '[data-emulator-frame-owner]'
+    action.type === 'rotate' || action.type === 'attach-view' || action.type === 'shutdown-view'
+      ? '[data-emulator-pane]'
+      : '[data-emulator-frame-owner]'
   )
   if (!owner) {
     throw new Error('emulator_frame_unavailable')

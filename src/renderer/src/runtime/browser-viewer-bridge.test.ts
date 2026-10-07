@@ -42,6 +42,7 @@ const fixture = vi.hoisted(() => {
     annotationTray: vi
       .fn()
       .mockResolvedValue({ noteCount: 1, open: true, copied: true, sendMenuOpen: false }),
+    reloadMenu: vi.fn().mockResolvedValue({ open: true }),
     annotationRow: vi
       .fn()
       .mockResolvedValue({ editingAnnotationId: 'note', comment: 'draft', intent: 'change' }),
@@ -88,6 +89,7 @@ const fixture = vi.hoisted(() => {
 vi.mock('./browser-annotation-tray-request', () => ({
   requestBrowserAnnotationTray: fixture.annotationTray
 }))
+vi.mock('./browser-reload-menu-request', () => ({ requestBrowserReloadMenu: fixture.reloadMenu }))
 vi.mock('./browser-annotation-row-request', () => ({
   requestBrowserAnnotationRow: fixture.annotationRow
 }))
@@ -465,4 +467,11 @@ it('routes annotation row editing to the exact native page owner', async () => {
     { action: 'start', annotationId: 'note' },
     expect.any(Number)
   )
+})
+
+it('routes reload menu state to the exact native page owner', async () => {
+  expect(
+    await request({ viewer: 'host', operation: 'reload-menu', page: 'page-1', action: 'open' })
+  ).toMatchObject({ applied: true, rendered: false, reloadMenu: { open: true } })
+  expect(fixture.reloadMenu).toHaveBeenCalledWith('page-1', 'open', expect.any(Number))
 })

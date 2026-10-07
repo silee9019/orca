@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useEmulatorPaneCommands } from './use-emulator-pane-commands'
+import { useEmulatorSessionCommands } from './use-emulator-session-commands'
 import type { Tab } from '../../../../shared/tab-types'
 import { EmulatorPaneToolbar } from './emulator-pane-toolbar'
 import { EmulatorDeviceFrame } from './emulator-device-frame'
@@ -15,6 +16,11 @@ type EmulatorPaneProps = {
 }
 
 export default function EmulatorPane({ tab, worktreeId, isActive = true }: EmulatorPaneProps) {
+  const session = useEmulatorPaneSession({
+    worktreeId,
+    tabId: tab?.id,
+    autoAttachOnMount: isActive
+  })
   const {
     devices,
     selectedUdid,
@@ -33,14 +39,11 @@ export default function EmulatorPane({ tab, worktreeId, isActive = true }: Emula
     streamKey,
     isLive,
     visualOrientation
-  } = useEmulatorPaneSession({
-    worktreeId,
-    tabId: tab?.id,
-    autoAttachOnMount: isActive
-  })
+  } = session
 
   const paneRef = useRef<HTMLDivElement>(null)
   useEmulatorPaneCommands(paneRef, sendRotate, isLive && !loading)
+  useEmulatorSessionCommands(paneRef, session)
 
   return (
     <div

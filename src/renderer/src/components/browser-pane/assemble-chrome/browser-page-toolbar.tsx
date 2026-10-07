@@ -1,3 +1,4 @@
+import { useBrowserReloadMenuCommands } from './use-browser-reload-menu-commands'
 import { useBrowserToolbarHistoryCommands } from './use-browser-toolbar-history-commands'
 import type { BrowserNavigationControls } from './browser-navigation-control-row'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
@@ -117,6 +118,7 @@ export function BrowserPageToolbar({
         ? ('annotate' as const)
         : undefined
 
+  useBrowserReloadMenuCommands(browserPageId, isActive, reloadMenuOpen, setReloadMenuOpen)
   const controls: BrowserNavigationControls = {
     canGoBack: canGoBack || Boolean(convertedFrom),
     canGoForward: canGoForward || Boolean(convertedTo),

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import type * as DurableFileWrite from '../../src/main/durable-file-write'
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { verifyBrowserSettingsCookies } from './browser-settings-cookie-story.fixture'
 import { cookieFixture } from './browser-settings-cookie.fixture'
@@ -13,6 +14,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer, type Socket } from 'node:net'
 import { afterEach, expect, it, vi } from 'vitest'
+import {
+  getBrowserIdentityModeStatus,
+  initializeBrowserIdentityModeStore,
+  resetBrowserIdentityModeStoreForTests,
+  setBrowserIdentityMode
+} from '../../src/main/browser/browser-identity-mode-store'
+import { BROWSER_IDENTITY_MODE_FILE } from '../../src/main/browser/browser-identity-mode-record'
+import type { BrowserUserAgentMode } from '../../src/shared/browser-user-agent-mode'
 import { BROWSER_SESSION_META_FILE_NAME } from '../../src/main/browser/browser-session-meta-store'
 import { browserSessionRegistry } from '../../src/main/browser/browser-session-registry'
 import { Store } from '../../src/main/persistence'
@@ -42,9 +51,6 @@ vi.mock('../../src/renderer/src/hooks/useActiveProjectSkillRuntime', () => ({
 vi.mock('../../src/renderer/src/components/settings/AgentSkillSetupPanel', () => ({
   AgentSkillSetupPanel: () => null
 }))
-vi.mock('../../src/renderer/src/components/settings/BrowserUserAgentSetting', () => ({
-  BrowserUserAgentSetting: () => null
-}))
 vi.mock('../../src/cli/runtime/launch', () => ({
   launchOrcaApp: () => {
     throw new Error('Fixture refuses app launch')
@@ -55,9 +61,24 @@ vi.mock('../../src/main/browser/browser-session-partition-policies', () => ({
   forgetBrowserSessionPartitionConfiguration: () => {},
   retireBrowserSessionUserAgentPolicy: () => {}
 }))
+const identityWriteFixture = vi.hoisted(() => ({ fail: false }))
+vi.mock('../../src/main/durable-file-write', async (importOriginal) => {
+  const actual = await importOriginal<typeof DurableFileWrite>()
+  return {
+    ...actual,
+    writeFileDurableSync: (...args: Parameters<typeof actual.writeFileDurableSync>) => {
+      if (identityWriteFixture.fail) {
+        throw new Error('fixture identity write refused')
+      }
+      return actual.writeFileDurableSync(...args)
+    }
+  }
+})
 const directories: string[] = []
 afterEach(() => {
   vi.restoreAllMocks()
+  identityWriteFixture.fail = false
+  resetBrowserIdentityModeStoreForTests()
   for (const path of directories.splice(0)) {
     rmSync(path, { recursive: true, force: true })
   }
@@ -80,6 +101,10 @@ it.skipIf(process.platform === 'win32')(
       serializedState: JSON.stringify({ repos: [], settings: {} }),
       dataFile: join(directory, 'profile.json')
     })
+    resetBrowserIdentityModeStoreForTests()
+    initializeBrowserIdentityModeStore(directory)
+    const identityWriteGate: { release?: () => void } = {}
+    let holdIdentityWrite = false
     browserSessionRegistry.configureForOrcaProfile({
       orcaProfileId: 'fixture-browser-owner',
       profileDirectory: directory
@@ -125,6 +150,15 @@ it.skipIf(process.platform === 'win32')(
             dispatcher.dispatch({ id: 'owner-file-import', method, params })
         },
         browser: {
+          identityGet: async () => getBrowserIdentityModeStatus(),
+          identitySet: async (mode: BrowserUserAgentMode) => {
+            if (holdIdentityWrite) {
+              await new Promise<void>((resolve) => {
+                identityWriteGate.release = resolve
+              })
+            }
+            return setBrowserIdentityMode(mode)
+          },
           sessionListProfiles: async () => browserSessionRegistry.listProfiles(),
           sessionDetectBrowsers: async () => cookieFixture.browsers,
           sessionDeleteProfile: async ({ profileId }: { profileId: string }) =>
@@ -398,6 +432,49 @@ it.skipIf(process.platform === 'win32')(
       expect(useAppStore.getState().defaultBrowserSessionProfileId).toBeNull()
       await invoke('host-select', ['--value', 'local'])
       expect(useAppStore.getState().detectedBrowsersLoaded).toBe(true)
+      await expect(
+        invoke('browser-identity-set', ['--value', 'native'], 'runtime:missing')
+      ).rejects.toThrow()
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('clean')
+      await invoke('browser-identity-set', ['--value', 'clean'])
+      holdIdentityWrite = true
+      const changingIdentity = invoke('browser-identity-set', ['--value', 'native'], 'local', false)
+      void changingIdentity.catch(() => {})
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        const nativeRadio = [...container.querySelectorAll('[role="radio"]')].find(
+          (node) => node.textContent === 'Native'
+        )
+        expect(nativeRadio?.getAttribute('aria-disabled')).toBe('true')
+        expect(identityWriteGate.release).toBeTypeOf('function')
+      })
+      await expect(
+        invoke('browser-identity-set', ['--value', 'clean'], 'local', false)
+      ).rejects.toThrow()
+      identityWriteGate.release?.()
+      holdIdentityWrite = false
+      await changingIdentity
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('native')
+      expect(getBrowserIdentityModeStatus().identity.appliedMode).toBe('clean')
+      expect(
+        JSON.parse(readFileSync(join(directory, BROWSER_IDENTITY_MODE_FILE), 'utf8')).mode
+      ).toBe('native')
+      expect(container.textContent).toContain('Restart required')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identityConfiguredMode": "native"')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identityRestartRequired": true')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identitySaving": false')
+      identityWriteFixture.fail = true
+      await expect(invoke('browser-identity-set', ['--value', 'clean'])).rejects.toThrow()
+      identityWriteFixture.fail = false
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('native')
+      expect(container.textContent).toContain('fixture identity write refused')
+      expect(
+        JSON.parse(readFileSync(join(directory, BROWSER_IDENTITY_MODE_FILE), 'utf8')).mode
+      ).toBe('native')
+      await invoke('browser-identity-set', ['--value', 'clean'])
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('clean')
+      expect(container.textContent).not.toContain('Restart required')
+      expect(container.textContent).not.toContain('fixture identity write refused')
       await invoke('zoom', ['--value', '0'])
       expect(store.getUI().browserDefaultZoomLevel).toBe(0)
       await expect(

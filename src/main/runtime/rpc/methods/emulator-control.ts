@@ -10,10 +10,22 @@ import {
   EmulatorScreenPasteParams,
   EmulatorRotateViewParams,
   EmulatorFocusGroupParams,
-  EmulatorSelectTabParams
+  EmulatorSelectTabParams,
+  EmulatorSessionViewParams,
+  EmulatorPointerViewParams
 } from '../../../../shared/emulator-frame-command'
 
 export const EMULATOR_CONTROL_METHODS = [
+  defineMethod({
+    name: 'emulator.pointerView',
+    params: EmulatorPointerViewParams,
+    handler: (params, { runtime, signal }) => runtime.emulatorFrame(params, signal)
+  }),
+  defineMethod({
+    name: 'emulator.sessionView',
+    params: EmulatorSessionViewParams,
+    handler: (params, { runtime, signal }) => runtime.emulatorFrame(params, signal)
+  }),
   defineMethod({
     name: 'emulator.focusGroup',
     params: EmulatorFocusGroupParams,

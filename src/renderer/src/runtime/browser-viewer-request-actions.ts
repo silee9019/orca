@@ -4,6 +4,7 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
+import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
 import { requestBrowserContextMenu } from './browser-context-menu-request'
 import { requestBrowserTabUi } from './browser-tab-ui-request'
@@ -129,6 +130,10 @@ export async function applyBrowserViewerRequest(
       request.expiresAt
     )
     return { ...base, page: page.id, draft, applied: true }
+  }
+  if (command.operation === 'reload-menu') {
+    const reloadMenu = await requestBrowserReloadMenu(page.id, command.action, request.expiresAt)
+    return { ...base, page: page.id, reloadMenu, applied: true }
   }
   if (command.operation === 'context-menu') {
     const contextMenu = await requestBrowserContextMenu(page.id, command.action, request.expiresAt)

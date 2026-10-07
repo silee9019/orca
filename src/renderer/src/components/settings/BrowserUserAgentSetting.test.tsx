@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LOCAL_EXECUTION_HOST_ID, type ExecutionHostId } from '../../../../shared/execution-host'
 import { TooltipProvider } from '../ui/tooltip'
 import { BrowserUserAgentSetting } from './BrowserUserAgentSetting'
+import { requestBrowserSettings } from '../../runtime/browser-settings-request'
 
 const identityGet = vi.fn()
 const identitySet = vi.fn()
@@ -46,7 +47,7 @@ describe('BrowserUserAgentSetting', () => {
 
   afterEach(cleanup)
 
-  it('never substitutes the local identity while Remote Settings is focused', () => {
+  it('never substitutes the local identity while Remote Settings is focused', async () => {
     identityGet.mockResolvedValue(statusFor('native'))
 
     renderFor('runtime:remote-host')
@@ -54,6 +55,14 @@ describe('BrowserUserAgentSetting', () => {
     expect(identityGet).not.toHaveBeenCalled()
     expect(screen.getByText(/manage browser identity on the remote host/i)).toBeTruthy()
     expect(screen.queryByRole('radiogroup')).toBeNull()
+    await expect(
+      requestBrowserSettings(
+        { action: 'browser-identity-set', mode: 'native' },
+        Date.now() + 1000,
+        'runtime:remote-host'
+      )
+    ).rejects.toThrow()
+    expect(identitySet).not.toHaveBeenCalled()
   })
 
   it('shows the configured mode as the selected option on the local host', async () => {
@@ -107,6 +116,51 @@ describe('BrowserUserAgentSetting', () => {
     expect(screen.getByRole('radio', { name: 'Cleaned' }).getAttribute('aria-checked')).toBe('true')
   })
 
+  it('refuses a late result after the focused owner changes away and back', async () => {
+    identityGet.mockResolvedValue(statusFor('clean'))
+    const completion: { resolve?: (value: unknown) => void } = {}
+    identitySet.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          completion.resolve = resolve
+        })
+    )
+    const view = render(
+      <TooltipProvider>
+        <BrowserUserAgentSetting hostId="local" />
+      </TooltipProvider>
+    )
+    await screen.findByRole('radio', { name: 'Native' })
+    const pending = requestBrowserSettings(
+      { action: 'browser-identity-set', mode: 'native' },
+      Date.now() + 1500,
+      'local'
+    )
+    void pending.catch(() => {})
+    await waitFor(() => expect(identitySet).toHaveBeenCalledWith('native'))
+    view.rerender(
+      <TooltipProvider>
+        <BrowserUserAgentSetting hostId="runtime:remote-host" />
+      </TooltipProvider>
+    )
+    view.rerender(
+      <TooltipProvider>
+        <BrowserUserAgentSetting hostId="local" />
+      </TooltipProvider>
+    )
+    completion.resolve?.({
+      ok: true,
+      identity: statusFor('native', { appliedMode: 'clean', restartRequired: true }).identity
+    })
+    await expect(pending).rejects.toThrow()
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: 'Cleaned' }).getAttribute('aria-checked')).toBe(
+        'true'
+      )
+    )
+    expect(screen.queryByText(/restart required/i)).toBeNull()
+  })
+
   it('offers no control when identity data must be reset first', async () => {
     identityGet.mockResolvedValue({
       identity: {
@@ -127,5 +181,13 @@ describe('BrowserUserAgentSetting', () => {
     // Naming the escape is the whole point: the UI exposes no reset control, so without the
     // command this state tells the user to do something with no way to do it.
     expect(screen.getByText(/orca browser identity set --mode <mode> --reset/i)).toBeTruthy()
+    await expect(
+      requestBrowserSettings(
+        { action: 'browser-identity-set', mode: 'native' },
+        Date.now() + 1000,
+        'local'
+      )
+    ).rejects.toThrow()
+    expect(identitySet).not.toHaveBeenCalled()
   })
 })

@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject, type WheelEvent } from 'react'
 import type { EmulatorFrameState } from '../../../../shared/emulator-frame-command'
 import type { EmulatorKeyboardPasteResult } from './emulator-keyboard-paste'
 import { EmulatorFrameCommandEvent } from './emulator-frame-command'
+import { dispatchEmulatorPointerSequence } from './emulator-pointer-command'
 
 export function useEmulatorFrameCommands(
   paneRef: RefObject<HTMLDivElement | null>,
@@ -32,6 +33,8 @@ export function useEmulatorFrameCommands(
       const action = event.action
       if (
         action.type === 'rotate' ||
+        action.type === 'attach-view' ||
+        action.type === 'shutdown-view' ||
         action.type === 'focus-group' ||
         action.type === 'select-tab'
       ) {
@@ -45,7 +48,7 @@ export function useEmulatorFrameCommands(
       const screen = pane.querySelector<HTMLDivElement>('[data-emulator-screen]')
       if (
         !screen ||
-        (action.type === 'wheel' &&
+        ((action.type === 'wheel' || action.type === 'pointer') &&
           (screen.getBoundingClientRect().width <= 0 || screen.getBoundingClientRect().height <= 0))
       ) {
         event.completion = Promise.reject(new Error('emulator_frame_unavailable'))
@@ -63,7 +66,14 @@ export function useEmulatorFrameCommands(
         })
         return
       }
-      if (action.type === 'key') {
+      if (action.type === 'pointer') {
+        try {
+          dispatchEmulatorPointerSequence(screen, action)
+        } catch (error) {
+          event.completion = Promise.reject(error)
+          return
+        }
+      } else if (action.type === 'key') {
         const key = new KeyboardEvent('keydown', {
           key: action.key,
           shiftKey: action.shift,
