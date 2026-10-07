@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { Keyboard, Platform } from 'react-native'
 import { useClipboardWriter } from '../platform/clipboard'
 import { useBackClaim } from '../navigation/use-back-claim'
@@ -101,7 +101,16 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     return drafts
   }, [markdownDocs, sessionTabs])
 
+  // Set while the draft sheet is open for a session switch, so "Leave" there lands on the target.
+  const pendingSwitchHrefRef = useRef<string | null>(null)
+
   const leaveSession = useCallback(() => {
+    const switchHref = pendingSwitchHrefRef.current
+    pendingSwitchHrefRef.current = null
+    if (switchHref !== null) {
+      router.replace(switchHref)
+      return
+    }
     if (router.canGoBack()) {
       router.back()
       return
@@ -111,6 +120,7 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
   }, [hostId, router])
 
   const requestLeaveSession = useCallback(() => {
+    pendingSwitchHrefRef.current = null
     const dirtyDrafts = getDirtyMarkdownDrafts()
     if (dirtyDrafts.length === 0) {
       leaveSession()
@@ -119,6 +129,20 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     Keyboard.dismiss()
     setLeaveDrafts(dirtyDrafts)
   }, [getDirtyMarkdownDrafts, leaveSession])
+
+  const requestSwitchSession = useCallback(
+    (href: string) => {
+      const dirtyDrafts = getDirtyMarkdownDrafts()
+      if (dirtyDrafts.length === 0) {
+        router.replace(href)
+        return
+      }
+      pendingSwitchHrefRef.current = href
+      Keyboard.dismiss()
+      setLeaveDrafts(dirtyDrafts)
+    },
+    [getDirtyMarkdownDrafts, router, setLeaveDrafts]
+  )
 
   // Native holds the key always: `leaveSession` replaces to the host at the root, where an
   // unclaimed press would exit the app. On the page an unclaimed press is the shell's own pop,
@@ -232,6 +256,7 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     getDirtyMarkdownDrafts,
     leaveSession,
     requestLeaveSession,
+    requestSwitchSession,
     discardMarkdownLocalContent,
     confirmDiscardMarkdown,
     saveMarkdownTab

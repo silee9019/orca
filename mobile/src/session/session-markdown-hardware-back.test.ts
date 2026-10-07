@@ -192,3 +192,58 @@ describe("the session's hardware back gate", () => {
     expect(native.remove).toHaveBeenCalledTimes(1)
   })
 })
+
+/**
+ * Switching sessions from the title dropdown is a leave, so it takes the same draft confirmation
+ * as the Back key instead of silently dropping phone-only markdown edits.
+ */
+describe('switching sessions with unsaved markdown', () => {
+  function renderSwitcher(docs: Map<string, MarkdownDocState>) {
+    const setLeaveDrafts = vi.fn()
+    const api: { current: ReturnType<typeof useMobileSessionMarkdownActions> | null } = {
+      current: null
+    }
+    function SwitchProbe(): null {
+      api.current = useMobileSessionMarkdownActions({ ...scopeWith(docs), setLeaveDrafts })
+      return null
+    }
+    act(() => {
+      create(createElement(SwitchProbe))
+    })
+    if (api.current === null) {
+      throw new Error('the probe did not render')
+    }
+    return { api: api.current, setLeaveDrafts }
+  }
+
+  it('replaces to the target straight away when nothing is dirty', () => {
+    const { api, setLeaveDrafts } = renderSwitcher(new Map())
+    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
+    expect(leaves.replaced).toEqual(['/h/host-1/session/wt-2'])
+    expect(setLeaveDrafts).not.toHaveBeenCalled()
+  })
+
+  it('asks first when a draft is dirty and switches only once the user leaves', () => {
+    const { api, setLeaveDrafts } = renderSwitcher(
+      new Map([['tab-1', readyDoc('saved', 'edited')]])
+    )
+    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
+    expect(leaves.replaced).toEqual([])
+    expect(native.dismiss).toHaveBeenCalledTimes(1)
+    expect(setLeaveDrafts).toHaveBeenCalledTimes(1)
+
+    act(() => api.leaveSession())
+    expect(leaves.replaced).toEqual(['/h/host-1/session/wt-2'])
+  })
+
+  it('a Back press after a cancelled switch leaves instead of switching', () => {
+    const { api } = renderSwitcher(new Map([['tab-1', readyDoc('saved', 'edited')]]))
+    const left = vi.fn()
+    leaves.back = left
+    act(() => api.requestSwitchSession('/h/host-1/session/wt-2'))
+    act(() => api.requestLeaveSession())
+    act(() => api.leaveSession())
+    expect(left).toHaveBeenCalledTimes(1)
+    expect(leaves.replaced).toEqual([])
+  })
+})

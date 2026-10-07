@@ -19,6 +19,7 @@ import {
   resolveMobileTerminalTabAgentId
 } from './mobile-terminal-tab-agent'
 import { colors } from '../theme/mobile-theme'
+import { MobileSessionTitleDropdown } from './MobileSessionTitleDropdown'
 import { QuickCommandsTabButton } from './QuickCommandsTabButton'
 import { styles } from './mobile-session-styles'
 import { useKeyboardPersistingTaps } from '../platform/keyboard-persisting-taps'
@@ -74,9 +75,13 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
         </Pressable>
 
         <View style={styles.sessionTitleBlock}>
-          <Text style={styles.sessionTitle} numberOfLines={1}>
-            {worktreeName || 'Terminal'}
-          </Text>
+          {isFloatingWorkspaceRoute ? (
+            <Text style={styles.sessionTitle} numberOfLines={1}>
+              {worktreeName || 'Terminal'}
+            </Text>
+          ) : (
+            <MobileSessionTitleDropdown controller={controller} />
+          )}
           <Pressable
             style={styles.sessionMetaRow}
             disabled={!showConnectionRetry}

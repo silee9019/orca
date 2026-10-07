@@ -12,6 +12,7 @@ import { leaveHostRoute } from '../host-route-exit'
 import { getWorktreeRowIdentity, removeWorktreeRow } from '../worktree/worktree-host-row-identity'
 import { isWorktreePinned, type Worktree } from '../worktree/workspace-list-sections'
 import { worktreeActivate, worktreePinWrite, worktreeRemove } from './host-screen-operations'
+import { worktreeSessionPath } from '../session/mobile-session-route'
 import type { HostScreenState } from './use-host-screen-state'
 
 export function useHostWorktreeActions(args: {
@@ -199,7 +200,11 @@ export function useHostWorktreeActions(args: {
       // `?? ''` and not a cast: the hook takes `hostId` optional and every other member guards it,
       // so an absent one builds `/h//session/...` — a pathname the shell's segment rule refuses —
       // rather than the string "undefined", which it would accept as a host named undefined.
-      const target = `/h/${encodeURIComponent(hostId ?? '')}/session/${encodeURIComponent(item.worktreeId)}?name=${encodeURIComponent(item.displayName || item.repo)}`
+      const target = worktreeSessionPath(
+        hostId ?? '',
+        item.worktreeId,
+        item.displayName || item.repo
+      )
       navigateFromHostList(target)
     },
     [client, connState, hostId, navigateFromHostList]
