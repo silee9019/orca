@@ -1,3 +1,4 @@
+import { runBrowserGrabAction } from './browser-grab-action'
 import { runBrowserDownloadUi } from './browser-download-ui'
 import { runBrowserNewTab } from './browser-new-tab'
 import { runBrowserReloadMenu } from './browser-reload-menu'
@@ -138,6 +139,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     }),
 
   'browser grab shortcut-copy': (ctx) => runGrabCommand(ctx, 'shortcut-copy'),
+  'browser grab-action': runBrowserGrabAction,
   'browser download-ui': runBrowserDownloadUi,
   'browser grab toggle': (ctx) => runGrabCommand(ctx, 'toggle'),
   'browser grab start': (ctx) => runGrabCommand(ctx, 'start'),

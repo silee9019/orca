@@ -20,6 +20,10 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['copy', 'screenshot'].map((key) => ({
+    args: ['grab-action', '--page', 'p1', '--key', key],
+    command: { operation: 'grab-action', page: 'p1', key }
+  })),
   {
     args: ['new-ui', '--worktree', 'folder:new', '--group', 'active', '--confirm'],
     command: { operation: 'new-tab', target: { worktree: 'folder:new', group: 'active' } }
@@ -305,6 +309,8 @@ it.each([
   ['address', '--action', 'draft', '--page', 'p1', '--viewer', 'host'],
   ['address', '--action', 'select', '--page', 'p1', '--viewer', 'host', '--index', '-1'],
   ['address', '--action', 'invalid', '--page', 'p1', '--viewer', 'host'],
+  ['grab-action', '--page', 'p1', '--viewer', 'host'],
+  ['grab-action', '--page', 'p1', '--viewer', 'host', '--key', 'invalid'],
   ['grab', 'start', '--page', 'p1', '--viewer', 'host'],
   ['grab', 'start', '--page', 'p1', '--viewer', 'host', '--intent', 'invalid'],
   ['annotation', 'list', '--page', 'p1'],

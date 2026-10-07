@@ -28,7 +28,7 @@ import {
   DEFAULT_BROWSER_ANNOTATION_PRIORITY
 } from '../describe-page/browser-annotation-geometry'
 import { useBrowserPageAnnotationViewportTracking } from './use-browser-page-annotation-viewport-tracking'
-import { runBrowserGrabActionShortcut } from './browser-page-grab-action'
+import { useBrowserGrabActionCommands } from './use-browser-grab-action-commands'
 import type {
   BrowserPageGrabAnnotationsOptions,
   BrowserPageGrabToastState,
@@ -40,6 +40,7 @@ export function useBrowserPageGrabAnnotations({
   toolTargetId = browserTabId,
   isActive,
   markupIsActive = false,
+  grabActionCommandOwner,
   grab,
   containerRef,
   trackingContainer,
@@ -207,21 +208,16 @@ export function useBrowserPageGrabAnnotations({
     markupIsActive
   )
 
-  // C / S copy the hovered element without clicking: extract via IPC while armed/awaiting, else use the captured payload.
-  const handleGrabActionShortcut = useCallback(
-    (key: 'c' | 's'): void => {
-      runBrowserGrabActionShortcut({
-        key,
-        grabIntent,
-        grab,
-        grabPayloadRef,
-        toolTargetIdRef,
-        recordFeatureInteraction,
-        showGrabToast
-      })
-    },
-    [grab, grabIntent, recordFeatureInteraction, showGrabToast]
-  )
+  const handleGrabActionShortcut = useBrowserGrabActionCommands({
+    commandOwner: grabActionCommandOwner,
+    markupIsActive,
+    grabIntent,
+    grab,
+    grabPayloadRef,
+    toolTargetIdRef,
+    recordFeatureInteraction,
+    showGrabToast
+  })
 
   const { handleGrabCopy, handleGrabCopyScreenshot } = useBrowserGrabClipboard({
     page: toolTargetId,

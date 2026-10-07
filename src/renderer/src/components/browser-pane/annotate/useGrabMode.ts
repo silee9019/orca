@@ -24,6 +24,7 @@ export type GrabModeHook = {
   /** True when the user right-clicked to select, signalling the renderer
    *  should show the full action menu instead of auto-copying. */
   contextMenu: boolean
+  getCaptureGeneration?: () => number
   toggle: () => void | Promise<boolean>
   cancel: () => void
   /** Called after Copy — re-arms grab for another pick. */
@@ -294,5 +295,15 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
     rearm,
     exit
   })
-  return { state, payload, error, contextMenu, toggle, cancel, rearm, exit }
+  return {
+    state,
+    payload,
+    error,
+    contextMenu,
+    toggle,
+    cancel,
+    rearm,
+    exit,
+    getCaptureGeneration: () => armGenerationRef.current
+  }
 }

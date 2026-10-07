@@ -33,6 +33,7 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: [
       'browser new-ui',
       'browser download-ui',
+      'browser grab-action',
       'browser reload-menu',
       'browser annotation tray',
       'browser address',

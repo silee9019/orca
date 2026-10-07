@@ -1,3 +1,4 @@
+import { requestBrowserGrabAction } from './browser-grab-action-request'
 import { requestWorkspaceFileOpen } from './workspace-file-open-request'
 import { requestWorkspacePortOpen } from './workspace-port-open-request'
 import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
@@ -156,6 +157,10 @@ export async function applyBrowserViewerRequest(
       request.expiresAt
     )
     return { ...base, page: page.id, draft, applied: true }
+  }
+  if (command.operation === 'grab-action') {
+    const grabAction = await requestBrowserGrabAction(page.id, command.key, request.expiresAt)
+    return { ...base, page: page.id, grabAction, applied: true }
   }
   if (command.operation === 'download-ui') {
     const download = await requestBrowserDownload(

@@ -1,3 +1,4 @@
+import { BrowserGrabActionReceipt } from './rpc-contract/browser-grab-action-params'
 import { WorkspaceFileOpenState } from './rpc-contract/workspace-file-open-params'
 import { WorkspacePortOpenState } from './rpc-contract/workspace-port-open-params'
 import { PluginMarketplaceViewerState } from './rpc-contract/plugin-marketplace-viewer-params'
@@ -41,6 +42,7 @@ export const BrowserViewerResultSchema = z.object({
   page: z.string().optional(),
   newTab: BrowserNewTabState.optional(),
   download: BrowserDownloadReceipt.optional(),
+  grabAction: BrowserGrabActionReceipt.optional(),
   reloadMenu: BrowserReloadMenuState.optional(),
   contextMenu: BrowserContextMenuState.optional(),
   tabUi: BrowserTabUiState.optional(),

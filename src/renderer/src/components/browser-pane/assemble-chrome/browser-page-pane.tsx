@@ -175,6 +175,7 @@ export function BrowserPagePane({
   const markup = useBrowserPageMarkupCapture(webviewRef, { page: browserTab.id, active: isActive })
   const grabAnnotations = useBrowserPageGrabAnnotations({
     browserTabId: browserTab.id,
+    grabActionCommandOwner: { page: browserTab.id, active: isActive },
     markupIsActive: markup.isActive,
     isActive,
     grab,
