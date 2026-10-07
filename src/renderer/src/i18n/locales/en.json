@@ -7011,6 +7011,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "Also show pinned worktrees in their original lists",
             "description": "Pinned worktrees stay in Pinned and also appear in All, Project, Status, and PR."
+          },
+          "floatingSidebar": {
+            "title": "Floating sidebar",
+            "description": "Collapse the sidebar and reveal it over the content when the pointer touches the left edge."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9573,6 +9577,14 @@
               "kw": {
                 "cursor": "cursor"
               }
+            },
+            "floatingSidebar": {
+              "title": "Floating sidebar",
+              "description": "Collapse the sidebar and reveal it over the content when the pointer touches the left edge.",
+              "floating": "floating",
+              "hover": "hover",
+              "overlay": "overlay",
+              "autoHide": "auto-hide"
             }
           }
         },

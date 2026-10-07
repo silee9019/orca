@@ -7,6 +7,7 @@ import { RecoverableRenderErrorBoundary } from '../components/error-boundaries/R
 import { FloatingTerminalToggleButton } from '../components/floating-terminal/FloatingTerminalToggleButton'
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
+import { FloatingSidebarOverlay } from '../components/sidebar/FloatingSidebarOverlay'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -56,10 +57,22 @@ function WorktreeSidebar({
             )
       }
     >
-      <Sidebar
-        worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
-        worktreeScrollAnchorRef={scrollRefs.scrollAnchorRef}
-      />
+      {layout.floatingSidebar ? (
+        <div className="relative min-h-0 w-0 shrink-0">
+          <FloatingSidebarOverlay>
+            <Sidebar
+              forceOpen
+              worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
+              worktreeScrollAnchorRef={scrollRefs.scrollAnchorRef}
+            />
+          </FloatingSidebarOverlay>
+        </div>
+      ) : (
+        <Sidebar
+          worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
+          worktreeScrollAnchorRef={scrollRefs.scrollAnchorRef}
+        />
+      )}
     </RecoverableRenderErrorBoundary>
   )
 }

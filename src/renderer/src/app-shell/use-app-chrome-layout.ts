@@ -21,7 +21,7 @@ export type AppChromeLayout = ReturnType<typeof useAppChromeLayout>
  */
 export function useAppChromeLayout() {
   const activeView = useAppStore((s) => s.activeView)
-  const sidebarOpen = useAppStore((s) => s.sidebarOpen)
+  const pinnedSidebarOpen = useAppStore((s) => s.sidebarOpen)
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
   const rightSidebarTab = useAppStore((s) => s.rightSidebarTab)
   const rightSidebarExplorerView = useAppStore((s) => s.rightSidebarExplorerView)
@@ -46,6 +46,10 @@ export function useAppChromeLayout() {
     hasRequestedBackgroundTerminalWorktreeMount,
     hasRequestedBackgroundTerminalWorktreeMount
   )
+
+  // Why: floating mode never takes layout width, so flow treats it as collapsed; the pinned value stays untouched.
+  const floatingSidebar = settings?.floatingSidebar === true
+  const sidebarOpen = floatingSidebar ? false : pinnedSidebarOpen
 
   const systemPrefersDark = useSystemPrefersDark()
   const leftSidebarStyle = useMemo(
@@ -125,6 +129,7 @@ export function useAppChromeLayout() {
     effectiveActiveTabId,
     collapsedSidebarHeaderWidth,
     creationLayoutActive,
+    floatingSidebar,
     isFullScreen,
     leftSidebarStyle,
     leftTitlebarChromeLayout,

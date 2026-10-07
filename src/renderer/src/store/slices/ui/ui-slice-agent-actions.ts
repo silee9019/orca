@@ -8,6 +8,7 @@ import {
 } from '../../../lib/running-agent-targets'
 import { translate } from '@/i18n/i18n'
 import { createUiActivityActions } from './ui-slice-activity-actions'
+import { resolveToggleSidebarPatch } from './floating-sidebar-toggle'
 
 let agentSendTargetModeInstanceCounter = 0
 
@@ -24,6 +25,8 @@ export function createUiAgentActions(
   | 'sidebarOpen'
   | 'sidebarWidth'
   | 'toggleSidebar'
+  | 'floatingSidebarRevealed'
+  | 'setFloatingSidebarRevealed'
   | 'setSidebarOpen'
   | 'setSidebarWidth'
   | 'agentSendPopoverTargetMode'
@@ -45,7 +48,16 @@ export function createUiAgentActions(
     ...createUiActivityActions(set, get),
     sidebarOpen: true,
     sidebarWidth: 280,
-    toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+    floatingSidebarRevealed: false,
+    setFloatingSidebarRevealed: (revealed) => set({ floatingSidebarRevealed: revealed }),
+    toggleSidebar: () =>
+      set((s) =>
+        resolveToggleSidebarPatch({
+          sidebarOpen: s.sidebarOpen,
+          floating: s.settings?.floatingSidebar === true,
+          revealed: s.floatingSidebarRevealed
+        })
+      ),
     setSidebarOpen: (open) => set({ sidebarOpen: open }),
     setSidebarWidth: (width) => set({ sidebarWidth: width }),
     agentSendPopoverTargetMode: null,

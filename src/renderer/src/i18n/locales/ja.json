@@ -6774,6 +6774,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "ピン留めしたワークツリーを元のリストにも表示",
             "description": "ピン留めしたワークツリーを Pinned に残したまま、すべて、プロジェクト、ステータス、PR にも表示します。"
+          },
+          "floatingSidebar": {
+            "title": "フローティングサイドバー",
+            "description": "サイドバーを折りたたみ、ポインターが左端に触れたときにコンテンツの上に重ねて表示します。"
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9326,7 +9330,15 @@
             "zcodeUsageDescription": "ZCode コーディングプランのクォータの使用状況をステータスバーに表示します。",
             "zcode": "zコード",
             "zai": "ザイ",
-            "glm": "グルム"
+            "glm": "グルム",
+            "floatingSidebar": {
+              "title": "フローティングサイドバー",
+              "description": "サイドバーを折りたたみ、ポインターが左端に触れたときにコンテンツの上に重ねて表示します。",
+              "floating": "フローティング",
+              "hover": "ホバー",
+              "overlay": "オーバーレイ",
+              "autoHide": "自動で隠す"
+            }
           }
         },
         "auto": {

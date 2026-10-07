@@ -269,6 +269,8 @@ export type GlobalSettings = NativeChatGlobalSettings & {
   showSkillsButton?: boolean
   /** Only toggles the sidebar shortcut; Orca Mobile stays reachable from Settings. */
   showMobileButton?: boolean
+  /** Collapses the left sidebar into a hover-reveal overlay; optional (older profiles), readers default to off. */
+  floatingSidebar?: boolean
   /** Pinned workspaces show in one sidebar location by default; opt in to also show them in their natural groups. */
   showPinnedWorktreesInGroups?: boolean
   /** How Ctrl+Tab picks the next visible tab; optional (older profiles), readers default to MRU. */

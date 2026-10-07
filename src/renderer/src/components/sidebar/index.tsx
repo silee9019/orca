@@ -43,13 +43,17 @@ export const WORKTREE_SIDEBAR_RESIZE_HANDLE_LINE_CLASS_NAME =
 type SidebarProps = {
   worktreeScrollOffsetRef: React.MutableRefObject<number>
   worktreeScrollAnchorRef: React.MutableRefObject<VirtualizedScrollAnchor>
+  /** Floating overlay renders the sidebar open regardless of the pinned sidebarOpen value. */
+  forceOpen?: boolean
 }
 
 function Sidebar({
   worktreeScrollOffsetRef,
-  worktreeScrollAnchorRef
+  worktreeScrollAnchorRef,
+  forceOpen
 }: SidebarProps): React.JSX.Element {
-  const sidebarOpen = useAppStore((s) => s.sidebarOpen)
+  const pinnedSidebarOpen = useAppStore((s) => s.sidebarOpen)
+  const sidebarOpen = forceOpen ?? pinnedSidebarOpen
   const sidebarWidth = useAppStore((s) => s.sidebarWidth)
   const setSidebarWidth = useAppStore((s) => s.setSidebarWidth)
   const repos = useAppStore((s) => s.repos)

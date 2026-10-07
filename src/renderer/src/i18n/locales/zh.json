@@ -6774,6 +6774,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "也在原来的列表中显示已固定的工作树",
             "description": "已固定的工作树会保留在 Pinned 中，同时也显示在全部、项目、状态和 PR 中。"
+          },
+          "floatingSidebar": {
+            "title": "浮动侧边栏",
+            "description": "折叠侧边栏，当指针移到左边缘时在内容上方浮动显示。"
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9289,7 +9293,15 @@
             "zcodeUsageDescription": "在状态栏中显示 ZCode 编码计划配额使用情况。",
             "zcode": "零码",
             "zai": "在",
-            "glm": "格鲁姆"
+            "glm": "格鲁姆",
+            "floatingSidebar": {
+              "title": "浮动侧边栏",
+              "description": "折叠侧边栏，当指针移到左边缘时在内容上方浮动显示。",
+              "floating": "浮动",
+              "hover": "悬停",
+              "overlay": "覆盖",
+              "autoHide": "自动隐藏"
+            }
           }
         },
         "auto": {

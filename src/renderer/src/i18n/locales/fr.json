@@ -6892,6 +6892,10 @@
           "showPinnedWorktreesInGroups": {
             "title": "Afficher aussi les worktrees épinglés dans leurs listes d'origine",
             "description": "Les worktrees épinglés restent dans Épinglés et apparaissent aussi dans Tous, Projet, Statut et PR."
+          },
+          "floatingSidebar": {
+            "title": "Barre latérale flottante",
+            "description": "Réduit la barre latérale et l'affiche par-dessus le contenu lorsque le pointeur touche le bord gauche."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9449,7 +9453,15 @@
             "zcodeUsageDescription": "Afficher l'utilisation du quota du plan de codage ZCode dans la barre d'état.",
             "zcode": "code z",
             "zai": "zaï",
-            "glm": "GLM"
+            "glm": "GLM",
+            "floatingSidebar": {
+              "title": "Barre latérale flottante",
+              "description": "Réduit la barre latérale et l'affiche par-dessus le contenu lorsque le pointeur touche le bord gauche.",
+              "floating": "flottante",
+              "hover": "survol",
+              "overlay": "superposition",
+              "autoHide": "masquage automatique"
+            }
           }
         },
         "auto": {
