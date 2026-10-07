@@ -1,3 +1,5 @@
+import type { TuiAgent } from '../../../../shared/tui-agent'
+import { useMountedAgentEnvDraftControls } from '../../runtime/use-mounted-account-credential-controls'
 import { useId, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -128,10 +130,12 @@ export function AgentDefaultArgsInput({
 }
 
 export function AgentDefaultEnvInput({
+  agent,
   defaultEnv,
   envOverride,
   onSaveEnv
 }: {
+  agent?: TuiAgent
   defaultEnv: Record<string, string>
   envOverride: Record<string, string>
   onSaveEnv: (value: Record<string, string>) => void
@@ -140,6 +144,12 @@ export function AgentDefaultEnvInput({
   const draftSeed = stringifyAgentDefaultEnvDraft(envOverride)
   const [envDraft, setEnvDraft] = useState(draftSeed)
   const [envDraftTooLarge, setEnvDraftTooLarge] = useState(false)
+  useMountedAgentEnvDraftControls(agent, {
+    set: (value) => {
+      setEnvDraft(value)
+      setEnvDraftTooLarge(false)
+    }
+  })
   const envDraftErrorId = useId()
   const commitEnv = (): void => {
     const parsedDraft = parseAgentDefaultEnvDraft(envDraft)

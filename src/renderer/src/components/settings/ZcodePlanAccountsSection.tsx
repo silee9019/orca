@@ -1,3 +1,6 @@
+import { useUsageAccountRefreshController } from '@/runtime/use-usage-account-refresh-controller'
+import { AccountMountedActionError } from '../../../../shared/account-mounted-viewer-command'
+import { useMountedZcodePlanDraftControls } from '../../runtime/use-mounted-account-credential-controls'
 import { useState } from 'react'
 import { isWebClientLocation } from '@/lib/web-client-location'
 import { ExternalLink, Loader2, Lock, LockOpen, RefreshCw, ShieldCheck } from 'lucide-react'
@@ -53,6 +56,14 @@ export function ZcodePlanAccountsSection(): React.JSX.Element {
   const now = useNow(60_000)
 
   const credentialEditable = !isWebClientLocation()
+  useMountedZcodePlanDraftControls({
+    set: (value) => {
+      if (!credentialEditable || credentialBusy) {
+        throw new AccountMountedActionError('unavailable')
+      }
+      setApiKeyDraft(value)
+    }
+  })
   const site = settings?.zcodePlanSite ?? (credentialEditable ? 'zai' : undefined)
   const detailsUnavailable = !credentialEditable || status?.detailsUnavailable === true
   const consoleUrl = site ? ZCODE_PLAN_SITE_CONSOLE_URLS[site] : undefined
@@ -74,6 +85,8 @@ export function ZcodePlanAccountsSection(): React.JSX.Element {
       setRefreshing(false)
     }
   }
+
+  useUsageAccountRefreshController('zcode', handleRefreshUsage, refreshing)
 
   const usage = zcodeUsage ?? null
   const usageWindows = collectZcodeUsageWindows(usage)

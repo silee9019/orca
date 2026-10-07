@@ -1,3 +1,4 @@
+import { useMountedCodexSwitcherControls } from '../../runtime/account-mounted-switcher-controls'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CodexRateLimitAccountsState } from '../../../../shared/managed-account-types'
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
@@ -178,7 +179,7 @@ export function useCodexSwitcherController(codex: ProviderRateLimits) {
   const handleSignInAccount = (
     accountId: string,
     target: CodexStatusRuntimeTarget
-  ): Promise<void> =>
+  ): Promise<boolean> =>
     signInCodexAccount(accountId, target, {
       accountState,
       accountsExpandedRef,
@@ -287,6 +288,8 @@ export function useCodexSwitcherController(codex: ProviderRateLimits) {
     switchGroups.find((group) => group.key === selectedRuntimeKey) ?? switchGroups[0]
   const activeTarget = selectedGroup?.targets.find((target) => target.active)
   const resetProjection = getCodexResetProjection(codex, hasActiveRuntimeEnvironment)
+
+  useMountedCodexSwitcherControls(switchGroups, handleAccountsExpandedToggle, handleSelectRuntime)
 
   return {
     accountsExpanded,

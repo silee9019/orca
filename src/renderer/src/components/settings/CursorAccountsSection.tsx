@@ -1,3 +1,4 @@
+import { useUsageAccountRefreshController } from '@/runtime/use-usage-account-refresh-controller'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { AgentIcon } from '@/lib/agent-catalog'
@@ -83,6 +84,8 @@ export function CursorAccountsSection(): React.JSX.Element {
       setRefreshing(false)
     }
   }
+
+  useUsageAccountRefreshController('cursor', handleRefreshUsage, refreshing)
 
   const signedIn = status?.signedIn === true
   const tokenFresh = status?.tokenFresh === true

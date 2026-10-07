@@ -61,7 +61,7 @@ function getAccessibilityStatus(): DeveloperPermissionStatus {
   return systemPreferences.isTrustedAccessibilityClient(false) ? 'granted' : 'unknown'
 }
 
-async function openPrivacyPane(id: DeveloperPermissionId): Promise<boolean> {
+export async function openPrivacyPane(id: DeveloperPermissionId): Promise<boolean> {
   const url = PRIVACY_PANE_URLS[id]
   if (!url) {
     await shell.openExternal(
@@ -166,7 +166,7 @@ async function getPermissionState(id: DeveloperPermissionId): Promise<DeveloperP
   }
 }
 
-async function requestPermission(
+export async function requestPermission(
   id: DeveloperPermissionId
 ): Promise<DeveloperPermissionRequestResult> {
   if (process.platform !== 'darwin') {
@@ -216,11 +216,15 @@ async function requestPermission(
   return { id, status: (await getPermissionState(id)).status, openedSystemSettings: true }
 }
 
+export function getDeveloperPermissionStatus(): Promise<DeveloperPermissionState[]> {
+  return Promise.all(DEVELOPER_PERMISSION_IDS.map(getPermissionState))
+}
+
 export function registerDeveloperPermissionHandlers(): void {
   ipcMain.handle(
     'developerPermissions:getStatus',
     async (): Promise<DeveloperPermissionState[]> => {
-      return Promise.all(DEVELOPER_PERMISSION_IDS.map(getPermissionState))
+      return getDeveloperPermissionStatus()
     }
   )
 

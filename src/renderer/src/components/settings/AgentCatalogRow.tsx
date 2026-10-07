@@ -219,6 +219,7 @@ export function AgentCatalogRow({
           {(defaultEnvSummary || envSummary) && (
             <div className="mt-2">
               <AgentDefaultEnvInput
+                agent={agentId}
                 key={`${agentId}:${envSummary}`}
                 defaultEnv={defaultEnv}
                 envOverride={envOverride}

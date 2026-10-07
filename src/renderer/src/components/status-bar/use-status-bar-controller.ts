@@ -1,3 +1,4 @@
+import { useUsageMenuViewerController } from '../../runtime/use-usage-menu-viewer-controller'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useAppStore } from '../../store'
@@ -87,6 +88,21 @@ export function useStatusBarController(floatingTerminalOpen: boolean) {
       }
     }
   }, [isRefreshing, refreshRateLimits, refreshDetectedAgents])
+
+  const handleUsageMenuOpenChange = (nextOpen: boolean): void => {
+    if (nextOpen) {
+      usageMenuFocusHandoff.reset()
+      recordFeatureInteraction('usage-tracking')
+    }
+    setUsageMenuOpen(nextOpen)
+  }
+
+  useUsageMenuViewerController(
+    usageMenuOpen,
+    handleUsageMenuOpenChange,
+    statusBarVisible,
+    usageMenuFocusHandoff.onPointerDownOutside
+  )
 
   if (!statusBarVisible) {
     return null
@@ -233,13 +249,6 @@ export function useStatusBarController(floatingTerminalOpen: boolean) {
     setUsageMenuOpen(false)
     openSettingsTarget({ pane: 'accounts', repoId: null, sectionId })
     openSettingsPage()
-  }
-  const handleUsageMenuOpenChange = (nextOpen: boolean): void => {
-    if (nextOpen) {
-      usageMenuFocusHandoff.reset()
-      recordFeatureInteraction('usage-tracking')
-    }
-    setUsageMenuOpen(nextOpen)
   }
 
   return {

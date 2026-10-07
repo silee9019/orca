@@ -178,9 +178,12 @@ export class CodexAccountService {
     return this.pendingLoginUrl
   }
 
-  /** Registration lasts the process's lifetime; there is no teardown to hand back. */
-  onPendingLoginUrlChanged(listener: (url: string | null) => void): void {
+  /** The caller owns the listener lifetime. */
+  onPendingLoginUrlChanged(listener: (url: string | null) => void): () => void {
     this.pendingLoginUrlListeners.add(listener)
+    return () => {
+      this.pendingLoginUrlListeners.delete(listener)
+    }
   }
 
   private setPendingLoginUrl(url: string | null): void {

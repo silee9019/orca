@@ -60,7 +60,8 @@ export function getCurrentOrcaProfileAuthStatus(userDataPath: string): OrcaProfi
 }
 
 export async function connectCurrentOrcaProfile(
-  userDataPath: string
+  userDataPath: string,
+  signal?: AbortSignal
 ): Promise<ConnectCurrentOrcaProfileResult> {
   const active = ensureActiveOrcaProfile(userDataPath)
   if (isOrcaCloudDevAuthEnabled()) {
@@ -83,8 +84,8 @@ export async function connectCurrentOrcaProfile(
 
   const attempt = ++nextCloudConnectAttempt
   try {
-    const code = await beginOrcaCloudPkceFlow(configState.config, active.profile.id)
-    if (attempt < linkedCloudConnectAttempt) {
+    const code = await beginOrcaCloudPkceFlow(configState.config, active.profile.id, signal)
+    if (signal?.aborted || attempt < linkedCloudConnectAttempt) {
       return {
         status: 'cancelled',
         auth: getCurrentOrcaProfileAuthStatus(userDataPath)
@@ -94,7 +95,7 @@ export async function connectCurrentOrcaProfile(
       ...code,
       localProfileId: active.profile.id
     })
-    if (attempt < linkedCloudConnectAttempt) {
+    if (signal?.aborted || attempt < linkedCloudConnectAttempt) {
       return {
         status: 'cancelled',
         auth: getCurrentOrcaProfileAuthStatus(userDataPath)

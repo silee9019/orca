@@ -228,6 +228,9 @@ export function useResourceUsageStatusController() {
   })
 
   return {
+    sessionInventory,
+    resourceSessionBindings,
+    workspaceSessionReady,
     open,
     setOpen,
     sortOption,

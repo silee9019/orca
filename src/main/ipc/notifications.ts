@@ -26,6 +26,9 @@ import {
   resetNotificationPermissionEvidence
 } from './notification-permission-probe'
 
+import { installNotificationControls } from '../notifications/notification-controls'
+export { getNotificationControls } from '../notifications/notification-controls'
+
 export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntimeService): void {
   ipcMain.removeHandler('notifications:getDesktopAwayState')
   ipcMain.handle('notifications:getDesktopAwayState', () => readDesktopAwayState(powerMonitor))
@@ -34,8 +37,8 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
   ipcMain.removeHandler('notifications:openSystemSettings')
   ipcMain.removeHandler('notifications:getPermissionStatus')
   ipcMain.removeHandler('notifications:probeDelivery')
-  ipcMain.handle('notifications:openSystemSettings', (): void => {
-    openNotificationSystemSettings()
+  ipcMain.handle('notifications:openSystemSettings', async (): Promise<void> => {
+    await openNotificationSystemSettings()
   })
 
   // Why: Electron's main process can't read macOS auth status; expose only what we can observe (platform support + whether we've prompted).
@@ -46,76 +49,78 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
   })
 
   ipcMain.handle('notifications:getPermissionStatus', getPermissionStatus)
-  ipcMain.handle(
-    'notifications:probeDelivery',
-    async (_event, args?: { force?: boolean }): Promise<NotificationDeliveryProbeResult> => {
-      // Why: macOS-only — Windows/Linux have no first-use permission dialog, so the onboarding card never renders there.
-      if (process.platform !== 'darwin' || !Notification.isSupported()) {
-        return { state: 'unsupported', authoritative: false }
-      }
-      // Why: probes surface the macOS permission dialog, so mark startup registration done to avoid a second prompt later.
-      if (store.getUI().notificationPermissionRequested !== true) {
-        store.updateUI({ notificationPermissionRequested: true })
-      }
-      // Preferred source: the bundled helper reads real auth silently, so polling tracks System Settings changes without banners.
-      const authorization = await readNotificationAuthorizationStatus()
-      if (authorization === 'authorized') {
-        recordNotificationDeliveryOutcome('delivered')
-        return { state: 'delivered', authoritative: true }
-      }
-      if (authorization === 'denied') {
-        recordNotificationDeliveryOutcome('failed')
-        return { state: 'blocked', authoritative: true }
-      }
-      if (authorization === 'not-determined') {
-        // Why: the dialog only appears once something asks; fire one probe per session to trigger it, then report pending.
-        if (!hasTriggeredPermissionDialogThisSession()) {
-          void probeNotificationDelivery()
-        }
-        return { state: 'awaiting-decision', authoritative: true }
-      }
-      // Helper unavailable or 'unknown': fall back to scheduling-based probes with session caching to avoid repeated banners.
-      const lastObservedDeliveryOutcome = getLastObservedDeliveryOutcome()
-      if (!args?.force && lastObservedDeliveryOutcome !== null) {
-        return {
-          state: lastObservedDeliveryOutcome === 'delivered' ? 'delivered' : 'blocked',
-          authoritative: false
-        }
-      }
-      return probeNotificationDelivery()
+  const probeDelivery = async (args?: {
+    force?: boolean
+  }): Promise<NotificationDeliveryProbeResult> => {
+    // Why: macOS-only — Windows/Linux have no first-use permission dialog, so the onboarding card never renders there.
+    if (process.platform !== 'darwin' || !Notification.isSupported()) {
+      return { state: 'unsupported', authoritative: false }
     }
+    // Why: probes surface the macOS permission dialog, so mark startup registration done to avoid a second prompt later.
+    if (store.getUI().notificationPermissionRequested !== true) {
+      store.updateUI({ notificationPermissionRequested: true })
+    }
+    // Preferred source: the bundled helper reads real auth silently, so polling tracks System Settings changes without banners.
+    const authorization = await readNotificationAuthorizationStatus()
+    if (authorization === 'authorized') {
+      recordNotificationDeliveryOutcome('delivered')
+      return { state: 'delivered', authoritative: true }
+    }
+    if (authorization === 'denied') {
+      recordNotificationDeliveryOutcome('failed')
+      return { state: 'blocked', authoritative: true }
+    }
+    if (authorization === 'not-determined') {
+      // Why: the dialog only appears once something asks; fire one probe per session to trigger it, then report pending.
+      if (!hasTriggeredPermissionDialogThisSession()) {
+        void probeNotificationDelivery()
+      }
+      return { state: 'awaiting-decision', authoritative: true }
+    }
+    // Helper unavailable or 'unknown': fall back to scheduling-based probes with session caching to avoid repeated banners.
+    const lastObservedDeliveryOutcome = getLastObservedDeliveryOutcome()
+    if (!args?.force && lastObservedDeliveryOutcome !== null) {
+      return {
+        state: lastObservedDeliveryOutcome === 'delivered' ? 'delivered' : 'blocked',
+        authoritative: false
+      }
+    }
+    return probeNotificationDelivery()
+  }
+  ipcMain.handle('notifications:probeDelivery', (_event, args?: { force?: boolean }) =>
+    probeDelivery(args)
   )
 
   const announced = createAnnouncedNotificationRegistry()
 
   ipcMain.removeHandler('notifications:dismiss')
-  ipcMain.handle(
-    'notifications:dismiss',
-    (_event, ids: string[], paneKeys?: string[]): NotificationDismissResult => {
-      const uniqueIds = new Set(
-        ids.filter((id): id is string => typeof id === 'string' && id.length > 0)
-      )
-      // Why: an acknowledged subject retires everything announced for it, including ids minted
-      // from a row start that has since moved and so can no longer be rebuilt by the renderer.
-      for (const paneKey of Array.isArray(paneKeys) ? paneKeys : []) {
-        if (typeof paneKey === 'string') {
-          for (const id of announced.take(paneKey)) {
-            uniqueIds.add(id)
-          }
+  const dismiss = (ids: string[], paneKeys?: string[]): NotificationDismissResult => {
+    const uniqueIds = new Set(
+      ids.filter((id): id is string => typeof id === 'string' && id.length > 0)
+    )
+    // Why: an acknowledged subject retires everything announced for it, including ids minted
+    // from a row start that has since moved and so can no longer be rebuilt by the renderer.
+    for (const paneKey of Array.isArray(paneKeys) ? paneKeys : []) {
+      if (typeof paneKey === 'string') {
+        for (const id of announced.take(paneKey)) {
+          uniqueIds.add(id)
         }
       }
-      let dismissed = 0
-      for (const id of uniqueIds) {
-        const entry = activeNotificationsById.get(id)
-        if (entry) {
-          entry.notification.close()
-          entry.release()
-          dismissed += 1
-        }
-        runtime?.dismissMobileNotification(id)
-      }
-      return { dismissed }
     }
+    let dismissed = 0
+    for (const id of uniqueIds) {
+      const entry = activeNotificationsById.get(id)
+      if (entry) {
+        entry.notification.close()
+        entry.release()
+        dismissed += 1
+      }
+      runtime?.dismissMobileNotification(id)
+    }
+    return { dismissed }
+  }
+  ipcMain.handle('notifications:dismiss', (_event, ids: string[], paneKeys?: string[]) =>
+    dismiss(ids, paneKeys)
   )
 
   const deliveryService = createNotificationDeliveryService({
@@ -149,6 +154,15 @@ export function registerNotificationHandlers(store: Store, runtime?: OrcaRuntime
     ): NotificationDispatchResult | Promise<NotificationDispatchResult> =>
       deliveryService.dispatch(args)
   )
+
+  installNotificationControls({
+    getPermissionStatus,
+    getDesktopAwayState: () => readDesktopAwayState(powerMonitor),
+    openSystemSettings: openNotificationSystemSettings,
+    probeDelivery,
+    dismiss,
+    dispatch: (args) => deliveryService.dispatch(args)
+  })
 
   registerNotificationSoundHandlers(store)
 }

@@ -1,5 +1,8 @@
+import { useAcknowledgedViewerToggle } from '@/runtime/use-acknowledged-viewer-toggle'
+import { registerInlineUsageSignIn } from '@/runtime/usage-inline-signin-controller'
+import type { CodexStatusRuntimeTarget } from './status-bar-runtime-targets'
 import { Loader2, RefreshCw } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAppStore } from '../../store'
 import type { ProviderRateLimits } from '../../../../shared/rate-limit-types'
@@ -89,14 +92,39 @@ export function InlineUsageSignInAction({
   isSigningIn,
   disabled,
   onSignInPointerDown,
+  viewerTarget,
   onSignIn
 }: {
   isFetching: boolean
   isSigningIn: boolean
   disabled: boolean
   onSignInPointerDown?: () => void
-  onSignIn: () => void
+  onSignIn: () => void | Promise<boolean>
+  viewerTarget?: { accountId: string; target: CodexStatusRuntimeTarget }
 }): React.JSX.Element {
+  const confirmIdle = useAcknowledgedViewerToggle(isSigningIn, () => {}, viewerTarget?.accountId)
+  const callbacks = useRef({ onSignIn, onSignInPointerDown, disabled })
+  callbacks.current = { onSignIn, onSignInPointerDown, disabled }
+  const accountId = viewerTarget?.accountId
+  const runtime = viewerTarget?.target.runtime
+  const wslDistro = viewerTarget?.target.wslDistro
+  useEffect(() => {
+    if (!accountId || !runtime) {
+      return undefined
+    }
+    return registerInlineUsageSignIn({
+      accountId,
+      target: { runtime, wslDistro: wslDistro ?? null },
+      busy: () => callbacks.current.disabled,
+      pointerDown: () => callbacks.current.onSignInPointerDown?.(),
+      signIn: async () => {
+        const success = (await callbacks.current.onSignIn()) === true
+        await confirmIdle(false)
+        return success
+      },
+      cancel: () => window.api.codexAccounts.cancelPendingLogin()
+    })
+  }, [accountId, runtime, wslDistro, confirmIdle])
   return (
     <div className={`flex w-full items-center gap-2 ${isFetching ? 'animate-pulse' : ''}`}>
       <span className="min-w-0 flex-1 text-[10px] text-muted-foreground">
