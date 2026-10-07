@@ -9,8 +9,10 @@ import {
 import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
 export const COMPUTER_PERMISSIONS_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'computer permissions viewer': async (ctx) => {
+    const action = getRequiredStringFlag(ctx.flags, 'action')
     const command = ComputerPermissionsViewerCommand.safeParse({
-      action: getRequiredStringFlag(ctx.flags, 'action')
+      action,
+      ...(action === 'reset' ? { confirm: getRequiredStringFlag(ctx.flags, 'confirm') } : {})
     })
     if (!command.success || getRequiredStringFlag(ctx.flags, 'viewer') !== 'host') {
       throw new RuntimeClientError(

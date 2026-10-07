@@ -106,6 +106,8 @@ describe('useIpcEvents CLI-created worktree activation', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
         automations: { onChanged: () => () => {} },
@@ -377,6 +379,8 @@ describe('useIpcEvents CLI-created worktree activation', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
         automations: { onChanged: () => () => {} },

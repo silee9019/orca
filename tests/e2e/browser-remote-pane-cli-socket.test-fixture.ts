@@ -1,3 +1,5 @@
+import { BROWSER_OBSERVATION_COMMAND_SPECS } from '../../src/cli/specs/browser-observation'
+import { BROWSER_OBSERVATION_HANDLERS } from '../../src/cli/handlers/browser-observation'
 import { BROWSER_WEBAUTHN_DIALOG_COMMAND_SPECS } from '../../src/cli/specs/browser-webauthn-dialog'
 import { BROWSER_WEBAUTHN_DIALOG_HANDLERS } from '../../src/cli/handlers/browser-webauthn-dialog'
 import { BROWSER_FAILURE_COMMAND_SPECS } from '../../src/cli/specs/browser-failure'
@@ -208,7 +210,28 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runObservation = async (kind: 'visibility' | 'driver', extra: string[]) => {
+    const specs = BROWSER_OBSERVATION_COMMAND_SPECS
+    const parsed = parseArgs(
+      [
+        ...(kind === 'visibility' ? ['browser', 'observe'] : ['runtime', 'browser-observe']),
+        '--viewer',
+        'host',
+        ...extra
+      ],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_OBSERVATION_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
   return {
+    runObservation,
     runWebAuthnDialog,
     runFailure,
     runFile,

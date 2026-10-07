@@ -87,6 +87,8 @@ describe('useIpcEvents updater integration', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
         automations: { onChanged: () => () => {} },
@@ -289,6 +291,8 @@ describe('useIpcEvents updater integration', () => {
       })
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api: {
         repos: makeEvents(),
         automations: makeEvents(),

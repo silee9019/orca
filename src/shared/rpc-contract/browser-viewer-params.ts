@@ -1,3 +1,4 @@
+import { BrowserObservationCommand } from './browser-observation-params'
 import { ComputerPermissionsViewerCommand } from './computer-permissions-viewer-params'
 import { BrowserSshRouteTarget } from './browser-ssh-route-params'
 import { BrowserWebAuthnDialogTarget } from './browser-webauthn-dialog-params'
@@ -55,6 +56,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('observe-page'), command: BrowserObservationCommand }),
   z.object({
     viewer,
     operation: z.literal('computer-permissions'),

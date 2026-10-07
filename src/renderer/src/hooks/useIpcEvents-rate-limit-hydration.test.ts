@@ -134,6 +134,8 @@ describe('useIpcEvents rate-limit hydration', () => {
     })
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       setTimeout: vi.fn(() => 1),
       clearTimeout: vi.fn(),

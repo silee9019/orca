@@ -16,6 +16,8 @@ type ComputerPermissionsOwner = {
   loading: boolean
   helperUnavailableReason: string | null
   isResetting: () => boolean
+  canReset: () => boolean
+  resetAccess: (canApply?: () => boolean) => Promise<(() => boolean) | undefined>
   refresh: (canApply?: () => boolean) => Promise<(() => boolean) | undefined>
 }
 export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwner): void {
@@ -40,10 +42,14 @@ export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwne
         throw new Error('computer_permissions_readback_expired_effect_unknown')
       }
       if (
-        request.command.action === 'refresh' &&
-        (!receipt.current?.() || current.current.loading)
+        request.command.action !== 'status' &&
+        (!receipt.current?.() || current.current.loading || current.current.isResetting())
       ) {
-        throw new Error('computer_permissions_refresh_failed_effect_unknown')
+        throw new Error(
+          request.command.action === 'reset'
+            ? 'computer_permissions_reset_failed_effect_unknown'
+            : 'computer_permissions_refresh_failed_effect_unknown'
+        )
       }
       const state = ComputerPermissionsViewerState.parse({
         platform: current.current.platform,
@@ -53,7 +59,13 @@ export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwne
       })
       request.finish(undefined, state)
     } catch {
-      request.finish(new Error('computer_permissions_refresh_failed_effect_unknown'))
+      request.finish(
+        new Error(
+          request.command.action === 'reset'
+            ? 'computer_permissions_reset_failed_effect_unknown'
+            : 'computer_permissions_refresh_failed_effect_unknown'
+        )
+      )
     }
   }
   useEffect(finishCommitted)
@@ -82,6 +94,14 @@ export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwne
           ) {
             throw new Error('computer_permissions_refresh_unavailable')
           }
+          if (request.command.action === 'reset') {
+            if (current.current.platform !== 'darwin') {
+              throw new Error('computer_permissions_reset_unavailable')
+            }
+            if (!current.current.canReset()) {
+              throw new Error('computer_permissions_reset_busy_or_unavailable')
+            }
+          }
           pending.current = request
           ready.current = true
           receipt.current = undefined
@@ -90,22 +110,31 @@ export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwne
             return
           }
           ready.current = false
-          void current.current
-            .refresh(() => {
-              try {
-                requireComputerPermissionsViewer()
-                return !request.isSettled() && Date.now() < request.expiresAt
-              } catch {
-                return false
-              }
-            })
+          const perform =
+            request.command.action === 'reset'
+              ? current.current.resetAccess
+              : current.current.refresh
+          void perform(() => {
+            try {
+              requireComputerPermissionsViewer()
+              return !request.isSettled() && Date.now() < request.expiresAt
+            } catch {
+              return false
+            }
+          })
             .then((result) => {
               if (pending.current !== request || request.isSettled()) {
                 return
               }
               if (!result) {
                 pending.current = null
-                request.finish(new Error('computer_permissions_refresh_failed_effect_unknown'))
+                request.finish(
+                  new Error(
+                    request.command.action === 'reset'
+                      ? 'computer_permissions_reset_failed_effect_unknown'
+                      : 'computer_permissions_refresh_failed_effect_unknown'
+                  )
+                )
                 return
               }
               receipt.current = result
@@ -113,7 +142,13 @@ export function useComputerPermissionsViewerOwner(owner: ComputerPermissionsOwne
               publishCompletion((value) => value + 1)
             })
             .catch(() =>
-              request.finish(new Error('computer_permissions_refresh_failed_effect_unknown'))
+              request.finish(
+                new Error(
+                  request.command.action === 'reset'
+                    ? 'computer_permissions_reset_failed_effect_unknown'
+                    : 'computer_permissions_refresh_failed_effect_unknown'
+                )
+              )
             )
         } catch (error) {
           request.finish(

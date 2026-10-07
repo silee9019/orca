@@ -1,3 +1,4 @@
+import { requestBrowserObservation } from './browser-observation-request'
 import { applyComputerPermissionsViewerAction } from './computer-permissions-viewer-actions'
 import { requestBrowserWebAuthnDialog } from './browser-webauthn-dialog-request'
 import { requestWorkspaceFileOpen } from './workspace-file-open-request'
@@ -15,6 +16,7 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'observe-page'
         | 'computer-permissions'
         | 'load-failure'
         | 'webauthn-dialog'
@@ -29,6 +31,10 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'observe-page') {
+    const observation = await requestBrowserObservation(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, observation }
+  }
   if (command.operation === 'computer-permissions') {
     const computerPermissions = await applyComputerPermissionsViewerAction(
       command.command,

@@ -111,6 +111,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
@@ -337,6 +339,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
@@ -558,6 +562,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },

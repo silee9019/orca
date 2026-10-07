@@ -364,6 +364,8 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       { get: (_target, property: string) => namespace(property) }
     ) as unknown
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api,
       dispatchEvent: vi.fn(),
       setTimeout,

@@ -55,6 +55,7 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'observe-page' ||
     command.operation === 'computer-permissions' ||
     command.operation === 'webauthn-dialog' ||
     command.operation === 'load-failure' ||

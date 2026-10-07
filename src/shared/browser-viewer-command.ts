@@ -1,3 +1,4 @@
+import { BrowserObservationState } from './rpc-contract/browser-observation-params'
 import { ComputerPermissionsViewerState } from './rpc-contract/computer-permissions-viewer-params'
 import { BrowserSshRouteReceipt } from './rpc-contract/browser-ssh-route-params'
 import { BrowserWebAuthnDialogState } from './rpc-contract/browser-webauthn-dialog-params'
@@ -46,6 +47,7 @@ export const BrowserViewerResultSchema = z.object({
   marketplace: PluginMarketplaceViewerState.optional(),
   paletteState: BrowserPaletteState.optional(),
   page: z.string().optional(),
+  observation: BrowserObservationState.optional(),
   newTab: BrowserNewTabState.optional(),
   download: BrowserDownloadReceipt.optional(),
   grabAction: BrowserGrabActionReceipt.optional(),

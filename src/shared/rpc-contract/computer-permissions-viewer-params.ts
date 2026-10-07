@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { openEnum } from '../zod-salvage'
-export const ComputerPermissionsViewerCommand = z.object({ action: z.enum(['status', 'refresh']) })
+export const ComputerPermissionsViewerCommand = z.discriminatedUnion('action', [
+  z.object({ action: z.enum(['status', 'refresh']) }),
+  z.object({ action: z.literal('reset'), confirm: z.literal('computer-use-permissions') })
+])
 export type ComputerPermissionsViewerCommand = z.infer<typeof ComputerPermissionsViewerCommand>
 export const ComputerPermissionsViewerState = z.object({
   platform: openEnum(
