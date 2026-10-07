@@ -2,6 +2,7 @@ import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
 import { requestBrowserTabUi } from './browser-tab-ui-request'
+import { requestBrowserGroupUi } from './browser-group-ui-request'
 import { requestBrowserProfileUi } from './browser-profile-ui-request'
 import { requestBrowserAnnotationTray } from './browser-annotation-tray-request'
 import { requestBrowserAddress } from './browser-address-request'
@@ -47,6 +48,10 @@ export async function applyBrowserViewerRequest(
   }
   if (state.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
+  }
+  if (command.operation === 'group-ui') {
+    const groupUi = await requestBrowserGroupUi(command.target, command.action, request.expiresAt)
+    return { ...base, applied: true, groupUi }
   }
   if (command.operation === 'tab-ui') {
     const tabUi = await requestBrowserTabUi(

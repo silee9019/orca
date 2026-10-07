@@ -1,5 +1,10 @@
 // @vitest-environment happy-dom
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
+import { verifyBrowserSettingsCookies } from './browser-settings-cookie-story.fixture'
+import { cookieFixture } from './browser-settings-cookie.fixture'
+import { RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser } from '../../src/main/runtime/runtime-browser-commands-browser-profile-import-from-browser'
+import { BROWSER_PROFILE_FILE_METHODS } from '../../src/main/runtime/rpc/methods/browser-profile-file'
+import { BROWSER_USE_ENABLED_STORAGE_KEY } from '../../src/renderer/src/lib/browser-use-setup-state'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
@@ -19,10 +24,22 @@ import { BROWSER_SETTINGS_VIEWER_HANDLERS } from '../../src/cli/handlers/browser
 import { BROWSER_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/browser-viewer'
 import { applyBrowserViewerRequest } from '../../src/renderer/src/runtime/browser-viewer-bridge'
 import { TooltipProvider } from '../../src/renderer/src/components/ui/tooltip'
-import { BrowserPane } from '../../src/renderer/src/components/settings/BrowserPane'
+import {
+  BrowserSettingsNavigationFixture,
+  browserNavigationFixture
+} from './browser-settings-navigation.fixture'
+import { resetSkillDiscoveryCacheForTests } from '../../src/renderer/src/hooks/installed-agent-skill-discovery'
+import { ORCA_CLI_SKILL_NAME } from '../../src/renderer/src/lib/agent-feature-install-commands'
+import type { SkillDiscoveryTarget } from '../../src/shared/skills'
 import { useAppStore } from '../../src/renderer/src/store'
-vi.mock('../../src/renderer/src/components/settings/BrowserUsePane', () => ({
-  BrowserUseSetup: () => null
+vi.mock('../../src/renderer/src/hooks/useActiveProjectSkillRuntime', () => ({
+  useActiveProjectSkillRuntime: () => ({
+    installDisabledReason: null,
+    canUseLocalSkillFreshness: false
+  })
+}))
+vi.mock('../../src/renderer/src/components/settings/AgentSkillSetupPanel', () => ({
+  AgentSkillSetupPanel: () => null
 }))
 vi.mock('../../src/renderer/src/components/settings/BrowserUserAgentSetting', () => ({
   BrowserUserAgentSetting: () => null
@@ -50,6 +67,9 @@ it.skipIf(process.platform === 'win32')(
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
     const directory = mkdtempSync(join(tmpdir(), 'orca-browser-settings-owner-'))
     directories.push(directory)
+    cookieFixture.directory = directory
+    cookieFixture.jars.clear()
+    localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, '1')
     const store = new Store({
       serializedState: JSON.stringify({ repos: [], settings: {} }),
       dataFile: join(directory, 'profile.json')
@@ -59,11 +79,60 @@ it.skipIf(process.platform === 'win32')(
       profileDirectory: directory
     })
     const runtime = new OrcaRuntimeService(store)
+    resetSkillDiscoveryCacheForTests()
+    const skillScans: (SkillDiscoveryTarget | undefined)[] = []
+    let skillInstalled = true
+    let skillFailure = false
     Object.assign(window, {
       api: {
+        skills: {
+          discover: async (target?: SkillDiscoveryTarget) => {
+            skillScans.push(target)
+            if (skillFailure) {
+              throw new Error('private-fixture-discovery-error')
+            }
+            return {
+              scannedAt: Date.now(),
+              sources: [],
+              skills: skillInstalled
+                ? [
+                    {
+                      id: 'fixture-cli',
+                      name: ORCA_CLI_SKILL_NAME,
+                      description: null,
+                      providers: ['codex'],
+                      sourceKind: 'home',
+                      sourceLabel: 'fixture',
+                      rootPath: directory,
+                      directoryPath: join(directory, ORCA_CLI_SKILL_NAME),
+                      skillFilePath: join(directory, ORCA_CLI_SKILL_NAME, 'SKILL.md'),
+                      installed: true,
+                      updatedAt: 1
+                    }
+                  ]
+                : []
+            }
+          }
+        },
+        runtime: {
+          call: async ({ method, params }: { method: string; params: unknown }) =>
+            dispatcher.dispatch({ id: 'owner-file-import', method, params })
+        },
         browser: {
           sessionListProfiles: async () => browserSessionRegistry.listProfiles(),
-          sessionDetectBrowsers: async () => [],
+          sessionDetectBrowsers: async () => cookieFixture.browsers,
+          sessionDeleteProfile: async ({ profileId }: { profileId: string }) =>
+            browserSessionRegistry.deleteProfile(profileId),
+          sessionClearDefaultCookies: async () =>
+            browserSessionRegistry.clearDefaultSessionCookies(),
+          sessionImportFromBrowser: async (
+            params: Parameters<
+              RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser['browserProfileImportFromBrowser']
+            >[0]
+          ) =>
+            RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser.prototype.browserProfileImportFromBrowser(
+              params
+            ),
           sessionCreateProfile: async (
             params: Parameters<OrcaRuntimeService['browserProfileCreate']>[0]
           ) => {
@@ -71,6 +140,8 @@ it.skipIf(process.platform === 'win32')(
           }
         },
         ui: {
+          recordFeatureInteraction: async (id: Parameters<Store['recordFeatureInteraction']>[0]) =>
+            store.recordFeatureInteraction(id),
           set: async (updates: Parameters<Store['updateUI']>[0]) => {
             store.updateUI(updates)
           }
@@ -78,6 +149,8 @@ it.skipIf(process.platform === 'win32')(
       }
     })
     useAppStore.setState({
+      runtimeEnvironmentCatalogSettled: true,
+      runtimeEnvironments: [],
       settings: store.getSettings(),
       persistedUIReady: true,
       activeModal: null,
@@ -92,7 +165,7 @@ it.skipIf(process.platform === 'win32')(
         createElement(
           TooltipProvider,
           {},
-          createElement(BrowserPane, { settings: store.getSettings(), updateSettings: () => {} })
+          createElement(BrowserSettingsNavigationFixture, { settings: store.getSettings() })
         )
       )
     )
@@ -106,7 +179,10 @@ it.skipIf(process.platform === 'win32')(
         viewerId: 8
       })
     })
-    const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_VIEWER_METHODS })
+    const dispatcher = new RpcDispatcher({
+      runtime,
+      methods: [...BROWSER_VIEWER_METHODS, ...BROWSER_PROFILE_FILE_METHODS]
+    })
     const sockets = new Set<Socket>()
     const server = createServer((socket) => {
       sockets.add(socket)
@@ -143,7 +219,7 @@ it.skipIf(process.platform === 'win32')(
     )
     const client = new RuntimeClient(directory, 5000, null, null)
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-    async function invoke(action: string, flags: string[] = [], host = 'local') {
+    async function invoke(action: string, flags: string[] = [], host = 'local', pump = true) {
       const specs = BROWSER_SETTINGS_VIEWER_SPECS
       const parsed = parseArgs(
         [
@@ -169,6 +245,9 @@ it.skipIf(process.platform === 'win32')(
         json: true
       })
       void pending.catch(() => {})
+      if (!pump) {
+        return pending
+      }
       let settled = false
       void pending.then(
         () => {
@@ -182,7 +261,12 @@ it.skipIf(process.platform === 'win32')(
         await act(async () => {})
         expect(settled).toBe(true)
       })
-      await pending
+      await pending.catch((error) => {
+        throw new Error(
+          `Action ${action} failed: ${error instanceof Error ? error.message : 'unknown'}`,
+          { cause: error }
+        )
+      })
     }
     try {
       await invoke('homepage-draft', ['--value', 'https://draft.fixture.invalid'])
@@ -227,7 +311,56 @@ it.skipIf(process.platform === 'win32')(
       expect(readFileSync(join(directory, BROWSER_SESSION_META_FILE_NAME), 'utf8')).toContain(
         'Fixture Profile'
       )
+      await verifyBrowserSettingsCookies(invoke, created, directory, container, store, output)
+      const scroll = vi.fn()
+      const originalScroll = HTMLElement.prototype.scrollIntoView
+      HTMLElement.prototype.scrollIntoView = scroll
+      try {
+        await act(async () => useAppStore.getState().setSettingsSearchQuery('no-cookie-match'))
+        await invoke('cookies-scroll')
+        expect(useAppStore.getState().settingsSearchQuery).toBe('')
+        expect(document.getElementById('browser-session-cookies')).not.toBeNull()
+        expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+        expect(output.mock.calls.at(-1)?.[0]).toContain('"cookiesScrolled": true')
+        await invoke('cookies-configure', ['--profile', 'default', '--surface', 'browser-use'])
+        await invoke('browser-use-configure')
+      } finally {
+        HTMLElement.prototype.scrollIntoView = originalScroll
+      }
+      browserNavigationFixture.allowDiscard = false
+      await expect(invoke('computer-use-open')).rejects.toThrow('effect_unknown')
+      expect(browserNavigationFixture.section).toBe('')
+      expect(browserNavigationFixture.scrollTarget).toBe('')
+      expect(browserNavigationFixture.requestTick).toBe(0)
+      browserNavigationFixture.allowDiscard = true
+      await invoke('computer-use-open')
+      expect(browserNavigationFixture.section).toBe('computer-use')
+      expect(browserNavigationFixture.scrollTarget).toBe('computer-use')
+      expect(browserNavigationFixture.requestTick).toBe(1)
+      await invoke('browser-use-computer')
+      expect(browserNavigationFixture.requestTick).toBe(2)
+      await invoke('browser-use-enabled', ['--value', 'false'])
+      expect(localStorage.getItem(BROWSER_USE_ENABLED_STORAGE_KEY)).toBe('0')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"browserUseEnabled": false')
+      await invoke('browser-use-enabled', ['--value', 'true'])
+      expect(localStorage.getItem(BROWSER_USE_ENABLED_STORAGE_KEY)).toBe('1')
+      expect(store.getUI().featureInteractions?.['agent-browser-setup']?.interactionCount).toBe(1)
+      await invoke('browser-use-install-intent')
+      expect(store.getUI().featureInteractions?.['agent-browser-setup']?.interactionCount).toBe(2)
+      skillInstalled = false
+      await invoke('browser-use-refresh')
+      expect(skillScans.at(-1)?.refresh).toBe(true)
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"skillDetected": false')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"skillLoading": false')
+      skillFailure = true
+      await expect(invoke('browser-use-refresh')).rejects.toThrow(
+        'Browser skill scan did not establish a current result.'
+      )
+      expect(JSON.stringify(output.mock.calls)).not.toContain('private-fixture')
       await invoke('profile-dialog-open')
+      await invoke('profile-dialog-status')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"dialogOpen": true')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"creating": false')
       await invoke('profile-name', ['--value', 'Discarded draft'])
       await invoke('profile-dialog-close')
       expect(container.ownerDocument.querySelector('[role="dialog"]')).toBeNull()

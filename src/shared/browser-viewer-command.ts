@@ -1,4 +1,5 @@
 import { BrowserTabUiState } from './rpc-contract/browser-tab-ui-params'
+import { BrowserGroupUiState } from './rpc-contract/browser-group-ui-params'
 import { BrowserProfileUiState } from './rpc-contract/browser-profile-ui-params'
 import { z } from 'zod'
 import { BrowserDocumentState } from './rpc-contract/browser-document-params'
@@ -20,6 +21,7 @@ export const BrowserViewerResultSchema = z.object({
   rendered: z.literal(false),
   page: z.string().optional(),
   tabUi: BrowserTabUiState.optional(),
+  groupUi: BrowserGroupUiState.optional(),
   profileUi: BrowserProfileUiState.optional(),
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),

@@ -1,4 +1,5 @@
 import { BrowserTabUiTarget, BrowserTabUiAction, BrowserTabUiPoint } from './browser-tab-ui-params'
+import { BrowserGroupUiTarget, BrowserGroupUiAction } from './browser-group-ui-params'
 import { BrowserProfileUiCommand } from './browser-profile-ui-params'
 import { z } from 'zod'
 import { BrowserDocumentViewerParams } from './browser-document-params'
@@ -47,6 +48,12 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
     operation: z.literal('browser-settings'),
     hostId: z.string().min(1).max(256),
     command: BrowserSettingsCommand
+  }),
+  z.object({
+    viewer,
+    operation: z.literal('group-ui'),
+    target: BrowserGroupUiTarget,
+    action: BrowserGroupUiAction
   }),
   z
     .object({

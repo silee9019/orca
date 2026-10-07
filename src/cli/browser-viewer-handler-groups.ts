@@ -2,6 +2,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'browser-group-ui',
+    keys: ['browser group-ui'],
+    load: async () => (await import('./handlers/browser-group-ui.js')).BROWSER_GROUP_UI_HANDLERS
+  },
+  {
     name: 'browser-markup-gesture',
     keys: ['browser markup gesture'],
     load: async () =>

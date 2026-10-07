@@ -156,23 +156,27 @@ describe('createBrowserSlice runtime guard', () => {
     expect(store.getState().browserSessionProfiles[0]?.id).toBe('local-default')
   })
 
-  it('does not import local browser cookies while a runtime environment is active', async () => {
-    const store = createTestStore()
-    store.setState({ settings: settingsWithRuntime('env-1') })
+  it.each([undefined, 'fixture-cookie-file.json'])(
+    'does not import local browser cookies while a runtime environment is active',
+    async (filePath) => {
+      const store = createTestStore()
+      store.setState({ settings: settingsWithRuntime('env-1') })
 
-    const result = await store.getState().importCookiesToProfile('default')
+      const result = await store.getState().importCookiesToProfile('default', filePath)
 
-    expect(mockApi.browser.sessionImportCookies).not.toHaveBeenCalled()
-    expect(result).toMatchObject({
-      ok: false,
-      executionHostId: 'runtime:env-1',
-      executionHostLabel: 'env-1'
-    })
-    expect(store.getState().browserSessionImportState).toMatchObject({
-      profileId: 'default',
-      status: 'error'
-    })
-  })
+      expect(mockApi.browser.sessionImportCookies).not.toHaveBeenCalled()
+      expect(result).toMatchObject({
+        ok: false,
+        reason: 'Manual cookie file import is unavailable while a remote runtime is active.',
+        executionHostId: 'runtime:env-1',
+        executionHostLabel: 'env-1'
+      })
+      expect(store.getState().browserSessionImportState).toMatchObject({
+        profileId: 'default',
+        status: 'error'
+      })
+    }
+  )
 
   it('retains the host display label used by browser settings', async () => {
     const store = createTestStore()

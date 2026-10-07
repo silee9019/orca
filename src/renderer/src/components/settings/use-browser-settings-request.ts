@@ -7,7 +7,7 @@ import { BROWSER_SETTINGS_EVENT } from '@/runtime/browser-settings-request'
 
 type Options = {
   accepts: (command: BrowserSettingsCommand) => boolean
-  apply: (command: BrowserSettingsCommand) => Promise<void> | void
+  apply: (command: BrowserSettingsCommand, expiresAt: number) => Promise<void> | void
   read: () => BrowserSettingsState
 }
 export function useBrowserSettingsRequest(options: Options): void {
@@ -28,10 +28,16 @@ export function useBrowserSettingsRequest(options: Options): void {
           if (current.current.read().hostId !== request.hostId) {
             throw new Error('browser_settings_host_mismatch')
           }
-          await current.current.apply(command)
+          await current.current.apply(command, request.expiresAt)
           requestAnimationFrame(() => {
             if (!request.isSettled()) {
-              request.finish(undefined, current.current.read())
+              const state = current.current.read()
+              const expected = command.action === 'host-select' ? command.hostId : request.hostId
+              if (state.hostId !== expected) {
+                request.finish(new Error('browser_settings_host_changed_effect_unknown'))
+              } else {
+                request.finish(undefined, state)
+              }
             }
           })
         })
