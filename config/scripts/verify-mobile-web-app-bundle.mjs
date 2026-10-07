@@ -52,7 +52,7 @@ export const MOBILE_WEB_APP_BUNDLE_MAX_TOTAL_BYTES = 9 * 1024 * 1024
  * `routes.slice(0, n)` for every n, which is what the fence below is derived from rather than
  * fitted to. The spread it shows is 1 to 10: `pr` and `web` add one script each, `session` adds ten.
  * The root `./_layout.tsx` (the page's web sibling of the native root) sorts first; with it the
- * swept tree reads 74 scripts at 16 routes.
+ * swept tree reads 73 scripts at 16 routes.
  *
  * This table is the fence's only input, so a route added to the tree stales it and the pins beside
  * the fence fail until it is re-measured. That is the point: the bound is re-derived, never bumped.
@@ -71,9 +71,9 @@ export const MOBILE_WEB_APP_BUNDLE_SCRIPT_SWEEP = [
   ['./h/[hostId]/review/[worktreeId].tsx', 48],
   ['./h/[hostId]/session/[worktreeId].tsx', 58],
   ['./h/[hostId]/source-control/[worktreeId].tsx', 63],
-  ['./h/[hostId]/tasks.tsx', 71],
-  ['./h/[hostId]/web.tsx', 72],
-  ['./h/_layout.tsx', 74]
+  ['./h/[hostId]/tasks.tsx', 70],
+  ['./h/[hostId]/web.tsx', 71],
+  ['./h/_layout.tsx', 73]
 ]
 
 const sweptScripts = MOBILE_WEB_APP_BUNDLE_SCRIPT_SWEEP.map(([, scripts]) => scripts)
