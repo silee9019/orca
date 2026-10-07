@@ -1,3 +1,4 @@
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
 import { ImeInput } from '@/lib/ime-text-field'
 import React, { useCallback, useRef, useState } from 'react'
 import { Check, X } from 'lucide-react'
@@ -13,7 +14,7 @@ import type { MarkupModeController } from './useMarkupMode'
 import { useMarkupEditor } from './useMarkupEditor'
 
 export type MarkupOverlayProps = {
-  commandOwner?: { page: string; active: boolean }
+  commandOwner?: BrowserMarkupEditorOwner
   baseImage: MarkupBaseImage
   busy: boolean
   onComplete: (input: { imageElement: HTMLImageElement; shapes: MarkupShape[] }) => void

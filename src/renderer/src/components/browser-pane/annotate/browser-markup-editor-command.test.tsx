@@ -117,3 +117,20 @@ it('commits or cancels text placed by the original canvas pointer handler', asyn
     'browser_markup_text_not_pending'
   )
 })
+
+it('selects one active editor after an inactive matching owner', async () => {
+  const inactive = mount(false)
+  const active = mount()
+  expect(await command({ action: 'tool', value: 'rect' })).toMatchObject({ tool: 'rect' })
+  expect(inactive.result.current.tool).toBe('pen')
+  expect(active.result.current.tool).toBe('rect')
+})
+it('refuses duplicate active editor owners before changing either editor', async () => {
+  const first = mount()
+  const second = mount()
+  await expect(command({ action: 'tool', value: 'rect' })).rejects.toThrow(
+    'browser_markup_editor_owner_ambiguous'
+  )
+  expect(first.result.current.tool).toBe('pen')
+  expect(second.result.current.tool).toBe('pen')
+})

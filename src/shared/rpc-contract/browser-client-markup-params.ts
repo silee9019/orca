@@ -7,12 +7,13 @@ export const BrowserClientMarkupTarget = BrowserClientPageTarget.extend({
   environmentId: z.string().min(1)
 })
 export type BrowserClientMarkupTarget = z.infer<typeof BrowserClientMarkupTarget>
-export const BrowserClientMarkupAction = z.enum(['start', 'cancel', 'status'])
+export const BrowserClientMarkupAction = z.enum(['start', 'cancel', 'status', 'copy'])
 export type BrowserClientMarkupAction = z.infer<typeof BrowserClientMarkupAction>
 export const BrowserClientMarkupReceipt = BrowserClientMarkupTarget.extend({
   action: BrowserClientMarkupAction,
   state: openEnum(['idle', 'capturing', 'drawing', 'composing', 'unknown'], 'unknown'),
   hasImage: z.boolean(),
+  copied: z.literal(true).optional(),
   accepted: z.literal(true)
 })
 export type BrowserClientMarkupReceipt = z.infer<typeof BrowserClientMarkupReceipt>

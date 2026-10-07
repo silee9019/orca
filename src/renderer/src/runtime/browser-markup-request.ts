@@ -7,6 +7,7 @@ export type BrowserMarkupState = {
 export type BrowserMarkupEvent = {
   page: string
   clientTarget?: BrowserClientMarkupTarget
+  settledState?: 'idle'
   action: 'start' | 'cancel' | 'status'
   expiresAt: number
   offer: (active: boolean, execute: () => void) => void
@@ -24,7 +25,8 @@ export function requestBrowserMarkup(
   page: string,
   action: BrowserMarkupEvent['action'],
   expiresAt: number,
-  clientTarget?: BrowserClientMarkupTarget
+  clientTarget?: BrowserClientMarkupTarget,
+  settledState?: 'idle'
 ): Promise<BrowserMarkupState> {
   return new Promise((resolve, reject) => {
     const offers: (() => void)[] = []
@@ -51,6 +53,7 @@ export function requestBrowserMarkup(
         detail: {
           page,
           clientTarget,
+          settledState,
           action,
           expiresAt,
           isSettled: () => settled,

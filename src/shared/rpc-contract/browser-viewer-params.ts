@@ -1,3 +1,5 @@
+import { BrowserSetupGuideCommand } from './browser-setup-guide-params'
+import { ClientHostedBrowserRowCommand } from './client-hosted-browser-row-params'
 import {
   BrowserClientMarkupTarget,
   BrowserClientMarkupAction
@@ -62,6 +64,16 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('browser-setup-guide'),
+    command: BrowserSetupGuideCommand
+  }),
+  z.object({
+    viewer,
+    operation: z.literal('client-hosted-row'),
+    command: ClientHostedBrowserRowCommand
+  }),
   z.object({
     viewer,
     operation: z.literal('client-markup'),

@@ -1,12 +1,20 @@
+import type { BrowserClientMarkupTarget } from '../../../shared/rpc-contract/browser-client-markup-params'
 import type {
   BrowserMarkupEditorCommand,
   BrowserMarkupEditorState
 } from '../../../shared/rpc-contract/browser-markup-editor-params'
+export type BrowserMarkupEditorOwner = {
+  page: string
+  active: boolean
+  clientTarget?: BrowserClientMarkupTarget
+  isCurrent?: () => boolean
+}
 export type BrowserMarkupEditorEvent = {
+  clientTarget?: BrowserClientMarkupTarget
   page: string
   command: BrowserMarkupEditorCommand
   expiresAt: number
-  claim: () => boolean
+  offer: (active: boolean, execute: () => void) => void
   isSettled: () => boolean
   finish: (error?: Error, state?: BrowserMarkupEditorState) => void
 }
@@ -20,10 +28,12 @@ declare global {
 export function requestBrowserMarkupEditor(
   page: string,
   command: BrowserMarkupEditorCommand,
-  expiresAt: number
+  expiresAt: number,
+  clientTarget?: BrowserClientMarkupTarget
 ): Promise<BrowserMarkupEditorState> {
   return new Promise((resolve, reject) => {
-    let claimed = false
+    const offers: (() => void)[] = []
+    let matchingOwners = 0
     let settled = false
     const finish = (error?: Error, state?: BrowserMarkupEditorState): void => {
       if (settled) {
@@ -45,22 +55,32 @@ export function requestBrowserMarkupEditor(
       new CustomEvent(BROWSER_MARKUP_EDITOR_COMMAND_EVENT, {
         detail: {
           page,
+          clientTarget,
           command,
           expiresAt,
           isSettled: () => settled,
-          claim: () => {
-            if (claimed) {
-              return false
+          offer: (active: boolean, execute: () => void) => {
+            matchingOwners += 1
+            if (active) {
+              offers.push(execute)
             }
-            claimed = true
-            return true
           },
           finish
         }
       })
     )
-    if (!claimed) {
-      finish(new Error('browser_markup_editor_ui_unavailable'))
+    if (Date.now() >= expiresAt) {
+      finish(new Error('request_expired'))
+    } else if (offers.length > 1) {
+      finish(new Error('browser_markup_editor_owner_ambiguous'))
+    } else if (!offers.length) {
+      finish(
+        new Error(
+          matchingOwners ? 'browser_markup_viewer_inactive' : 'browser_markup_editor_ui_unavailable'
+        )
+      )
+    } else {
+      offers[0]?.()
     }
   })
 }

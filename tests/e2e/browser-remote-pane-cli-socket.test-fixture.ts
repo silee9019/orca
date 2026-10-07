@@ -1,3 +1,5 @@
+import { CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS } from '../../src/cli/specs/client-hosted-browser-row'
+import { CLIENT_HOSTED_BROWSER_ROW_HANDLERS } from '../../src/cli/handlers/client-hosted-browser-row'
 import { BROWSER_TAKE_BACK_COMMAND_SPECS } from '../../src/cli/specs/browser-take-back'
 import { BROWSER_TAKE_BACK_HANDLERS } from '../../src/cli/handlers/browser-take-back'
 import { BROWSER_OBSERVATION_COMMAND_SPECS } from '../../src/cli/specs/browser-observation'
@@ -247,7 +249,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runClientRow = async (action: 'activate' | 'close', extra: string[]) => {
+    const specs = CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'hosted-row', action, '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await CLIENT_HOSTED_BROWSER_ROW_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
   return {
+    runClientRow,
     runTakeBack,
     runObservation,
     runWebAuthnDialog,

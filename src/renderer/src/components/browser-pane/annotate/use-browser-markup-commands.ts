@@ -48,7 +48,10 @@ export function useBrowserMarkupCommands(
     } else if (!active) {
       operation.request.finish(new Error('browser_markup_viewer_inactive_effect_unknown'))
       pending.current = null
-    } else if (operation.done) {
+    } else if (
+      operation.done &&
+      (!operation.request.settledState || current.current.state === operation.request.settledState)
+    ) {
       const snapshot = current.current
       const accepted =
         operation.request.action === 'start'
@@ -85,6 +88,15 @@ export function useBrowserMarkupCommands(
           return
         }
         if (request.action === 'status') {
+          if (request.settledState && current.current.state !== request.settledState) {
+            if (pending.current && !pending.current.request.isSettled()) {
+              request.finish(new Error('browser_markup_busy'))
+              return
+            }
+            pending.current = { request, done: true }
+            update((value) => value + 1)
+            return
+          }
           request.finish(undefined, current.current)
           return
         }

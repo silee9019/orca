@@ -39,5 +39,11 @@ export function useBrowserPageMarkupCapture(
     onDeliverVerified: deliverMarkupToClipboardVerified
   })
   useBrowserMarkupCommands(owner?.page ?? '', owner?.active ?? false, mode, admission)
-  return { ...mode, commandOwner: owner }
+  return {
+    ...mode,
+    commandOwner:
+      owner && admission
+        ? { ...owner, clientTarget: admission.target, isCurrent: admission.isCurrent }
+        : owner
+  }
 }

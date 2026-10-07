@@ -1,4 +1,3 @@
-import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
 import { requestBrowserSshRoute } from './browser-ssh-route-request'
 import { applyBrowserPlacementViewerAction } from './browser-placement-viewer-actions'
 import { requestBrowserGrabAction } from './browser-grab-action-request'
@@ -56,6 +55,7 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'client-hosted-row' ||
     command.operation === 'client-markup' ||
     command.operation === 'take-back' ||
     command.operation === 'observe-page' ||
@@ -78,12 +78,8 @@ export async function applyBrowserViewerRequest(
   if (state.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
   }
-  if (command.operation === 'browser-feature-wall') {
-    const browserFeatureWall = await applyBrowserFeatureWallAction(
-      command.command,
-      request.expiresAt
-    )
-    return { ...base, applied: true, browserFeatureWall }
+  if (command.operation === 'browser-feature-wall' || command.operation === 'browser-setup-guide') {
+    return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   if (command.operation === 'plugin-marketplace') {
     const marketplace = await applyPluginMarketplaceViewerAction(command.command, request.expiresAt)

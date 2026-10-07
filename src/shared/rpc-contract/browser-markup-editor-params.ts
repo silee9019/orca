@@ -1,3 +1,4 @@
+import { BrowserClientMarkupTarget } from './browser-client-markup-params'
 import { z } from 'zod'
 export const BrowserMarkupTool = z.enum([
   'pen',
@@ -33,6 +34,7 @@ export const BrowserMarkupEditorCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserMarkupEditorCommand = z.infer<typeof BrowserMarkupEditorCommand>
 export const BrowserMarkupEditorState = z.object({
+  clientTarget: BrowserClientMarkupTarget.optional(),
   tool: BrowserMarkupTool,
   color: z.string(),
   width: z.number(),

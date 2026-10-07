@@ -43,6 +43,10 @@ export const BROWSER_CLIENT_MARKUP_HANDLERS: Record<string, CommandHandler> = {
       ) ||
       (action.data === 'start' &&
         (acknowledgment.data.state !== 'drawing' || !acknowledgment.data.hasImage)) ||
+      (action.data === 'copy' &&
+        (!acknowledgment.data.copied ||
+          acknowledgment.data.state !== 'idle' ||
+          acknowledgment.data.hasImage)) ||
       (action.data === 'cancel' &&
         (acknowledgment.data.state !== 'idle' || acknowledgment.data.hasImage))
     ) {

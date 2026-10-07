@@ -1,3 +1,4 @@
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
@@ -37,7 +38,7 @@ type UseMarkupModeParams = {
 }
 
 export type MarkupModeController = {
-  commandOwner?: { page: string; active: boolean }
+  commandOwner?: BrowserMarkupEditorOwner
   state: MarkupModeState
   isActive: boolean
   baseImage: MarkupBaseImage | null

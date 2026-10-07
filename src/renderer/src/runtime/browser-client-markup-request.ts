@@ -1,3 +1,4 @@
+import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
 import type { BrowserViewerResult } from '../../../shared/browser-viewer-command'
 import { useAppStore } from '@/store'
 import { findPage } from '@/store/slices/browser-page-records'
@@ -43,7 +44,33 @@ export async function requestBrowserClientMarkup(
   if (!isBrowserClientMarkupTargetCurrent(target)) {
     throw new Error('browser_client_markup_target_mismatch')
   }
-  const result = await requestBrowserMarkup(target.page, action, expiresAt, target)
+  let copied = false
+  if (action === 'copy') {
+    const receipt = await requestBrowserMarkupEditor(
+      target.page,
+      { action: 'copy' },
+      expiresAt,
+      target
+    )
+    if (
+      !receipt.copied ||
+      !receipt.clientTarget ||
+      !isBrowserClientMarkupTargetCurrent(target) ||
+      Object.entries(target).some(
+        ([key, value]) => Reflect.get(receipt.clientTarget ?? {}, key) !== value
+      )
+    ) {
+      throw new Error('browser_client_markup_copy_effect_unknown')
+    }
+    copied = true
+  }
+  const result = await requestBrowserMarkup(
+    target.page,
+    action === 'copy' ? 'status' : action,
+    expiresAt,
+    target,
+    action === 'copy' ? 'idle' : undefined
+  )
   if (
     !isBrowserClientMarkupTargetCurrent(target) ||
     !result.clientTarget ||
@@ -53,7 +80,17 @@ export async function requestBrowserClientMarkup(
   ) {
     throw new Error('browser_client_markup_owner_changed_effect_unknown')
   }
-  return { ...target, action, state: result.state, hasImage: result.hasImage, accepted: true }
+  if (copied && (result.state !== 'idle' || result.hasImage)) {
+    throw new Error('browser_client_markup_copy_effect_unknown')
+  }
+  return {
+    ...target,
+    action,
+    state: result.state,
+    hasImage: result.hasImage,
+    ...(copied ? { copied: true as const } : {}),
+    accepted: true
+  }
 }
 
 export async function applyBrowserClientMarkupRequest(

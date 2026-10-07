@@ -1,3 +1,6 @@
+import { applyBrowserSetupGuideAction } from './browser-setup-guide-actions'
+import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
+import { requestClientHostedBrowserRow } from './client-hosted-browser-row-request'
 import { applyBrowserClientMarkupRequest } from './browser-client-markup-request'
 import { requestBrowserTakeBack } from './browser-take-back-request'
 import { requestBrowserObservation } from './browser-observation-request'
@@ -18,6 +21,9 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'browser-setup-guide'
+        | 'browser-feature-wall'
+        | 'client-hosted-row'
         | 'client-markup'
         | 'take-back'
         | 'observe-page'
@@ -35,6 +41,18 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'browser-setup-guide') {
+    const browserSetupGuide = await applyBrowserSetupGuideAction(command.command, expiresAt)
+    return { ...base, applied: true, browserSetupGuide }
+  }
+  if (command.operation === 'browser-feature-wall') {
+    const browserFeatureWall = await applyBrowserFeatureWallAction(command.command, expiresAt)
+    return { ...base, applied: true, browserFeatureWall }
+  }
+  if (command.operation === 'client-hosted-row') {
+    const clientHostedRow = await requestClientHostedBrowserRow(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, clientHostedRow }
+  }
   if (command.operation === 'client-markup') {
     return await applyBrowserClientMarkupRequest(command, expiresAt)
   }

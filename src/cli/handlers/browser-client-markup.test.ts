@@ -83,7 +83,7 @@ it('refuses invalid generation and action before requesting the viewer', async (
   const call = vi.spyOn(client, 'call')
   await expect(run('start', '-1')).rejects.toMatchObject({ code: 'invalid_argument' })
   await expect(run('start', '1.5')).rejects.toMatchObject({ code: 'invalid_argument' })
-  await expect(run('copy')).rejects.toMatchObject({ code: 'invalid_argument' })
+  await expect(run('unknown-action')).rejects.toMatchObject({ code: 'invalid_argument' })
   expect(call).not.toHaveBeenCalled()
 })
 it('does not accept a cancel receipt that retains a drawing image', async () => {
@@ -181,4 +181,42 @@ it('refuses missing result envelopes without printing success', async () => {
     await expect(run('status')).rejects.toMatchObject({ code: 'runtime_error' })
   }
   expect(log).not.toHaveBeenCalled()
+})
+it('requires explicit copied and idle/no-image readback for client composition', async () => {
+  const receipt = {
+    ...target,
+    action: 'copy',
+    state: 'idle',
+    hasImage: false,
+    copied: true,
+    accepted: true
+  }
+  const call = vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'fixture' },
+    result: { applied: true, clientMarkup: receipt }
+  })
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  await run('copy')
+  expect(call).toHaveBeenCalledWith('ui.browserViewer', {
+    viewer: 'host',
+    operation: 'client-markup',
+    target,
+    action: 'copy'
+  })
+  for (const clientMarkup of [
+    { ...receipt, copied: undefined },
+    { ...receipt, copied: false },
+    { ...receipt, state: 'drawing', hasImage: true },
+    { ...receipt, state: 'future-state' }
+  ]) {
+    call.mockResolvedValue({
+      id: 'fixture',
+      ok: true,
+      _meta: { runtimeId: 'fixture' },
+      result: { applied: true, clientMarkup }
+    })
+    await expect(run('copy')).rejects.toMatchObject({ code: 'runtime_error' })
+  }
 })
