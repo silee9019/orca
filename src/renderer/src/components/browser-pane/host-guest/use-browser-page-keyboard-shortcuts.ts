@@ -1,8 +1,9 @@
+import { useBrowserCopyShortcutCommands } from './use-browser-copy-shortcut-commands'
+import { browserGrabShortcutOwnsTarget } from './browser-grab-shortcut-priority'
 import { useEffect, type MutableRefObject } from 'react'
 import { getShortcutPlatform } from '@/hooks/useShortcutLabel'
 import { useAppStore } from '@/store'
 import { keybindingMatchesAction } from '../../../../../shared/keybindings'
-import { browserChromeShortcutOwnsEvent } from '../describe-page/browser-overlay-shortcut-target'
 import type { BrowserChromeShortcutScope, GrabIntent } from '../describe-page/browser-page-types'
 import { isEditableKeyboardTarget } from './browser-keyboard'
 import { useBrowserPageWebviewShortcuts } from './use-browser-page-webview-shortcuts'
@@ -38,6 +39,13 @@ export function useBrowserPageKeyboardShortcuts({
   handleGrabActionShortcut: (key: 'c' | 's') => void
   grabIsInteractive: boolean
 }): void {
+  useBrowserCopyShortcutCommands(
+    browserTabId,
+    workspaceId,
+    isActive,
+    chromeShortcutScope,
+    markupIsActive
+  )
   const keybindings = useAppStore((state) => state.keybindings)
 
   useBrowserPageWebviewShortcuts({
@@ -78,11 +86,13 @@ export function useBrowserPageKeyboardShortcuts({
         intent === null ||
         // Why: startGrabIntent toggles, so a held chord would flicker the picker on and off.
         e.repeat ||
-        // Why: don't start the in-guest picker behind an open markup overlay (matches the disabled toolbar buttons).
-        markupIsActive ||
-        !browserChromeShortcutOwnsEvent(chromeShortcutScope, e, workspaceId) ||
-        // Why: a live selection means copy; selecting in the floating panel or a sidebar keeps scope.
-        (intent === 'copy' && window.getSelection()?.isCollapsed === false)
+        !browserGrabShortcutOwnsTarget(
+          chromeShortcutScope,
+          e.target,
+          workspaceId,
+          intent,
+          markupIsActive
+        )
       ) {
         return
       }

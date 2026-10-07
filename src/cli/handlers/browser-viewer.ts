@@ -22,7 +22,16 @@ function runFindCommand(
 }
 function runGrabCommand(
   ctx: HandlerContext,
-  action: 'start' | 'toggle' | 'cancel' | 'rearm' | 'exit' | 'status' | 'copy' | 'copy-screenshot'
+  action:
+    | 'shortcut-copy'
+    | 'start'
+    | 'toggle'
+    | 'cancel'
+    | 'rearm'
+    | 'exit'
+    | 'status'
+    | 'copy'
+    | 'copy-screenshot'
 ): Promise<void> {
   return runViewerCommand(ctx, {
     viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
@@ -127,6 +136,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
       action: 'status'
     }),
 
+  'browser grab shortcut-copy': (ctx) => runGrabCommand(ctx, 'shortcut-copy'),
   'browser grab toggle': (ctx) => runGrabCommand(ctx, 'toggle'),
   'browser grab start': (ctx) => runGrabCommand(ctx, 'start'),
   'browser grab cancel': (ctx) => runGrabCommand(ctx, 'cancel'),

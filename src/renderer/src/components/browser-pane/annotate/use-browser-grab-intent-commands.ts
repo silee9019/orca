@@ -62,7 +62,7 @@ export function useBrowserGrabIntentCommands(
       if (
         request.page !== page ||
         (request.action !== 'intent-start' && request.action !== 'toggle') ||
-        !request.claim()
+        !request.claim(isActive)
       ) {
         return
       }

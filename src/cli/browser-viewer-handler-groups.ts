@@ -54,6 +54,7 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'browser context-menu',
       'browser grab start',
       'browser grab toggle',
+      'browser grab shortcut-copy',
       'browser grab cancel',
       'browser grab rearm',
       'browser grab exit',

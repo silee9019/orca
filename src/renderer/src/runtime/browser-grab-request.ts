@@ -11,7 +11,7 @@ export type BrowserGrabEvent = {
   action: BrowserGrabViewerAction | 'intent-start' | 'await-ready'
   intent?: 'copy' | 'annotate'
   expiresAt: number
-  claim: () => boolean
+  claim: (active?: boolean) => boolean
   isSettled: () => boolean
   finish: (error?: Error, state?: BrowserGrabState) => void
 }
@@ -29,6 +29,7 @@ export function requestBrowserGrab(
   intent?: 'copy' | 'annotate'
 ): Promise<BrowserGrabState> {
   return new Promise((resolve, reject) => {
+    let inactive = false
     let claimed = false
     let settled = false
     const timer = window.setTimeout(
@@ -55,7 +56,11 @@ export function requestBrowserGrab(
           intent,
           expiresAt,
           isSettled: () => settled,
-          claim: () => {
+          claim: (active = true) => {
+            if (!active) {
+              inactive = true
+              return false
+            }
             if (claimed) {
               return false
             }
@@ -67,7 +72,7 @@ export function requestBrowserGrab(
       })
     )
     if (!claimed) {
-      finish(new Error('browser_grab_ui_unavailable'))
+      finish(new Error(inactive ? 'browser_grab_viewer_inactive' : 'browser_grab_ui_unavailable'))
     }
   })
 }

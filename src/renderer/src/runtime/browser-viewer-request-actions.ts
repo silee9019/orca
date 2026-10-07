@@ -1,3 +1,4 @@
+import { requestWorkspacePortOpen } from './workspace-port-open-request'
 import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
 import { applyBrowserPaletteSelection } from './browser-palette-selection'
 import { requestRemoteFilePicker } from './remote-file-picker-request'
@@ -6,6 +7,7 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
+import { requestBrowserCopyShortcut } from './browser-copy-shortcut-request'
 import { requestBrowserNewTab } from './browser-new-tab-request'
 import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
@@ -54,6 +56,10 @@ export async function applyBrowserViewerRequest(
     return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'workspace-port-open') {
+    const portOpenState = await requestWorkspacePortOpen(command.command, request.expiresAt)
+    return { ...base, applied: true, portOpenState }
+  }
   if (command.operation === 'palette-select') {
     const paletteState = await applyBrowserPaletteSelection(command.selection, request.expiresAt)
     return { ...base, applied: true, paletteState }
@@ -155,6 +161,10 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, contextMenu, applied: true }
   }
   if (command.operation === 'grab') {
+    if (command.action === 'shortcut-copy') {
+      const grab = await requestBrowserCopyShortcut(page.id, request.expiresAt)
+      return { ...base, page: page.id, grab, applied: true }
+    }
     if (command.action === 'toggle') {
       if (!command.intent) {
         throw new Error('invalid_grab_intent')
@@ -228,12 +238,8 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, applied: true, annotationRow: row }
   }
   if (command.operation === 'annotation-tray') {
-    const annotationTray = await requestBrowserAnnotationTray(
-      page.id,
-      command.action,
-      request.expiresAt
-    )
-    return { ...base, page: page.id, applied: true, annotationTray }
+    const tray = await requestBrowserAnnotationTray(page.id, command.action, request.expiresAt)
+    return { ...base, page: page.id, applied: true, annotationTray: tray }
   }
   if (command.operation === 'profile-ui') {
     const profileUi = await requestBrowserProfileUi(page.id, command.command, request.expiresAt)
@@ -244,12 +250,8 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, applied: true, address }
   }
   if (command.operation === 'markup-editor') {
-    const markupEditor = await requestBrowserMarkupEditor(
-      page.id,
-      command.command,
-      request.expiresAt
-    )
-    return { ...base, page: page.id, applied: true, markupEditor }
+    const editor = await requestBrowserMarkupEditor(page.id, command.command, request.expiresAt)
+    return { ...base, page: page.id, applied: true, markupEditor: editor }
   }
   if (command.operation === 'markup') {
     const markup = await requestBrowserMarkup(page.id, command.action, request.expiresAt)

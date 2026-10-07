@@ -71,7 +71,7 @@ export function getPortOpenBrowserTooltipLabel(openLabel: string, isMac?: boolea
   return `${openLabel}. ${getPortSystemBrowserHint(isMac)}`
 }
 
-type PortOpenClickEvent = Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>
+export type PortOpenClickEvent = Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>
 
 export function resolvePortOpenInOrcaBrowser({
   settings,
@@ -107,6 +107,7 @@ export async function openWorkspacePortInBrowser(args: {
   setRemoteBrowserPageHandle: RemoteBrowserPageHandleSetter
   openInOrcaBrowser?: boolean
   localhostLabelRoute?: LocalhostWorktreeLabelRoute | null
+  isCurrent?: () => boolean
 }): Promise<{ ok: true } | { ok: false; reason: string }> {
   if (!args.runtimeTarget) {
     return { ok: false, reason: WORKSPACE_PORT_TARGET_UNAVAILABLE_REASON }
@@ -119,6 +120,9 @@ export async function openWorkspacePortInBrowser(args: {
     } catch {
       url = rawUrl
     }
+  }
+  if (args.isCurrent && !args.isCurrent()) {
+    return { ok: false, reason: 'Workspace port owner changed before opening.' }
   }
   if (args.openInOrcaBrowser === false && args.runtimeTarget.kind === 'local') {
     try {
@@ -145,12 +149,18 @@ export async function openWorkspacePortInBrowser(args: {
         BROWSER_SCREENCAST_RUNTIME_CAPABILITY,
         RUNTIME_BROWSER_UNAVAILABLE_MESSAGE
       )
+      if (args.isCurrent && !args.isCurrent()) {
+        return { ok: false, reason: 'Workspace port owner changed before opening.' }
+      }
       const remotePage = await callRuntimeRpc<{ browserPageId: string }>(
         args.runtimeTarget,
         'browser.tabCreate',
         { worktree: toRuntimeWorktreeSelector(worktreeId), url },
         { timeoutMs: 30_000 }
       )
+      if (args.isCurrent && !args.isCurrent()) {
+        return { ok: false, reason: 'Workspace port opened remotely but viewer owner changed.' }
+      }
       const tab = args.createBrowserTab(worktreeId, url, {
         activate: true,
         browserRuntimeEnvironmentId: args.runtimeTarget.environmentId

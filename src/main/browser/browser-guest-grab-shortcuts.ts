@@ -1,3 +1,4 @@
+import { probeBrowserGrabCopyShortcutPriority } from './browser-grab-copy-shortcut-priority'
 import { keybindingMatchesAction, type KeybindingOverrides } from '../../shared/keybindings'
 import type { ResolveRenderer } from './browser-guest-renderer-target'
 
@@ -41,24 +42,7 @@ export function setupGrabShortcutForwarding(args: {
       return
     }
 
-    void guest
-      .executeJavaScript(`(() => {
-        const active = document.activeElement
-        const tag = active?.tagName
-        const isEditable =
-          active instanceof HTMLInputElement ||
-          active instanceof HTMLTextAreaElement ||
-          active?.isContentEditable === true ||
-          tag === 'SELECT' ||
-          tag === 'IFRAME'
-        if (isEditable) {
-          return false
-        }
-        const selection = window.getSelection()
-        return Boolean(selection && selection.type === 'Range' && selection.toString().trim().length > 0)
-          ? false
-          : true
-      })()`)
+    void probeBrowserGrabCopyShortcutPriority(guest)
       .then((shouldToggle) => {
         if (!shouldToggle) {
           return

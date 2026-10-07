@@ -1,3 +1,4 @@
+import { WorkspacePortOpenCommand } from './workspace-port-open-params'
 import { PluginMarketplaceViewerCommand } from './plugin-marketplace-viewer-params'
 import { BrowserPaletteSelection } from './browser-palette-params'
 import { RemoteFilePickerCommand } from './remote-file-picker-params'
@@ -25,6 +26,7 @@ export const BrowserViewerPreset = z.enum(BROWSER_VIEWPORT_PRESETS.map((preset) 
 export const BrowserGrabViewerAction = z.enum([
   'start',
   'toggle',
+  'shortcut-copy',
   'cancel',
   'rearm',
   'exit',
@@ -46,6 +48,11 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('workspace-port-open'),
+    command: WorkspacePortOpenCommand
+  }),
   z.object({
     viewer,
     operation: z.literal('plugin-marketplace'),
