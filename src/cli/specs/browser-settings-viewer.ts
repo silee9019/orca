@@ -7,6 +7,7 @@ export const BROWSER_SETTINGS_VIEWER_SPECS: CommandSpec[] = [
       'orca browser settings viewer --viewer host --host <current-settings-host> --action <action> [--value <value>] [--host <host-id>] [--profile <profile-id|default>] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
+      'preference',
       'viewer',
       'action',
       'value',
@@ -19,8 +20,10 @@ export const BROWSER_SETTINGS_VIEWER_SPECS: CommandSpec[] = [
       'confirm'
     ],
     notes: [
-      'Actions: browser-identity-set, kagi-clear, browser-use-copy-example, browser-use-status, browser-use-enabled, browser-use-refresh, browser-use-install-intent, browser-use-configure, browser-use-computer, cookies-configure, profile-status, detect-browsers, cookies-import-browser, cookies-import-file, profile-delete, default-cookies-clear, status, homepage-draft, homepage-save, search-engine, zoom, profile-dialog-open, profile-dialog-close, profile-dialog-status, profile-name, profile-create, profile-select, host-select, cookies-scroll, computer-use-open.',
+      'Actions: browser-preference-set, browser-ssh-route-restore, browser-identity-set, kagi-clear, browser-use-copy-example, browser-use-status, browser-use-enabled, browser-use-refresh, browser-use-install-intent, browser-use-configure, browser-use-computer, cookies-configure, profile-status, detect-browsers, cookies-import-browser, cookies-import-file, profile-delete, default-cookies-clear, status, homepage-draft, homepage-save, search-engine, zoom, profile-dialog-open, profile-dialog-close, profile-dialog-status, profile-name, profile-create, profile-select, host-select, cookies-scroll, computer-use-open.',
       'Cookie import requires --profile <id> --surface profile-row|browser-use --confirm <same-profile-id>. File import uses --file <path> on the selected local host, with no native picker. Browser import requires --browser-family and optional --browser-profile from detected metadata. Cookie contents are never command arguments or result fields. Delete/clear requires --profile and --confirm <same-id>.',
+      'browser-preference-set uses --preference link-routing|link-routing-modifier|localhost-labels|client-hosted-remote|ssh-routing with --value true|false, or terminal-url-click|terminal-url-middle-click with --value actions|open|none. It reuses the visible local settings owner and verifies its latest value; link-routing also preserves the preference-prompt marker.',
+      'browser-ssh-route-restore uses --value <current-disabled-target-id> and reuses the existing restore button owner. It changes the preference only and does not connect to or write to an SSH host.',
       'browser-identity-set takes --value clean|native through the mounted local identity settings owner and reports its saving/error/restart state. Remote settings and identity records requiring explicit reset are refused; use the existing direct host identity CLI for those operations.',
       'kagi-clear clears the existing masked Kagi link through its visible settings owner, resets the draft and shows the existing toast. It accepts no secret input and returns only configured/draft-present booleans.',
       'browser-use-copy-example takes --value 0|1|2 and copies an existing example through its mounted owner; clipboard read-back is compared without returning its contents.',

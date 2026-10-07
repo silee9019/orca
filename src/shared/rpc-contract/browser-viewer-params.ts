@@ -1,6 +1,7 @@
 import { RemoteFilePickerCommand } from './remote-file-picker-params'
 import { LinkedBrowserCommand } from './linked-browser-params'
 import { FloatingBrowserCommand } from './floating-browser-params'
+import { BrowserNewTabTarget } from './browser-new-tab-params'
 import { BrowserReloadMenuAction } from './browser-reload-menu-params'
 import { BrowserAnnotationRowCommand } from './browser-annotation-row-params'
 import { BrowserContextMenuAction } from './browser-context-menu-params'
@@ -59,6 +60,7 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
     hostId: z.string().min(1).max(256),
     command: BrowserSettingsCommand
   }),
+  z.object({ viewer, operation: z.literal('new-tab'), target: BrowserNewTabTarget }),
   z.object({ viewer, operation: z.literal('reload-menu'), page, action: BrowserReloadMenuAction }),
   z.object({
     viewer,

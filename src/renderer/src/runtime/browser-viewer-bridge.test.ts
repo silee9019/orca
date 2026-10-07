@@ -42,6 +42,11 @@ const fixture = vi.hoisted(() => {
     annotationTray: vi
       .fn()
       .mockResolvedValue({ noteCount: 1, open: true, copied: true, sendMenuOpen: false }),
+    newTab: vi.fn().mockResolvedValue({
+      workspace: 'created',
+      page: 'created-page',
+      addressFocusRequested: true
+    }),
     reloadMenu: vi.fn().mockResolvedValue({ open: true }),
     annotationRow: vi
       .fn()
@@ -89,6 +94,7 @@ const fixture = vi.hoisted(() => {
 vi.mock('./browser-annotation-tray-request', () => ({
   requestBrowserAnnotationTray: fixture.annotationTray
 }))
+vi.mock('./browser-new-tab-request', () => ({ requestBrowserNewTab: fixture.newTab }))
 vi.mock('./browser-reload-menu-request', () => ({ requestBrowserReloadMenu: fixture.reloadMenu }))
 vi.mock('./browser-annotation-row-request', () => ({
   requestBrowserAnnotationRow: fixture.annotationRow
@@ -474,4 +480,22 @@ it('routes reload menu state to the exact native page owner', async () => {
     await request({ viewer: 'host', operation: 'reload-menu', page: 'page-1', action: 'open' })
   ).toMatchObject({ applied: true, rendered: false, reloadMenu: { open: true } })
   expect(fixture.reloadMenu).toHaveBeenCalledWith('page-1', 'open', expect.any(Number))
+})
+
+it('routes new tab invocation before page resolution to its exact host-viewer creation owner', async () => {
+  expect(
+    await request({
+      viewer: 'host',
+      operation: 'new-tab',
+      target: { worktree: 'folder:new', group: 'active' }
+    })
+  ).toMatchObject({
+    applied: true,
+    rendered: false,
+    newTab: { workspace: 'created', addressFocusRequested: true }
+  })
+  expect(fixture.newTab).toHaveBeenCalledWith(
+    { worktree: 'folder:new', group: 'active' },
+    expect.any(Number)
+  )
 })

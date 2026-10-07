@@ -72,6 +72,24 @@ export const BROWSER_SETTINGS_VIEWER_HANDLERS: Record<string, CommandHandler> = 
       }
       extra.enabled = enabled === 'true'
     }
+    if (action === 'browser-preference-set') {
+      const field = getRequiredStringFlag(ctx.flags, 'preference')
+      const value = getRequiredStringFlag(ctx.flags, 'value')
+      extra.preference = {
+        field,
+        value:
+          field === 'terminal-url-click' || field === 'terminal-url-middle-click'
+            ? value
+            : value === 'true'
+              ? true
+              : value === 'false'
+                ? false
+                : value
+      }
+    }
+    if (action === 'browser-ssh-route-restore') {
+      extra.targetId = getRequiredStringFlag(ctx.flags, 'value')
+    }
     const parsed = BrowserSettingsCommand.safeParse({ action, ...extra })
     if (!parsed.success || getRequiredStringFlag(ctx.flags, 'viewer') !== 'host') {
       throw new RuntimeClientError(

@@ -1,3 +1,6 @@
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
+import { useRef } from 'react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { translate } from '@/i18n/i18n'
 import { BROWSER_TERMINAL_LINK_ACTIONS_SETTINGS_TARGET_ID } from '@/lib/settings-navigation-types'
@@ -21,7 +24,7 @@ type BrowserTerminalLinkActionsSettingProps = {
     | 'terminalUrlMiddleClickBehavior'
   >
   isMac: boolean
-  updateSettings: (updates: Partial<GlobalSettings>) => void
+  updateSettings: (updates: Partial<GlobalSettings>) => void | Promise<void>
 }
 
 export function BrowserTerminalLinkActionsSetting({
@@ -75,6 +78,46 @@ export function BrowserTerminalLinkActionsSetting({
     'Leave to terminal'
   )
 
+  const setPlainClick = (value: TerminalLinkClickBehavior) =>
+    updateSettings({ terminalLinkClickBehavior: value })
+  const setMiddleClick = (value: TerminalLinkClickBehavior) =>
+    updateSettings({ terminalUrlMiddleClickBehavior: value })
+  const preferenceField = useRef<'terminal-url-click' | 'terminal-url-middle-click'>(
+    'terminal-url-click'
+  )
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      command.action === 'browser-preference-set' &&
+      (command.preference.field === 'terminal-url-click' ||
+        command.preference.field === 'terminal-url-middle-click'),
+    apply: async (command) => {
+      if (command.action !== 'browser-preference-set') {
+        return
+      }
+      if (command.preference.field === 'terminal-url-click') {
+        preferenceField.current = command.preference.field
+        await setPlainClick(command.preference.value)
+      } else if (command.preference.field === 'terminal-url-middle-click') {
+        preferenceField.current = command.preference.field
+        await setMiddleClick(command.preference.value)
+      }
+    },
+    read: () => ({
+      hostId: LOCAL_EXECUTION_HOST_ID,
+      preference:
+        preferenceField.current === 'terminal-url-click'
+          ? { field: 'terminal-url-click', value: behavior }
+          : {
+              field: 'terminal-url-middle-click',
+              value: settings.terminalUrlMiddleClickBehavior ?? 'open'
+            }
+    }),
+    verify: (command, state) =>
+      command.action === 'browser-preference-set' &&
+      state.preference?.field === command.preference.field &&
+      state.preference.value === command.preference.value
+  })
+
   return (
     <SearchableSetting
       id={BROWSER_TERMINAL_LINK_ACTIONS_SETTINGS_TARGET_ID}
@@ -93,7 +136,7 @@ export function BrowserTerminalLinkActionsSetting({
               control={
                 <SettingsSegmentedControl<TerminalLinkClickBehavior>
                   value={behavior}
-                  onChange={(value) => updateSettings({ terminalLinkClickBehavior: value })}
+                  onChange={setPlainClick}
                   ariaLabel={plainClickAriaLabel}
                   size="sm"
                   options={[
@@ -110,7 +153,7 @@ export function BrowserTerminalLinkActionsSetting({
               control={
                 <SettingsSegmentedControl<TerminalLinkClickBehavior>
                   value={settings.terminalUrlMiddleClickBehavior ?? 'open'}
-                  onChange={(value) => updateSettings({ terminalUrlMiddleClickBehavior: value })}
+                  onChange={setMiddleClick}
                   ariaLabel={middleClickAriaLabel}
                   size="sm"
                   options={[

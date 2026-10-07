@@ -17,6 +17,8 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'browser.onOpenLinkInOrcaTab',
   'browser.onPaneFocus',
   'emulator.onAutoAttach',
+  'emulator.onFocusRequest',
+  'emulator.onFrameRequest',
   'emulator.onPaneFocus',
   'gh.onPRRefreshEvent',
   'keybindings.onChanged',
@@ -39,6 +41,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ssh.onPortForwardsChanged',
   'ssh.onStateChanged',
   'ui.onActivateWorktree',
+  'ui.onBrowserViewerRequest',
   'ui.onCloseActiveTab',
   'ui.onCloseFloatingItem',
   'ui.onCloseSessionTab',
@@ -73,6 +76,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onRequestTerminalCreate',
   'ui.onRequestTerminalTabMount',
   'ui.onResumeSleepingAgents',
+  'ui.onSearchSettingsViewerRequest',
   'ui.onSelectFloatingIndex',
   'ui.onSessionTabCloseRequest',
   'ui.onSleepWorktree',
@@ -93,6 +97,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onToggleRightSidebar',
   'ui.onToggleStatusBar',
   'ui.onToggleWorktreePalette',
+  'ui.onVoiceViewerRequest',
   'ui.onWorktreeHistoryNavigate',
   'updater.onClearDismissal',
   'updater.onStatus',
@@ -105,7 +110,10 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
 ] as const
 
 const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
+  'ui.onSearchSettingsViewerRequest',
   'ui.onMobileMarkdownRequest',
+  'ui.onBrowserViewerRequest',
+  'ui.onVoiceViewerRequest',
   'automations.onChanged',
   'runtimeEnvironments.onStatusChanged',
   'repos.onChanged',
@@ -169,6 +177,8 @@ const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
   'browser.onCapturePaintHold',
   'browser.onPaneFocus',
   'browser.onOpenLinkInOrcaTab',
+  'emulator.onFocusRequest',
+  'emulator.onFrameRequest',
   'ui.onNewBrowserTab',
   'ui.onNewMarkdownTab',
   'ui.onNewSimulatorTab',
@@ -248,6 +258,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     const listeners = new Map<string, ListenerRecord[]>()
     const storeSubscriptions: { active: boolean; cleanup: Mock }[] = []
     const setUpdateStatus = vi.fn()
+    const browserResponses = vi.fn()
     const storeState = new Proxy(
       createHarnessStoreState({
         tabsByWorktree: { 'wt-1': [] },
@@ -290,6 +301,9 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
                   unsubscribe: () => cleanupOrder.push('runtimeEnvironment.unsubscribe')
                 }
               }
+            }
+            if (name === 'ui' && property === 'respondBrowserViewer') {
+              return browserResponses
             }
             if (property.startsWith('on')) {
               return (callback: (...args: unknown[]) => void) => {
@@ -382,11 +396,14 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
           )
       )
     ).toEqual([
+      'ui.onSearchSettingsViewerRequest',
       'ui.onMobileMarkdownRequest',
+      'ui.onBrowserViewerRequest',
+      'ui.onVoiceViewerRequest',
       'automations.onChanged',
       'runtimeEnvironments.onStatusChanged',
       'runtimeEnvironments.subscribe',
-      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(3)
+      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(6)
     ])
     const groupOrder = (names: readonly string[]): string[] =>
       registrationOrder.filter((entry) => names.includes(entry))
@@ -467,7 +484,34 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     ).toBe(true)
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
 
+    const browserCallback = listeners.get('ui.onBrowserViewerRequest')?.[0]?.callback
+    if (!browserCallback) {
+      throw new Error('missing browser viewer callback')
+    }
+    browserCallback({
+      id: 'browser-before-cleanup',
+      expiresAt: 0,
+      command: { viewer: 'host', operation: 'history-list' }
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(browserResponses).toHaveBeenCalledWith({
+      id: 'browser-before-cleanup',
+      ok: false,
+      error: 'request_expired'
+    })
+    expect(browserResponses).toHaveBeenCalledTimes(1)
     firstCleanup()
+    browserCallback({
+      id: 'browser-after-cleanup',
+      expiresAt: 0,
+      command: { viewer: 'host', operation: 'history-list' }
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(browserResponses).toHaveBeenCalledTimes(1)
     const ipcCleanupOrder = cleanupOrder
       .filter((entry) => entry.startsWith('ipc.') && entry !== 'ipc.dispose')
       .map((entry) => entry.slice('ipc.'.length))

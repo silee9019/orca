@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BrowserPreference } from './browser-preference-params'
 import { BROWSER_PAGE_ZOOM_LEVELS } from '../browser-page-zoom'
 
 const cookieTarget = {
@@ -6,6 +7,11 @@ const cookieTarget = {
   surface: z.enum(['profile-row', 'browser-use'])
 }
 export const BrowserSettingsCommand = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('browser-preference-set'), preference: BrowserPreference }),
+  z.object({
+    action: z.literal('browser-ssh-route-restore'),
+    targetId: z.string().min(1).max(256)
+  }),
   z.object({
     ...cookieTarget,
     action: z.enum(['detect-browsers', 'profile-status', 'cookies-configure'])
@@ -82,6 +88,11 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserSettingsCommand = z.infer<typeof BrowserSettingsCommand>
 export const BrowserSettingsState = z.object({
+  preference: BrowserPreference.optional(),
+  linkRoutingPreferencePrompted: z.boolean().optional(),
+  sshRouteRestored: z.boolean().optional(),
+  sshRestoredTargetId: z.string().optional(),
+  sshDisabledTargetCount: z.number().int().nonnegative().optional(),
   identityConfiguredMode: z.enum(['clean', 'native']).nullable().optional(),
   identityAppliedMode: z.enum(['clean', 'native']).nullable().optional(),
   identityRestartRequired: z.boolean().optional(),

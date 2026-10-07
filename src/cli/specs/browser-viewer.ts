@@ -1,3 +1,4 @@
+import { BROWSER_NEW_TAB_COMMAND_SPECS } from './browser-new-tab'
 import { BROWSER_RELOAD_MENU_COMMAND_SPECS } from './browser-reload-menu'
 import { BROWSER_ANNOTATION_TRAY_COMMAND_SPECS } from './browser-annotation-tray'
 import { BROWSER_ANNOTATION_ROW_COMMAND_SPECS } from './browser-annotation-row'
@@ -7,6 +8,7 @@ import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
+  ...BROWSER_NEW_TAB_COMMAND_SPECS,
   ...BROWSER_RELOAD_MENU_COMMAND_SPECS,
   ...BROWSER_ANNOTATION_TRAY_COMMAND_SPECS,
   ...BROWSER_ANNOTATION_ROW_COMMAND_SPECS,

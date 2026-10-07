@@ -78,29 +78,50 @@ export async function applyEmulatorFocus(
 
 export function attachEmulatorFocusBridge(): () => void {
   const api = window.api.emulator
-  if (!api.onFocusRequest || !api.respondFocus) {
+  if (!api?.onFocusRequest || !api.respondFocus) {
     return () => {}
   }
   let queue = Promise.resolve()
-  const focus = api.onFocusRequest((request) => {
+  let disposed = false
+  const enqueue = (
+    request: EmulatorFocusRequest,
+    apply: (request: EmulatorFocusRequest) => Promise<EmulatorFocusResult>,
+    error: string
+  ) => {
     queue = queue.then(async () => {
+      if (disposed) {
+        return
+      }
       try {
-        api.respondFocus?.({ id: request.id, ok: true, result: await applyEmulatorFocus(request) })
+        if (Date.now() >= request.expiresAt) {
+          throw new Error('request_expired')
+        }
+        const result = await apply(request)
+        if (!disposed) {
+          api.respondFocus?.(
+            Date.now() < request.expiresAt
+              ? { id: request.id, ok: true, result }
+              : { id: request.id, ok: false, error }
+          )
+        }
       } catch {
-        api.respondFocus?.({ id: request.id, ok: false, error: 'viewer_focus_not_applied' })
+        if (!disposed) {
+          api.respondFocus?.({ id: request.id, ok: false, error })
+        }
       }
     })
+  }
+  const focus = api.onFocusRequest((request) => {
+    enqueue(request, applyEmulatorFocus, 'viewer_focus_not_applied')
   })
   const frame = api.onFrameRequest?.((request) => {
-    queue = queue.then(async () => {
-      try {
-        api.respondFocus?.({ id: request.id, ok: true, result: await applyEmulatorFrame(request) })
-      } catch {
-        api.respondFocus?.({ id: request.id, ok: false, error: 'emulator_frame_not_applied' })
-      }
-    })
+    enqueue(request, applyEmulatorFrame, 'emulator_frame_not_applied')
   })
   return () => {
+    if (disposed) {
+      return
+    }
+    disposed = true
     focus()
     frame?.()
   }

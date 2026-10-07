@@ -20,6 +20,10 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  {
+    args: ['new-ui', '--worktree', 'folder:new', '--group', 'active', '--confirm'],
+    command: { operation: 'new-tab', target: { worktree: 'folder:new', group: 'active' } }
+  },
   ...['open', 'close', 'status'].map((action) => ({
     args: ['reload-menu', '--page', 'p1', '--action', action],
     command: { operation: 'reload-menu', page: 'p1', action }
@@ -391,6 +395,16 @@ it.each([
     'p1'
   ]
 ])('rejects invalid annotation row requests before transport %j', async (...args) => {
+  const call = vi.spyOn(client, 'call')
+  await expect(run(args)).rejects.toMatchObject({ code: 'invalid_argument' })
+  expect(call).not.toHaveBeenCalled()
+})
+
+it.each([
+  ['new-ui', '--viewer', 'host', '--worktree', 'folder:new', '--group', 'active'],
+  ['new-ui', '--viewer', 'host', '--worktree', 'folder:new', '--confirm'],
+  ['new-ui', '--viewer', 'client', '--worktree', 'folder:new', '--group', 'active', '--confirm']
+])('refuses invalid new-ui before transport %j', async (...args) => {
   const call = vi.spyOn(client, 'call')
   await expect(run(args)).rejects.toMatchObject({ code: 'invalid_argument' })
   expect(call).not.toHaveBeenCalled()

@@ -1,3 +1,4 @@
+import { runBrowserNewTab } from './browser-new-tab'
 import { runBrowserReloadMenu } from './browser-reload-menu'
 import { runBrowserAnnotationRow } from './browser-annotation-row'
 import { runBrowserContextMenu } from './browser-context-menu'
@@ -44,6 +45,7 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 }
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser new-ui': runBrowserNewTab,
   'browser reload-menu': runBrowserReloadMenu,
   'browser annotation row': runBrowserAnnotationRow,
   'browser context-menu': runBrowserContextMenu,

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import type { EmulatorFocusRequest } from '../../../shared/emulator-focus'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const state = vi.hoisted(() => ({
   persistedUIReady: true,
@@ -11,7 +12,7 @@ const state = vi.hoisted(() => ({
 }))
 vi.mock('@/store', () => ({ useAppStore: { getState: () => state } }))
 vi.mock('@/lib/ensure-simulator-tab', () => ({ ensureSimulatorTab: vi.fn(() => 'sim-tab') }))
-import { applyEmulatorFocus } from './emulator-focus-bridge'
+import { applyEmulatorFocus, attachEmulatorFocusBridge } from './emulator-focus-bridge'
 import { ensureSimulatorTab } from '@/lib/ensure-simulator-tab'
 const request = () => ({
   id: 'focus-request',
@@ -65,4 +66,112 @@ describe('emulator pane focus renderer effect', () => {
     document.body.innerHTML = ''
     await expect(applyEmulatorFocus(request())).rejects.toThrow('viewer_focus_not_applied')
   })
+})
+
+it('discards queued focus and frame requests after bridge cleanup', async () => {
+  const api = Object.getOwnPropertyDescriptor(window, 'api')
+  const focusCallbacks: ((request: EmulatorFocusRequest) => void)[] = []
+  const frameCallbacks: typeof focusCallbacks = []
+  const unsubscribeFocus = vi.fn()
+  const unsubscribeFrame = vi.fn()
+  const respondFocus = vi.fn()
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: {
+      emulator: {
+        onFocusRequest: (callback: (typeof focusCallbacks)[number]) => {
+          focusCallbacks.push(callback)
+          return unsubscribeFocus
+        },
+        onFrameRequest: (callback: (typeof frameCallbacks)[number]) => {
+          frameCallbacks.push(callback)
+          return unsubscribeFrame
+        },
+        respondFocus
+      }
+    }
+  })
+  try {
+    const detach = attachEmulatorFocusBridge()
+    focusCallbacks[0](request())
+    frameCallbacks[0]({
+      ...request(),
+      id: 'frame-request',
+      frame: { tabId: 'sim-tab', action: { type: 'rotate' } }
+    })
+    detach()
+    for (let turn = 0; turn < 8; turn += 1) {
+      await Promise.resolve()
+    }
+    expect(unsubscribeFocus).toHaveBeenCalledTimes(1)
+    expect(unsubscribeFrame).toHaveBeenCalledTimes(1)
+    expect(state.setActiveWorktree).not.toHaveBeenCalled()
+    expect(respondFocus).not.toHaveBeenCalled()
+  } finally {
+    if (api) {
+      Object.defineProperty(window, 'api', api)
+    } else {
+      Reflect.deleteProperty(window, 'api')
+    }
+  }
+})
+
+it('preserves the entry point when the emulator preload API is absent', () => {
+  const api = Object.getOwnPropertyDescriptor(window, 'api')
+  Object.defineProperty(window, 'api', { configurable: true, value: {} })
+  try {
+    expect(() => attachEmulatorFocusBridge()()).not.toThrow()
+    expect(state.setActiveWorktree).not.toHaveBeenCalled()
+  } finally {
+    if (api) {
+      Object.defineProperty(window, 'api', api)
+    } else {
+      Reflect.deleteProperty(window, 'api')
+    }
+  }
+})
+
+it('suppresses the response when cleanup occurs during an already started focus request', async () => {
+  const api = Object.getOwnPropertyDescriptor(window, 'api')
+  const callbacks: ((request: EmulatorFocusRequest) => void)[] = []
+  const frames: FrameRequestCallback[] = []
+  const respondFocus = vi.fn()
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frames.push(callback)
+    return frames.length
+  })
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: {
+      emulator: {
+        onFocusRequest: (callback: (typeof callbacks)[number]) => {
+          callbacks.push(callback)
+          return () => {}
+        },
+        respondFocus
+      }
+    }
+  })
+  try {
+    const detach = attachEmulatorFocusBridge()
+    callbacks[0](request())
+    await Promise.resolve()
+    expect(state.setActiveWorktree).toHaveBeenCalledTimes(1)
+    expect(frames).toHaveLength(1)
+    detach()
+    frames[0](0)
+    expect(frames).toHaveLength(2)
+    frames[1](0)
+    for (let turn = 0; turn < 8; turn += 1) {
+      await Promise.resolve()
+    }
+    expect(respondFocus).not.toHaveBeenCalled()
+    expect(state.setActiveWorktree).toHaveBeenCalledTimes(1)
+  } finally {
+    if (api) {
+      Object.defineProperty(window, 'api', api)
+    } else {
+      Reflect.deleteProperty(window, 'api')
+    }
+  }
 })

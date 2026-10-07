@@ -4,6 +4,7 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
+import { requestBrowserNewTab } from './browser-new-tab-request'
 import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
 import { requestBrowserContextMenu } from './browser-context-menu-request'
@@ -45,6 +46,10 @@ export async function applyBrowserViewerRequest(
   const state = useAppStore.getState()
   if (!state.settings || !state.persistedUIReady) {
     throw new Error('viewer_not_ready')
+  }
+  if (command.operation === 'new-tab') {
+    const newTab = await requestBrowserNewTab(command.target, request.expiresAt)
+    return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (command.operation === 'floating-browser') {

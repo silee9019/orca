@@ -12,6 +12,8 @@ export const browserNavigationFixture = {
   requestTick: 0
 }
 export function BrowserSettingsNavigationFixture({ settings }: { settings: GlobalSettings }) {
+  const currentSettings = useAppStore((state) => state.settings) ?? settings
+  const updateSettings = useAppStore((state) => state.updateSettings)
   const settingsSearchQuery = useAppStore((state) => state.settingsSearchQuery)
   const [requestTick, setPendingNavRequestTick] = useState(0)
   const contentScrollRef = useRef<HTMLDivElement>(null)
@@ -39,8 +41,8 @@ export function BrowserSettingsNavigationFixture({ settings }: { settings: Globa
   browserNavigationFixture.scrollTarget = pendingScrollTargetRef.current ?? ''
   browserNavigationFixture.requestTick = requestTick
   return createElement(BrowserPane, {
-    settings,
-    updateSettings: () => {},
+    settings: currentSettings,
+    updateSettings,
     onOpenComputerUse: actions.openComputerUseFromBrowser
   })
 }

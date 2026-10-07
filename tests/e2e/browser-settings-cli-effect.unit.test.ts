@@ -93,12 +93,20 @@ it.skipIf(process.platform === 'win32')(
     cookieFixture.jars.clear()
     localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, '1')
     const successToast = vi.spyOn(toast, 'success')
+    const settingsErrors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    let settingsWriteIgnored = false
+    let settingsWriteFailure = false
+    let holdPreferenceWrites = false
+    const preferenceWriteReleases: (() => void)[] = []
     let clipboard = ''
     const clipboardEvents: string[] = []
     let clipboardWriteFailure = false
     let clipboardReadMismatch = false
     const store = new Store({
-      serializedState: JSON.stringify({ repos: [], settings: {} }),
+      serializedState: JSON.stringify({
+        repos: [],
+        settings: { browserSshWorkspaceRoutingDisabledTargetIds: ['fixture-ssh-target'] }
+      }),
       dataFile: join(directory, 'profile.json')
     })
     resetBrowserIdentityModeStoreForTests()
@@ -116,6 +124,20 @@ it.skipIf(process.platform === 'win32')(
     let skillFailure = false
     Object.assign(window, {
       api: {
+        settings: {
+          set: async (updates: Parameters<Store['updateSettings']>[0]) => {
+            if (holdPreferenceWrites) {
+              await new Promise<void>((resolve) => preferenceWriteReleases.push(resolve))
+            }
+            if (settingsWriteFailure) {
+              throw new Error('fixture settings write refused')
+            }
+            if (!settingsWriteIgnored) {
+              await store.updateSettings(updates)
+            }
+            return store.getSettings()
+          }
+        },
         skills: {
           discover: async (target?: SkillDiscoveryTarget) => {
             skillScans.push(target)
@@ -322,6 +344,92 @@ it.skipIf(process.platform === 'win32')(
       })
     }
     try {
+      const setPreference = (field: string, value: string, host = 'local') =>
+        invoke('browser-preference-set', ['--preference', field, '--value', value], host)
+      await setPreference('link-routing', 'true')
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      expect(store.getSettings().openLinksInAppPreferencePrompted).toBe(true)
+      expect(
+        container
+          .querySelector('[role="switch"][aria-label="Link Routing"]')
+          ?.getAttribute('aria-checked')
+      ).toBe('true')
+      settingsWriteIgnored = true
+      await expect(setPreference('link-routing', 'false')).rejects.toThrow()
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      settingsWriteIgnored = false
+      settingsWriteFailure = true
+      await expect(setPreference('link-routing', 'false')).rejects.toThrow()
+      expect(settingsErrors).toHaveBeenCalled()
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      settingsWriteFailure = false
+      await setPreference('link-routing', 'false')
+      expect(store.getSettings().openLinksInApp).toBe(false)
+      await expect(setPreference('link-routing', 'true', 'runtime:missing')).rejects.toThrow()
+      expect(store.getSettings().openLinksInApp).toBe(false)
+      await setPreference('link-routing-modifier', 'true')
+      expect(store.getSettings().openLinksInAppModifierInverts).toBe(true)
+      await setPreference('localhost-labels', 'true')
+      expect(store.getSettings().localhostWorktreeLabelsEnabled).toBe(true)
+      await setPreference('client-hosted-remote', 'false')
+      expect(store.getSettings().browserClientHostedRemoteEnabled).toBe(false)
+      await setPreference('ssh-routing', 'false')
+      expect(store.getSettings().browserSshWorkspaceRoutingEnabled).toBe(false)
+      await invoke('browser-ssh-route-restore', ['--value', 'fixture-ssh-target'])
+      expect(store.getSettings().browserSshWorkspaceRoutingDisabledTargetIds).toEqual([])
+      expect(container.textContent).not.toContain('fixture-ssh-target')
+      await expect(
+        invoke('browser-ssh-route-restore', ['--value', 'missing-ssh-target'])
+      ).rejects.toThrow()
+      await store.updateSettings({
+        browserSshWorkspaceRoutingDisabledTargetIds: ['race-a', 'race-b']
+      })
+      await act(async () => useAppStore.setState({ settings: store.getSettings() }))
+      holdPreferenceWrites = true
+      const firstRestore = invoke(
+        'browser-ssh-route-restore',
+        ['--value', 'race-a'],
+        'local',
+        false
+      )
+      const secondRestore = invoke(
+        'browser-ssh-route-restore',
+        ['--value', 'race-b'],
+        'local',
+        false
+      )
+      void firstRestore.catch(() => {})
+      void secondRestore.catch(() => {})
+      await vi.waitFor(() => expect(preferenceWriteReleases).toHaveLength(2))
+      holdPreferenceWrites = false
+      await act(async () => {
+        for (const release of preferenceWriteReleases.splice(0)) {
+          release()
+        }
+      })
+      const restoreResults: boolean[] = []
+      void firstRestore.then(
+        () => (restoreResults[0] = true),
+        () => (restoreResults[0] = false)
+      )
+      void secondRestore.then(
+        () => (restoreResults[1] = true),
+        () => (restoreResults[1] = false)
+      )
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        expect(restoreResults).toHaveLength(2)
+      })
+      expect(restoreResults).toEqual([false, true])
+      expect(store.getSettings().browserSshWorkspaceRoutingDisabledTargetIds).toEqual(['race-a'])
+      await invoke('browser-ssh-route-restore', ['--value', 'race-a'])
+      await setPreference('terminal-url-click', 'actions')
+      expect(store.getSettings().terminalLinkClickBehavior).toBe('actions')
+      await setPreference('terminal-url-middle-click', 'none')
+      expect(store.getSettings().terminalUrlMiddleClickBehavior).toBe('none')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"value": "none"')
+      await expect(setPreference('client-hosted-remote', 'not-a-boolean')).rejects.toThrow()
+      await expect(setPreference('terminal-url-click', 'not-a-behavior')).rejects.toThrow()
       await invoke('homepage-draft', ['--value', 'https://draft.fixture.invalid'])
       expect(container.querySelector('input')).toHaveProperty(
         'value',

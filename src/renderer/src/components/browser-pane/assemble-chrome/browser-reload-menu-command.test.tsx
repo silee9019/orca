@@ -55,11 +55,22 @@ it('shares right-click open and original Reload and Hard Reload callbacks with m
   const view = render(<Owner />)
   fireEvent.contextMenu(view.getByRole('button', { name: 'Reload' }))
   expect(await command('status')).toEqual({ open: true })
-  fireEvent.click(view.getByRole('menuitem', { name: 'Reload' }))
+  const item = await view.findByRole('menuitem', { name: 'Reload' })
+  const content = item.closest('[data-slot="dropdown-menu-content"]')
+  if (!content) {
+    throw new Error('missing reload menu content')
+  }
+  const closed = new Promise<void>((resolve) => {
+    content.addEventListener('focusScope.autoFocusOnUnmount', () => resolve(), { once: true })
+  })
+  fireEvent.click(item)
+  await act(async () => {
+    await closed
+  })
   expect(reload).toHaveBeenLastCalledWith('reload')
   expect(await command('status')).toEqual({ open: false })
   await command('open')
-  fireEvent.click(view.getByRole('menuitem', { name: 'Hard Reload' }))
+  fireEvent.click(await view.findByRole('menuitem', { name: 'Hard Reload' }))
   expect(reload).toHaveBeenLastCalledWith('hard-reload')
   expect(await command('status')).toEqual({ open: false })
 })
