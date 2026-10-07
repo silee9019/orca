@@ -1,7 +1,9 @@
+import { getBrowserDisplayTitle } from '../describe-page/browser-page-url-display'
 import { matchesBrowserClientPageCommandTarget } from '@/runtime/browser-client-page-command-target'
 import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
 import {
   normalizeBrowserNavigationUrl,
+  redactKagiSessionToken,
   toHttpsRecoveryUrl
 } from '../../../../../shared/browser-url'
 import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
@@ -137,13 +139,17 @@ export function useBrowserFailureCommands(owner: Owner): void {
           if (!initialPage || initialPage.loading) {
             throw new Error('browser_failure_https_effect_unverifiable')
           }
+          const modelUrl = redactKagiSessionToken(httpsUrl)
           before.tryHttps(httpsUrl)
           const state = useAppStore.getState()
           const navigated = findPage(state.browserPagesByWorkspace, event.page)
           if (
             Date.now() >= event.expiresAt ||
             !navigated?.loading ||
-            navigated.url !== httpsUrl ||
+            Boolean(navigated.loadError) ||
+            (command.placement === 'local'
+              ? navigated.url !== httpsUrl
+              : navigated.title !== getBrowserDisplayTitle(modelUrl, modelUrl)) ||
             navigated.worktreeId !== command.worktreeId ||
             (navigated.browserRuntimeEnvironmentId ?? null) !== command.environmentId ||
             state.activeWorktreeId !== command.worktreeId ||

@@ -1,3 +1,4 @@
+import { requestBrowserSshRoute } from './browser-ssh-route-request'
 import { applyBrowserPlacementViewerAction } from './browser-placement-viewer-actions'
 import { requestBrowserGrabAction } from './browser-grab-action-request'
 import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
@@ -75,6 +76,10 @@ export async function applyBrowserViewerRequest(
   if (command.operation === 'plugin-marketplace') {
     const marketplace = await applyPluginMarketplaceViewerAction(command.command, request.expiresAt)
     return { ...base, applied: true, marketplace }
+  }
+  if (command.operation === 'ssh-route') {
+    const sshRoute = await requestBrowserSshRoute(command.target, request.expiresAt)
+    return { ...base, applied: true, sshRoute }
   }
   if (command.operation === 'group-ui') {
     const groupUi = await requestBrowserGroupUi(command.target, command.action, request.expiresAt)

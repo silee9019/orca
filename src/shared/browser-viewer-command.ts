@@ -1,3 +1,4 @@
+import { BrowserSshRouteReceipt } from './rpc-contract/browser-ssh-route-params'
 import { BrowserWebAuthnDialogState } from './rpc-contract/browser-webauthn-dialog-params'
 import { BrowserFailureState } from './rpc-contract/browser-failure-params'
 import { BrowserGrabActionReceipt } from './rpc-contract/browser-grab-action-params'
@@ -29,6 +30,7 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  sshRoute: BrowserSshRouteReceipt.optional(),
   viewer: z.literal('host'),
   viewerId: z.number().int(),
   floatingBrowser: FloatingBrowserState.optional(),

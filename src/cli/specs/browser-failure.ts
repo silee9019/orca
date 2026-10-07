@@ -23,7 +23,7 @@ export const BROWSER_FAILURE_COMMAND_SPECS: CommandSpec[] = [
       'confirm'
     ],
     notes: [
-      'Requires one mounted failure owner matching the exact page, current error and placement. Certificate approval requires its current challenge and --confirm. External opening requires an acknowledged desktop API; old peers fail explicitly. Retry acknowledges loading initiation; try-https reuses the visible eligible local HTTPS recovery target and acknowledges its URL/loading transition, not completed navigation.'
+      'Requires one mounted failure owner matching the exact page, current error and placement. Certificate approval requires its current challenge and --confirm. External opening requires an acknowledged desktop API; old peers fail explicitly. Retry acknowledges loading initiation; try-https reuses the visible eligible HTTPS recovery target and acknowledges its URL/loading transition, not completed navigation.'
     ]
   }
 ]

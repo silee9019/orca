@@ -1,3 +1,4 @@
+import { BrowserSshRouteTarget } from './browser-ssh-route-params'
 import { BrowserWebAuthnDialogTarget } from './browser-webauthn-dialog-params'
 import { BrowserFailureTarget } from './browser-failure-params'
 import { BrowserGrabActionKey } from './browser-grab-action-params'
@@ -53,6 +54,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('ssh-route'), target: BrowserSshRouteTarget }),
   z.object({
     viewer,
     operation: z.literal('webauthn-dialog'),

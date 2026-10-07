@@ -2,6 +2,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'browser-ssh-route',
+    keys: ['browser ssh-route'],
+    load: async () => (await import('./handlers/browser-ssh-route.js')).BROWSER_SSH_ROUTE_HANDLERS
+  },
+  {
     name: 'browser-group-ui',
     keys: ['browser group-ui'],
     load: async () => (await import('./handlers/browser-group-ui.js')).BROWSER_GROUP_UI_HANDLERS

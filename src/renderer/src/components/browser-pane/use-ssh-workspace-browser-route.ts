@@ -41,6 +41,7 @@ export function useSshWorkspaceBrowserRoute(
 ): {
   state: SshWorkspaceBrowserRouteState
   targetId: string | null
+  attempt: number
   retry: () => void
   tryWithoutProbe: () => void
   browseFromThisDevice: () => void
@@ -147,6 +148,7 @@ export function useSshWorkspaceBrowserRoute(
   return {
     state: effectiveState,
     targetId: sshTargetId,
+    attempt: attempt.count,
     retry: () => rederive(false),
     tryWithoutProbe: () => {
       // Persist the override so this host isn't re-nagged on every launch.
