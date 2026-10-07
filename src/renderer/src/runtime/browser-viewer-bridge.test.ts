@@ -42,6 +42,14 @@ const fixture = vi.hoisted(() => {
     annotationTray: vi
       .fn()
       .mockResolvedValue({ noteCount: 1, open: true, copied: true, sendMenuOpen: false }),
+    contextMenu: vi.fn().mockResolvedValue({
+      open: false,
+      focusedItem: null,
+      hasLink: true,
+      hasSelection: false,
+      clipboardWritten: true,
+      guestFocusRequested: true
+    }),
     address: vi.fn().mockResolvedValue({
       value: 'review',
       open: true,
@@ -76,6 +84,9 @@ const fixture = vi.hoisted(() => {
 })
 vi.mock('./browser-annotation-tray-request', () => ({
   requestBrowserAnnotationTray: fixture.annotationTray
+}))
+vi.mock('./browser-context-menu-request', () => ({
+  requestBrowserContextMenu: fixture.contextMenu
 }))
 vi.mock('./browser-address-request', () => ({ requestBrowserAddress: fixture.address }))
 vi.mock('./browser-markup-editor-request', () => ({
@@ -412,4 +423,20 @@ it('routes annotation tray copy to the native owner and returns only its acknowl
     annotationTray: { copied: true, noteCount: 1 }
   })
   expect(fixture.annotationTray).toHaveBeenCalledWith('page-1', 'copy', expect.any(Number))
+})
+
+it('routes context menu copy to its selected native page owner', async () => {
+  expect(
+    await request({
+      viewer: 'host',
+      operation: 'context-menu',
+      page: 'page-1',
+      action: 'copy-link'
+    })
+  ).toMatchObject({
+    applied: true,
+    rendered: false,
+    contextMenu: { open: false, clipboardWritten: true }
+  })
+  expect(fixture.contextMenu).toHaveBeenCalledWith('page-1', 'copy-link', expect.any(Number))
 })

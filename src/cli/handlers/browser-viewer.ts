@@ -1,3 +1,4 @@
+import { runBrowserContextMenu } from './browser-context-menu'
 import { runBrowserProfileUi } from './browser-profile-ui'
 import { runViewerCommand, requireBrowserViewerConfirmation } from './browser-viewer-command'
 import { readFile, stat } from 'node:fs/promises'
@@ -41,6 +42,7 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 }
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser context-menu': runBrowserContextMenu,
   'browser profile-ui': runBrowserProfileUi,
   'browser markup copy': (ctx) => runMarkupEditor(ctx, { action: 'copy' }),
   'browser markup text-commit': (ctx) =>

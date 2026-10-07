@@ -20,6 +20,27 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['open-link-external', 'open-page-external'].map((action) => ({
+    args: ['context-menu', '--action', action, '--page', 'p1', '--confirm'],
+    command: { operation: 'context-menu', page: 'p1', action }
+  })),
+  ...[
+    'status',
+    'close',
+    'next',
+    'previous',
+    'first',
+    'last',
+    'copy-link',
+    'copy-page-url',
+    'copy-selection',
+    'back',
+    'forward',
+    'reload'
+  ].map((action) => ({
+    args: ['context-menu', '--action', action, '--page', 'p1'],
+    command: { operation: 'context-menu', page: 'p1', action }
+  })),
   ...[
     'menu-open',
     'menu-close',
@@ -310,3 +331,11 @@ it.each(['switch-confirm', 'new-create', 'import-browser', 'import-file'])(
     expect(call).not.toHaveBeenCalled()
   }
 )
+
+it('requires confirmation before external context menu handoff', async () => {
+  const call = vi.spyOn(client, 'call')
+  await expect(
+    run(['context-menu', '--action', 'open-link-external', '--viewer', 'host', '--page', 'p1'])
+  ).rejects.toThrow('confirm')
+  expect(call).not.toHaveBeenCalled()
+})

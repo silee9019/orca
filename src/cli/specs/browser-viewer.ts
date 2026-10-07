@@ -1,9 +1,11 @@
+import { BROWSER_CONTEXT_MENU_COMMAND_SPECS } from './browser-context-menu'
 import { BROWSER_PROFILE_UI_COMMAND_SPECS } from './browser-profile-ui'
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   ...BROWSER_PROFILE_UI_COMMAND_SPECS,
+  ...BROWSER_CONTEXT_MENU_COMMAND_SPECS,
   {
     path: ['browser', 'markup', 'copy'],
     summary: 'Compose markup and copy the image with a native write acknowledgment',

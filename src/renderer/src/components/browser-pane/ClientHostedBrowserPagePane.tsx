@@ -336,6 +336,7 @@ export function ClientHostedBrowserPagePane({
     <div className="relative flex h-full min-h-0 flex-1 flex-col bg-background">
       {/* IPC-driven context menu in a Portal so position:fixed escapes ancestor transform/backdrop-filter containing blocks. */}
       <BrowserPageContextMenu
+        isActive={isActive}
         browserPageId={browserTab.id}
         worktreeId={worktreeId}
         canGoBack={browserTab.canGoBack}

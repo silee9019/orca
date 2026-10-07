@@ -1,4 +1,5 @@
 import { FloatingBrowserState } from './rpc-contract/floating-browser-params'
+import { BrowserContextMenuState } from './rpc-contract/browser-context-menu-params'
 import { BrowserTabUiState } from './rpc-contract/browser-tab-ui-params'
 import { BrowserGroupUiState } from './rpc-contract/browser-group-ui-params'
 import { BrowserProfileUiState } from './rpc-contract/browser-profile-ui-params'
@@ -22,6 +23,7 @@ export const BrowserViewerResultSchema = z.object({
   persisted: z.literal(false),
   rendered: z.literal(false),
   page: z.string().optional(),
+  contextMenu: BrowserContextMenuState.optional(),
   tabUi: BrowserTabUiState.optional(),
   groupUi: BrowserGroupUiState.optional(),
   profileUi: BrowserProfileUiState.optional(),
