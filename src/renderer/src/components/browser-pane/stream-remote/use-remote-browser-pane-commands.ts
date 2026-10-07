@@ -5,6 +5,7 @@ import {
 } from '@/runtime/browser-remote-pane-request'
 import type {
   BrowserRemotePaneState,
+  BrowserRemotePaneCommand,
   BrowserRemotePaneInputCommand,
   BrowserRemotePaneNavigationCommand
 } from '../../../../../shared/rpc-contract/browser-remote-pane-params'
@@ -23,6 +24,11 @@ type RemotePaneOwner = {
     isCurrent: () => boolean
   ) => Promise<void>
   performInput?: (command: BrowserRemotePaneInputCommand, isCurrent: () => boolean) => Promise<void>
+  performMarkup?: (
+    command: Extract<BrowserRemotePaneCommand, { action: 'markup' | 'markup-editor' }>,
+    isCurrent: () => boolean,
+    expiresAt: number
+  ) => Promise<Pick<BrowserRemotePaneState, 'markup' | 'markupEditor'>>
   reconnect: () => void
 }
 function snapshot(owner: RemotePaneOwner, reconnectRequested: boolean): BrowserRemotePaneState {
@@ -97,19 +103,31 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
         request.finish(undefined, snapshot(value, false))
         return
       }
-      if ((pending.current && !pending.current.request.isSettled()) || inputPending.current) {
+      const cancellingMarkup =
+        request.command.action === 'markup' &&
+        request.command.markupAction === 'cancel' &&
+        (inputPending.current?.command.action === 'markup' ||
+          inputPending.current?.command.action === 'markup-editor')
+      if (
+        (pending.current && !pending.current.request.isSettled()) ||
+        (inputPending.current && !cancellingMarkup)
+      ) {
         request.finish(new Error('remote_browser_pane_busy'))
         return
       }
       if (
         request.command.action === 'click' ||
         request.command.action === 'key' ||
-        request.command.action === 'navigate'
+        request.command.action === 'navigate' ||
+        request.command.action === 'markup' ||
+        request.command.action === 'markup-editor'
       ) {
         if (
-          request.command.action === 'navigate'
-            ? !value.performNavigation
-            : !value.performInput || value.streamStatus.kind !== 'live'
+          request.command.action === 'markup' || request.command.action === 'markup-editor'
+            ? !value.performMarkup
+            : request.command.action === 'navigate'
+              ? !value.performNavigation
+              : !value.performInput || value.streamStatus.kind !== 'live'
         ) {
           request.finish(new Error('remote_browser_input_unavailable'))
           return
@@ -128,9 +146,11 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
           )
         }
         const operation =
-          request.command.action === 'navigate'
-            ? value.performNavigation?.(request.command, isCurrent)
-            : value.performInput?.(request.command, isCurrent)
+          request.command.action === 'markup' || request.command.action === 'markup-editor'
+            ? value.performMarkup?.(request.command, isCurrent, request.expiresAt)
+            : request.command.action === 'navigate'
+              ? value.performNavigation?.(request.command, isCurrent)
+              : value.performInput?.(request.command, isCurrent)
         if (!operation) {
           request.finish(new Error('remote_browser_input_unavailable'))
           inputPending.current = null
@@ -138,15 +158,18 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
         }
         void operation
           .then(
-            () => {
+            (result) => {
               if (!isCurrent()) {
                 request.finish(new Error('remote_browser_input_cancelled_effect_unknown'))
               } else {
                 request.finish(undefined, {
                   ...snapshot(current.current, false),
+                  ...result,
                   ...(request.command.action === 'navigate'
                     ? { navigationApplied: true }
-                    : { inputAccepted: true })
+                    : request.command.action === 'click' || request.command.action === 'key'
+                      ? { inputAccepted: true }
+                      : {})
                 })
               }
             },

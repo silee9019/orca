@@ -145,3 +145,32 @@ it('shares the context-menu owner with the actual row pointer capture handler', 
   expect(await command('status')).toMatchObject({ menu: { open: true, point: { x: 40, y: 60 } } })
   expect(await command('menu-close')).toMatchObject({ menu: { open: false } })
 })
+it('keeps middle-button default cancellation and close on the original row owner', () => {
+  const view = render(<Owner />)
+  const row = view.container.querySelector('[data-tab-id="ws-target"]')
+  if (!row) {
+    throw new Error('missing row')
+  }
+  expect(fireEvent.mouseDown(row, { button: 1 })).toBe(false)
+  expect(fireEvent.mouseUp(row, { button: 1 })).toBe(false)
+  act(() => {
+    expect(
+      row.dispatchEvent(new MouseEvent('auxclick', { button: 1, bubbles: true, cancelable: true }))
+    ).toBe(false)
+  })
+  expect(fixture.closed).toEqual(['target'])
+  expect(fixture.activate).not.toHaveBeenCalled()
+})
+it('keeps close-button propagation separate from deferred row activation', () => {
+  const view = render(<Owner />)
+  const button = view.container.querySelector('[data-tab-id="ws-target"] button')
+  if (!button) {
+    throw new Error('missing close button')
+  }
+  fireEvent.pointerDown(button, { button: 0, clientX: 5, clientY: 5 })
+  fireEvent.pointerUp(window, { button: 0, clientX: 5, clientY: 5 })
+  expect(fixture.activate).not.toHaveBeenCalled()
+  fireEvent.click(button)
+  expect(fixture.closed).toEqual(['target'])
+  expect(fixture.activate).not.toHaveBeenCalled()
+})

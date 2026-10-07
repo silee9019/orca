@@ -284,6 +284,13 @@ export function RemoteBrowserPagePane({
     setPaneNotice
   })
 
+  const markup = useRemoteBrowserMarkupCapture(imageRef, remoteViewportRef, {
+    page: browserTab.id,
+    active: isActive && !stagedPage,
+    environmentId: activeRuntimeEnvironmentId,
+    remotePageId: lifecycle.tokens.remotePage
+  })
+
   useRemoteBrowserPaneCommands({
     page: browserTab.id,
     environmentId: activeRuntimeEnvironmentId,
@@ -294,6 +301,7 @@ export function RemoteBrowserPagePane({
     reconnectGeneration,
     reconnect: reconnectRemoteStream,
     performInput: performRemoteInput,
+    performMarkup: markup.performCommand,
     performNavigation: (command, isCurrent) =>
       runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
   })
@@ -333,8 +341,6 @@ export function RemoteBrowserPagePane({
     mountedRef,
     setPaneNotice
   })
-
-  const markup = useRemoteBrowserMarkupCapture(imageRef, remoteViewportRef)
 
   return (
     // The testid scopes E2E queries to this pane: a workspace can hold more than one browser pane,
@@ -399,6 +405,7 @@ export function RemoteBrowserPagePane({
         onReload={() => void runRemoteNavigation('browser.reload')}
       />
       <RemoteBrowserPageViewport
+        isActive={isActive}
         remoteViewportRef={remoteViewportRef}
         imageRef={imageRef}
         frameUrl={frameUrl}

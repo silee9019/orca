@@ -1,7 +1,7 @@
 import { BrowserPageToolbar } from './browser-page-toolbar'
 // @vitest-environment happy-dom
 import { useRef, useState, type ReactNode } from 'react'
-import { act, cleanup, render } from '@testing-library/react'
+import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -192,6 +192,96 @@ it('redacts the private Kagi session token from address and suggestion output', 
   expect(state.suggestions.some((row) => row.kind === 'search')).toBe(true)
   expect(JSON.stringify(state)).not.toContain('fixture-secret')
 })
+it('uses original blur delay to close suggestions and restore the typed query before acknowledgement', async () => {
+  vi.useFakeTimers()
+  try {
+    render(<Harness />)
+    const draft = await command({ action: 'draft', text: 'review' })
+    const history = draft.suggestions.find((row) => row.kind === 'history')
+    if (!history) {
+      throw new Error('missing history')
+    }
+    await command({ action: 'preview', index: history.index })
+    let response: Promise<BrowserAddressState> | undefined
+    let settled = false
+    await act(async () => {
+      response = requestBrowserAddress('p1', { action: 'blur' }, Date.now() + 5000)
+      void response.then(
+        () => {
+          settled = true
+        },
+        () => {
+          settled = true
+        }
+      )
+    })
+    expect(settled).toBe(false)
+    await act(async () => {
+      vi.advanceTimersByTime(199)
+    })
+    expect(settled).toBe(false)
+    await act(async () => {
+      vi.advanceTimersByTime(1)
+    })
+    await expect(response).resolves.toMatchObject({ open: false, focused: false, value: 'review' })
+  } finally {
+    vi.useRealTimers()
+  }
+})
+it('keeps a genuine refocus during the blur grace window open instead of reporting a false close', async () => {
+  vi.useFakeTimers()
+  try {
+    const view = render(<Harness />)
+    await command({ action: 'draft', text: 'review' })
+    let response: Promise<BrowserAddressState> | undefined
+    await act(async () => {
+      response = requestBrowserAddress('p1', { action: 'blur' }, Date.now() + 5000)
+      void response.catch(() => {})
+    })
+    const input = view.getByRole('combobox')
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('missing input')
+    }
+    await act(async () => {
+      input.focus()
+      vi.advanceTimersByTime(5000)
+    })
+    await expect(response).rejects.toThrow('timeout')
+    expect(await command({ action: 'status' })).toMatchObject({
+      open: true,
+      focused: true,
+      value: 'review'
+    })
+  } finally {
+    vi.useRealTimers()
+  }
+})
+it('preserves initial collapsed click selection and native drag selection guards', async () => {
+  const view = render(<Harness />)
+  const input = view.getByRole('combobox')
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error('missing input')
+  }
+  fireEvent.mouseDown(input, { button: 0 })
+  await act(async () => {
+    input.focus()
+    input.setSelectionRange(2, 2)
+  })
+  fireEvent.click(input)
+  expect([input.selectionStart, input.selectionEnd]).toEqual([0, input.value.length])
+  await act(async () => {
+    input.blur()
+  })
+  fireEvent.mouseDown(input, { button: 0 })
+  await act(async () => {
+    input.focus()
+    input.setSelectionRange(1, 3)
+  })
+  fireEvent.click(input)
+  expect([input.selectionStart, input.selectionEnd]).toEqual([1, 3])
+  expect(await command({ action: 'open' })).toMatchObject({ open: true, focused: true })
+  expect([input.selectionStart, input.selectionEnd]).toEqual([0, input.value.length])
+})
 
 it('binds the actual BrowserPageToolbar page and active owner to its address receiver', async () => {
   const view = render(<ToolbarOwner />)
@@ -217,6 +307,36 @@ it('binds the actual BrowserPageToolbar page and active owner to its address rec
   ).rejects.toThrow('browser_address_ui_unavailable')
 })
 
+it('applies blur through the actual BrowserPageToolbar address owner', async () => {
+  vi.useFakeTimers()
+  try {
+    render(<ToolbarOwner />)
+    let response: Promise<BrowserAddressState> | undefined
+    await act(async () => {
+      response = requestBrowserAddress(
+        'toolbar-page',
+        { action: 'draft', text: 'owner blur' },
+        Date.now() + 5000
+      )
+      void response.catch(() => {})
+    })
+    await expect(response).resolves.toMatchObject({ focused: true, value: 'owner blur' })
+    await act(async () => {
+      response = requestBrowserAddress('toolbar-page', { action: 'blur' }, Date.now() + 5000)
+      void response.catch(() => {})
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(200)
+    })
+    await expect(response).resolves.toMatchObject({
+      focused: false,
+      open: false,
+      value: 'owner blur'
+    })
+  } finally {
+    vi.useRealTimers()
+  }
+})
 function ToolbarOwner({ active = true }: { active?: boolean }) {
   const [value, setValue] = useState('about:blank')
   const ref = useRef<HTMLInputElement | null>(null)

@@ -139,6 +139,7 @@ describe.skipIf(process.platform === 'win32')(
         )
       }
       viewerFixture.getState = () => ({
+        activeModal: 'none',
         persistedUIReady: true,
         settings: store.getSettings(),
         openSettingsTarget: () => {},

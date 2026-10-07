@@ -71,7 +71,7 @@ export async function applyVoiceDialogViewerAction(
       if (state.settings?.experimentalEphemeralVms !== true) {
         throw new Error('vm_feature_disabled')
       }
-      if (state.activeModal) {
+      if (state.activeModal !== 'none') {
         throw new Error('viewer_modal_busy')
       }
       state.openSettingsTarget({ pane: 'experimental', repoId: null, sectionId: 'ephemeral-vms' })
@@ -105,7 +105,7 @@ export async function applyVoiceDialogViewerAction(
         throw new Error('voice_model_confirmation_mismatch')
       }
       const state = requireHostViewer()
-      if (state.activeModal) {
+      if (state.activeModal !== 'none') {
         throw new Error('viewer_modal_busy')
       }
       state.openSettingsTarget({ pane: 'voice', repoId: null })

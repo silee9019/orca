@@ -10,7 +10,7 @@ export async function applyBrowserSettingsViewerAction(
   hostId: string
 ): Promise<BrowserSettingsState> {
   const initial = requireHostViewer()
-  if (initial.activeModal) {
+  if (initial.activeModal !== 'none') {
     throw new Error('viewer_modal_busy')
   }
   if (!document.querySelector('[data-browser-settings-pane]')) {

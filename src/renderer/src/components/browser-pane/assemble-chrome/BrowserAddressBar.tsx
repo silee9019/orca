@@ -343,6 +343,7 @@ export default function BrowserAddressBar({
     suggestions,
     inputRef,
     focus: handleFocus,
+    blur: handleBlur,
     change: (text) => {
       clearSuggestionPreview()
       onChange(text)

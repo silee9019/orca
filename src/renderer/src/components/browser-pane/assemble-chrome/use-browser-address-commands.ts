@@ -14,6 +14,7 @@ export type BrowserAddressController = {
   suggestions: BrowserAddressBarSuggestion[]
   inputRef: RefObject<HTMLInputElement | null>
   focus: () => void
+  blur: () => void
   change: (value: string) => void
   dismiss: () => void
   highlight: (url: string) => void
@@ -46,6 +47,7 @@ export function useBrowserAddressCommands(
     request: BrowserAddressEvent
     check: (value: BrowserAddressController) => boolean
     navigation: boolean
+    waitForBlur: boolean
   } | null>(null)
   const [, update] = useState(0)
   useLayoutEffect(() => {
@@ -57,6 +59,14 @@ export function useBrowserAddressCommands(
       return
     }
     if (!operation.request.isSettled()) {
+      if (Date.now() >= operation.request.expiresAt) {
+        operation.request.finish(new Error('request_expired'))
+        pending.current = null
+        return
+      }
+      if (operation.waitForBlur && owner?.active && current.current.open) {
+        return
+      }
       const accepted = !!owner?.active && operation.check(current.current)
       operation.request.finish(
         accepted ? undefined : new Error('browser_address_edit_not_applied_effect_unknown'),
@@ -98,6 +108,7 @@ export function useBrowserAddressCommands(
       }
       let check: (value: BrowserAddressController) => boolean
       let navigation = false
+      let waitForBlur = false
       try {
         if (command.action === 'open') {
           before.inputRef.current.focus()
@@ -125,6 +136,14 @@ export function useBrowserAddressCommands(
             })
           )
           check = (value) => value.open && value.suggestions.length > 0
+        } else if (command.action === 'blur') {
+          if (document.activeElement === before.inputRef.current) {
+            before.inputRef.current.blur()
+          } else {
+            before.blur()
+          }
+          waitForBlur = true
+          check = (value) => !value.open && document.activeElement !== value.inputRef.current
         } else if (command.action === 'dismiss') {
           before.dismiss()
           check = (value) => !value.open
@@ -160,7 +179,7 @@ export function useBrowserAddressCommands(
           request.finish(new Error('invalid_browser_address_action'))
           return
         }
-        pending.current = { request, check, navigation }
+        pending.current = { request, check, navigation, waitForBlur }
         update((value) => value + 1)
       } catch {
         request.finish(new Error('browser_address_action_failed_effect_unknown'))

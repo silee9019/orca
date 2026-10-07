@@ -5,7 +5,7 @@ export const BrowserAddressCommand = z.discriminatedUnion('action', [
     action: z.enum(['preview', 'select', 'highlight']),
     index: z.number().int().nonnegative()
   }),
-  z.object({ action: z.enum(['open', 'dismiss', 'submit', 'status', 'next', 'previous']) })
+  z.object({ action: z.enum(['open', 'blur', 'dismiss', 'submit', 'status', 'next', 'previous']) })
 ])
 export type BrowserAddressCommand = z.infer<typeof BrowserAddressCommand>
 export const BrowserAddressState = z.object({

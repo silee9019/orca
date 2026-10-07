@@ -34,7 +34,7 @@ export async function applyVmRuntimeViewerAction(
   if (!state.settings?.experimentalEphemeralVms) {
     throw new Error('vm_feature_disabled')
   }
-  if (state.activeModal) {
+  if (state.activeModal !== 'none') {
     throw new Error('viewer_modal_busy')
   }
   if (command.operation === 'vm-runtime-stop' && command.confirmation !== command.runtimeId) {

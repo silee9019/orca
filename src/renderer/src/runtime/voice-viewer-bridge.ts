@@ -143,7 +143,7 @@ export async function applyVoiceViewerRequest(
       }
     }
     case 'vm-composer': {
-      if (initial.activeModal) {
+      if (initial.activeModal !== 'none') {
         throw new Error('viewer_modal_busy')
       }
       const catalog = await window.api.ephemeralVm.listRecipes({ repoId: command.repoId })
@@ -154,7 +154,7 @@ export async function applyVoiceViewerRequest(
       ) {
         throw new Error('vm_recipe_not_found')
       }
-      if (requireHostViewer().activeModal) {
+      if (requireHostViewer().activeModal !== 'none') {
         throw new Error('viewer_modal_busy')
       }
       initial.openModal('new-workspace-composer', {

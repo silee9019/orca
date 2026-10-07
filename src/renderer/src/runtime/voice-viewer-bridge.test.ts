@@ -13,12 +13,14 @@ import type { VoiceViewerOperation } from '../../../shared/voice-viewer'
 import { applyVoiceViewerRequest } from './voice-viewer-bridge'
 
 const fixtureState: {
+  activeModal: string
   persistedUIReady: boolean
   openSettingsTarget: () => void
   openSettingsPage: () => void
   settings: { activeRuntimeEnvironmentId: string | null; voice: VoiceSettings }
   updateSettingsOrThrow: (updates: { voice: VoiceSettings }) => Promise<void>
 } = {
+  activeModal: 'none',
   persistedUIReady: true,
   openSettingsTarget: vi.fn(),
   openSettingsPage: vi.fn(),
@@ -34,6 +36,7 @@ afterEach(() => {
     detach()
   }
   vi.unstubAllGlobals()
+  fixtureState.activeModal = 'none'
   fixtureState.settings.activeRuntimeEnvironmentId = null
 })
 

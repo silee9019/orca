@@ -24,10 +24,24 @@ export const BROWSER_REMOTE_PANE_HANDLERS: Record<string, CommandHandler> = {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const addressAction =
       action === 'address' ? getRequiredStringFlag(ctx.flags, 'address-action') : undefined
+    const editorAction =
+      action === 'markup-editor' ? getRequiredStringFlag(ctx.flags, 'editor-action') : undefined
     const command = BrowserRemotePaneCommand.safeParse({
       environmentId: getRequiredStringFlag(ctx.flags, 'runtime-environment'),
       expectedRemotePageId: remotePage === 'none' ? null : remotePage,
       action,
+      markupAction: getOptionalStringFlag(ctx.flags, 'markup-action'),
+      editor: {
+        action: editorAction,
+        value:
+          editorAction === 'width' || editorAction === 'font-size'
+            ? getOptionalNumberFlag(ctx.flags, 'value')
+            : getOptionalStringFlag(ctx.flags, 'value'),
+        text:
+          editorAction === 'text-commit'
+            ? getRequiredStringFlagAllowingEmpty(ctx.flags, 'text')
+            : undefined
+      },
       address: {
         action: addressAction,
         text:
@@ -42,6 +56,8 @@ export const BROWSER_REMOTE_PANE_HANDLERS: Record<string, CommandHandler> = {
       key: getOptionalStringFlag(ctx.flags, 'key'),
       navigation: getOptionalStringFlag(ctx.flags, 'navigation'),
       url: getOptionalStringFlag(ctx.flags, 'url'),
+      failureAction: getOptionalStringFlag(ctx.flags, 'failure-action'),
+      challengeId: getOptionalStringFlag(ctx.flags, 'challenge'),
       meta: ctx.flags.get('meta') === true,
       ctrl: ctx.flags.get('ctrl') === true,
       alt: ctx.flags.get('alt') === true,
@@ -78,6 +94,12 @@ export const BROWSER_REMOTE_PANE_HANDLERS: Record<string, CommandHandler> = {
       throw new RuntimeClientError(
         'runtime_error',
         'Remote browser pane did not return an applied owner receipt.'
+      )
+    }
+    if (receipt.data.failure?.certificate?.ok === false) {
+      throw new RuntimeClientError(
+        'runtime_error',
+        `Remote certificate proceed refused: ${receipt.data.failure.certificate.reason}`
       )
     }
     printResult(response, ctx.json, (value) => JSON.stringify(value, null, 2))

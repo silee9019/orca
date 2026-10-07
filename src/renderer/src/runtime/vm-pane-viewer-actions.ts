@@ -9,7 +9,7 @@ export async function applyVmPaneViewerAction(
   if (viewer.settings?.experimentalEphemeralVms !== true) {
     throw new Error('vm_feature_disabled')
   }
-  if (viewer.activeModal) {
+  if (viewer.activeModal !== 'none') {
     throw new Error('viewer_modal_busy')
   }
   viewer.openSettingsTarget({ pane: 'experimental', repoId: null, sectionId: 'ephemeral-vms' })

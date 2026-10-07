@@ -78,7 +78,7 @@ it.each([
       command: { operation: 'annotation-tray', page: 'p1', action }
     })
   ),
-  ...['open', 'dismiss', 'submit', 'status', 'next', 'previous'].map((action) => ({
+  ...['open', 'blur', 'dismiss', 'submit', 'status', 'next', 'previous'].map((action) => ({
     args: ['address', '--action', action, '--page', 'p1'],
     command: { operation: 'address', page: 'p1', command: { action } }
   })),

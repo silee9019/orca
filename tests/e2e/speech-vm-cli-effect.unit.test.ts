@@ -131,6 +131,7 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
     const runtime = new OrcaRuntimeService(store)
     viewerFixture.getState = () => ({
       persistedUIReady: true,
+      activeModal: 'none',
       openSettingsTarget: () => {},
       openSettingsPage: () => {},
       settings: store.getSettings(),

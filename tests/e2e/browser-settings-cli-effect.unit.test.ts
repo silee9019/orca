@@ -153,7 +153,7 @@ it.skipIf(process.platform === 'win32')(
       runtimeEnvironments: [],
       settings: store.getSettings(),
       persistedUIReady: true,
-      activeModal: null,
+      activeModal: 'none',
       settingsSearchQuery: '',
       browserDefaultUrl: null
     })
