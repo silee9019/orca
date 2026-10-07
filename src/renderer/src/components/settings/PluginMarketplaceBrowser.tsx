@@ -63,6 +63,7 @@ export function PluginMarketplaceBrowser({
   const [installBusy, setInstallBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const previewRequestRef = useRef(0)
+  const previewOperationsRef = useRef(0)
 
   useEffect(() => {
     mountedRef.current = true
@@ -120,9 +121,11 @@ export function PluginMarketplaceBrowser({
 
   const openPreview = async (
     listing: PluginMarketplaceHostListing,
-    update: boolean
-  ): Promise<void> => {
+    update: boolean,
+    canApply?: (value: PluginMarketplaceHostInstallPreview) => boolean
+  ): Promise<(() => boolean) | undefined> => {
     const requestId = ++previewRequestRef.current
+    previewOperationsRef.current++
     setPreviewBusyKey(listing.pluginKey)
     setActionError(null)
     setError(null)
@@ -134,8 +137,12 @@ export function PluginMarketplaceBrowser({
             pluginKey: listing.pluginKey
           })
       if (mountedRef.current && requestId === previewRequestRef.current) {
+        if (canApply && !canApply(nextPreview)) {
+          return undefined
+        }
         setPreviewMode(update ? 'update' : 'install')
         setPreview(nextPreview)
+        return () => mountedRef.current && requestId === previewRequestRef.current
       }
     } catch (cause) {
       if (mountedRef.current && requestId === previewRequestRef.current) {
@@ -150,16 +157,19 @@ export function PluginMarketplaceBrowser({
         )
       }
     } finally {
+      previewOperationsRef.current--
       if (mountedRef.current && requestId === previewRequestRef.current) {
         setPreviewBusyKey(null)
       }
     }
+    return undefined
   }
 
   const installPreview = async (): Promise<void> => {
     if (!preview || installBusy) {
       return
     }
+    previewOperationsRef.current++
     setInstallBusy(true)
     setActionError(null)
     try {
@@ -187,6 +197,7 @@ export function PluginMarketplaceBrowser({
         )
       }
     } finally {
+      previewOperationsRef.current--
       if (mountedRef.current) {
         setInstallBusy(false)
       }
@@ -203,6 +214,14 @@ export function PluginMarketplaceBrowser({
     reload: reloadWithReceipt,
     sourcesOpen,
     previewOpen: preview !== null,
+    preview,
+    previewBusy: previewBusyKey !== null,
+    isPreviewBusy: () => previewOperationsRef.current > 0,
+    installBusy,
+    visibleListings,
+    installedByKey,
+    openPreview,
+    closePreview: () => setPreview(null),
     setSearch,
     setFilter,
     setSourcesOpen,

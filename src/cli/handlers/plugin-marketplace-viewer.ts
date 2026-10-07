@@ -9,6 +9,12 @@ export const PLUGIN_MARKETPLACE_VIEWER_HANDLERS: Record<string, CommandHandler> 
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const parsed = PluginMarketplaceViewerCommand.safeParse({
       action,
+      ...(action === 'preview' || action === 'preview-close'
+        ? {
+            source: getRequiredStringFlag(ctx.flags, 'source'),
+            plugin: getRequiredStringFlag(ctx.flags, 'plugin')
+          }
+        : {}),
       ...(action === 'search' || action === 'filter'
         ? { value: getRequiredStringFlagAllowingEmpty(ctx.flags, 'value') }
         : {})

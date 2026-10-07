@@ -5,6 +5,11 @@ import {
   verifyMarketplaceCatalogReload
 } from './plugin-marketplace-catalog-story.fixture'
 import { act, createElement } from 'react'
+import {
+  fixtureMarketplacePreviewApi,
+  marketplaceViewerArguments,
+  verifyMarketplacePreview
+} from './plugin-marketplace-preview-story.fixture'
 import { createRoot } from 'react-dom/client'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -80,8 +85,7 @@ it.skipIf(process.platform === 'win32')(
               releaseSourceRefresh = resolve
             })
           },
-          list: async () => [],
-          onChanged: () => () => {},
+          ...fixtureMarketplacePreviewApi(listings),
           listMarketplaces: async () => {
             providerCalls.push('sources')
             return [source]
@@ -180,19 +184,14 @@ it.skipIf(process.platform === 'win32')(
     )
     const client = new RuntimeClient(directory, 5000, null, null)
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const invoke = async (action: string, value?: string): Promise<void> => {
+    const invoke = async (
+      action: string,
+      value?: string,
+      target?: { source: string; plugin: string }
+    ): Promise<void> => {
       const specs = PLUGIN_MARKETPLACE_VIEWER_SPECS
       const parsed = parseArgs(
-        [
-          'plugins',
-          'marketplace',
-          'viewer',
-          '--viewer',
-          'host',
-          '--action',
-          action,
-          ...(value === undefined ? [] : ['--value', value])
-        ],
+        marketplaceViewerArguments(action, value, target),
         specs.map((s) => s.path),
         specs
       )
@@ -222,6 +221,7 @@ it.skipIf(process.platform === 'win32')(
       expect(providerCalls).toEqual(['sources', 'listings'])
       expect(container.querySelectorAll('[data-marketplace-plugin-key]')).toHaveLength(2)
       await verifyMarketplaceCatalogReload(invoke, container)
+      await verifyMarketplacePreview(invoke, source.id, listings)
       await invoke('search', 'private-fixture-query')
       expect(container.querySelector('input')?.value).toBe('private-fixture-query')
       expect(container.querySelectorAll('[data-marketplace-plugin-key]')).toHaveLength(1)

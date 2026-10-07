@@ -1,3 +1,8 @@
+import type {
+  PluginHostListEntry,
+  PluginMarketplaceHostInstallPreview,
+  PluginMarketplaceHostListing
+} from '../../../../preload/api-types'
 import { useEffect, useRef, useState } from 'react'
 import { PluginMarketplaceViewerCommand } from '../../../../shared/rpc-contract/plugin-marketplace-viewer-params'
 import {
@@ -16,6 +21,18 @@ type CatalogOwner = {
   reload: () => Promise<(() => boolean) | undefined>
   sourcesOpen: boolean
   previewOpen: boolean
+  preview: PluginMarketplaceHostInstallPreview | null
+  previewBusy: boolean
+  isPreviewBusy: () => boolean
+  installBusy: boolean
+  visibleListings: PluginMarketplaceHostListing[]
+  installedByKey: ReadonlyMap<string, PluginHostListEntry>
+  openPreview: (
+    listing: PluginMarketplaceHostListing,
+    update: boolean,
+    canApply: (value: PluginMarketplaceHostInstallPreview) => boolean
+  ) => Promise<(() => boolean) | undefined>
+  closePreview: () => void
   setSourcesOpen: (value: boolean) => void
   closeSources: () => boolean
   setSearch: (value: string) => void
@@ -26,6 +43,7 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
   current.current = owner
   const pending = useRef<PluginMarketplaceEvent | null>(null)
   const ready = useRef(true)
+  const previewReceipt = useRef<(() => boolean) | undefined>(undefined)
   const reloadReceipt = useRef<(() => boolean) | undefined>(undefined)
   const [, publishCompletion] = useState(0)
   const finishCommitted = (): void => {
@@ -51,6 +69,10 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
       request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
       return
     }
+    if (request.command.action === 'preview' && !previewReceipt.current?.()) {
+      request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
+      return
+    }
     const next = current.current
     const command = request.command
     if (
@@ -58,7 +80,11 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
       (command.action === 'filter' && next.filter !== command.value) ||
       (command.action === 'sources-open' && !next.sourcesOpen) ||
       (command.action === 'sources-close' && next.sourcesOpen) ||
-      (command.action === 'reload' && next.errorPresent)
+      (command.action === 'reload' && next.errorPresent) ||
+      (command.action === 'preview' &&
+        (next.preview?.marketplaceSourceId !== command.source ||
+          next.preview.pluginKey !== command.plugin)) ||
+      (command.action === 'preview-close' && next.preview !== null)
     ) {
       request.finish(new Error('plugin_marketplace_readback_unknown'))
     } else {
@@ -91,7 +117,7 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
           requirePluginMarketplaceViewer()
           if (
             command.action !== 'status' &&
-            (current.current.previewOpen ||
+            ((current.current.previewOpen && command.action !== 'preview-close') ||
               (current.current.sourcesOpen &&
                 command.action !== 'sources-open' &&
                 command.action !== 'sources-close'))
@@ -104,9 +130,25 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
           if (command.action === 'sources-close' && !current.current.sourcesOpen) {
             throw new Error('plugin_marketplace_source_not_open')
           }
+          if (
+            command.action === 'preview-close' &&
+            (current.current.preview?.marketplaceSourceId !== command.source ||
+              current.current.preview.pluginKey !== command.plugin)
+          ) {
+            throw new Error('plugin_marketplace_preview_target_mismatch')
+          }
+          if (
+            (command.action === 'preview' || command.action === 'preview-close') &&
+            (current.current.isPreviewBusy() ||
+              current.current.previewBusy ||
+              current.current.installBusy)
+          ) {
+            throw new Error('plugin_marketplace_preview_busy')
+          }
           pending.current = request
           ready.current = true
           reloadReceipt.current = undefined
+          previewReceipt.current = undefined
           if (command.action === 'search' && current.current.search !== command.value) {
             current.current.setSearch(command.value)
           } else if (command.action === 'filter' && current.current.filter !== command.value) {
@@ -134,6 +176,62 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
                 }
                 request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
               })
+          } else if (command.action === 'preview') {
+            const matches = current.current.visibleListings.filter(
+              (listing) =>
+                listing.marketplaceSourceId === command.source &&
+                listing.pluginKey === command.plugin
+            )
+            const listing = matches[0]
+            const installed = current.current.installedByKey.get(command.plugin)
+            if (
+              current.current.filter !== 'all' ||
+              current.current.loading ||
+              matches.length !== 1 ||
+              !listing ||
+              listing.blockedByKillList ||
+              (installed && installed.source?.kind !== 'marketplace')
+            ) {
+              throw new Error('plugin_marketplace_listing_unavailable')
+            }
+            ready.current = false
+            void current.current
+              .openPreview(listing, installed?.source?.kind === 'marketplace', (preview) => {
+                try {
+                  requirePluginMarketplaceViewer()
+                  return (
+                    !request.isSettled() &&
+                    Date.now() < request.expiresAt &&
+                    !current.current.sourcesOpen &&
+                    !current.current.previewOpen &&
+                    preview.marketplaceSourceId === command.source &&
+                    preview.pluginKey === command.plugin
+                  )
+                } catch {
+                  return false
+                }
+              })
+              .then((receipt) => {
+                if (pending.current !== request || request.isSettled()) {
+                  return
+                }
+                if (!receipt) {
+                  pending.current = null
+                  request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
+                  return
+                }
+                previewReceipt.current = receipt
+                ready.current = true
+                publishCompletion((value) => value + 1)
+              })
+              .catch(() => {
+                if (pending.current === request) {
+                  pending.current = null
+                }
+                request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
+              })
+          } else if (command.action === 'preview-close') {
+            current.current.closePreview()
           } else if (command.action === 'sources-open' && !current.current.sourcesOpen) {
             current.current.setSourcesOpen(true)
           } else if (command.action === 'sources-close') {
