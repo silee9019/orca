@@ -4,7 +4,15 @@ import {
   type BrowserProfileUiEvent
 } from '@/runtime/browser-profile-ui-request'
 import type { BrowserProfileUiState } from '../../../../../shared/rpc-contract/browser-profile-ui-params'
+import type { BrowserCookieImportExecutionResult, BrowserSlice } from '@/store/slices/browser'
 type ProfileUiOwner = {
+  detect: () => Promise<void>
+  getDetection: () => NonNullable<BrowserProfileUiState['detection']>
+  cookieHost: string
+  getImportState: () => BrowserSlice['browserSessionImportState']
+  cookieBusy: boolean
+  importBrowser: (family: string, profile?: string) => Promise<BrowserCookieImportExecutionResult>
+  importFile: (filePath: string) => Promise<BrowserCookieImportExecutionResult>
   page: string
   active: boolean
   snapshot: BrowserProfileUiState
@@ -83,6 +91,94 @@ export function useBrowserProfileUiCommands(owner: ProfileUiOwner): void {
         (pending.current && !pending.current.request.isSettled())
       ) {
         request.finish(new Error('browser_profile_ui_busy'))
+        return
+      }
+      if (command.action === 'detect-browsers') {
+        if (before.cookieHost !== 'local' || before.cookieBusy) {
+          request.finish(new Error('browser_profile_detect_host_unsupported_or_busy'))
+          return
+        }
+        const operation = { request, check: () => true, done: false }
+        pending.current = operation
+        void before.detect().then(
+          () => {
+            if (pending.current !== operation || request.isSettled()) {
+              return
+            }
+            pending.current = null
+            if (
+              !current.current.active ||
+              Date.now() >= request.expiresAt ||
+              current.current.cookieHost !== 'local'
+            ) {
+              request.finish(new Error('browser_profile_detect_owner_changed_effect_unknown'))
+            } else {
+              request.finish(undefined, {
+                ...current.current.snapshot,
+                detection: before.getDetection()
+              })
+            }
+          },
+          () => {
+            if (pending.current === operation) {
+              pending.current = null
+            }
+            request.finish(new Error('browser_profile_detect_failed_effect_unknown'))
+          }
+        )
+        return
+      }
+      if (command.action === 'import-browser' || command.action === 'import-file') {
+        if (before.cookieHost !== 'local' || before.cookieBusy) {
+          request.finish(new Error('browser_profile_import_host_unsupported_or_busy'))
+          return
+        }
+        const operation = { request, check: () => true, done: false }
+        pending.current = operation
+        const work =
+          command.action === 'import-browser'
+            ? before.importBrowser(command.family, command.browserProfile)
+            : before.importFile(command.filePath)
+        void work.then(
+          (result) => {
+            if (pending.current !== operation || request.isSettled()) {
+              return
+            }
+            pending.current = null
+            if (
+              Date.now() >= request.expiresAt ||
+              !current.current.active ||
+              current.current.snapshot.profile !== before.snapshot.profile ||
+              current.current.cookieHost !== 'local'
+            ) {
+              request.finish(new Error('browser_profile_import_owner_changed_effect_unknown'))
+            } else if (
+              !result.ok ||
+              result.executionHostId !== 'local' ||
+              result.executionMachine !== 'client'
+            ) {
+              request.finish(new Error('browser_profile_import_failed_effect_unknown'))
+            } else {
+              request.finish(undefined, {
+                ...current.current.snapshot,
+                cookieImport: {
+                  profile: result.profileId,
+                  imported: result.summary.importedCookies,
+                  skipped: result.summary.skippedCookies,
+                  total: result.summary.totalCookies,
+                  executionHost: 'local',
+                  executionMachine: 'client'
+                }
+              })
+            }
+          },
+          () => {
+            if (pending.current === operation) {
+              pending.current = null
+            }
+            request.finish(new Error('browser_profile_import_failed_effect_unknown'))
+          }
+        )
         return
       }
       let check: (state: BrowserProfileUiState) => boolean

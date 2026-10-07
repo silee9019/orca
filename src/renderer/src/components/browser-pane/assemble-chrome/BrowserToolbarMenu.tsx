@@ -1,7 +1,8 @@
 import { useBrowserProfileUiCommands } from './use-browser-profile-ui-commands'
 import { useLayoutEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { emitBrowserCookieImportToast } from '@/lib/browser-cookie-import-toast'
+import { useBrowserToolbarCookieImports } from './use-browser-toolbar-cookie-imports'
+import { getBrowserSettingsHostId } from '@/store/slices/browser/browser-host-state'
 import { useAppStore } from '@/store'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { shouldShowBrowserImportHint } from './browser-import-hint-visibility'
@@ -43,8 +44,6 @@ export function BrowserToolbarMenu({
   const detectedBrowsers = useAppStore((s) => s.detectedBrowsers)
   const switchBrowserTabProfile = useAppStore((s) => s.switchBrowserTabProfile)
   const createBrowserSessionProfile = useAppStore((s) => s.createBrowserSessionProfile)
-  const importCookiesFromBrowser = useAppStore((s) => s.importCookiesFromBrowser)
-  const importCookiesToProfile = useAppStore((s) => s.importCookiesToProfile)
   const fetchDetectedBrowsers = useAppStore((s) => s.fetchDetectedBrowsers)
   const browserSessionImportState = useAppStore((s) => s.browserSessionImportState)
   const setBrowserPageViewportPreset = useAppStore((s) => s.setBrowserPageViewportPreset)
@@ -181,56 +180,8 @@ export function BrowserToolbarMenu({
     }
   }
 
-  const handleImportFromBrowser = async (
-    browserFamily: string,
-    browserProfile?: string
-  ): Promise<void> => {
-    const result = await importCookiesFromBrowser(effectiveProfileId, browserFamily, browserProfile)
-    if (result.ok) {
-      const browser = detectedBrowsers.find((b) => b.family === browserFamily)
-      emitBrowserCookieImportToast(
-        result.summary,
-        browserProfile
-          ? translate(
-              'auto.components.browser.pane.BrowserToolbarMenu.c5f0e4d3b2a1',
-              'Imported {{value0}} cookies from {{value1}} ({{value2}}).',
-              {
-                value0: result.summary.importedCookies,
-                value1: browser?.label ?? browserFamily,
-                value2: browserProfile
-              }
-            )
-          : translate(
-              'auto.components.browser.pane.BrowserToolbarMenu.d6a1f5e4c3b2',
-              'Imported {{value0}} cookies from {{value1}}.',
-              {
-                value0: result.summary.importedCookies,
-                value1: browser?.label ?? browserFamily
-              }
-            ),
-        result
-      )
-    } else {
-      toast.error(result.reason)
-    }
-  }
-
-  const handleImportFromFile = async (): Promise<void> => {
-    const result = await importCookiesToProfile(effectiveProfileId)
-    if (result.ok) {
-      emitBrowserCookieImportToast(
-        result.summary,
-        translate(
-          'auto.components.browser.pane.BrowserToolbarMenu.53bbe3dab4',
-          'Imported {{value0}} cookies from file.',
-          { value0: result.summary.importedCookies }
-        ),
-        result
-      )
-    } else if (result.reason !== 'canceled') {
-      toast.error(result.reason)
-    }
-  }
+  const { handleImportFromBrowser, handleImportFromFile } =
+    useBrowserToolbarCookieImports(effectiveProfileId)
 
   useBrowserProfileUiCommands({
     page: browserPageId,
@@ -254,7 +205,21 @@ export function BrowserToolbarMenu({
     confirmSwitch: confirmSwitchProfile,
     newDialog: handleNewProfileDialogOpenChange,
     name: setNewProfileName,
-    create: handleCreateProfile
+    create: handleCreateProfile,
+    cookieHost: useAppStore(getBrowserSettingsHostId),
+    detect: fetchDetectedBrowsers,
+    getDetection: () => {
+      const state = useAppStore.getState()
+      return {
+        loaded: state.detectedBrowsersLoaded,
+        browsers: state.detectedBrowsers,
+        serviceVerified: false as const
+      }
+    },
+    getImportState: () => useAppStore.getState().browserSessionImportState,
+    cookieBusy: browserSessionImportState?.status === 'importing',
+    importBrowser: handleImportFromBrowser,
+    importFile: handleImportFromFile
   })
 
   return (

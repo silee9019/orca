@@ -1,3 +1,4 @@
+import { runBrowserProfileUi } from './browser-profile-ui'
 import { runViewerCommand, requireBrowserViewerConfirmation } from './browser-viewer-command'
 import { readFile, stat } from 'node:fs/promises'
 import type { CommandHandler, HandlerContext } from '../dispatch'
@@ -38,24 +39,7 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 }
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
-  'browser profile-ui': (ctx) => {
-    const action = getRequiredStringFlag(ctx.flags, 'action')
-    if (action === 'switch-confirm' || action === 'new-create') {
-      requireBrowserViewerConfirmation(ctx)
-    }
-    return runViewerCommand(ctx, {
-      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-      page: getRequiredStringFlag(ctx.flags, 'page'),
-      operation: 'profile-ui',
-      command: {
-        action,
-        ...(action === 'select' ? { profile: getRequiredStringFlag(ctx.flags, 'profile') } : {}),
-        ...(action === 'new-name'
-          ? { name: getRequiredStringFlagAllowingEmpty(ctx.flags, 'name') }
-          : {})
-      }
-    })
-  },
+  'browser profile-ui': runBrowserProfileUi,
   'browser markup copy': (ctx) => runMarkupEditor(ctx, { action: 'copy' }),
   'browser markup text-commit': (ctx) =>
     runMarkupEditor(ctx, {

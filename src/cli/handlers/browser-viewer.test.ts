@@ -53,6 +53,42 @@ it.each([
     command: { operation: 'profile-ui', page: 'p1', command: { action: 'new-name', name: '' } }
   },
   {
+    args: [
+      'profile-ui',
+      '--action',
+      'import-browser',
+      '--family',
+      'chrome',
+      '--browser-profile',
+      'Profile 1',
+      '--confirm',
+      '--page',
+      'p1'
+    ],
+    command: {
+      operation: 'profile-ui',
+      page: 'p1',
+      command: { action: 'import-browser', family: 'chrome', browserProfile: 'Profile 1' }
+    }
+  },
+  {
+    args: [
+      'profile-ui',
+      '--action',
+      'import-file',
+      '--file',
+      join(tmpdir(), 'cookies.json'),
+      '--confirm',
+      '--page',
+      'p1'
+    ],
+    command: {
+      operation: 'profile-ui',
+      page: 'p1',
+      command: { action: 'import-file', filePath: join(tmpdir(), 'cookies.json') }
+    }
+  },
+  {
     args: ['markup', 'text-commit', '--page', 'p1', '--text', 'annotation text'],
     command: {
       operation: 'markup-editor',
@@ -260,7 +296,7 @@ it('reads a WebAuthn credential from a file and never prints it', async () => {
   }
 })
 
-it.each(['switch-confirm', 'new-create'])(
+it.each(['switch-confirm', 'new-create', 'import-browser', 'import-file'])(
   'requires explicit confirmation for profile-ui %s',
   async (action) => {
     const call = vi.spyOn(client, 'call')

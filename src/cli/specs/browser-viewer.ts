@@ -1,15 +1,9 @@
+import { BROWSER_PROFILE_UI_COMMAND_SPECS } from './browser-profile-ui'
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
-  {
-    path: ['browser', 'profile-ui'],
-    summary:
-      'Use the native host viewer profile menu and dialogs; guest registration is not verified',
-    usage:
-      'orca browser profile-ui --viewer host --page <id> --action <menu-open|menu-close|select|switch-confirm|switch-cancel|new-open|new-name|new-create|new-cancel|status> [--profile <id>] [--name <name>] [--confirm] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'profile', 'name', 'confirm']
-  },
+  ...BROWSER_PROFILE_UI_COMMAND_SPECS,
   {
     path: ['browser', 'markup', 'copy'],
     summary: 'Compose markup and copy the image with a native write acknowledgment',

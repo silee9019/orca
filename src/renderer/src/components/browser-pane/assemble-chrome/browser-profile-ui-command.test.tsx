@@ -21,6 +21,7 @@ const fixture = vi.hoisted(() => {
       { id: 'default', label: 'Default', partition: 'partition-default' },
       { id: 'other', label: 'Other', partition: 'partition-other' }
     ],
+    browserSessionHostIdOverride: 'local',
     detectedBrowsers: [],
     browserSessionImportState: null,
     activeContextualTourId: null,
