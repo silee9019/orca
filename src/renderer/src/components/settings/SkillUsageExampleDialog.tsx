@@ -1,3 +1,4 @@
+import { useSkillExampleViewerController } from '../../runtime/skill-example-viewer-controller'
 import { Fragment } from 'react'
 import { Copy, type LucideIcon } from 'lucide-react'
 import { toast } from 'sonner'
@@ -49,7 +50,7 @@ export function SkillUsageExampleDialog(props: {
 }): React.JSX.Element {
   const { example, slashCommand, icon: Icon, open, onOpenChange } = props
 
-  const copyPrompt = async (prompt: string): Promise<void> => {
+  const copyPrompt = async (prompt: string): Promise<boolean> => {
     try {
       await window.api.ui.writeClipboardText(prompt)
       toast.success(
@@ -58,6 +59,7 @@ export function SkillUsageExampleDialog(props: {
           'Copied example prompt.'
         )
       )
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -67,8 +69,13 @@ export function SkillUsageExampleDialog(props: {
               'Failed to copy prompt.'
             )
       )
+      return false
     }
   }
+
+  useSkillExampleViewerController(slashCommand, example.id, open, onOpenChange, () =>
+    copyPrompt(example.prompt)
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

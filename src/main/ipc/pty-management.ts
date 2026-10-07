@@ -69,6 +69,22 @@ async function collectSessions(adapters: DaemonPtyAdapter[]): Promise<DaemonSess
   return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
 }
 
+export async function readDaemonMacTccAttribution(): Promise<{
+  health: MacDaemonTccAttributionHealth
+  folderAccessMismatch: DaemonFolderAccessMismatchNotice | null
+}> {
+  // Why two guards: the two answers are independent evidence, and a failed health read must
+  // not present as "the folder evidence is gone".
+  const health = await getCurrentDaemonMacTccAttributionHealth().catch(
+    (): MacDaemonTccAttributionHealth => 'unknown'
+  )
+  const identity = readCurrentDaemonIdentity()
+  // Why re-probe on the poll: the fix dialog's first step completes in System Settings, and
+  // returning to Orca is the only moment anything can notice. The refresh owns when to skip.
+  await refreshDaemonFolderAccessProbe(identity).catch(() => {})
+  return { health, folderAccessMismatch: getDaemonFolderAccessMismatch(identity) }
+}
+
 export function registerDaemonManagementHandlers(): void {
   ipcMain.removeHandler('pty:management:listSessions')
   ipcMain.removeHandler('pty:management:killAll')
@@ -79,24 +95,7 @@ export function registerDaemonManagementHandlers(): void {
 
   // Why: lets Settings warn that macOS privacy grants no longer reach daemon terminals (STA-3491),
   // and carries the folder-access evidence the notice needs (STA-7948) on the same focus-time poll.
-  ipcMain.handle(
-    'pty:management:macTccAttribution',
-    async (): Promise<{
-      health: MacDaemonTccAttributionHealth
-      folderAccessMismatch: DaemonFolderAccessMismatchNotice | null
-    }> => {
-      // Why two guards: the two answers are independent evidence, and a failed health read must
-      // not present as "the folder evidence is gone".
-      const health = await getCurrentDaemonMacTccAttributionHealth().catch(
-        (): MacDaemonTccAttributionHealth => 'unknown'
-      )
-      const identity = readCurrentDaemonIdentity()
-      // Why re-probe on the poll: the fix dialog's first step completes in System Settings, and
-      // returning to Orca is the only moment anything can notice. The refresh owns when to skip.
-      await refreshDaemonFolderAccessProbe(identity).catch(() => {})
-      return { health, folderAccessMismatch: getDaemonFolderAccessMismatch(identity) }
-    }
-  )
+  ipcMain.handle('pty:management:macTccAttribution', readDaemonMacTccAttribution)
 
   // Why a separate channel from the poll: this one has a side effect — it clears Orca's TCC row and
   // makes the app touch the folder so macOS re-prompts — and only a user click may trigger it.

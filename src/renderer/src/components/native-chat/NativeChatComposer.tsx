@@ -411,6 +411,13 @@ const NativeChatComposerPane = forwardRef<NativeChatComposerHandle, NativeChatCo
         onStop={interrupt}
         sessionOptionsSurface={sessionOptionsSurface}
         sessionOptionsSnapshot={sessionOptionsSnapshot}
+        contextUsageTarget={
+          structuredTransport?.sessionId
+            ? { kind: 'session', id: structuredTransport.sessionId }
+            : targetPtyId
+              ? { kind: 'pty', id: targetPtyId }
+              : undefined
+        }
         contextUsage={contextUsageSummary}
         sessionOptionsPickerRequest={structuredTransport?.optionPickerRequest ?? null}
       />

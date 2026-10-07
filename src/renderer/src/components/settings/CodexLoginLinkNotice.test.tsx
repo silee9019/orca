@@ -1,6 +1,7 @@
+import { applyAccountLoginLinkAction } from '../../runtime/account-login-link-controls'
 // @vitest-environment happy-dom
 
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '../../i18n/i18n'
 import { CodexLoginLinkNotice } from './CodexLoginLinkNotice'
@@ -90,4 +91,22 @@ describe('CodexLoginLinkNotice', () => {
     listeners[0](null)
     await waitFor(() => expect(container.textContent).toBe(''))
   })
+})
+
+it('uses the mounted login callbacks without exposing the URL and expires on unmount', async () => {
+  const { writeClipboardText, openUrl } = stubApi(AUTH_URL)
+  const view = render(<CodexLoginLinkNotice />)
+  await waitFor(() => expect(view.container.textContent).toContain(AUTH_URL))
+  let result: unknown
+  await act(async () => {
+    result = await applyAccountLoginLinkAction('copy')
+  })
+  expect(result).toEqual({ copied: true })
+  expect(JSON.stringify(result)).not.toContain(AUTH_URL)
+  expect(writeClipboardText).toHaveBeenCalledWith(AUTH_URL)
+  expect(view.container.textContent).toContain('Copied')
+  await applyAccountLoginLinkAction('open')
+  expect(openUrl).toHaveBeenCalledWith(AUTH_URL)
+  view.unmount()
+  await expect(applyAccountLoginLinkAction('copy')).rejects.toThrow('mounted')
 })

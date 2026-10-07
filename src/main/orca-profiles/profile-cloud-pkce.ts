@@ -42,8 +42,12 @@ function closeServer(server: Server): void {
 
 export function beginOrcaCloudPkceFlow(
   config: OrcaCloudAuthConfig,
-  localProfileId: string
+  localProfileId: string,
+  signal?: AbortSignal
 ): Promise<OrcaCloudAuthorizationCode> {
+  if (signal?.aborted) {
+    return Promise.reject(new Error('orca_cloud_auth_denied'))
+  }
   const codeVerifier = createCodeVerifier()
   const nonce = base64Url(randomBytes(32))
   const state = base64Url(randomBytes(32))
@@ -124,9 +128,18 @@ export function beginOrcaCloudPkceFlow(
     const timeout = setTimeout(() => {
       rejectFlow(new Error('orca_cloud_auth_timeout'))
     }, AUTH_TIMEOUT_MS)
-    server.once('close', () => clearTimeout(timeout))
+    const abort = () => rejectFlow(new Error('orca_cloud_auth_denied'))
+    signal?.addEventListener('abort', abort, { once: true })
+    server.once('close', () => {
+      clearTimeout(timeout)
+      signal?.removeEventListener('abort', abort)
+    })
     server.once('error', rejectFlow)
     server.listen(0, '127.0.0.1', () => {
+      if (settled) {
+        closeServer(server)
+        return
+      }
       const address = server.address()
       if (!address || typeof address === 'string') {
         rejectFlow(new Error('orca_cloud_auth_loopback_unavailable'))

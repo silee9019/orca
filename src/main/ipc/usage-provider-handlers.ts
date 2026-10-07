@@ -4,7 +4,7 @@ import type { CodexUsageStore } from '../codex-usage/store'
 import type { OpenCodeUsageStore } from '../opencode-usage/store'
 import type { MuseUsageStore } from '../muse-usage/store'
 
-type UsageProviderStores = {
+export type UsageProviderStores = {
   claudeUsage: ClaudeUsageStore
   codexUsage: CodexUsageStore
   openCodeUsage: OpenCodeUsageStore
@@ -13,7 +13,7 @@ type UsageProviderStores = {
 
 type UsageProviderChannelPrefix = keyof UsageProviderStores
 
-type UsageProviderHandlerStore<Scope, Range, BreakdownKind> = {
+export type UsageProviderHandlerStore<Scope, Range, BreakdownKind> = {
   getScanState: () => unknown
   setEnabled: (enabled: boolean) => unknown
   refresh: (force?: boolean) => unknown

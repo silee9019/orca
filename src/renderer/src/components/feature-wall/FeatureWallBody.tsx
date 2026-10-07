@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { registerUsageAccountStateRefresh } from '@/runtime/usage-account-viewer-controller'
 import type { JSX } from 'react'
 import type { FeatureWallWorkflow } from '../../../../shared/feature-wall-workflows'
 import type { FeatureWallOpenSourceTelemetry } from '../../../../shared/telemetry-events'
@@ -59,6 +61,10 @@ export function FeatureWallBody(props: {
   const isWorkbench = selected.id === 'workbench'
   const isReview = selected.id === 'review'
   const isAgentsUsage = isAgents && agentsActiveStep?.id === 'usage'
+  useEffect(() => {
+    if (isAgentsUsage) {return registerUsageAccountStateRefresh(onUsageAccountStateChange)}
+    return undefined
+  }, [isAgentsUsage, onUsageAccountStateChange])
   const isAgentsStatuses = isAgents && agentsActiveStep?.id === 'statuses'
   const isAgentsOrchestration = isAgents && agentsActiveStep?.id === 'orchestration'
   const isWorkbenchEditor = isWorkbench && workbenchActiveStep?.id === 'editor'

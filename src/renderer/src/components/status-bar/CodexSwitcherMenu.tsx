@@ -258,12 +258,18 @@ export function CodexSwitcherMenu({
                             isFetching={inactiveUsage?.isFetching ?? false}
                             isSigningIn={isSigningIn}
                             disabled={isBusy}
+                            viewerTarget={
+                              target.id === null
+                                ? undefined
+                                : { accountId: target.id, target: target.runtimeTarget }
+                            }
                             onSignInPointerDown={suppressNextAccountSelect}
                             onSignIn={() => {
                               suppressNextAccountSelect()
                               if (target.id !== null) {
-                                void handleSignInAccount(target.id, target.runtimeTarget)
+                                return handleSignInAccount(target.id, target.runtimeTarget)
                               }
+                              return undefined
                             }}
                           />
                         ) : inactiveUsage?.rateLimits ? (

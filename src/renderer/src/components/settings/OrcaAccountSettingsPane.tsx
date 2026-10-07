@@ -1,3 +1,5 @@
+import { AccountMountedActionError } from '../../../../shared/account-mounted-viewer-command'
+import { useMountedOrcaSignOutDialogControls } from '../../runtime/use-mounted-account-dialog-controls'
 import { useState } from 'react'
 import { BookOpen, Check, CircleUserRound, Files, Smartphone } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -66,6 +68,14 @@ export function OrcaAccountSettingsPane(): React.JSX.Element {
   const [signingOut, setSigningOut] = useState(false)
   const connected = authStatus?.state === 'connected'
   const canConnect = authStatus?.configured === true
+  useMountedOrcaSignOutDialogControls({
+    setOpen: (open) => {
+      if (open && (!connected || signingOut)) {
+        throw new AccountMountedActionError('unavailable')
+      }
+      setSignOutOpen(open)
+    }
+  })
 
   useOrcaProfileAuthStatusRefresh()
 

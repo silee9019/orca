@@ -1,3 +1,4 @@
+import { requireAccountsPermissionsExecutionHost } from '../accounts-permissions-host-boundary'
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -28,24 +29,17 @@ import { ACCOUNT_IMPORT_RUNTIME_CAPABILITY } from '../../shared/protocol-version
 import type { RuntimeStatus } from '../../shared/runtime-types'
 import type {
   ClaudeRateLimitAccountsState,
-  CodexRateLimitAccountsState,
-  ManagedDataAccountsState
+  CodexRateLimitAccountsState
 } from '../../shared/managed-account-types'
 import {
   type InteractiveLoginSession,
   withInteractiveLoginCleanup
 } from './interactive-login-interruption'
 import { getWslAccountTarget } from './account-wsl-location'
-import { addDataAccount, listDataAccounts, mutateDataAccount } from './data-account-commands'
-import { formatAccountsBlock, formatDataAccounts } from './account-list-format'
-
-// Why: add returns just that provider's state; list returns the full snapshot.
-type AccountsListSnapshot = {
-  opencode?: ManagedDataAccountsState
-  devin?: ManagedDataAccountsState
-  claude: ClaudeRateLimitAccountsState
-  codex: CodexRateLimitAccountsState
-}
+import { addDataAccount } from './data-account-commands'
+import { mutateManagedAccount } from './account-controls'
+import { listManagedAccounts } from './account-list-command'
+import { formatAccountsBlock } from './account-list-format'
 
 function addAgentNodePaths(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const pathKey =
@@ -251,14 +245,9 @@ async function addCodexAccount({ client, cwd, json }: HandlerContext): Promise<v
   printResult(result, json, (state) => formatAccountsBlock('Codex', state))
 }
 
-/**
- * Rejects the runtime-selector flags instead of ignoring them. shouldIgnoreRemoteSelection
- * pins account commands to the local runtime, so honoring `--environment homelab`
- * silently would target the laptop rather than the host the user named — the exact
- * mistake this feature exists to avoid. A `--help` note does not reach someone who
- * already typed the flag.
- */
+// Account operations always target this host; reject selectors before any login or mutation.
 function rejectAccountRemoteSelectionFlags(ctx: HandlerContext, command: string): void {
+  requireAccountsPermissionsExecutionHost(ctx)
   rejectRemoteSelectionFlags(
     ctx.flags,
     `\`${command}\`. Run it on the host whose accounts you want to manage.`
@@ -278,6 +267,7 @@ async function assertAccountImportSupported({ client }: HandlerContext): Promise
 /** CLI handlers for managed account enrollment and listing. */
 export const ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
   'account add': async (ctx) => {
+    requireAccountsPermissionsExecutionHost(ctx)
     const agentFlag = ctx.flags.get('agent')
     // Why: a valueless `--agent` parses as boolean true; defaulting it to claude
     // would silently run a full OAuth login for the provider the user did not ask for.
@@ -306,32 +296,14 @@ export const ACCOUNT_HANDLERS: Record<string, CommandHandler> = {
   },
   'account list': async (ctx) => {
     rejectAccountRemoteSelectionFlags(ctx, 'orca account list')
-    const provider = ctx.flags.get('agent')
-    if (provider !== undefined) {
-      await listDataAccounts(ctx, provider)
-      return
-    }
-    const { client, json } = ctx
-    // Why: this command renders no usage numbers, so skip the forced provider
-    // refresh — it is one serial network round-trip per managed account.
-    const result = await client.call<AccountsListSnapshot>('accounts.list', {
-      refreshUsage: false
-    })
-    printResult(result, json, (snapshot) =>
-      [
-        formatAccountsBlock('Claude', snapshot.claude),
-        formatAccountsBlock('Codex', snapshot.codex),
-        ...(snapshot.opencode ? [formatDataAccounts('OpenCode', snapshot.opencode)] : []),
-        ...(snapshot.devin ? [formatDataAccounts('Devin', snapshot.devin)] : [])
-      ].join('\n\n')
-    )
+    await listManagedAccounts(ctx)
   },
   'account select': async (ctx) => {
     rejectAccountRemoteSelectionFlags(ctx, 'orca account select')
-    await mutateDataAccount(ctx, 'select')
+    await mutateManagedAccount(ctx, 'select')
   },
   'account rm': async (ctx) => {
     rejectAccountRemoteSelectionFlags(ctx, 'orca account rm')
-    await mutateDataAccount(ctx, 'remove')
+    await mutateManagedAccount(ctx, 'remove')
   }
 }

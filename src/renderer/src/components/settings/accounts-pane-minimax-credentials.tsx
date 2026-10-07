@@ -1,3 +1,4 @@
+import { useMountedMiniMaxDraftModel } from '../../runtime/use-mounted-account-credential-controls'
 import { HelpCircle, Loader2, Lock, LockOpen } from 'lucide-react'
 import { useNow } from '../../hooks/use-now'
 import { translate } from '@/i18n/i18n'
@@ -87,6 +88,7 @@ export function MiniMaxCredentials({
     saveMiniMaxApiKey,
     clearMiniMaxApiKey
   } = model
+  useMountedMiniMaxDraftModel(model)
   const now = useNow(60_000)
   return (
     <>

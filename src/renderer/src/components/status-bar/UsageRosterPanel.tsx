@@ -1,4 +1,5 @@
-import React from 'react'
+import { registerUsageRosterSignIn } from '@/runtime/usage-roster-viewer-controller'
+import React, { useEffect, useRef } from 'react'
 import { ChevronRight, RefreshCw } from 'lucide-react'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { SettingsSegmentedControl } from '@/components/settings/SettingsFormControls'
@@ -231,6 +232,24 @@ export function UsageRosterPanel({
   // default clickable row.
   renderRow?: (p: ProviderRateLimits, row: React.ReactNode) => React.ReactNode
 }): React.JSX.Element {
+  const viewerCallbacks = useRef({ onSignIn, canSignIn, providers })
+  viewerCallbacks.current = { onSignIn, canSignIn, providers }
+  useEffect(
+    () =>
+      registerUsageRosterSignIn({
+        onSignIn: (provider) => viewerCallbacks.current.onSignIn(provider),
+        canSignIn: (provider) => viewerCallbacks.current.canSignIn(provider),
+        providers: () =>
+          viewerCallbacks.current.providers
+            .filter(
+              (provider) =>
+                getUsageRosterRowState(provider, usedSections(provider).length > 0).kind ===
+                'sign-in'
+            )
+            .map((provider) => provider.provider)
+      }),
+    []
+  )
   // Why: one boundary-scheduled clock keeps every open row current without per-provider timers.
   const now = useResetCountdownClock(
     providers.flatMap((provider) =>

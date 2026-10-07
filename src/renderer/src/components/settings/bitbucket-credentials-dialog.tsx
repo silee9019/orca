@@ -1,3 +1,4 @@
+import { useMountedBitbucketControls } from '../../runtime/use-mounted-account-credential-controls'
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { ExternalLink, LoaderCircle, Lock } from 'lucide-react'
 import type { BitbucketAuthMode } from '../../../../shared/bitbucket-credentials'
@@ -20,7 +21,7 @@ import { hasRemoteProviderRuntime } from '@/lib/provider-runtime-context'
 import { preventOutsideDismissWhenDirty } from '@/lib/outside-dismiss-guard'
 import { translate } from '@/i18n/i18n'
 
-const API_TOKEN_DOCS_URL = 'https://support.atlassian.com/bitbucket-cloud/docs/using-api-tokens/'
+import { BITBUCKET_API_TOKEN_DOCS_URL } from '../../../../shared/account-documentation-links'
 
 type ConnectState = 'idle' | 'connecting' | 'error'
 
@@ -107,6 +108,16 @@ export function BitbucketCredentialsDialog({
     }
   }
 
+  const handleAuthModeChange = (value: BitbucketAuthMode): void => {
+    if (connecting) {
+      return
+    }
+    setAuthMode(value)
+    setApiToken('')
+    setAccessToken('')
+    clearErrorOnEdit()
+  }
+
   const handleOpenChange = (nextOpen: boolean): void => {
     if (!connecting) {
       onOpenChange(nextOpen)
@@ -120,6 +131,19 @@ export function BitbucketCredentialsDialog({
     baseUrl !== baselineRef.current.baseUrl ||
     (isTokenMode ? accessToken !== '' : email !== baselineRef.current.email || apiToken !== '')
   const guardOutsideDismiss = preventOutsideDismissWhenDirty(isDraftDirty)
+  useMountedBitbucketControls({
+    open,
+    locked,
+    connecting,
+    setAuthMode: handleAuthModeChange,
+    setEmail,
+    setApiToken,
+    setAccessToken,
+    setBaseUrl,
+    clearErrorOnEdit,
+    handleOpenChange,
+    guardOutsideDismiss
+  })
 
   const handleConnect = async (): Promise<void> => {
     if (!canSubmit) {
@@ -211,15 +235,9 @@ export function BitbucketCredentialsDialog({
               value={authMode}
               disabled={connecting}
               onValueChange={(value) => {
-                if (!value || connecting) {
-                  return
+                if (value === 'basic' || value === 'token') {
+                  handleAuthModeChange(value)
                 }
-                setAuthMode(value as BitbucketAuthMode)
-                // An API token and an access token are different secrets; drop
-                // the typed one so it can't be submitted as the other.
-                setApiToken('')
-                setAccessToken('')
-                clearErrorOnEdit()
               }}
               aria-label={translate(
                 'auto.components.settings.bitbucket.credentials.dialog.authModeLabel',
@@ -357,7 +375,7 @@ export function BitbucketCredentialsDialog({
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"
-                onClick={() => window.api.shell.openUrl(API_TOKEN_DOCS_URL)}
+                onClick={() => window.api.shell.openUrl(BITBUCKET_API_TOKEN_DOCS_URL)}
               >
                 <ExternalLink className="size-3" />
                 {translate(
