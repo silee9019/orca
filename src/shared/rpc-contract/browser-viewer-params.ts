@@ -1,4 +1,7 @@
+import { BrowserTabUiTarget, BrowserTabUiAction } from './browser-tab-ui-params'
+import { BrowserProfileUiCommand } from './browser-profile-ui-params'
 import { z } from 'zod'
+import { BrowserDocumentViewerParams } from './browser-document-params'
 import { BrowserAnnotationTrayAction } from './browser-annotation-tray-params'
 import { BrowserAddressCommand } from './browser-address-params'
 import { BrowserMarkupEditorCommand } from './browser-markup-editor-params'
@@ -30,6 +33,14 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  BrowserDocumentViewerParams,
+  z.object({
+    viewer,
+    operation: z.literal('tab-ui'),
+    target: BrowserTabUiTarget,
+    action: BrowserTabUiAction
+  }),
+  z.object({ viewer, operation: z.literal('profile-ui'), page, command: BrowserProfileUiCommand }),
   z.object({
     viewer,
     operation: z.literal('annotation-tray'),

@@ -22,9 +22,22 @@ function snapshot(editor: Editor): BrowserMarkupEditorState {
 export function useBrowserMarkupEditorCommands(
   owner: { page: string; active: boolean } | undefined,
   busy: boolean,
-  editor: Editor
+  editor: Editor,
+  copyVerified?: (stillCurrent: () => boolean) => Promise<boolean>
 ): void {
   const current = useRef(editor)
+  const copying = useRef(false)
+  const mounted = useRef(true)
+  const active = useRef(owner?.active ?? false)
+  useLayoutEffect(() => {
+    active.current = owner?.active ?? false
+  })
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const pending = useRef<{
     request: BrowserMarkupEditorEvent
     check: (value: Editor) => boolean
@@ -69,14 +82,63 @@ export function useBrowserMarkupEditorCommands(
         request.finish(new Error('browser_markup_composing'))
         return
       }
-      if (pending.current && !pending.current.request.isSettled()) {
+      if (copying.current || (pending.current && !pending.current.request.isSettled())) {
         request.finish(new Error('browser_markup_editor_busy'))
         return
       }
       const command = request.command
       const before = current.current
+      if (command.action === 'copy') {
+        if (!copyVerified || before.pendingText) {
+          request.finish(new Error('browser_markup_copy_unavailable'))
+          return
+        }
+        copying.current = true
+        const stillCurrent = () =>
+          mounted.current &&
+          active.current &&
+          !request.isSettled() &&
+          Date.now() < request.expiresAt
+        void copyVerified(stillCurrent)
+          .then(
+            (copied) => {
+              request.finish(copied ? undefined : new Error('browser_markup_copy_effect_unknown'), {
+                ...snapshot(before),
+                ...(copied ? { copied: true as const } : {})
+              })
+            },
+            () => request.finish(new Error('browser_markup_copy_effect_unknown'))
+          )
+          .finally(() => {
+            copying.current = false
+          })
+        return
+      }
       let check: (value: Editor) => boolean
-      if (command.action === 'tool') {
+      if (command.action === 'text-commit' || command.action === 'text-cancel') {
+        if (!before.pendingText) {
+          request.finish(new Error('browser_markup_text_not_pending'))
+          return
+        }
+        if (command.action === 'text-cancel') {
+          before.cancelPendingText()
+          check = (value) => value.pendingText === null && value.shapes === before.shapes
+        } else {
+          const text = command.text.trim()
+          before.commitPendingText(command.text)
+          check = (value) =>
+            value.pendingText === null &&
+            (text.length === 0
+              ? value.shapes === before.shapes
+              : value.shapes.length === before.shapes.length + 1 &&
+                value.shapes.some(
+                  (shape) =>
+                    shape.kind === 'text' &&
+                    shape.text === text &&
+                    !before.shapes.some((previous) => previous.id === shape.id)
+                ))
+        }
+      } else if (command.action === 'tool') {
         before.setTool(command.value)
         check = (value) => value.tool === command.value
       } else if (command.action === 'color') {
@@ -120,7 +182,7 @@ export function useBrowserMarkupEditorCommands(
     }
     window.addEventListener(BROWSER_MARKUP_EDITOR_COMMAND_EVENT, receive)
     return () => window.removeEventListener(BROWSER_MARKUP_EDITOR_COMMAND_EVENT, receive)
-  }, [owner, busy])
+  }, [owner, busy, copyVerified])
   useEffect(
     () => () => {
       pending.current?.request.finish(new Error('browser_markup_editor_ui_unavailable'))

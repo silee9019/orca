@@ -90,6 +90,8 @@ export function BrowserGuestAnnotateOverlays({
       {markup.isActive && markup.baseImage && markupTarget
         ? createPortal(
             <MarkupOverlay
+              commandOwner={markup.commandOwner}
+              onCompleteVerified={markup.completeVerified}
               baseImage={markup.baseImage}
               busy={markup.state === 'composing'}
               onComplete={(input) => void markup.complete(input)}

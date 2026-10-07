@@ -33,6 +33,7 @@ export type MarkupCompleteInput = {
 type UseMarkupModeParams = {
   getCaptureContext: () => MarkupCaptureContext | null
   onDeliver: (result: MarkupComposeResult) => Promise<void> | void
+  onDeliverVerified?: (result: MarkupComposeResult, stillCurrent: () => boolean) => Promise<void>
 }
 
 export type MarkupModeController = {
@@ -43,11 +44,13 @@ export type MarkupModeController = {
   start: () => Promise<void>
   cancel: () => void
   complete: (input: MarkupCompleteInput) => Promise<void>
+  completeVerified?: (input: MarkupCompleteInput, stillCurrent: () => boolean) => Promise<boolean>
 }
 
 export function useMarkupMode({
   getCaptureContext,
-  onDeliver
+  onDeliver,
+  onDeliverVerified
 }: UseMarkupModeParams): MarkupModeController {
   const [state, setState] = useState<MarkupModeState>('idle')
   const [baseImage, setBaseImage] = useState<MarkupBaseImage | null>(null)
@@ -104,12 +107,16 @@ export function useMarkupMode({
     reset()
   }, [reset])
 
-  const complete = useCallback(
-    async ({ imageElement, shapes }: MarkupCompleteInput) => {
+  const completeWithDelivery = useCallback(
+    async (
+      { imageElement, shapes }: MarkupCompleteInput,
+      delivery: (result: MarkupComposeResult, stillCurrent: () => boolean) => Promise<void> | void,
+      stillCurrent: () => boolean
+    ): Promise<boolean> => {
       const context = contextRef.current
       if (!context) {
         reset()
-        return
+        return false
       }
       // Why: invalidate this completion if the user cancels or restarts while
       // onDeliver is pending, so a stale callback can't reset/error the new session.
@@ -119,8 +126,11 @@ export function useMarkupMode({
       // cursor) paints before the synchronous composite raster runs — otherwise
       // Copy freezes with no visible feedback. Skip the work if cancelled meanwhile.
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-      if (captureTokenRef.current !== token) {
-        return
+      if (captureTokenRef.current !== token || !stillCurrent()) {
+        if (captureTokenRef.current === token) {
+          setState('drawing')
+        }
+        return false
       }
       try {
         const result = await composeMarkupDataUrl({
@@ -138,17 +148,27 @@ export function useMarkupMode({
         // Why: re-check before delivering — the async compose is a wide window in
         // which the user can Escape/cancel, and onDeliver writes the clipboard
         // irreversibly. Without this, a cancelled session still overwrites it.
-        if (captureTokenRef.current !== token) {
-          return
+        if (captureTokenRef.current !== token || !stillCurrent()) {
+          if (captureTokenRef.current === token) {
+            setState('drawing')
+          }
+          return false
         }
-        await onDeliver(result)
-        if (captureTokenRef.current !== token) {
-          return
+        await delivery(result, () => captureTokenRef.current === token && stillCurrent())
+        if (captureTokenRef.current !== token || !stillCurrent()) {
+          if (captureTokenRef.current === token) {
+            setState('drawing')
+          }
+          return false
         }
         reset()
+        return true
       } catch {
-        if (captureTokenRef.current !== token) {
-          return
+        if (captureTokenRef.current !== token || !stillCurrent()) {
+          if (captureTokenRef.current === token) {
+            setState('drawing')
+          }
+          return false
         }
         // Why: the frozen backdrop is still valid, so return to drawing (not a
         // dead-end error state) — the user can retry Copy or Cancel out.
@@ -157,10 +177,22 @@ export function useMarkupMode({
           'Could not attach the markup screenshot.'
         )
         setState('drawing')
+        return false
       }
     },
-    [onDeliver, reset, reportError]
+    [reset, reportError]
   )
+
+  const complete = useCallback(
+    async (input: MarkupCompleteInput): Promise<void> => {
+      await completeWithDelivery(input, onDeliver, () => true)
+    },
+    [completeWithDelivery, onDeliver]
+  )
+  const completeVerified = onDeliverVerified
+    ? (input: MarkupCompleteInput, stillCurrent: () => boolean) =>
+        completeWithDelivery(input, onDeliverVerified, stillCurrent)
+    : undefined
 
   return {
     state,
@@ -168,6 +200,7 @@ export function useMarkupMode({
     baseImage,
     start,
     cancel,
-    complete
+    complete,
+    completeVerified
   }
 }

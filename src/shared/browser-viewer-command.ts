@@ -1,4 +1,7 @@
+import { BrowserTabUiState } from './rpc-contract/browser-tab-ui-params'
+import { BrowserProfileUiState } from './rpc-contract/browser-profile-ui-params'
 import { z } from 'zod'
+import { BrowserDocumentState } from './rpc-contract/browser-document-params'
 import { BrowserAnnotationTrayState } from './rpc-contract/browser-annotation-tray-params'
 import { BrowserAddressState } from './rpc-contract/browser-address-params'
 import { BrowserMarkupEditorState } from './rpc-contract/browser-markup-editor-params'
@@ -14,6 +17,9 @@ export const BrowserViewerResultSchema = z.object({
   persisted: z.literal(false),
   rendered: z.literal(false),
   page: z.string().optional(),
+  tabUi: BrowserTabUiState.optional(),
+  profileUi: BrowserProfileUiState.optional(),
+  document: BrowserDocumentState.optional(),
   annotationTray: BrowserAnnotationTrayState.optional(),
   address: BrowserAddressState.optional(),
   markupEditor: BrowserMarkupEditorState.optional(),

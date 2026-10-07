@@ -1,3 +1,6 @@
+import { requestBrowserDocument } from './browser-document-request'
+import { requestBrowserTabUi } from './browser-tab-ui-request'
+import { requestBrowserProfileUi } from './browser-profile-ui-request'
 import { requestBrowserAnnotationTray } from './browser-annotation-tray-request'
 import { requestBrowserAddress } from './browser-address-request'
 import {
@@ -39,6 +42,14 @@ export async function applyBrowserViewerRequest(
     throw new Error('viewer_runtime_mismatch')
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'tab-ui') {
+    const tabUi = await requestBrowserTabUi(command.target, command.action, request.expiresAt)
+    return { ...base, applied: true, tabUi }
+  }
+  if (command.operation === 'document') {
+    const document = await requestBrowserDocument(command.page, command.command, request.expiresAt)
+    return { ...base, page: command.page, applied: true, document }
+  }
   if (command.operation === 'download-cancel') {
     const applied = await window.api.browser.cancelDownload({ downloadId: command.downloadId })
     return { ...base, applied }
@@ -148,6 +159,10 @@ export async function applyBrowserViewerRequest(
       request.expiresAt
     )
     return { ...base, page: page.id, applied: true, annotationTray }
+  }
+  if (command.operation === 'profile-ui') {
+    const profileUi = await requestBrowserProfileUi(page.id, command.command, request.expiresAt)
+    return { ...base, page: page.id, applied: true, profileUi }
   }
   if (command.operation === 'address') {
     const address = await requestBrowserAddress(page.id, command.command, request.expiresAt)

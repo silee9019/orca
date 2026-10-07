@@ -591,6 +591,78 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       await invoke(['vm', 'cleanup', '--runtime', provision.result.runtime.id])
       expect(readFileSync(join(root, 'fixture-provider-state'), 'utf8')).toBe('destroy')
       expect(output.mock.calls.at(-1)?.[0]).toContain('succeeded')
+      const slowScript = join(root, 'slow-provider.cjs')
+      writeFileSync(
+        slowScript,
+        `const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(join(root, 'slow-provider-state'))},process.argv[2]);setTimeout(()=>process.exit(1),1500)`
+      )
+      const slowCommand = `${JSON.stringify(process.execPath)} ${JSON.stringify(slowScript)}`
+      writeFileSync(
+        join(root, 'ORCA.yaml'),
+        [
+          'environmentRecipes:',
+          '  - id: fixture-provider',
+          '    name: Fixture Provider',
+          `    create: ${JSON.stringify(`${slowCommand} create`)}`,
+          `    destroy: ${JSON.stringify(`${slowCommand} destroy`)}`
+        ].join('\n')
+      )
+      const provisioning = invoke([
+        'vm',
+        'provision',
+        '--repo',
+        'fixture-repo',
+        '--recipe',
+        'fixture-provider',
+        '--provision-id',
+        'cancel-socket-operation'
+      ]).then(
+        () => null,
+        (error) => error
+      )
+      await vi.waitFor(() =>
+        expect(readFileSync(join(root, 'slow-provider-state'), 'utf8')).toBe('create')
+      )
+      await invoke(['vm', 'provision-status', '--provision-id', 'cancel-socket-operation'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"state": "running"')
+      await invoke(['vm', 'cancel', '--provision-id', 'cancel-socket-operation'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"cancelled": true')
+      expect(await provisioning).toBeInstanceOf(Error)
+      await invoke(['vm', 'provision-status', '--provision-id', 'cancel-socket-operation'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"state": "failed"')
+      await invoke(['vm', 'cancel', '--provision-id', 'cancel-socket-operation'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"cancelled": false')
+      upsertEphemeralVmRuntime(root, {
+        id: 'socket-cleanup-vm',
+        recipeId: 'fixture-provider',
+        repoId: 'fixture-repo',
+        status: 'running',
+        cleanupStatus: 'not_started',
+        createdAt: 1,
+        updatedAt: 1,
+        recipeResult: { schemaVersion: 1, pairingCode: 'fixture-cancel-private', projectRoot: root }
+      })
+      const cleaning = invoke(['vm', 'cleanup', '--runtime', 'socket-cleanup-vm']).then(
+        () => null,
+        (error) => error
+      )
+      await vi.waitFor(() =>
+        expect(readFileSync(join(root, 'slow-provider-state'), 'utf8')).toBe('destroy')
+      )
+      await invoke(['vm', 'runtimes'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"cleanupStatus": "running"')
+      await invoke([
+        'vm',
+        'stop-cleanup',
+        '--runtime',
+        'socket-cleanup-vm',
+        '--confirm',
+        'socket-cleanup-vm'
+      ])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"cleanupStatus": "failed"')
+      expect(await cleaning).toBeInstanceOf(Error)
+      await invoke(['vm', 'runtimes'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"status": "cleanup_failed"')
       const failureScript = join(root, 'failure-provider.cjs')
       writeFileSync(
         failureScript,

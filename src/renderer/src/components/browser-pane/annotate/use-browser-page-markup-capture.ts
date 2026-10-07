@@ -1,6 +1,9 @@
 import { useBrowserMarkupCommands } from './use-browser-markup-commands'
 import { useCallback, type MutableRefObject } from 'react'
-import { deliverMarkupToClipboard } from './markup-clipboard-delivery'
+import {
+  deliverMarkupToClipboard,
+  deliverMarkupToClipboardVerified
+} from './markup-clipboard-delivery'
 import {
   useMarkupMode,
   type MarkupCaptureContext,
@@ -28,7 +31,8 @@ export function useBrowserPageMarkupCapture(
         outputScale: window.devicePixelRatio || 1
       }
     }, [webviewRef]),
-    onDeliver: deliverMarkupToClipboard
+    onDeliver: deliverMarkupToClipboard,
+    onDeliverVerified: deliverMarkupToClipboardVerified
   })
   useBrowserMarkupCommands(owner?.page ?? '', owner?.active ?? false, mode)
   return { ...mode, commandOwner: owner }

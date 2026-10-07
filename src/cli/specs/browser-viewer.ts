@@ -3,6 +3,32 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['browser', 'profile-ui'],
+    summary:
+      'Use the native host viewer profile menu and dialogs; guest registration is not verified',
+    usage:
+      'orca browser profile-ui --viewer host --page <id> --action <menu-open|menu-close|select|switch-confirm|switch-cancel|new-open|new-name|new-create|new-cancel|status> [--profile <id>] [--name <name>] [--confirm] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'profile', 'name', 'confirm']
+  },
+  {
+    path: ['browser', 'markup', 'copy'],
+    summary: 'Compose markup and copy the image with a native write acknowledgment',
+    usage: 'orca browser markup copy --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'text-commit'],
+    summary: 'Commit text at the existing pending markup placement',
+    usage: 'orca browser markup text-commit --viewer host --page <id> --text <text> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'text']
+  },
+  {
+    path: ['browser', 'markup', 'text-cancel'],
+    summary: 'Cancel the existing pending markup text placement',
+    usage: 'orca browser markup text-cancel --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
     path: ['browser', 'annotation', 'tray'],
     summary: 'Use the native host viewer annotation tray and verified clipboard copy',
     usage:

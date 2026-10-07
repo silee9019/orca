@@ -9,6 +9,7 @@ import type { MarkupBaseImage } from './markup-base-image'
 import type { MarkupShape } from './markup-drawing-model'
 import { TEXT_FONT_FAMILY } from './markup-shape-render'
 import { useBrowserMarkupEditorCommands } from './use-browser-markup-editor-commands'
+import type { MarkupModeController } from './useMarkupMode'
 import { useMarkupEditor } from './useMarkupEditor'
 
 export type MarkupOverlayProps = {
@@ -16,12 +17,14 @@ export type MarkupOverlayProps = {
   baseImage: MarkupBaseImage
   busy: boolean
   onComplete: (input: { imageElement: HTMLImageElement; shapes: MarkupShape[] }) => void
+  onCompleteVerified?: MarkupModeController['completeVerified']
   onCancel: () => void
 }
 
 export function MarkupOverlay({
   baseImage,
   commandOwner,
+  onCompleteVerified,
   busy,
   onComplete,
   onCancel
@@ -29,7 +32,13 @@ export function MarkupOverlay({
   const baseImgRef = useRef<HTMLImageElement | null>(null)
   const [baseLoaded, setBaseLoaded] = useState(false)
   const editor = useMarkupEditor(busy, onCancel)
-  useBrowserMarkupEditorCommands(commandOwner, busy, editor)
+  useBrowserMarkupEditorCommands(commandOwner, busy, editor, async (stillCurrent) => {
+    const imageElement = baseImgRef.current
+    if (!imageElement || !baseLoaded || !onCompleteVerified || editor.pendingText) {
+      return false
+    }
+    return onCompleteVerified({ imageElement, shapes: editor.shapes }, stillCurrent)
+  })
   const { pendingText } = editor
 
   const handleDone = useCallback(() => {

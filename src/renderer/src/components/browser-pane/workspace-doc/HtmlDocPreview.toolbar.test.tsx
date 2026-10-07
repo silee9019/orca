@@ -1,179 +1,32 @@
 // @vitest-environment happy-dom
+import {
+  GRANT_ID,
+  MARKUP_DRAW_HINT_SEEN_KEY,
+  ENTRY_RELATIVE_PATH,
+  ABSOLUTE_PATH,
+  clipboard,
+  grabCalls,
+  osOpens,
+  store,
+  installDocPreviewTestApi,
+  provider,
+  storeState,
+  renderPreview,
+  stubHistory,
+  button
+} from './doc-preview-owner-test-fixture'
 //
 // The preview is an editor tab that has to read like a browser tab. These pin the parts of that
 // illusion a reader can catch us on: the document names itself and its owning machine instead of
 // showing the internal preview scheme, Back/Forward really drive the guest's history, and the chip
 // hands over the path the owner spells rather than the one the grant was minted with.
 import { act } from 'react'
+import { requestBrowserDocument } from '@/runtime/browser-document-request'
+import { requestBrowserAddress } from '@/runtime/browser-address-request'
 import type { BrowserPage, BrowserWorkspace } from '../../../../../shared/browser-workspace-types'
-import type * as WebviewRegistryModule from '../host-guest/webview-registry'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TooltipProvider } from '@/components/ui/tooltip'
 import { acquireWebviewsDragPassthrough } from '@/components/browser-pane/host-guest/webview-drag-passthrough'
-
-const GRANT_ID = 'a'.repeat(32)
-// The draw-tool hint's own storage key; the hook that owns it keeps it private.
-const MARKUP_DRAW_HINT_SEEN_KEY = 'orca.browser.markup-draw-hint-seen'
-const ENTRY_RELATIVE_PATH = 'docs/reports/index.html'
-const ABSOLUTE_PATH = '/repo/docs/reports/index.html'
-
-const clipboard = vi.hoisted(() => ({ writes: [] as string[] }))
-const grabCalls: { browserPageId: string; enabled: boolean }[] = []
-const osOpens: string[] = []
-
-vi.mock('@/lib/doc-preview-grants', () => ({
-  buildDocPreviewGrantRequest: () => ({
-    owner: {
-      kind: 'runtime' as const,
-      environmentId: 'env-1',
-      worktreeSelector: 'id:wt-1',
-      worktreeRoot: '/repo'
-    },
-    root: '/repo',
-    entryRelativePath: ENTRY_RELATIVE_PATH
-  }),
-  ensureDocPreviewGrant: () =>
-    Promise.resolve({
-      grantId: GRANT_ID,
-      url: `orca-preview://${GRANT_ID}/${ENTRY_RELATIVE_PATH}`
-    }),
-  releaseDocPreviewGrant: () => undefined
-}))
-
-vi.mock('@/components/browser-pane/host-guest/webview-registry', async (importOriginal) => ({
-  ...(await importOriginal<typeof WebviewRegistryModule>()),
-  moveFocusToRendererBeforeWebviewDetach: () => undefined
-}))
-
-// The real one walks half the store to decide who owns a worktree; the chip only cares that
-// whatever it decides reaches the pill.
-vi.mock('@/lib/execution-host-display-label', () => ({
-  selectWorktreeHostDisplayLabel: () => 'Studio Mac mini'
-}))
-
-const store = vi.hoisted(() => ({
-  openedFiles: [] as unknown[],
-  downloads: [] as string[],
-  pageStateUpdates: [] as { pageId: string; updates: { title?: string } }[],
-  conversions: [] as { pageId: string; target: unknown }[]
-}))
-
-// The document lives on the SSH host that owns the workspace, which is what makes the preview a
-// preview at all — the client OS has no copy of it.
-vi.mock('@/lib/connection-context', () => ({
-  getConnectionId: () => 'ssh-1',
-  getConnectionIdForFile: () => 'ssh-1',
-  getConnectionIdFromState: () => 'ssh-1'
-}))
-
-vi.mock('@/lib/connection-owner-resolution', () => ({
-  getConnectionIdForFileFromState: () => 'ssh-1'
-}))
-
-vi.mock('@/components/terminal-pane/terminal-remote-file-download-open', () => ({
-  downloadAndOpenRemoteTerminalFile: (_context: unknown, filePath: string) => {
-    store.downloads.push(filePath)
-    return Promise.resolve()
-  }
-}))
-
-const storeState = {
-  getKnownWorktreeById: () => ({ path: '/repo' }),
-  persistedUIReady: true,
-  settings: { activeRuntimeEnvironmentId: 'env-1' },
-  keybindings: {},
-  browserAnnotationsByPageId: {} as Record<string, unknown[]>,
-  activeGroupIdByWorktree: {} as Record<string, string>,
-  agentSendPopoverTargetMode: null,
-  openAgentSendPopoverTargetMode: () => undefined,
-  closeAgentSendPopoverTargetMode: () => undefined,
-  addBrowserPageAnnotation: () => undefined,
-  deleteBrowserPageAnnotation: () => undefined,
-  clearBrowserPageAnnotations: () => undefined,
-  recordFeatureInteraction: () => undefined,
-  openFile: (file: unknown) => {
-    store.openedFiles.push(file)
-    return 'file-1'
-  },
-  updateBrowserPageState: (pageId: string, updates: { title?: string }) => {
-    store.pageStateUpdates.push({ pageId, updates })
-  },
-  browserUrlHistory: [],
-  workspaceDocHistory: [],
-  recordWorkspaceDocVisit: () => undefined,
-  browserDefaultSearchEngine: 'google',
-  browserKagiSessionLink: null,
-  convertBrowserPage: (pageId: string, target: unknown) => {
-    store.conversions.push({ pageId, target })
-    return { id: 'converted-1' }
-  }
-}
-
-vi.mock('@/store', () => ({
-  useAppStore: Object.assign(
-    (selector?: (state: typeof storeState) => unknown) =>
-      selector ? selector(storeState) : storeState,
-    { getState: () => storeState }
-  )
-}))
-
-type StubWebview = Element & {
-  canGoBack: () => boolean
-  canGoForward: () => boolean
-  goBack: () => void
-  goForward: () => void
-  reload: () => void
-}
-
-async function renderPreview(
-  container: HTMLDivElement,
-  root: Root,
-  options: { holdsGuestFocus?: boolean; isActive?: boolean } = {}
-): Promise<StubWebview> {
-  const { HtmlDocPreview } = await import('./HtmlDocPreview')
-  await act(async () => {
-    root.render(
-      <TooltipProvider>
-        <HtmlDocPreview
-          isActive={options.isActive ?? true}
-          previewId="preview-1"
-          filePath={ABSOLUTE_PATH}
-          relativePath={ENTRY_RELATIVE_PATH}
-          worktreeId="wt-1"
-          holdsGuestFocus={options.holdsGuestFocus ?? false}
-        />
-      </TooltipProvider>
-    )
-  })
-  const webview = container.querySelector('webview') as StubWebview | null
-  expect(webview).not.toBeNull()
-  // Why: the tools only arm once something has painted, so every case starts from a settled load.
-  await act(async () => {
-    webview?.dispatchEvent(new Event('did-stop-loading'))
-  })
-  return webview as StubWebview
-}
-
-function stubHistory(
-  webview: StubWebview,
-  depth: { canGoBack: boolean; canGoForward: boolean }
-): { goBack: ReturnType<typeof vi.fn>; goForward: ReturnType<typeof vi.fn> } {
-  const goBack = vi.fn()
-  const goForward = vi.fn()
-  webview.canGoBack = () => depth.canGoBack
-  webview.canGoForward = () => depth.canGoForward
-  webview.goBack = goBack
-  webview.goForward = goForward
-  webview.reload = vi.fn()
-  return { goBack, goForward }
-}
-
-function button(container: HTMLDivElement, label: string): HTMLButtonElement {
-  const element = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)
-  expect(element).not.toBeNull()
-  return element as HTMLButtonElement
-}
 
 describe('HtmlDocPreview browser chrome', () => {
   let container: HTMLDivElement
@@ -182,38 +35,8 @@ describe('HtmlDocPreview browser chrome', () => {
 
   beforeEach(() => {
     mounted = true
-    clipboard.writes = []
-    store.openedFiles = []
-    store.downloads = []
-    grabCalls.length = 0
-    osOpens.length = 0
-    ;(window as unknown as { api: unknown }).api = {
-      docPreview: { onLoadFailure: () => () => undefined },
-      ui: {
-        writeClipboardText: (text: string) => {
-          clipboard.writes.push(text)
-          return Promise.resolve()
-        },
-        writeClipboardImage: () => Promise.resolve()
-      },
-      shell: {
-        openFilePath: (filePath: string) => {
-          osOpens.push(filePath)
-          return Promise.resolve(true)
-        }
-      },
-      browser: {
-        unregisterGuest: () => Promise.resolve(),
-        setGrabMode: (args: { browserPageId: string; enabled: boolean }) => {
-          grabCalls.push(args)
-          return Promise.resolve({ ok: true })
-        },
-        cancelGrab: () => Promise.resolve(true),
-        awaitGrabSelection: () => new Promise(() => {}),
-        captureSelectionScreenshot: () => Promise.resolve({ ok: false }),
-        setAnnotationViewportBridge: () => Promise.resolve(true)
-      }
-    }
+    storeState.settings.activeRuntimeEnvironmentId = 'env-1'
+    installDocPreviewTestApi()
     container = document.createElement('div')
     document.body.append(container)
     root = createRoot(container)
@@ -274,6 +97,197 @@ describe('HtmlDocPreview browser chrome', () => {
     await act(async () => root.unmount())
     mounted = false
     expect(hasLiveBrowserGuest('preview-1')).toBe(false)
+  })
+
+  it('uses the document owner for reload, clipboard read-back and source opening', async () => {
+    const guest = await renderPreview(container, root)
+    stubHistory(guest, { canGoBack: false, canGoForward: false })
+    const reload = vi.spyOn(guest, 'reload')
+    const invoke = (action: 'reload' | 'copy-path' | 'copy-relative-path' | 'open-source') =>
+      requestBrowserDocument('preview-1', { action }, Date.now() + 1000)
+    await expect(invoke('reload')).resolves.toMatchObject({ navigationRequested: true })
+    expect(reload).toHaveBeenCalledOnce()
+    await invoke('copy-path')
+    await invoke('copy-relative-path')
+    expect(clipboard.writes).toEqual([ABSOLUTE_PATH, ENTRY_RELATIVE_PATH])
+    await expect(invoke('open-source')).resolves.toMatchObject({ openedFileId: 'file-1' })
+    expect(store.openedFiles).toEqual([
+      expect.objectContaining({ filePath: ABSOLUTE_PATH, worktreeId: 'wt-1', mode: 'edit' })
+    ])
+    await renderPreview(container, root, { isActive: false })
+    await expect(invoke('reload')).rejects.toThrow('inactive')
+    expect(reload).toHaveBeenCalledOnce()
+    await expect(
+      requestBrowserDocument('missing', { action: 'status' }, Date.now() + 1000)
+    ).rejects.toThrow('owner_unavailable')
+  })
+
+  it('grants only the exact pending directories and preserves newly offered requests', async () => {
+    const guest = await renderPreview(container, root)
+    stubHistory(guest, { canGoBack: false, canGoForward: false })
+    await act(async () => {
+      provider.onFailure?.({
+        grantId: GRANT_ID,
+        relativePath: 'assets/a.css',
+        reason: 'authorization-required'
+      })
+    })
+    await expect(
+      requestBrowserDocument(
+        'preview-1',
+        { action: 'directory-allow', paths: ['other/file'], confirmation: 'preview-1' },
+        Date.now() + 1000
+      )
+    ).rejects.toThrow('confirmation_mismatch')
+    expect(provider.authorize).not.toHaveBeenCalled()
+    let complete: ((accepted: boolean) => void) | undefined
+    provider.authorize.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve
+        })
+    )
+    const response = requestBrowserDocument(
+      'preview-1',
+      { action: 'directory-allow', paths: ['assets/a.css'], confirmation: 'preview-1' },
+      Date.now() + 1000
+    )
+    await act(async () => {
+      provider.onFailure?.({
+        grantId: GRANT_ID,
+        relativePath: 'data/b.json',
+        reason: 'authorization-required'
+      })
+    })
+    await act(async () => {
+      complete?.(true)
+      await response
+    })
+    expect(provider.authorize).toHaveBeenCalledWith(GRANT_ID, 'assets/a.css')
+    await expect(
+      requestBrowserDocument('preview-1', { action: 'status' }, Date.now() + 1000)
+    ).resolves.toMatchObject({ pendingPaths: ['data/b.json'] })
+    await act(async () => {
+      await requestBrowserDocument('preview-1', { action: 'directory-dismiss' }, Date.now() + 1000)
+    })
+    expect(container.textContent).not.toContain('Allow folder')
+  })
+
+  it('refuses late directory authorization receipts after the owner unmounts', async () => {
+    const guest = await renderPreview(container, root)
+    stubHistory(guest, { canGoBack: false, canGoForward: false })
+    const reload = vi.spyOn(guest, 'reload')
+    await act(async () => {
+      provider.onFailure?.({
+        grantId: GRANT_ID,
+        relativePath: 'assets/a.css',
+        reason: 'authorization-required'
+      })
+    })
+    let complete: ((accepted: boolean) => void) | undefined
+    provider.authorize.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve
+        })
+    )
+    const response = requestBrowserDocument(
+      'preview-1',
+      { action: 'directory-allow', paths: ['assets/a.css'], confirmation: 'preview-1' },
+      Date.now() + 1000
+    )
+    const rejected = expect(response).rejects.toThrow('owner_changed_effect_unknown')
+    await act(async () => {
+      root.unmount()
+      mounted = false
+    })
+    await rejected
+    await act(async () => {
+      complete?.(true)
+    })
+    expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('opens the real document address editor, edits its input and cancels back to the chip', async () => {
+    await renderPreview(container, root)
+    const opening = requestBrowserAddress('preview-1', { action: 'open' }, Date.now() + 1000)
+    await act(async () => {})
+    await expect(opening).resolves.toMatchObject({ value: ENTRY_RELATIVE_PATH, focused: true })
+    const input = container.querySelector('input')
+    expect(input?.value).toBe(ENTRY_RELATIVE_PATH)
+    expect(document.activeElement).toBe(input)
+    const draft = requestBrowserAddress(
+      'preview-1',
+      { action: 'draft', text: 'https://example.com' },
+      Date.now() + 1000
+    )
+    await act(async () => {})
+    await expect(draft).resolves.toMatchObject({ value: 'https://example.com' })
+    expect(input?.value).toBe('https://example.com')
+    const cancel = requestBrowserAddress('preview-1', { action: 'dismiss' }, Date.now() + 1000)
+    await act(async () => {})
+    await expect(cancel).resolves.toMatchObject({ open: false, focused: false })
+    expect(container.querySelector('input')).toBeNull()
+    expect(store.conversions).toEqual([])
+  })
+
+  it('requires the document external-open owner receipt and refuses a canceled open', async () => {
+    await renderPreview(container, root)
+    store.externalOpenAccepted = false
+    await expect(
+      requestBrowserDocument('preview-1', { action: 'open-external' }, Date.now() + 1000)
+    ).rejects.toThrow('external_open_not_verified')
+    store.externalOpenAccepted = true
+    await expect(
+      requestBrowserDocument('preview-1', { action: 'open-external' }, Date.now() + 1000)
+    ).resolves.toMatchObject({ page: 'preview-1' })
+    expect(store.downloads).toEqual([ABSOLUTE_PATH, ABSOLUTE_PATH])
+    expect(osOpens).toEqual([])
+  })
+
+  it('hard-reloads by revoking and reminting the same document grant', async () => {
+    const before = await renderPreview(container, root)
+    const grants = await import('@/lib/doc-preview-grants')
+    const revoke = vi.spyOn(grants, 'releaseDocPreviewGrant')
+    const mint = vi.spyOn(grants, 'ensureDocPreviewGrant')
+    await act(async () => {
+      await expect(
+        requestBrowserDocument('preview-1', { action: 'hard-reload' }, Date.now() + 1000)
+      ).resolves.toMatchObject({ navigationRequested: true })
+    })
+    expect(revoke).toHaveBeenCalledWith('preview-1')
+    expect(mint).toHaveBeenCalledOnce()
+    expect(container.querySelector('webview')).not.toBe(before)
+    revoke.mockRestore()
+    mint.mockRestore()
+  })
+
+  it('submits the document address through its original conversion callback', async () => {
+    await renderPreview(container, root)
+    for (const command of [
+      { action: 'open' },
+      { action: 'draft', text: 'https://example.com' },
+      { action: 'submit' }
+    ] as const) {
+      const response = requestBrowserAddress('preview-1', command, Date.now() + 1000)
+      await act(async () => {})
+      await response
+    }
+    expect(store.conversions).toEqual([
+      { pageId: 'preview-1', target: { kind: 'web', url: 'https://example.com/' } }
+    ])
+  })
+
+  it('reads document state from the mounted preview owner', async () => {
+    await renderPreview(container, root)
+    await expect(
+      requestBrowserDocument('preview-1', { action: 'status' }, Date.now() + 1000)
+    ).resolves.toMatchObject({
+      page: 'preview-1',
+      worktreeId: 'wt-1',
+      phase: 'ready',
+      pendingPaths: []
+    })
   })
 
   it('identifies the document by its workspace path and owning machine', async () => {

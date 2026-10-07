@@ -1,3 +1,4 @@
+import { BrowserPageToolbar } from './browser-page-toolbar'
 // @vitest-environment happy-dom
 import { useRef, useState, type ReactNode } from 'react'
 import { act, cleanup, render } from '@testing-library/react'
@@ -33,6 +34,13 @@ const fixture = vi.hoisted(() => {
     workspaceDocHistory: documents
   }
 })
+vi.mock('@/hooks/useShortcutLabel', () => ({ useShortcutLabel: () => '' }))
+vi.mock('./use-browser-toolbar-history-commands', () => ({
+  useBrowserToolbarHistoryCommands: () => {}
+}))
+vi.mock('./browser-chrome-toolbar', () => ({
+  BrowserChromeToolbar: ({ addressSlot }: { addressSlot: ReactNode }) => <>{addressSlot}</>
+}))
 vi.mock('@/store', () => ({
   useAppStore: (selector: (state: typeof fixture) => unknown) => selector(fixture)
 }))
@@ -184,3 +192,80 @@ it('redacts the private Kagi session token from address and suggestion output', 
   expect(state.suggestions.some((row) => row.kind === 'search')).toBe(true)
   expect(JSON.stringify(state)).not.toContain('fixture-secret')
 })
+
+it('binds the actual BrowserPageToolbar page and active owner to its address receiver', async () => {
+  const view = render(<ToolbarOwner />)
+  let response: Promise<BrowserAddressState> | undefined
+  await act(async () => {
+    response = requestBrowserAddress(
+      'toolbar-page',
+      { action: 'draft', text: 'https://owner.invalid' },
+      Date.now() + 5000
+    )
+    void response.catch(() => {})
+  })
+  await expect(response).resolves.toMatchObject({ value: 'https://owner.invalid' })
+  const input = view.container.querySelector('input')
+  expect(input?.value).toBe('https://owner.invalid')
+  view.rerender(<ToolbarOwner active={false} />)
+  await expect(
+    requestBrowserAddress('toolbar-page', { action: 'draft', text: 'blocked' }, Date.now() + 5000)
+  ).rejects.toThrow('browser_address_viewer_inactive')
+  expect(input?.value).toBe('https://owner.invalid')
+  await expect(
+    requestBrowserAddress('wrong-page', { action: 'status' }, Date.now() + 5000)
+  ).rejects.toThrow('browser_address_ui_unavailable')
+})
+
+function ToolbarOwner({ active = true }: { active?: boolean }) {
+  const [value, setValue] = useState('about:blank')
+  const ref = useRef<HTMLInputElement | null>(null)
+  return (
+    <BrowserPageToolbar
+      browserPageId="toolbar-page"
+      workspaceId="workspace-fixture"
+      worktreeId="folder-fixture"
+      sessionProfileId={null}
+      viewportPresetId={null}
+      isActive={active}
+      canGoBack={false}
+      canGoForward={false}
+      loading={false}
+      webviewRef={{ current: null }}
+      reloadMenuOpen={false}
+      setReloadMenuOpen={vi.fn()}
+      reloadButtonLabel="Reload"
+      reloadButtonLabelKind="reload"
+      reloadShortcut=""
+      hardReloadShortcut=""
+      runReloadTrigger={vi.fn()}
+      addressBarValue={value}
+      setAddressBarValue={setValue}
+      submitAddressBar={vi.fn()}
+      navigateToUrl={vi.fn()}
+      addressBarInputRef={ref}
+      dismissAddressBarSuggestionsRef={{ current: null }}
+      grab={{
+        state: 'idle',
+        payload: null,
+        error: null,
+        contextMenu: false,
+        toggle: vi.fn(),
+        cancel: vi.fn(),
+        rearm: vi.fn(),
+        exit: vi.fn()
+      }}
+      grabIntent="copy"
+      startGrabIntent={vi.fn()}
+      isBlankTab={false}
+      markupIsActive={false}
+      markupStart={async () => {}}
+      markupCancel={vi.fn()}
+      grabElementShortcut=""
+      browserAnnotationsLength={0}
+      shareableArtifactFile={null}
+      currentBrowserUrl="about:blank"
+      externalUrl={null}
+    />
+  )
+}

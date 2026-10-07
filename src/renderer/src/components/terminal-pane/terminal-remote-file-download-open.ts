@@ -11,7 +11,7 @@ import { downloadRuntimeFile, type RuntimeFileOperationArgs } from '@/runtime/ru
 export async function downloadAndOpenRemoteTerminalFile(
   fileContext: RuntimeFileOperationArgs,
   filePath: string
-): Promise<void> {
+): Promise<boolean> {
   const name = basename(filePath) || filePath
   try {
     const result = fileContext.connectionId
@@ -19,9 +19,9 @@ export async function downloadAndOpenRemoteTerminalFile(
       : await downloadRuntimeFile(fileContext, filePath, name)
     // Why: cancelling the native save dialog is a deliberate no-op, not a failure.
     if (result.canceled) {
-      return
+      return false
     }
-    await window.api.shell.openFilePath(result.destinationPath)
+    return await window.api.shell.openFilePath(result.destinationPath)
   } catch (error) {
     toast.error(
       extractIpcErrorMessage(
@@ -33,5 +33,6 @@ export async function downloadAndOpenRemoteTerminalFile(
         )
       )
     )
+    return false
   }
 }

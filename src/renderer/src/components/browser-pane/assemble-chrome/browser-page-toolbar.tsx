@@ -160,6 +160,7 @@ export function BrowserPageToolbar({
       controls={controls}
       addressSlot={
         <BrowserAddressBar
+          commandOwner={{ page: browserPageId, active: isActive }}
           value={addressBarValue}
           onChange={setAddressBarValue}
           onSubmit={submitAddressBar}

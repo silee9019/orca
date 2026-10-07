@@ -2,6 +2,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'browser-tab-ui',
+    keys: ['browser tab-ui'],
+    load: async () => (await import('./handlers/browser-tab-ui.js')).BROWSER_TAB_UI_HANDLERS
+  },
+  {
     name: 'browser-session',
     keys: [
       'tab profile detect-browsers',
@@ -17,6 +22,10 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: [
       'browser annotation tray',
       'browser address',
+      'browser profile-ui',
+      'browser markup copy',
+      'browser markup text-commit',
+      'browser markup text-cancel',
       'browser markup tool',
       'browser markup color',
       'browser markup width',

@@ -20,6 +20,50 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...[
+    'menu-open',
+    'menu-close',
+    'switch-confirm',
+    'switch-cancel',
+    'new-open',
+    'new-cancel',
+    'new-create',
+    'status'
+  ].map((action) => ({
+    args: [
+      'profile-ui',
+      '--action',
+      action,
+      '--page',
+      'p1',
+      ...(['switch-confirm', 'new-create'].includes(action) ? ['--confirm'] : [])
+    ],
+    command: { operation: 'profile-ui', page: 'p1', command: { action } }
+  })),
+  {
+    args: ['profile-ui', '--action', 'select', '--profile', 'other', '--page', 'p1'],
+    command: {
+      operation: 'profile-ui',
+      page: 'p1',
+      command: { action: 'select', profile: 'other' }
+    }
+  },
+  {
+    args: ['profile-ui', '--action', 'new-name', '--name', '', '--page', 'p1'],
+    command: { operation: 'profile-ui', page: 'p1', command: { action: 'new-name', name: '' } }
+  },
+  {
+    args: ['markup', 'text-commit', '--page', 'p1', '--text', 'annotation text'],
+    command: {
+      operation: 'markup-editor',
+      page: 'p1',
+      command: { action: 'text-commit', text: 'annotation text' }
+    }
+  },
+  {
+    args: ['markup', 'text-cancel', '--page', 'p1'],
+    command: { operation: 'markup-editor', page: 'p1', command: { action: 'text-cancel' } }
+  },
   ...['open', 'close', 'copy', 'clear', 'send-menu-open', 'send-menu-close', 'status'].map(
     (action) => ({
       args: [
@@ -46,7 +90,7 @@ it.each([
     args: ['address', '--action', 'draft', '--page', 'p1', '--text', ''],
     command: { operation: 'address', page: 'p1', command: { action: 'draft', text: '' } }
   },
-  ...['undo', 'redo', 'clear', 'editor-status'].map((action) => ({
+  ...['undo', 'redo', 'clear', 'editor-status', 'copy'].map((action) => ({
     args: ['markup', action, '--page', 'p1'],
     command: {
       operation: 'markup-editor',
@@ -215,3 +259,14 @@ it('reads a WebAuthn credential from a file and never prints it', async () => {
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+it.each(['switch-confirm', 'new-create'])(
+  'requires explicit confirmation for profile-ui %s',
+  async (action) => {
+    const call = vi.spyOn(client, 'call')
+    await expect(
+      run(['profile-ui', '--viewer', 'host', '--page', 'p1', '--action', action])
+    ).rejects.toThrow('--confirm')
+    expect(call).not.toHaveBeenCalled()
+  }
+)

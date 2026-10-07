@@ -1,3 +1,4 @@
+import { useBrowserTabUiCommands } from './use-browser-tab-ui-commands'
 import { useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import {
@@ -104,6 +105,21 @@ export default function BrowserTab({
   dropIndicator?: DropIndicator
   includeTopTabBorder?: boolean
 }): React.JSX.Element {
+  useBrowserTabUiCommands({
+    target: {
+      workspace: tab.id,
+      worktree: dragData.worktreeId,
+      group: dragData.groupId,
+      unifiedTab: dragData.unifiedTabId
+    },
+    activate: onActivate,
+    close: onClose,
+    closeOthers: onCloseOthers,
+    closeLeft: onCloseToLeft,
+    closeRight: onCloseToRight,
+    togglePin: onTogglePin,
+    duplicate: onDuplicate
+  })
   // Why: no transform/transition/isDragging styling — the drag design is
   // that tabs stay visually anchored; only the blue insertion bar moves.
   const { attributes, listeners, setNodeRef } = useSortable({

@@ -1,3 +1,8 @@
+import {
+  BROWSER_ADDRESS_COMMAND_EVENT,
+  requestBrowserAddress,
+  type BrowserAddressEvent
+} from '@/runtime/browser-address-request'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import BrowserAddressBar from '@/components/browser-pane/assemble-chrome/BrowserAddressBar'
@@ -18,17 +23,20 @@ import type { DocPreviewDocumentIdentity } from './doc-preview-document-identity
 export function DocPreviewAddressEdit({
   identity,
   previewId,
-  worktreeId
+  worktreeId,
+  isActive = true
 }: {
   identity: DocPreviewDocumentIdentity
   previewId: string
   worktreeId: string
+  isActive?: boolean
 }): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement | null>(null)
   const dismissSuggestionsRef = useRef<(() => void) | null>(null)
   const exitTimerRef = useRef<number | null>(null)
+  const pendingCommand = useRef<BrowserAddressEvent | null>(null)
 
   const beginEdit = useCallback((): void => {
     setValue(`${identity.directoryPrefix}${identity.fileName}`)
@@ -104,6 +112,69 @@ export function DocPreviewAddressEdit({
     toast.error(submission.loadError.description)
   }, [exitEdit, navigateToUrl, previewId, worktreeId])
 
+  useEffect(() => {
+    const pending = pendingCommand.current
+    if (!pending) {
+      return
+    }
+    pendingCommand.current = null
+    if (editing) {
+      void requestBrowserAddress(previewId, { action: 'status' }, pending.expiresAt).then(
+        (state) => pending.finish(undefined, state),
+        (error: unknown) =>
+          pending.finish(error instanceof Error ? error : new Error('browser_address_failed'))
+      )
+    } else {
+      pending.finish(undefined, {
+        value,
+        open: false,
+        focused: false,
+        selectedIndex: -1,
+        suggestions: []
+      })
+    }
+  })
+  useEffect(() => {
+    const receive = (event: CustomEvent<BrowserAddressEvent>): void => {
+      const request = event.detail
+      if (request.page !== previewId || (editing && request.command.action !== 'dismiss')) {
+        return
+      }
+      if (!request.claim()) {
+        return
+      }
+      if (!isActive || request.expiresAt <= Date.now()) {
+        request.finish(new Error('browser_address_viewer_inactive_or_expired'))
+        return
+      }
+      if (!editing && request.command.action === 'status') {
+        request.finish(undefined, {
+          value,
+          open: false,
+          focused: false,
+          selectedIndex: -1,
+          suggestions: []
+        })
+      } else if (!editing && request.command.action === 'open') {
+        pendingCommand.current = request
+        beginEdit()
+      } else if (editing && request.command.action === 'dismiss') {
+        pendingCommand.current = request
+        exitEdit()
+      } else {
+        request.finish(new Error('browser_address_editor_closed'))
+      }
+    }
+    window.addEventListener(BROWSER_ADDRESS_COMMAND_EVENT, receive, true)
+    return () => window.removeEventListener(BROWSER_ADDRESS_COMMAND_EVENT, receive, true)
+  }, [beginEdit, editing, exitEdit, isActive, previewId, value])
+  useEffect(
+    () => () => {
+      pendingCommand.current?.finish(new Error('browser_address_ui_unavailable'))
+    },
+    [previewId]
+  )
+
   if (!editing) {
     return <DocPreviewDocumentChip identity={identity} onBeginEdit={beginEdit} />
   }
@@ -132,6 +203,7 @@ export function DocPreviewAddressEdit({
       }}
     >
       <BrowserAddressBar
+        commandOwner={{ page: previewId, active: isActive }}
         value={value}
         onChange={setValue}
         onSubmit={submit}

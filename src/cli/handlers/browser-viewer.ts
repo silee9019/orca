@@ -1,31 +1,8 @@
+import { runViewerCommand, requireBrowserViewerConfirmation } from './browser-viewer-command'
 import { readFile, stat } from 'node:fs/promises'
 import type { CommandHandler, HandlerContext } from '../dispatch'
 import { getRequiredStringFlag, getRequiredStringFlagAllowingEmpty } from '../flags'
-import { printResult } from '../format'
 import { RuntimeClientError } from '../runtime-client'
-import { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
-import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
-
-async function runViewerCommand(ctx: HandlerContext, command: unknown): Promise<void> {
-  const parsed = BrowserViewerCommand.safeParse(command)
-  if (!parsed.success) {
-    throw new RuntimeClientError(
-      'invalid_argument',
-      'Invalid browser viewer command; specify --viewer host and valid command flags.'
-    )
-  }
-  const result = await ctx.client.call<BrowserViewerResult>('ui.browserViewer', parsed.data)
-  if (!result.result.applied) {
-    throw new RuntimeClientError('runtime_error', 'Browser viewer did not apply the command.')
-  }
-  printResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
-}
-
-function confirmed(ctx: HandlerContext): void {
-  if (ctx.flags.get('confirm') !== true) {
-    throw new RuntimeClientError('invalid_argument', 'Pass --confirm to approve this operation.')
-  }
-}
 
 function runFindCommand(
   ctx: HandlerContext,
@@ -61,10 +38,35 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 }
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser profile-ui': (ctx) => {
+    const action = getRequiredStringFlag(ctx.flags, 'action')
+    if (action === 'switch-confirm' || action === 'new-create') {
+      requireBrowserViewerConfirmation(ctx)
+    }
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      operation: 'profile-ui',
+      command: {
+        action,
+        ...(action === 'select' ? { profile: getRequiredStringFlag(ctx.flags, 'profile') } : {}),
+        ...(action === 'new-name'
+          ? { name: getRequiredStringFlagAllowingEmpty(ctx.flags, 'name') }
+          : {})
+      }
+    })
+  },
+  'browser markup copy': (ctx) => runMarkupEditor(ctx, { action: 'copy' }),
+  'browser markup text-commit': (ctx) =>
+    runMarkupEditor(ctx, {
+      action: 'text-commit',
+      text: getRequiredStringFlagAllowingEmpty(ctx.flags, 'text')
+    }),
+  'browser markup text-cancel': (ctx) => runMarkupEditor(ctx, { action: 'text-cancel' }),
   'browser annotation tray': (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     if (action === 'clear') {
-      confirmed(ctx)
+      requireBrowserViewerConfirmation(ctx)
     }
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
@@ -165,7 +167,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
       direction: getRequiredStringFlag(ctx.flags, 'direction')
     }),
   'browser download cancel': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'download-cancel',
@@ -173,7 +175,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     })
   },
   'browser devtools open': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'devtools-open',
@@ -181,7 +183,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     })
   },
   'browser webauthn cancel': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'webauthn-respond',
@@ -190,7 +192,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     })
   },
   'browser webauthn respond': async (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     const viewer = getRequiredStringFlag(ctx.flags, 'viewer')
     const requestId = getRequiredStringFlag(ctx.flags, 'request')
     const file = getRequiredStringFlag(ctx.flags, 'credential-file')
@@ -246,7 +248,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
       intent: getRequiredStringFlag(ctx.flags, 'intent')
     }),
   'browser annotation rm': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'annotation-delete',
@@ -255,7 +257,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     })
   },
   'browser annotation clear': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'annotation-clear',
@@ -268,7 +270,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
       operation: 'history-list'
     }),
   'browser history clear': (ctx) => {
-    confirmed(ctx)
+    requireBrowserViewerConfirmation(ctx)
     return runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'history-clear'

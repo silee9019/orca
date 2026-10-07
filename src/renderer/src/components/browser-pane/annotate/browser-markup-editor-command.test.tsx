@@ -83,3 +83,37 @@ it('undoes, redoes and clears actual pointer-created shapes through original his
   expect(await command({ action: 'clear' })).toMatchObject({ shapeCount: 0 })
   expect(await command({ action: 'undo' })).toMatchObject({ shapeCount: 1 })
 })
+
+it('commits or cancels text placed by the original canvas pointer handler', async () => {
+  let latest: ReturnType<typeof useMarkupEditor> | undefined
+  function TextOwner() {
+    const editor = useMarkupEditor(false, vi.fn())
+    latest = editor
+    useBrowserMarkupEditorCommands({ page: 'p1', active: true }, false, editor)
+    return (
+      <canvas
+        data-testid="text-canvas"
+        ref={editor.canvasRef}
+        onPointerDown={editor.onPointerDown}
+      />
+    )
+  }
+  const view = render(<TextOwner />)
+  const canvas = view.getByTestId('text-canvas')
+  await command({ action: 'tool', value: 'text' })
+  fireEvent.pointerDown(canvas, { button: 0, pointerId: 1, clientX: 20, clientY: 30 })
+  expect(await command({ action: 'status' })).toMatchObject({ pendingText: true })
+  expect(await command({ action: 'text-commit', text: '  annotation text  ' })).toMatchObject({
+    pendingText: false,
+    shapeCount: 1
+  })
+  expect(latest?.shapes).toMatchObject([{ kind: 'text', text: 'annotation text' }])
+  fireEvent.pointerDown(canvas, { button: 0, pointerId: 2, clientX: 70, clientY: 80 })
+  expect(await command({ action: 'text-cancel' })).toMatchObject({
+    pendingText: false,
+    shapeCount: 1
+  })
+  await expect(command({ action: 'text-commit', text: 'unplaced' })).rejects.toThrow(
+    'browser_markup_text_not_pending'
+  )
+})

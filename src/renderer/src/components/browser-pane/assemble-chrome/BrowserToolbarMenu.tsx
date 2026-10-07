@@ -1,3 +1,4 @@
+import { useBrowserProfileUiCommands } from './use-browser-profile-ui-commands'
 import { useLayoutEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { emitBrowserCookieImportToast } from '@/lib/browser-cookie-import-toast'
@@ -33,6 +34,11 @@ export function BrowserToolbarMenu({
   isActive,
   overflow
 }: BrowserToolbarMenuProps): React.JSX.Element {
+  const workspace = useAppStore((state) =>
+    Object.values(state.browserTabsByWorktree)
+      .flat()
+      .find((workspace) => workspace.id === workspaceId)
+  )
   const browserSessionProfiles = useAppStore((s) => s.browserSessionProfiles)
   const detectedBrowsers = useAppStore((s) => s.detectedBrowsers)
   const switchBrowserTabProfile = useAppStore((s) => s.switchBrowserTabProfile)
@@ -225,6 +231,31 @@ export function BrowserToolbarMenu({
       toast.error(result.reason)
     }
   }
+
+  useBrowserProfileUiCommands({
+    page: browserPageId,
+    active: isActive,
+    snapshot: {
+      workspace: workspaceId,
+      profile: workspace?.sessionProfileId ?? 'default',
+      partition: workspace?.sessionPartition ?? null,
+      menuOpen,
+      pendingProfile:
+        pendingSwitchProfileId === undefined ? null : (pendingSwitchProfileId ?? 'default'),
+      newDialogOpen: newProfileDialogOpen,
+      newName: newProfileName,
+      creating: isCreatingProfile,
+      guestRegistrationVerified: false
+    },
+    profiles: browserSessionProfiles,
+    menu: handleMenuOpenChange,
+    select: handleSwitchProfile,
+    cancelSwitch: () => setPendingSwitchProfileId(undefined),
+    confirmSwitch: confirmSwitchProfile,
+    newDialog: handleNewProfileDialogOpenChange,
+    name: setNewProfileName,
+    create: handleCreateProfile
+  })
 
   return (
     <>
