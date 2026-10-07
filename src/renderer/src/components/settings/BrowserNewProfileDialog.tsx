@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -6,24 +6,95 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { useAppStore } from '../../store'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
 
 type BrowserNewProfileDialogProps = {
   open: boolean
+  hostId?: string
   onOpenChange: (open: boolean) => void
 }
 
 export function BrowserNewProfileDialog({
   open,
+  hostId = 'local',
   onOpenChange
 }: BrowserNewProfileDialogProps): React.JSX.Element {
   const mountedRef = useMountedRef()
   const [newProfileName, setNewProfileName] = useState('')
   const [isCreatingProfile, setIsCreatingProfile] = useState(false)
+  const creatingRef = useRef(false)
 
   const handleClose = (): void => {
     onOpenChange(false)
     setNewProfileName('')
   }
+
+  const createProfile = async (): Promise<boolean> => {
+    const trimmed = newProfileName.trim()
+    if (!trimmed || creatingRef.current) {
+      return false
+    }
+    creatingRef.current = true
+    setIsCreatingProfile(true)
+    try {
+      const profile = await useAppStore.getState().createBrowserSessionProfile('isolated', trimmed)
+      if (!mountedRef.current) {
+        return false
+      }
+      if (profile) {
+        handleClose()
+        toast.success(
+          translate(
+            'auto.components.settings.BrowserPane.8f22b7580d',
+            'Profile "{{value0}}" created.',
+            { value0: profile.label }
+          )
+        )
+      } else {
+        toast.error(
+          translate('auto.components.settings.BrowserPane.612f7f6861', 'Failed to create profile.')
+        )
+      }
+      return profile !== null
+    } finally {
+      creatingRef.current = false
+      if (mountedRef.current) {
+        setIsCreatingProfile(false)
+      }
+    }
+  }
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      ['profile-name', 'profile-create', 'profile-dialog-close', 'profile-dialog-status'].includes(
+        command.action
+      ),
+    apply: async (command) => {
+      if (command.action === 'profile-dialog-status') {
+        return
+      }
+      if (!open || isCreatingProfile) {
+        throw new Error('browser_profile_dialog_unavailable_or_busy')
+      }
+      if (command.action === 'profile-name') {
+        setNewProfileName(command.value)
+      } else if (command.action === 'profile-dialog-close') {
+        handleClose()
+      } else if (command.action === 'profile-create') {
+        if (!newProfileName.trim()) {
+          throw new Error('browser_profile_name_required')
+        }
+        if (!(await createProfile())) {
+          throw new Error('browser_profile_create_failed')
+        }
+      }
+    },
+    read: () => ({
+      hostId,
+      dialogOpen: open,
+      profileNamePresent: newProfileName.length > 0,
+      creating: isCreatingProfile
+    })
+  })
 
   return (
     <Dialog
@@ -43,40 +114,7 @@ export function BrowserNewProfileDialog({
         <form
           onSubmit={async (e) => {
             e.preventDefault()
-            const trimmed = newProfileName.trim()
-            if (!trimmed) {
-              return
-            }
-            setIsCreatingProfile(true)
-            try {
-              const profile = await useAppStore
-                .getState()
-                .createBrowserSessionProfile('isolated', trimmed)
-              if (!mountedRef.current) {
-                return
-              }
-              if (profile) {
-                handleClose()
-                toast.success(
-                  translate(
-                    'auto.components.settings.BrowserPane.8f22b7580d',
-                    'Profile "{{value0}}" created.',
-                    { value0: profile.label }
-                  )
-                )
-              } else {
-                toast.error(
-                  translate(
-                    'auto.components.settings.BrowserPane.612f7f6861',
-                    'Failed to create profile.'
-                  )
-                )
-              }
-            } finally {
-              if (mountedRef.current) {
-                setIsCreatingProfile(false)
-              }
-            }
+            await createProfile()
           }}
         >
           <Input

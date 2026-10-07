@@ -83,3 +83,27 @@ it('does not turn an unapplied viewer response into success', async () => {
   })
   await expect(run([...flags, '--action', 'activate'])).rejects.toThrow('did not apply')
 })
+
+it('sends an explicit bounded menu point and refuses absent or invalid coordinates before RPC', async () => {
+  const call = vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'fixture' },
+    result: { applied: true }
+  })
+  vi.spyOn(process.stdout, 'write').mockReturnValue(true)
+  await run([...flags, '--action', 'menu-open', '--x', '25', '--y', '30'])
+  expect(call).toHaveBeenCalledWith('ui.browserViewer', {
+    viewer: 'host',
+    operation: 'tab-ui',
+    target,
+    action: 'menu-open',
+    point: { x: 25, y: 30 }
+  })
+  call.mockClear()
+  await expect(run([...flags, '--action', 'menu-open'])).rejects.toThrow('--x')
+  await expect(run([...flags, '--action', 'menu-open', '--x', '-1', '--y', '3'])).rejects.toThrow(
+    'Invalid browser viewer command'
+  )
+  expect(call).not.toHaveBeenCalled()
+})

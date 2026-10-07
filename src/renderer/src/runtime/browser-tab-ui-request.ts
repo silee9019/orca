@@ -1,11 +1,14 @@
 import type {
   BrowserTabUiAction,
+  BrowserTabUiPoint,
   BrowserTabUiState,
   BrowserTabUiTarget
 } from '../../../shared/rpc-contract/browser-tab-ui-params'
 export type BrowserTabUiEvent = {
   target: BrowserTabUiTarget
   action: BrowserTabUiAction
+  point?: BrowserTabUiPoint
+  isSettled: () => boolean
   expiresAt: number
   claim: () => boolean
   finish: (error?: Error, state?: BrowserTabUiState) => void
@@ -20,7 +23,8 @@ declare global {
 export function requestBrowserTabUi(
   target: BrowserTabUiTarget,
   action: BrowserTabUiAction,
-  expiresAt: number
+  expiresAt: number,
+  point?: BrowserTabUiPoint
 ): Promise<BrowserTabUiState> {
   return new Promise((resolve, reject) => {
     let claimed = false
@@ -46,6 +50,8 @@ export function requestBrowserTabUi(
         detail: {
           target,
           action,
+          point,
+          isSettled: () => settled,
           expiresAt,
           finish,
           claim: () => {

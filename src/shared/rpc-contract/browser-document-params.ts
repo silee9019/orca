@@ -10,6 +10,7 @@ export const BrowserDocumentCommand = z.discriminatedUnion('action', [
       'copy-relative-path',
       'open-source',
       'open-external',
+      'address-submit',
       'directory-dismiss'
     ])
   }),

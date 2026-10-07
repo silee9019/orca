@@ -24,6 +24,7 @@ export function useBrowserDocumentCommands(owner: {
   openExternal: () => Promise<boolean>
   openSource: () => string
   dismiss: () => void
+  submitAddressRef: RefObject<(() => boolean) | null>
   reloadRef: RefObject<(() => void) | null>
 }): void {
   const ownerRef = useRef(owner)
@@ -78,6 +79,12 @@ export function useBrowserDocumentCommands(owner: {
             if (!(await owner.openExternal())) {
               throw new Error('browser_document_external_open_not_verified')
             }
+            break
+          case 'address-submit':
+            if (owner.submitAddressRef.current?.() !== true) {
+              throw new Error('browser_document_navigation_not_requested')
+            }
+            state.navigationRequested = true
             break
           case 'open-source':
             state.openedFileId = owner.openSource()

@@ -7,6 +7,8 @@ export const BrowserTabUiTarget = z.object({
 })
 export type BrowserTabUiTarget = z.infer<typeof BrowserTabUiTarget>
 export const BrowserTabUiAction = z.enum([
+  'menu-open',
+  'menu-close',
   'activate',
   'close',
   'close-others',
@@ -17,8 +19,14 @@ export const BrowserTabUiAction = z.enum([
   'status'
 ])
 export type BrowserTabUiAction = z.infer<typeof BrowserTabUiAction>
+export const BrowserTabUiPoint = z.object({
+  x: z.number().finite().min(0).max(65535),
+  y: z.number().finite().min(0).max(65535)
+})
+export type BrowserTabUiPoint = z.infer<typeof BrowserTabUiPoint>
 export const BrowserTabUiState = z.object({
   target: BrowserTabUiTarget,
+  menu: z.object({ open: z.boolean(), point: BrowserTabUiPoint }),
   exists: z.boolean(),
   pinned: z.boolean(),
   activeGroup: z.string().nullable(),

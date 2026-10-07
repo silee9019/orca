@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY } from '../../../../../shared/protocol-version'
 import type { BrowserPage as BrowserPageState } from '../../../../../shared/browser-workspace-types'
@@ -10,8 +10,7 @@ import { useBrowserPageChromeFocus } from '../assemble-chrome/use-browser-page-c
 import { useBrowserAddressBarEditSession } from '../assemble-chrome/use-browser-address-bar-edit-session'
 import { useElementGuestFocus } from '../assemble-chrome/browser-page-guest-focus'
 import { consumeBrowserPageDeferredNavigation } from '../navigate/browser-page-deferred-navigation'
-import { useMarkupMode, type MarkupCaptureContext } from '../annotate/useMarkupMode'
-import { deliverMarkupToClipboard } from '../annotate/markup-clipboard-delivery'
+import { useRemoteBrowserMarkupCapture } from './use-remote-browser-markup-capture'
 import {
   isRemoteBrowserStreamBusy,
   remoteBrowserStreamNotice
@@ -24,6 +23,7 @@ import type {
 import type { RemoteBrowserPaneNotice } from './remote-browser-page-input-model'
 import { useRemoteBrowserPageLifecycle } from './use-remote-browser-page-lifecycle'
 import { useRemoteBrowserPageStream } from './use-remote-browser-page-stream'
+import { useRemoteBrowserPaneCommands } from './use-remote-browser-pane-commands'
 import { useRemoteBrowserPageNavigation } from './use-remote-browser-page-navigation'
 import {
   useRemoteBrowserPageInput,
@@ -234,7 +234,7 @@ export function RemoteBrowserPagePane({
     imageRef.current?.focus()
   }, [hasStreamFrame])
 
-  const { reconnectRemoteStream } = useRemoteBrowserPageStream({
+  const { reconnectRemoteStream, reconnectGeneration } = useRemoteBrowserPageStream({
     activeRuntimeEnvironmentId,
     browserPageId: browserTab.id,
     isActive,
@@ -262,6 +262,7 @@ export function RemoteBrowserPagePane({
 
   const {
     getRemoteImagePoint,
+    performRemoteInput,
     handleRemotePointerDown,
     handleRemotePointerUp,
     handleRemoteScreenshotKeyDown
@@ -281,6 +282,20 @@ export function RemoteBrowserPagePane({
     closeMissingRemotePage,
     scheduleRemoteTabInfoRefresh,
     setPaneNotice
+  })
+
+  useRemoteBrowserPaneCommands({
+    page: browserTab.id,
+    environmentId: activeRuntimeEnvironmentId,
+    remotePageId: lifecycle.tokens.remotePage,
+    active: isActive,
+    staged: stagedPage,
+    streamStatus,
+    reconnectGeneration,
+    reconnect: reconnectRemoteStream,
+    performInput: performRemoteInput,
+    performNavigation: (command, isCurrent) =>
+      runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
   })
 
   useRemoteBrowserPageWheel({
@@ -319,27 +334,7 @@ export function RemoteBrowserPagePane({
     setPaneNotice
   })
 
-  // Why: markup snapshots the displayed screencast <img> (no injection), so it works on remote panes even though element-grab doesn't.
-  const markup = useMarkupMode({
-    getCaptureContext: useCallback((): MarkupCaptureContext | null => {
-      const element = imageRef.current
-      const container = remoteViewportRef.current
-      if (!element || !container) {
-        return null
-      }
-      const rect = container.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) {
-        return null
-      }
-      return {
-        source: { kind: 'image', element },
-        cssWidth: rect.width,
-        cssHeight: rect.height,
-        outputScale: window.devicePixelRatio || 1
-      }
-    }, []),
-    onDeliver: deliverMarkupToClipboard
-  })
+  const markup = useRemoteBrowserMarkupCapture(imageRef, remoteViewportRef)
 
   return (
     // The testid scopes E2E queries to this pane: a workspace can hold more than one browser pane,

@@ -278,6 +278,38 @@ describe('HtmlDocPreview browser chrome', () => {
     ])
   })
 
+  it('converts a typed workspace document through its existing path resolver and owner', async () => {
+    await renderPreview(container, root)
+    for (const command of [
+      { action: 'open' },
+      { action: 'draft', text: './docs/next.html' }
+    ] as const) {
+      const response = requestBrowserAddress('preview-1', command, Date.now() + 1000)
+      void response.catch(() => {})
+      await act(async () => {})
+      await response
+    }
+    await act(async () => {
+      await expect(
+        requestBrowserDocument('preview-1', { action: 'address-submit' }, Date.now() + 1000)
+      ).resolves.toMatchObject({ navigationRequested: true })
+    })
+    expect(store.conversions).toEqual([
+      {
+        pageId: 'preview-1',
+        target: {
+          kind: 'workspace-doc',
+          docLocation: {
+            kind: 'workspace-doc',
+            worktreeId: 'wt-1',
+            filePath: '/repo/docs/next.html'
+          }
+        }
+      }
+    ])
+    expect(container.querySelector('input')).toBeNull()
+  })
+
   it('reads document state from the mounted preview owner', async () => {
     await renderPreview(container, root)
     await expect(

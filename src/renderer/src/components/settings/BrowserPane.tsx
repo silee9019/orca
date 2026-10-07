@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useAppStore } from '../../store'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { normalizeBrowserNavigationUrl } from '../../../../shared/browser-url'
+import { ORCA_BROWSER_BLANK_URL } from '../../../../shared/constants'
 import { matchesSettingsSearch } from './settings-search'
 import { getBrowserPaneSearchEntries } from './browser-search'
 import { getBrowserLinkRoutingDescription } from './browser-link-routing-copy'
@@ -209,8 +212,62 @@ export function BrowserPane({
     })
   }
 
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      !['profile-name', 'profile-create', 'profile-dialog-close', 'profile-dialog-status'].includes(
+        command.action
+      ),
+    apply: async (command) => {
+      if (command.action === 'homepage-draft') {
+        setHomePageDraft(command.value)
+      } else if (command.action === 'homepage-save') {
+        const trimmed = homePageDraft.trim()
+        const url = trimmed ? normalizeBrowserNavigationUrl(trimmed) : null
+        if (trimmed && (!url || url === ORCA_BROWSER_BLANK_URL)) {
+          throw new Error('invalid_home_page')
+        }
+        setBrowserDefaultUrl(url)
+        setHomePageDraftState(createBrowserHomePageDraftState(url ?? ''))
+      } else if (command.action === 'search-engine') {
+        setBrowserDefaultSearchEngine(command.engine === 'google' ? null : command.engine)
+      } else if (command.action === 'zoom') {
+        setBrowserDefaultZoomLevel(command.value)
+      } else if (command.action === 'profile-dialog-open') {
+        setNewProfileDialogOpen(true)
+      } else if (command.action === 'cookies-scroll') {
+        scrollToSessionCookies()
+      } else if (command.action === 'computer-use-open') {
+        if (!onOpenComputerUse) {
+          throw new Error('computer_use_navigation_unavailable')
+        }
+        onOpenComputerUse()
+      } else if (command.action === 'host-select') {
+        const host = browserSessionHostOptions.find((value) => value.id === command.hostId)
+        if (!host) {
+          throw new Error('browser_settings_host_unavailable')
+        }
+        await setBrowserSessionHostId(host.id)
+      } else if (command.action === 'profile-select') {
+        if (
+          command.profileId !== null &&
+          !nonDefaultProfiles.some((value) => value.id === command.profileId)
+        ) {
+          throw new Error('browser_settings_profile_unavailable')
+        }
+        setDefaultBrowserSessionProfileId(command.profileId)
+      }
+    },
+    read: () => ({
+      hostId: selectedBrowserSessionHostId,
+      defaultProfileId: defaultBrowserSessionProfileId,
+      homePageDraftPresent: homePageDraft.length > 0,
+      homePageDraftSaved: homePageDraft === persistedHomePageDraft,
+      dialogOpen: newProfileDialogOpen
+    })
+  })
+
   return (
-    <div ref={setBrowserPaneRootNode} className="space-y-6">
+    <div ref={setBrowserPaneRootNode} data-browser-settings-pane className="space-y-6">
       {showBrowserUse ? (
         <BrowserUseSetup
           onConfigureMoreBrowsers={scrollToSessionCookies}
@@ -314,7 +371,11 @@ export function BrowserPane({
         />
       ) : null}
 
-      <BrowserNewProfileDialog open={newProfileDialogOpen} onOpenChange={setNewProfileDialogOpen} />
+      <BrowserNewProfileDialog
+        hostId={selectedBrowserSessionHostId}
+        open={newProfileDialogOpen}
+        onOpenChange={setNewProfileDialogOpen}
+      />
     </div>
   )
 }

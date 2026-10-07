@@ -105,12 +105,34 @@ export default function BrowserTab({
   dropIndicator?: DropIndicator
   includeTopTabBorder?: boolean
 }): React.JSX.Element {
+  // Why: no transform/transition/isDragging styling — the drag design is
+  // that tabs stay visually anchored; only the blue insertion bar moves.
+  const { attributes, listeners, setNodeRef } = useSortable({
+    id: tab.id,
+    data: dragData
+  })
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
+  const openMenu = (point: { x: number; y: number }): void => {
+    window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
+    setMenuPoint(point)
+    setMenuOpen(true)
+  }
   useBrowserTabUiCommands({
     target: {
       workspace: tab.id,
       worktree: dragData.worktreeId,
       group: dragData.groupId,
       unifiedTab: dragData.unifiedTabId
+    },
+    menuOpen,
+    menuPoint,
+    menu: (open, point) => {
+      if (open && point) {
+        openMenu(point)
+      } else {
+        setMenuOpen(false)
+      }
     },
     activate: onActivate,
     close: onClose,
@@ -120,14 +142,6 @@ export default function BrowserTab({
     togglePin: onTogglePin,
     duplicate: onDuplicate
   })
-  // Why: no transform/transition/isDragging styling — the drag design is
-  // that tabs stay visually anchored; only the blue insertion bar moves.
-  const { attributes, listeners, setNodeRef } = useSortable({
-    id: tab.id,
-    data: dragData
-  })
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
 
   // Why: about:blank and other non-http URLs should not be sent to the
   // system browser. Disable the context menu item instead of silently
@@ -240,9 +254,7 @@ export default function BrowserTab({
         {...slotProps}
         onContextMenuCapture={(event) => {
           event.preventDefault()
-          window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
-          setMenuPoint({ x: event.clientX, y: event.clientY })
-          setMenuOpen(true)
+          openMenu({ x: event.clientX, y: event.clientY })
         }}
       >
         {menuOpen ? (

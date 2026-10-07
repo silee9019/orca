@@ -16,6 +16,14 @@ export const BROWSER_TAB_UI_HANDLERS: Record<string, CommandHandler> = {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
       operation: 'tab-ui',
       action,
+      ...(action === 'menu-open'
+        ? {
+            point: {
+              x: Number(getRequiredStringFlag(ctx.flags, 'x')),
+              y: Number(getRequiredStringFlag(ctx.flags, 'y'))
+            }
+          }
+        : {}),
       target: {
         workspace: getRequiredStringFlag(ctx.flags, 'workspace'),
         worktree: getRequiredStringFlag(ctx.flags, 'worktree'),

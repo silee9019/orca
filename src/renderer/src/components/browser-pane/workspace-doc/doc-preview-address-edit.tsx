@@ -3,7 +3,7 @@ import {
   requestBrowserAddress,
   type BrowserAddressEvent
 } from '@/runtime/browser-address-request'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { toast } from 'sonner'
 import BrowserAddressBar from '@/components/browser-pane/assemble-chrome/BrowserAddressBar'
 import { resolveBrowserAddressBarSubmission } from '@/components/browser-pane/navigate/browser-address-bar-navigation'
@@ -22,10 +22,12 @@ import type { DocPreviewDocumentIdentity } from './doc-preview-document-identity
  */
 export function DocPreviewAddressEdit({
   identity,
+  submitAddressRef,
   previewId,
   worktreeId,
   isActive = true
 }: {
+  submitAddressRef?: RefObject<(() => boolean) | null>
   identity: DocPreviewDocumentIdentity
   previewId: string
   worktreeId: string
@@ -37,6 +39,7 @@ export function DocPreviewAddressEdit({
   const dismissSuggestionsRef = useRef<(() => void) | null>(null)
   const exitTimerRef = useRef<number | null>(null)
   const pendingCommand = useRef<BrowserAddressEvent | null>(null)
+  const submittedRef = useRef(false)
 
   const beginEdit = useCallback((): void => {
     setValue(`${identity.directoryPrefix}${identity.fileName}`)
@@ -81,6 +84,7 @@ export function DocPreviewAddressEdit({
         return
       }
       const converted = useAppStore.getState().convertBrowserPage(previewId, { kind: 'web', url })
+      submittedRef.current = !!converted
       if (!converted) {
         exitEdit()
       }
@@ -89,12 +93,14 @@ export function DocPreviewAddressEdit({
   )
 
   const submit = useCallback((): void => {
+    submittedRef.current = false
     const typed = inputRef.current?.value ?? ''
     // A workspace path retargets the preview (fresh grant, same tab) — or activates the tab the
     // document is already open in, which is what opening a document has always meant.
     const docTarget = resolveWorkspaceDocAddressTarget(useAppStore.getState(), worktreeId, typed)
     if (docTarget.status === 'workspace-doc') {
-      convertBrowserPageToWorkspaceDoc(previewId, docTarget.docLocation)
+      submittedRef.current =
+        convertBrowserPageToWorkspaceDoc(previewId, docTarget.docLocation) !== 'failed'
       exitEdit()
       return
     }
@@ -111,6 +117,25 @@ export function DocPreviewAddressEdit({
     }
     toast.error(submission.loadError.description)
   }, [exitEdit, navigateToUrl, previewId, worktreeId])
+
+  useLayoutEffect(() => {
+    if (!submitAddressRef) {
+      return
+    }
+    submitAddressRef.current =
+      editing && isActive
+        ? () => {
+            submittedRef.current = false
+            inputRef.current?.dispatchEvent(
+              new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+            )
+            return submittedRef.current
+          }
+        : null
+    return () => {
+      submitAddressRef.current = null
+    }
+  }, [editing, isActive, submitAddressRef, submit])
 
   useEffect(() => {
     const pending = pendingCommand.current

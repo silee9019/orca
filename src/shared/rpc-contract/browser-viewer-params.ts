@@ -1,7 +1,9 @@
-import { BrowserTabUiTarget, BrowserTabUiAction } from './browser-tab-ui-params'
+import { BrowserTabUiTarget, BrowserTabUiAction, BrowserTabUiPoint } from './browser-tab-ui-params'
 import { BrowserProfileUiCommand } from './browser-profile-ui-params'
 import { z } from 'zod'
 import { BrowserDocumentViewerParams } from './browser-document-params'
+import { BrowserRemotePaneCommand } from './browser-remote-pane-params'
+import { BrowserSettingsCommand } from './browser-settings-params'
 import { BrowserAnnotationTrayAction } from './browser-annotation-tray-params'
 import { BrowserAddressCommand } from './browser-address-params'
 import { BrowserMarkupEditorCommand } from './browser-markup-editor-params'
@@ -36,10 +38,27 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
   BrowserDocumentViewerParams,
   z.object({
     viewer,
-    operation: z.literal('tab-ui'),
-    target: BrowserTabUiTarget,
-    action: BrowserTabUiAction
+    operation: z.literal('remote-pane'),
+    page,
+    command: BrowserRemotePaneCommand
   }),
+  z.object({
+    viewer,
+    operation: z.literal('browser-settings'),
+    hostId: z.string().min(1).max(256),
+    command: BrowserSettingsCommand
+  }),
+  z
+    .object({
+      viewer,
+      operation: z.literal('tab-ui'),
+      target: BrowserTabUiTarget,
+      action: BrowserTabUiAction,
+      point: BrowserTabUiPoint.optional()
+    })
+    .refine((command) => command.action !== 'menu-open' || command.point !== undefined, {
+      message: 'Menu open requires an explicit client point'
+    }),
   z.object({ viewer, operation: z.literal('profile-ui'), page, command: BrowserProfileUiCommand }),
   z.object({
     viewer,

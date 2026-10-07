@@ -1,4 +1,6 @@
 import { requestBrowserDocument } from './browser-document-request'
+import { requestRemoteBrowserPane } from './browser-remote-pane-request'
+import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
 import { requestBrowserTabUi } from './browser-tab-ui-request'
 import { requestBrowserProfileUi } from './browser-profile-ui-request'
 import { requestBrowserAnnotationTray } from './browser-annotation-tray-request'
@@ -38,13 +40,47 @@ export async function applyBrowserViewerRequest(
   if (!state.settings || !state.persistedUIReady) {
     throw new Error('viewer_not_ready')
   }
+  const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'remote-pane') {
+    const page = findPage(state.browserPagesByWorkspace, command.page)
+    if (!page) {
+      throw new Error('browser_page_not_found')
+    }
+    const environmentId = command.command.environmentId
+    const handle = state.remoteBrowserPageHandlesByPageId[page.id]
+    if (
+      (state.settings.activeRuntimeEnvironmentId &&
+        state.settings.activeRuntimeEnvironmentId !== environmentId) ||
+      (handle
+        ? handle.environmentId !== environmentId ||
+          handle.remotePageId !== command.command.expectedRemotePageId
+        : page.browserRuntimeEnvironmentId !== environmentId ||
+          command.command.expectedRemotePageId !== null)
+    ) {
+      throw new Error('remote_browser_pane_target_mismatch')
+    }
+    const remotePane = await requestRemoteBrowserPane(page.id, command.command, request.expiresAt)
+    return { ...base, page: page.id, applied: true, remotePane }
+  }
   if (state.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
   }
-  const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (command.operation === 'tab-ui') {
-    const tabUi = await requestBrowserTabUi(command.target, command.action, request.expiresAt)
+    const tabUi = await requestBrowserTabUi(
+      command.target,
+      command.action,
+      request.expiresAt,
+      command.point
+    )
     return { ...base, applied: true, tabUi }
+  }
+  if (command.operation === 'browser-settings') {
+    const settings = await applyBrowserSettingsViewerAction(
+      command.command,
+      request.expiresAt,
+      command.hostId
+    )
+    return { ...base, settings, applied: true }
   }
   if (command.operation === 'document') {
     const document = await requestBrowserDocument(command.page, command.command, request.expiresAt)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type RefObject } from 'react'
 import {
   BrowserChromeToolbar,
   type BrowserChromeElementTools
@@ -16,6 +16,7 @@ import { DocPreviewOverflowMenu } from './doc-preview-overflow-menu'
  */
 export function DocPreviewToolbar({
   identity,
+  submitAddressRef,
   isActive = true,
   previewId,
   worktreeId,
@@ -32,6 +33,7 @@ export function DocPreviewToolbar({
   onToggleMarkup,
   markupDisabled
 }: {
+  submitAddressRef?: RefObject<(() => boolean) | null>
   isActive?: boolean
   identity: DocPreviewDocumentIdentity
   /** The browser page this preview is open in — what an address commit converts. */
@@ -71,6 +73,7 @@ export function DocPreviewToolbar({
       }}
       addressSlot={
         <DocPreviewAddressEdit
+          submitAddressRef={submitAddressRef}
           isActive={isActive}
           identity={identity}
           previewId={previewId}

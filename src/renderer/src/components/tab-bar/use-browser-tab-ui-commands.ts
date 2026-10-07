@@ -1,12 +1,19 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
-import { BROWSER_TAB_UI_COMMAND_EVENT } from '@/runtime/browser-tab-ui-request'
+import {
+  BROWSER_TAB_UI_COMMAND_EVENT,
+  type BrowserTabUiEvent
+} from '@/runtime/browser-tab-ui-request'
+import { BrowserTabUiPoint } from '../../../../shared/rpc-contract/browser-tab-ui-params'
 import type {
   BrowserTabUiState,
   BrowserTabUiTarget
 } from '../../../../shared/rpc-contract/browser-tab-ui-params'
 type TabUiOwner = {
   target: BrowserTabUiTarget
+  menuOpen: boolean
+  menuPoint: BrowserTabUiPoint
+  menu: (open: boolean, point?: BrowserTabUiPoint) => void
   activate: () => void
   close: () => void
   closeOthers: () => void
@@ -15,7 +22,8 @@ type TabUiOwner = {
   togglePin: () => void
   duplicate?: () => void
 }
-function readTabUi(target: BrowserTabUiTarget): BrowserTabUiState {
+function readTabUi(owner: TabUiOwner): BrowserTabUiState {
+  const target = owner.target
   const state = useAppStore.getState()
   const item = state.unifiedTabsByWorktree[target.worktree]?.find(
     (tab) => tab.id === target.unifiedTab
@@ -23,6 +31,7 @@ function readTabUi(target: BrowserTabUiTarget): BrowserTabUiState {
   const group = state.groupsByWorktree[target.worktree]?.find((group) => group.id === target.group)
   return {
     target,
+    menu: { open: owner.menuOpen, point: owner.menuPoint },
     exists: Boolean(
       item &&
       state.browserTabsByWorktree[target.worktree]?.some(
@@ -72,10 +81,36 @@ function assertLocalTarget(target: BrowserTabUiTarget): void {
   }
 }
 export function useBrowserTabUiCommands(owner: TabUiOwner): void {
+  const pendingMenu = useRef<BrowserTabUiEvent | null>(null)
   const current = useRef(owner)
   useLayoutEffect(() => {
     current.current = owner
   })
+  useEffect(() => {
+    const request = pendingMenu.current
+    if (!request) {
+      return
+    }
+    if (request.isSettled()) {
+      pendingMenu.current = null
+      return
+    }
+    if (
+      owner.menuOpen === (request.action === 'menu-open') &&
+      (request.action !== 'menu-open' ||
+        (owner.menuPoint.x === request.point?.x && owner.menuPoint.y === request.point?.y))
+    ) {
+      request.finish(undefined, readTabUi(owner))
+      pendingMenu.current = null
+    }
+  })
+  useEffect(
+    () => () => {
+      pendingMenu.current?.finish(new Error('browser_tab_menu_unavailable_effect_unknown'))
+      pendingMenu.current = null
+    },
+    []
+  )
   useEffect(() => {
     const receive = (event: WindowEventMap['orca:browser-tab-ui-command']): void => {
       const request = event.detail
@@ -95,7 +130,30 @@ export function useBrowserTabUiCommands(owner: TabUiOwner): void {
           throw new Error('request_expired')
         }
         assertLocalTarget(target)
-        const before = readTabUi(target)
+        if (request.action === 'menu-open' || request.action === 'menu-close') {
+          if (pendingMenu.current && !pendingMenu.current.isSettled()) {
+            throw new Error('browser_tab_menu_busy')
+          }
+          if (
+            request.action === 'menu-open' &&
+            !BrowserTabUiPoint.safeParse(request.point).success
+          ) {
+            throw new Error('browser_tab_menu_point_required')
+          }
+          if (
+            owner.menuOpen === (request.action === 'menu-open') &&
+            (request.action !== 'menu-open' ||
+              (owner.menuPoint.x === request.point?.x && owner.menuPoint.y === request.point?.y))
+          ) {
+            owner.menu(request.action === 'menu-open', request.point)
+            request.finish(undefined, readTabUi(owner))
+          } else {
+            pendingMenu.current = request
+            owner.menu(request.action === 'menu-open', request.point)
+          }
+          return
+        }
+        const before = readTabUi(owner)
         const store = useAppStore.getState()
         const items = store.unifiedTabsByWorktree[target.worktree] ?? []
         const workspaceIds = new Set(
@@ -139,7 +197,7 @@ export function useBrowserTabUiCommands(owner: TabUiOwner): void {
             owner.closeOthers()
           }
         }
-        const after = readTabUi(target)
+        const after = readTabUi(current.current)
         const state = useAppStore.getState()
         after.closedTabs = expectedClosed.filter(
           (id) => !state.unifiedTabsByWorktree[target.worktree]?.some((item) => item.id === id)

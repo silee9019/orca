@@ -1,3 +1,4 @@
+import type { BrowserPage, BrowserWorkspace } from '../../../../../shared/browser-workspace-types'
 import { act } from 'react'
 import type { DocPreviewFailure } from '../../../../../shared/doc-preview-scheme'
 import type { Root } from 'react-dom/client'
@@ -78,7 +79,11 @@ vi.mock('@/components/terminal-pane/terminal-remote-file-download-open', () => (
 export const viewerSettings: { activeRuntimeEnvironmentId: string | null } = {
   activeRuntimeEnvironmentId: 'env-1'
 }
+const browserTabsByWorktree: Record<string, BrowserWorkspace[]> = {}
+const browserPagesByWorkspace: Record<string, BrowserPage[]> = {}
 export const storeState = {
+  browserTabsByWorktree,
+  browserPagesByWorkspace,
   getKnownWorktreeById: () => ({ path: '/repo' }),
   persistedUIReady: true,
   settings: viewerSettings,
