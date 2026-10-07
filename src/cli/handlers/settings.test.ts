@@ -16,7 +16,9 @@ afterEach(async () => {
 
 async function invoke(key: string, flags = new Map<string, string | boolean>()) {
   const handler = SETTINGS_HANDLERS[key]
-  if (!handler) {throw new Error(`Missing handler ${key}`)}
+  if (!handler) {
+    throw new Error(`Missing handler ${key}`)
+  }
   await handler({
     client: new RuntimeClient(directory, 1000, null, null),
     cwd: directory,

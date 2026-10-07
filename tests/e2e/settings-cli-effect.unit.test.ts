@@ -82,7 +82,9 @@ it('runs the CLI through an isolated socket and reads back profile and shortcut 
     let buffer = ''
     socket.on('data', (chunk) => {
       buffer += chunk.toString()
-      if (!buffer.includes('\n')) {return}
+      if (!buffer.includes('\n')) {
+        return
+      }
       const request = Request.parse(JSON.parse(buffer.split('\n')[0] ?? ''))
       expect(request.authToken).toBe('fixture-token')
       methods.push(request.method)
@@ -159,8 +161,12 @@ it('runs the CLI through an isolated socket and reads back profile and shortcut 
       'settings.control.listFonts'
     ])
   } finally {
-    for (const socket of sockets) {socket.destroy()}
-    if (server.listening) {await new Promise<void>((resolve) => server.close(() => resolve()))}
+    for (const socket of sockets) {
+      socket.destroy()
+    }
+    if (server.listening) {
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
     process.exitCode = exitCode
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
