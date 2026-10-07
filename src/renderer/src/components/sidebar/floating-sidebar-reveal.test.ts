@@ -82,20 +82,4 @@ describe('stepFloatingSidebarReveal', () => {
     ])
     expect(state.revealed).toBe(true)
   })
-
-  it('toggle opens and closes without a pointer and keeps it open for keyboard use', () => {
-    const open = run([{ type: 'toggle' }])
-    expect(open.state.revealed).toBe(true)
-    expect(open.timers).toEqual(['cancel'])
-    expect(run([{ type: 'toggle' }], open.state).state.revealed).toBe(false)
-  })
-
-  it('toggle closes even while held', () => {
-    const { state } = run([
-      { type: 'pointer-enter' },
-      { type: 'hold-changed', held: true },
-      { type: 'toggle' }
-    ])
-    expect(state.revealed).toBe(false)
-  })
 })

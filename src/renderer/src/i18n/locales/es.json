@@ -6792,7 +6792,7 @@
           },
           "floatingSidebar": {
             "title": "Barra lateral flotante",
-            "description": "Contrae la barra lateral y la muestra sobre el contenido al acercar el puntero al borde izquierdo."
+            "description": "Cuando la barra lateral está oculta, la muestra sobre el contenido mientras el puntero toca el borde izquierdo."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9311,7 +9311,7 @@
             },
             "floatingSidebar": {
               "title": "Barra lateral flotante",
-              "description": "Contrae la barra lateral y la muestra sobre el contenido al acercar el puntero al borde izquierdo.",
+              "description": "Cuando la barra lateral está oculta, la muestra sobre el contenido mientras el puntero toca el borde izquierdo.",
               "floating": "flotante",
               "hover": "pasar el cursor",
               "overlay": "superposición",

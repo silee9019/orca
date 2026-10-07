@@ -6777,7 +6777,7 @@
           },
           "floatingSidebar": {
             "title": "浮动侧边栏",
-            "description": "折叠侧边栏，当指针移到左边缘时在内容上方浮动显示。"
+            "description": "侧边栏隐藏时，指针停在左边缘期间在内容上方浮动显示。"
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9296,7 +9296,7 @@
             "glm": "格鲁姆",
             "floatingSidebar": {
               "title": "浮动侧边栏",
-              "description": "折叠侧边栏，当指针移到左边缘时在内容上方浮动显示。",
+              "description": "侧边栏隐藏时，指针停在左边缘期间在内容上方浮动显示。",
               "floating": "浮动",
               "hover": "悬停",
               "overlay": "覆盖",

@@ -9,6 +9,7 @@ import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchConta
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
 import { FloatingSidebarOverlay } from '../components/sidebar/FloatingSidebarOverlay'
 import { resolveFloatingSidebarTopInset } from '../components/sidebar/floating-sidebar-hold'
+import { resolveSidebarPresentation } from '../components/sidebar/sidebar-presentation'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -58,7 +59,7 @@ function WorktreeSidebar({
             )
       }
     >
-      {layout.floatingSidebar ? (
+      {resolveSidebarPresentation(layout) === 'hover-overlay' ? (
         <div className="relative min-h-0 w-0 shrink-0">
           <FloatingSidebarOverlay
             topInset={resolveFloatingSidebarTopInset(layout.leftTitlebarChromeLayout)}

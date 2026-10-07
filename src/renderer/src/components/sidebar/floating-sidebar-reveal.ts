@@ -16,7 +16,6 @@ export type FloatingSidebarRevealEvent =
   | { type: 'pointer-leave' }
   | { type: 'hold-changed'; held: boolean }
   | { type: 'timer-elapsed' }
-  | { type: 'toggle' }
 
 export type FloatingSidebarRevealStep = {
   state: FloatingSidebarRevealState
@@ -54,7 +53,5 @@ export function stepFloatingSidebarReveal(
             : state,
         timer: undefined
       }
-    case 'toggle':
-      return { state: { ...state, revealed: !state.revealed }, timer: 'cancel' }
   }
 }

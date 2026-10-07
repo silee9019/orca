@@ -6895,7 +6895,7 @@
           },
           "floatingSidebar": {
             "title": "Barre latérale flottante",
-            "description": "Réduit la barre latérale et l'affiche par-dessus le contenu lorsque le pointeur touche le bord gauche."
+            "description": "Quand la barre latérale est masquée, l'affiche par-dessus le contenu tant que le pointeur touche le bord gauche."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9456,7 +9456,7 @@
             "glm": "GLM",
             "floatingSidebar": {
               "title": "Barre latérale flottante",
-              "description": "Réduit la barre latérale et l'affiche par-dessus le contenu lorsque le pointeur touche le bord gauche.",
+              "description": "Quand la barre latérale est masquée, l'affiche par-dessus le contenu tant que le pointeur touche le bord gauche.",
               "floating": "flottante",
               "hover": "survol",
               "overlay": "superposition",

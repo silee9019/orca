@@ -199,7 +199,7 @@ export const getFloatingSidebarEntry = createLocalizedCatalog((): SettingsSearch
   ),
   description: translate(
     'auto.components.settings.appearance.search.floatingSidebar.description',
-    'Collapse the sidebar and reveal it over the content when the pointer touches the left edge.'
+    'When the sidebar is hidden, show it over the content while the pointer touches the left edge.'
   ),
   keywords: [
     ...translateSearchKeyword('auto.components.settings.appearance.search.5bff6a2ef0', 'sidebar'),

@@ -6777,7 +6777,7 @@
           },
           "floatingSidebar": {
             "title": "플로팅 사이드바",
-            "description": "사이드바를 접어 두고, 마우스를 왼쪽 가장자리에 올리면 콘텐츠 위에 겹쳐서 표시합니다."
+            "description": "사이드바를 숨겨 둔 상태에서 마우스를 왼쪽 가장자리에 올리면 콘텐츠 위에 겹쳐서 임시로 표시합니다."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9296,7 +9296,7 @@
             "glm": "glm",
             "floatingSidebar": {
               "title": "플로팅 사이드바",
-              "description": "사이드바를 접어 두고, 마우스를 왼쪽 가장자리에 올리면 콘텐츠 위에 겹쳐서 표시합니다.",
+              "description": "사이드바를 숨겨 둔 상태에서 마우스를 왼쪽 가장자리에 올리면 콘텐츠 위에 겹쳐서 임시로 표시합니다.",
               "floating": "플로팅",
               "hover": "호버",
               "overlay": "오버레이",

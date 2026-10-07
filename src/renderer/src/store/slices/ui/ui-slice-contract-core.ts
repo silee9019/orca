@@ -123,9 +123,6 @@ export type UiViewHistory =
 export type UISliceCore = {
   sidebarOpen: boolean
   sidebarWidth: number
-  /** Transient overlay state for the floating sidebar; never persisted. */
-  floatingSidebarRevealed: boolean
-  setFloatingSidebarRevealed: (revealed: boolean) => void
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   setSidebarWidth: (width: number) => void

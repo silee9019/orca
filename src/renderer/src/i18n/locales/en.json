@@ -7014,7 +7014,7 @@
           },
           "floatingSidebar": {
             "title": "Floating sidebar",
-            "description": "Collapse the sidebar and reveal it over the content when the pointer touches the left edge."
+            "description": "When the sidebar is hidden, show it over the content while the pointer touches the left edge."
           }
         },
         "AutoRenameBranchFromWorkSetting": {
@@ -9580,7 +9580,7 @@
             },
             "floatingSidebar": {
               "title": "Floating sidebar",
-              "description": "Collapse the sidebar and reveal it over the content when the pointer touches the left edge.",
+              "description": "When the sidebar is hidden, show it over the content while the pointer touches the left edge.",
               "floating": "floating",
               "hover": "hover",
               "overlay": "overlay",

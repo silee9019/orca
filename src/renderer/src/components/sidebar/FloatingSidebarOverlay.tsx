@@ -21,30 +21,26 @@ export function FloatingSidebarOverlay({
   children: React.ReactNode
   topInset?: number
 }): React.JSX.Element {
-  const storeRevealed = useAppStore((s) => s.floatingSidebarRevealed)
-  const setStoreRevealed = useAppStore((s) => s.setFloatingSidebarRevealed)
+  const [revealed, setRevealed] = useState(false)
   const panelRef = useRef<HTMLDivElement | null>(null)
   const stateRef = useRef(INITIAL_FLOATING_SIDEBAR_REVEAL)
   // Counter, not boolean: each 'start' must restart the delay even if one is already pending.
   const [closeTimerGeneration, setCloseTimerGeneration] = useState<number | null>(null)
   const pointerDownInsideRef = useRef(false)
 
-  const dispatch = useCallback(
-    (event: FloatingSidebarRevealEvent) => {
-      const step = stepFloatingSidebarReveal(stateRef.current, event)
-      const revealedChanged = step.state.revealed !== stateRef.current.revealed
-      stateRef.current = step.state
-      if (step.timer === 'start') {
-        setCloseTimerGeneration((generation) => (generation ?? 0) + 1)
-      } else if (step.timer === 'cancel' || event.type === 'timer-elapsed') {
-        setCloseTimerGeneration(null)
-      }
-      if (revealedChanged) {
-        setStoreRevealed(step.state.revealed)
-      }
-    },
-    [setStoreRevealed]
-  )
+  const dispatch = useCallback((event: FloatingSidebarRevealEvent) => {
+    const step = stepFloatingSidebarReveal(stateRef.current, event)
+    const revealedChanged = step.state.revealed !== stateRef.current.revealed
+    stateRef.current = step.state
+    if (step.timer === 'start') {
+      setCloseTimerGeneration((generation) => (generation ?? 0) + 1)
+    } else if (step.timer === 'cancel' || event.type === 'timer-elapsed') {
+      setCloseTimerGeneration(null)
+    }
+    if (revealedChanged) {
+      setRevealed(step.state.revealed)
+    }
+  }, [])
 
   const sampleHold = useCallback((): void => {
     const panel = panelRef.current
@@ -59,13 +55,6 @@ export function FloatingSidebarOverlay({
     }
   }, [dispatch])
 
-  // Keyboard toggle writes the store flag; fold it into the state machine.
-  useEffect(() => {
-    if (storeRevealed !== stateRef.current.revealed) {
-      dispatch({ type: 'toggle' })
-    }
-  }, [storeRevealed, dispatch])
-
   useEffect(() => {
     if (closeTimerGeneration === null) {
       return
@@ -78,12 +67,12 @@ export function FloatingSidebarOverlay({
   }, [closeTimerGeneration, dispatch])
 
   useEffect(() => {
-    if (!storeRevealed) {
+    if (!revealed) {
       return
     }
     const interval = setInterval(sampleHold, FLOATING_SIDEBAR_HOLD_POLL_MS)
     return () => clearInterval(interval)
-  }, [storeRevealed, sampleHold])
+  }, [revealed, sampleHold])
 
   useEffect(() => {
     const release = (): void => {
@@ -116,11 +105,11 @@ export function FloatingSidebarOverlay({
       <div
         ref={panelRef}
         data-floating-sidebar=""
-        data-state={storeRevealed ? 'open' : 'closed'}
+        data-state={revealed ? 'open' : 'closed'}
         // Why: closed panel is hidden from focus and the a11y tree; hover never moves focus into it.
         style={{ top: topInset }}
         className={`absolute bottom-0 left-0 z-20 flex shadow-floating transition-[transform,visibility] duration-150 motion-reduce:transition-none ${
-          storeRevealed ? 'translate-x-0 visible' : '-translate-x-full invisible'
+          revealed ? 'translate-x-0 visible' : '-translate-x-full invisible'
         }`}
         onPointerEnter={handleEnter}
         onPointerLeave={handleLeave}
