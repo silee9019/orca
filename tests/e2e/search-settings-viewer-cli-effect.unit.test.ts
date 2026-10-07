@@ -20,14 +20,21 @@ import { SessionHistorySettingsPane } from '../../src/renderer/src/components/se
 import { ConfirmationDialogContext } from '../../src/renderer/src/components/confirmation-dialog-context'
 import { unavailableSessionSearchStatus } from '../../src/shared/ai-vault-search-client'
 
-const fixture = vi.hoisted(() => ({ getState: () => ({}) }))
+const fixture = vi.hoisted(() => {
+  const environments: { id: string; name: string }[] = []
+  const details: Record<string, unknown> = {}
+  return { getState: () => ({}), environments, details }
+})
 vi.mock('@/store', () => ({
   useAppStore: Object.assign((select: (state: object) => unknown) => select(fixture.getState()), {
     getState: () => fixture.getState()
   })
 }))
 vi.mock('../../src/renderer/src/components/settings/use-runtime-environment-catalog', () => ({
-  useRuntimeEnvironmentCatalog: () => ({ environments: [], detailsByEnvironmentId: {} })
+  useRuntimeEnvironmentCatalog: () => ({
+    environments: fixture.environments,
+    detailsByEnvironmentId: fixture.details
+  })
 }))
 vi.mock('@/hooks/use-window-stream-visibility', () => ({ useWindowStreamVisible: () => true }))
 vi.mock('@/lib/web-client-location', () => ({ isWebClientLocation: () => false }))
@@ -43,10 +50,14 @@ it.skipIf(process.platform === 'win32')(
       dataFile: join(root, 'profile.json')
     })
     const markFeatureTipsSeen = vi.fn()
-    const openSettingsTarget = vi.fn()
+    let settingsNavigationTarget: { pane: string; repoId: null; sectionId?: string } | null = null
+    const openSettingsTarget = vi.fn((target: NonNullable<typeof settingsNavigationTarget>) => {
+      settingsNavigationTarget = target
+    })
     const openSettingsPage = vi.fn()
     fixture.getState = () => ({
       persistedUIReady: true,
+      settingsNavigationTarget,
       settings: store.getSettings(),
       markFeatureTipsSeen,
       openSettingsTarget,
@@ -58,10 +69,15 @@ it.skipIf(process.platform === 'win32')(
       api: {
         settings: { get: async () => store.getSettings() },
         aiVault: {
-          searchStatus: async () => ({
-            ...unavailableSessionSearchStatus(),
-            enabled: store.getSettings().aiVaultSearch?.enabled === true
-          })
+          searchStatus: async (host: string) => {
+            if (host === 'runtime:older') {
+              throw new Error('host-too-old')
+            }
+            return {
+              ...unavailableSessionSearchStatus(),
+              enabled: store.getSettings().aiVaultSearch?.enabled === true
+            }
+          }
         }
       }
     })
@@ -132,7 +148,7 @@ it.skipIf(process.platform === 'win32')(
       )
       const client = new RuntimeClient(root, 5000, null, null)
       const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-      async function invoke(confirmation = 'local') {
+      async function invoke(confirmation = 'local', operation = 'local-toggle', target?: string) {
         const parsed = parseArgs(
           [
             'search',
@@ -140,9 +156,8 @@ it.skipIf(process.platform === 'win32')(
             '--viewer',
             'host',
             '--operation',
-            'local-toggle',
-            '--confirm',
-            confirmation
+            operation,
+            ...(target ? ['--target-host', target] : ['--confirm', confirmation])
           ],
           SEARCH_SETTINGS_VIEWER_COMMAND_SPECS.map((spec) => spec.path)
         )
@@ -165,6 +180,24 @@ it.skipIf(process.platform === 'win32')(
       expect(openSettingsTarget).toHaveBeenCalledWith({ pane: 'session-history', repoId: null })
       await expect(invoke('wrong')).rejects.toThrow()
       expect(store.getSettings().aiVaultSearch?.enabled).toBe(false)
+      fixture.environments.push({ id: 'older', name: 'Old server' })
+      fixture.details.older = {
+        status: 'ready',
+        runtimeStatus: { appVersion: '1.4.0' },
+        compatibility: { kind: 'ok' },
+        remoteControl: null,
+        error: null
+      }
+      await act(async () => renderPane())
+      await vi.waitFor(() => expect(container.textContent).toContain('Update server'))
+      await act(async () => invoke('local', 'server-settings-open', 'runtime:older'))
+      expect(settingsNavigationTarget).toEqual({
+        pane: 'servers',
+        repoId: null,
+        sectionId: 'older'
+      })
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"applied": true')
+      expect(store.getSettings().aiVaultSearch?.enabled).toBe(false)
     } finally {
       for (const socket of sockets) {
         socket.destroy()
@@ -172,6 +205,8 @@ it.skipIf(process.platform === 'win32')(
       await new Promise<void>((resolve) => server.close(() => resolve()))
       await act(async () => ui.unmount())
       container.remove()
+      fixture.environments.length = 0
+      fixture.details = {}
       vi.restoreAllMocks()
       vi.unstubAllGlobals()
       rmSync(root, { recursive: true, force: true })
