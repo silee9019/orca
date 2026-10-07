@@ -1,6 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
+  copyFileSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -175,6 +176,8 @@ function prepareMacDevElectronApp() {
     electronVersion = JSON.parse(readFileSync(electronPackagePath, 'utf8')).version ?? null
   } catch {}
 
+  const devIconPath = path.join(repoRoot, 'config', 'dev-app-icon.icns')
+  const devIconHash = createHash('sha256').update(readFileSync(devIconPath)).digest('hex')
   const title = process.env.ORCA_DEV_DOCK_TITLE || 'Orca: dev'
   const identityKey = process.env.ORCA_DEV_INSTANCE_KEY || repoRoot
   // v11: stop patching the branch title into Info.plist so every dev bundle signs to one cdhash.
@@ -182,7 +185,7 @@ function prepareMacDevElectronApp() {
   const bundleLayoutVersion = 'stable-cdhash-dock-name-from-bundle-dir-v11'
   const hash = createHash('sha1')
     .update(
-      `${sourceAppPath}\0${electronVersion ?? ''}\0${title}\0${identityKey}\0${bundleLayoutVersion}`
+      `${sourceAppPath}\0${electronVersion ?? ''}\0${title}\0${identityKey}\0${bundleLayoutVersion}\0${devIconHash}`
     )
     .digest('hex')
     .slice(0, 12)
@@ -215,6 +218,7 @@ function prepareMacDevElectronApp() {
       sourceAppPath,
       electronVersion,
       bundleLayoutVersion,
+      devIconHash,
       plistPatches: [...getDevBundlePlistPatches(), ...getDevHelperPlistPatches()]
     },
     null,
@@ -292,6 +296,7 @@ function prepareMacDevElectronApp() {
   copyPrivateTree(sourceAppPath, appPath)
   restoreElectronFrameworkSymlinks(appPath)
 
+  copyFileSync(devIconPath, path.join(appPath, 'Contents', 'Resources', 'electron.icns'))
   const plistPath = path.join(appPath, 'Contents', 'Info.plist')
   const helperPlistPath = path.join(
     appPath,
