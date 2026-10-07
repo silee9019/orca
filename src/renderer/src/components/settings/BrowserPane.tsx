@@ -3,8 +3,6 @@ import { useBrowserCookieSectionScroll } from './use-browser-cookie-section-scro
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useAppStore } from '../../store'
 import { useBrowserSettingsRequest } from './use-browser-settings-request'
-import { normalizeBrowserNavigationUrl } from '../../../../shared/browser-url'
-import { ORCA_BROWSER_BLANK_URL } from '../../../../shared/constants'
 import { matchesSettingsSearch } from './settings-search'
 import { getBrowserPaneSearchEntries } from './browser-search'
 import { getBrowserLinkRoutingDescription } from './browser-link-routing-copy'
@@ -178,7 +176,6 @@ export function BrowserPane({
       [
         'status',
         'homepage-draft',
-        'homepage-save',
         'search-engine',
         'zoom',
         'profile-dialog-open',
@@ -190,14 +187,6 @@ export function BrowserPane({
     apply: async (command, expiresAt) => {
       if (command.action === 'homepage-draft') {
         setHomePageDraft(command.value)
-      } else if (command.action === 'homepage-save') {
-        const trimmed = homePageDraft.trim()
-        const url = trimmed ? normalizeBrowserNavigationUrl(trimmed) : null
-        if (trimmed && (!url || url === ORCA_BROWSER_BLANK_URL)) {
-          throw new Error('invalid_home_page')
-        }
-        setBrowserDefaultUrl(url)
-        setHomePageDraftState(createBrowserHomePageDraftState(url ?? ''))
       } else if (command.action === 'search-engine') {
         setBrowserDefaultSearchEngine(command.engine === 'google' ? null : command.engine)
       } else if (command.action === 'zoom') {
@@ -252,6 +241,8 @@ export function BrowserPane({
 
       {showHomePage ? (
         <BrowserHomePageSetting
+          hostId={selectedBrowserSessionHostId}
+          saved={homePageDraft === persistedHomePageDraft}
           value={homePageDraft}
           onChange={setHomePageDraft}
           onSave={(url) => {

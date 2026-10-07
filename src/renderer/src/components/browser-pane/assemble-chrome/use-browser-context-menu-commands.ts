@@ -1,38 +1,25 @@
+import {
+  browserContextMenuButtons as buttons,
+  snapshotBrowserContextMenu as snapshot
+} from './browser-context-menu-snapshot'
 import type { BrowserContextClipboardSource } from './use-browser-context-menu-clipboard'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import {
   BROWSER_CONTEXT_MENU_COMMAND_EVENT,
   type BrowserContextMenuEvent
 } from '@/runtime/browser-context-menu-request'
-import type { BrowserContextMenuState } from '../../../../../shared/rpc-contract/browser-context-menu-params'
+import type { BrowserContextLinkTabState } from '../../../../../shared/rpc-contract/browser-context-menu-params'
 import type { BrowserPageContextMenuState } from '../describe-page/browser-page-types'
 type Owner = {
   page: string
   active: boolean
   menu: BrowserPageContextMenuState | null
   ref: RefObject<HTMLDivElement | null>
+  inspect: (verified?: boolean) => Promise<boolean>
+  openLink: (verified?: boolean) => void | BrowserContextLinkTabState
   copy: (source: BrowserContextClipboardSource, verified?: boolean) => void | Promise<boolean>
   openExternal: (source: 'link' | 'page', verified?: boolean) => void | Promise<void>
   close: () => void
-}
-function buttons(owner: Owner): HTMLButtonElement[] {
-  return [
-    ...(owner.ref.current?.querySelectorAll<HTMLButtonElement>(
-      '[role="menuitem"]:not(:disabled)'
-    ) ?? [])
-  ]
-}
-function snapshot(owner: Owner): BrowserContextMenuState {
-  const index =
-    document.activeElement instanceof HTMLButtonElement
-      ? buttons(owner).indexOf(document.activeElement)
-      : -1
-  return {
-    open: owner.menu !== null,
-    focusedItem: index === -1 ? null : index,
-    hasLink: Boolean(owner.menu?.linkUrl),
-    hasSelection: Boolean(owner.menu?.selectionText.trim())
-  }
 }
 export function useBrowserContextMenuCommands(owner: Owner): void {
   const current = useRef(owner)
@@ -40,6 +27,8 @@ export function useBrowserContextMenuCommands(owner: Owner): void {
     request: BrowserContextMenuEvent
     ready: boolean
     copied: boolean
+    devToolsRequested?: true
+    linkTab?: BrowserContextLinkTabState
     external: boolean
     navigation: boolean
   } | null>(null)
@@ -63,6 +52,10 @@ export function useBrowserContextMenuCommands(owner: Owner): void {
       operation.request.finish(undefined, {
         ...snapshot(owner),
         guestFocusRequested: true,
+        ...(operation.devToolsRequested
+          ? { devToolsRequested: true as const, devToolsWindowVerified: false as const }
+          : {}),
+        ...(operation.linkTab ? { linkTab: operation.linkTab } : {}),
         ...(operation.external
           ? { externalOpened: true as const, externalWindowVerified: false as const }
           : {}),
@@ -98,6 +91,61 @@ export function useBrowserContextMenuCommands(owner: Owner): void {
       const menu = before.menu
       if (!menu || !before.ref.current) {
         request.finish(new Error('browser_context_menu_not_open'))
+        return
+      }
+      if (request.action === 'inspect') {
+        const operation = {
+          request,
+          ready: false,
+          copied: false,
+          navigation: false,
+          external: false,
+          devToolsRequested: true as const
+        }
+        pending.current = operation
+        void before.inspect(true).then(
+          () => {
+            if (pending.current === operation && !request.isSettled()) {
+              operation.ready = true
+              update((value) => value + 1)
+            }
+          },
+          (error: unknown) => {
+            request.finish(
+              error instanceof Error
+                ? error
+                : new Error('browser_context_menu_inspect_failed_effect_unknown')
+            )
+            if (pending.current === operation) {
+              pending.current = null
+            }
+          }
+        )
+        return
+      }
+      if (request.action === 'open-link') {
+        try {
+          const linkTab = before.openLink(true)
+          if (!linkTab) {
+            throw new Error('browser_context_menu_link_creation_unverifiable')
+          }
+          const operation = {
+            request,
+            ready: true,
+            copied: false,
+            navigation: false,
+            external: false,
+            linkTab
+          }
+          pending.current = operation
+          update((value) => value + 1)
+        } catch (error) {
+          request.finish(
+            error instanceof Error
+              ? error
+              : new Error('browser_context_menu_link_creation_effect_unknown')
+          )
+        }
         return
       }
       if (request.action === 'open-link-external' || request.action === 'open-page-external') {

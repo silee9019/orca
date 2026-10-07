@@ -1,3 +1,4 @@
+import { RemoteFilePickerState } from './rpc-contract/remote-file-picker-params'
 import { LinkedBrowserState } from './rpc-contract/linked-browser-params'
 import { FloatingBrowserState } from './rpc-contract/floating-browser-params'
 import { BrowserContextMenuState } from './rpc-contract/browser-context-menu-params'
@@ -21,6 +22,7 @@ export const BrowserViewerResultSchema = z.object({
   viewerId: z.number().int(),
   floatingBrowser: FloatingBrowserState.optional(),
   linkedBrowser: LinkedBrowserState.optional(),
+  remotePicker: RemoteFilePickerState.optional(),
   applied: z.boolean(),
   persisted: z.literal(false),
   rendered: z.literal(false),

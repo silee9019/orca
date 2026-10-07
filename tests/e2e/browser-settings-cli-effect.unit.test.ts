@@ -5,6 +5,7 @@ import { cookieFixture } from './browser-settings-cookie.fixture'
 import { RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser } from '../../src/main/runtime/runtime-browser-commands-browser-profile-import-from-browser'
 import { BROWSER_PROFILE_FILE_METHODS } from '../../src/main/runtime/rpc/methods/browser-profile-file'
 import { BROWSER_USE_ENABLED_STORAGE_KEY } from '../../src/renderer/src/lib/browser-use-setup-state'
+import { toast } from 'sonner'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
@@ -70,6 +71,11 @@ it.skipIf(process.platform === 'win32')(
     cookieFixture.directory = directory
     cookieFixture.jars.clear()
     localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, '1')
+    const successToast = vi.spyOn(toast, 'success')
+    let clipboard = ''
+    const clipboardEvents: string[] = []
+    let clipboardWriteFailure = false
+    let clipboardReadMismatch = false
     const store = new Store({
       serializedState: JSON.stringify({ repos: [], settings: {} }),
       dataFile: join(directory, 'profile.json')
@@ -140,6 +146,19 @@ it.skipIf(process.platform === 'win32')(
           }
         },
         ui: {
+          writeClipboardText: async (text: string) => {
+            clipboardEvents.push('write-start')
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            if (clipboardWriteFailure) {
+              throw new Error('private-clipboard-provider-error')
+            }
+            clipboard = text
+            clipboardEvents.push('write-complete')
+          },
+          readClipboardText: async () => {
+            clipboardEvents.push('read')
+            return clipboardReadMismatch ? '' : clipboard
+          },
           recordFeatureInteraction: async (id: Parameters<Store['recordFeatureInteraction']>[0]) =>
             store.recordFeatureInteraction(id),
           set: async (updates: Parameters<Store['updateUI']>[0]) => {
@@ -279,6 +298,55 @@ it.skipIf(process.platform === 'win32')(
       await invoke('homepage-save')
       expect(useAppStore.getState().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
       expect(store.getUI().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      expect(successToast).toHaveBeenCalledWith('Home page saved.')
+      await invoke('browser-use-copy-example', ['--value', '0'])
+      expect(clipboard).toBe(
+        'Using Orca CLI, open https://github.com/notifications and click the first unread pull request.'
+      )
+      expect(successToast).toHaveBeenCalledWith('Copied prompt.')
+      expect(clipboardEvents).toEqual(['write-start', 'write-complete', 'read'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"clipboardCopied": true')
+      expect(output.mock.calls.at(-1)?.[0]).not.toContain(clipboard)
+      clipboardWriteFailure = true
+      clipboardEvents.length = 0
+      const beforeFailedCopySuccesses = successToast.mock.calls.length
+      await expect(invoke('browser-use-copy-example', ['--value', '1'])).rejects.toThrow()
+      expect(clipboardEvents).toEqual(['write-start'])
+      expect(successToast).toHaveBeenCalledTimes(beforeFailedCopySuccesses)
+      clipboardWriteFailure = false
+      clipboardReadMismatch = true
+      await expect(invoke('browser-use-copy-example', ['--value', '1'])).rejects.toThrow()
+      clipboardReadMismatch = false
+      await expect(invoke('browser-use-copy-example', ['--value', '3'])).rejects.toThrow()
+      const beforeWrongHostCopy = clipboard
+      await expect(
+        invoke('browser-use-copy-example', ['--value', '2'], 'runtime:missing')
+      ).rejects.toThrow()
+      expect(clipboard).toBe(beforeWrongHostCopy)
+      expect(JSON.stringify(output.mock.calls)).not.toContain('private-clipboard-provider-error')
+      const savedToastCount = successToast.mock.calls.filter(
+        ([message]) => message === 'Home page saved.'
+      ).length
+      await invoke('homepage-draft', ['--value', '   '])
+      await invoke('homepage-save')
+      expect(store.getUI().browserDefaultUrl).toBeNull()
+      expect(
+        successToast.mock.calls.filter(([message]) => message === 'Home page saved.')
+      ).toHaveLength(savedToastCount)
+      await invoke('homepage-draft', ['--value', 'orca://blank'])
+      await expect(invoke('homepage-save')).rejects.toThrow()
+      expect(store.getUI().browserDefaultUrl).toBeNull()
+      await invoke('homepage-draft', ['--value', '  https://draft.fixture.invalid  '])
+      await invoke('homepage-save')
+      expect(store.getUI().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      await invoke('search-engine', ['--value', 'kagi'])
+      expect(
+        container.querySelector('input[aria-label="Kagi private session link"]')
+      ).not.toBeNull()
+      expect(store.getUI().browserKagiSessionLink).toBeUndefined()
+      await invoke('search-engine', ['--value', 'google'])
+      expect(store.getUI().browserDefaultSearchEngine).toBeNull()
+      expect(container.querySelector('input[aria-label="Kagi private session link"]')).toBeNull()
       await invoke('search-engine', ['--value', 'bing'])
       expect(useAppStore.getState().browserDefaultSearchEngine).toBe('bing')
       expect(store.getUI().browserDefaultSearchEngine).toBe('bing')

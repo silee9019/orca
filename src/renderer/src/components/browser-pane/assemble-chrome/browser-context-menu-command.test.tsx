@@ -17,6 +17,7 @@ const fixture = vi.hoisted(() => {
     set requested(value: ((event: BrowserContextMenuRequestedEvent) => void) | undefined) {
       requested = value
     },
+    inspect: vi.fn(),
     external: vi.fn(),
     legacyExternal: vi.fn(),
     createBrowserTab: vi.fn(),
@@ -38,6 +39,7 @@ const guest = Object.assign(document.createElement('div'), { goBack: back, goFor
 guest.tabIndex = 0
 beforeEach(() => {
   vi.clearAllMocks()
+  fixture.inspect.mockResolvedValue(true)
   fixture.external.mockResolvedValue({ opened: true })
   fixture.matches = true
   fixture.clipboard = ''
@@ -52,6 +54,7 @@ beforeEach(() => {
     configurable: true,
     value: {
       browser: {
+        openDevTools: fixture.inspect,
         onContextMenuRequested: (callback: (event: BrowserContextMenuRequestedEvent) => void) => {
           fixture.requested = callback
           return () => {
@@ -269,4 +272,55 @@ it('propagates an original write failure without reading or acknowledging clipbo
   open()
   await expect(command('copy-page-url')).rejects.toThrow('clipboard_unverifiable_effect_unknown')
   expect(fixture.read).not.toHaveBeenCalled()
+})
+
+it('waits for the original inspect service acknowledgement and reports no native window observation', async () => {
+  const view = render(<Owner />)
+  open()
+  expect(await command('inspect')).toMatchObject({
+    open: false,
+    devToolsRequested: true,
+    devToolsWindowVerified: false,
+    guestFocusRequested: true
+  })
+  expect(fixture.inspect).toHaveBeenCalledWith({ browserPageId: 'page' })
+  expect(view.queryByRole('menu')).toBeNull()
+  expect(document.activeElement).toBe(guest)
+})
+it.each([false, undefined])(
+  'refuses missing guest/offscreen or old inspect response %j',
+  async (response) => {
+    const view = render(<Owner />)
+    fixture.inspect.mockResolvedValue(response)
+    open()
+    await expect(command('inspect')).rejects.toThrow('inspect_unavailable')
+    expect(view.queryByRole('menu')).toBeNull()
+  }
+)
+
+it('does not acknowledge inspect before its original service responds', async () => {
+  render(<Owner />)
+  let release: (accepted: boolean) => void = () => {
+    throw new Error('missing service')
+  }
+  fixture.inspect.mockImplementation(
+    () =>
+      new Promise<boolean>((resolve) => {
+        release = resolve
+      })
+  )
+  open()
+  let response: ReturnType<typeof requestBrowserContextMenu> | undefined
+  let finished = false
+  await act(async () => {
+    response = requestBrowserContextMenu('page', 'inspect', Date.now() + 5000)
+    void response.then(() => {
+      finished = true
+    })
+  })
+  expect(finished).toBe(false)
+  await act(async () => {
+    release(true)
+  })
+  expect(await response).toMatchObject({ devToolsRequested: true, open: false })
 })

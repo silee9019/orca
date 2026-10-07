@@ -10,6 +10,11 @@ import {
 import type { PreviewState } from './remote-file-browser-path-preview-resolver'
 import type { FilesystemPathFlavor } from '../../../../shared/filesystem-entry-types'
 
+export type RemoteFileBrowserFilterKeyEvent = Pick<
+  KeyboardEvent<HTMLInputElement>,
+  'key' | 'preventDefault' | 'stopPropagation'
+>
+
 export type RemoteFileBrowserFilterKeyCommandsArgs = {
   filter: string
   setFilter: Dispatch<SetStateAction<string>>
@@ -40,9 +45,9 @@ export function useRemoteFileBrowserFilterKeyCommands({
   triggerFileHint,
   clearFileHint,
   onCancel
-}: RemoteFileBrowserFilterKeyCommandsArgs): (e: KeyboardEvent<HTMLInputElement>) => void {
+}: RemoteFileBrowserFilterKeyCommandsArgs): (e: RemoteFileBrowserFilterKeyEvent) => void {
   return useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
+    (e: RemoteFileBrowserFilterKeyEvent) => {
       if (e.key === 'Enter') {
         if (preview) {
           // Path mode Enter.

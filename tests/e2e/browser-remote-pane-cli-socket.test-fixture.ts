@@ -1,3 +1,5 @@
+import { REMOTE_FILE_PICKER_COMMAND_SPECS } from '../../src/cli/specs/remote-file-picker'
+import { REMOTE_FILE_PICKER_HANDLERS } from '../../src/cli/handlers/remote-file-picker'
 import { createServer, type Socket } from 'node:net'
 import { once } from 'node:events'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -106,7 +108,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runPicker = async (extra: string[]) => {
+    const specs = REMOTE_FILE_PICKER_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['file', 'remote-picker', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await REMOTE_FILE_PICKER_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
   return {
+    runPicker,
     run,
     close,
     useLegacyPeer: () => {

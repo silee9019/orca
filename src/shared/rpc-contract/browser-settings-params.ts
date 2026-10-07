@@ -30,6 +30,10 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('browser-use-enabled'), enabled: z.boolean() }),
   z.object({
+    action: z.literal('browser-use-copy-example'),
+    index: z.number().int().min(0).max(2)
+  }),
+  z.object({
     action: z.enum([
       'browser-use-status',
       'browser-use-refresh',
@@ -76,6 +80,7 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserSettingsCommand = z.infer<typeof BrowserSettingsCommand>
 export const BrowserSettingsState = z.object({
+  clipboardCopied: z.boolean().optional(),
   cookiesScrolled: z.boolean().optional(),
   browserUseEnabled: z.boolean().optional(),
   skillDetected: z.boolean().optional(),

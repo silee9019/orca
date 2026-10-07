@@ -20,7 +20,7 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
-  ...['open-link-external', 'open-page-external'].map((action) => ({
+  ...['open-link-external', 'open-page-external', 'open-link', 'inspect'].map((action) => ({
     args: ['context-menu', '--action', action, '--page', 'p1', '--confirm'],
     command: { operation: 'context-menu', page: 'p1', action }
   })),

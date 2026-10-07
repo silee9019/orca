@@ -1,4 +1,4 @@
-import { useCallback, useRef, type RefObject } from 'react'
+import { useCallback, useMemo, type RefObject } from 'react'
 import { browseRuntimeServerDirectory } from '@/runtime/runtime-server-directory-browser'
 import type { DirEntry } from './remote-file-browser-helpers'
 import type { FilesystemPathFlavor } from '../../../../shared/filesystem-entry-types'
@@ -20,14 +20,15 @@ export function useRemoteFileBrowserListing(
   targetId: string | undefined,
   runtimeEnvironmentId: string | undefined
 ): RemoteFileBrowserListing {
-  // Per-picker listing cache keyed by resolved path, so typing issues at most one remote call per committed segment.
-  const listingCacheRef = useRef<Map<string, BrowseResult>>(new Map())
-  // Resolved remote home, cached after the first browseDir('~'); anchors `~`/`~/...` without hardcoding a home dir.
-  const homePathRef = useRef<string | null>(null)
+  const listingState = useMemo(() => {
+    const home: { current: string | null } = { current: null }
+    return { targetId, runtimeEnvironmentId, cache: new Map<string, BrowseResult>(), home }
+  }, [targetId, runtimeEnvironmentId])
+  const { cache: listingCache, home: homePathRef } = listingState
 
   const fetchListing = useCallback(
     async (dirPath: string): Promise<BrowseResult> => {
-      const cached = listingCacheRef.current.get(dirPath)
+      const cached = listingCache.get(dirPath)
       if (cached) {
         return cached
       }
@@ -37,14 +38,14 @@ export function useRemoteFileBrowserListing(
             requireRuntimeEnvironmentId(runtimeEnvironmentId),
             dirPath
           )
-      listingCacheRef.current.set(result.resolvedPath, result)
+      listingCache.set(result.resolvedPath, result)
       // Also key by the requested dirPath (e.g. `~`, relative) so an identical request doesn't re-hit the SSH backend.
       if (dirPath !== result.resolvedPath) {
-        listingCacheRef.current.set(dirPath, result)
+        listingCache.set(dirPath, result)
       }
       return result
     },
-    [runtimeEnvironmentId, targetId]
+    [runtimeEnvironmentId, targetId, listingCache]
   )
 
   return { fetchListing, homePathRef }

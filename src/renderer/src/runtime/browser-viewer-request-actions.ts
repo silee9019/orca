@@ -1,3 +1,4 @@
+import { requestRemoteFilePicker } from './remote-file-picker-request'
 import { requestLinkedBrowser } from './linked-browser-request'
 import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
@@ -51,6 +52,10 @@ export async function applyBrowserViewerRequest(
   if (command.operation === 'remote-pane') {
     const remotePane = await applyRemoteBrowserPaneViewerAction(command, request.expiresAt)
     return { ...base, page: command.page, applied: true, remotePane }
+  }
+  if (command.operation === 'remote-picker') {
+    const remotePicker = await requestRemoteFilePicker(command.command, request.expiresAt)
+    return { ...base, applied: true, remotePicker }
   }
   if (command.operation === 'linked-browser') {
     const linkedBrowser = await requestLinkedBrowser(command.command, request.expiresAt)

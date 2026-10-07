@@ -9,22 +9,24 @@ export const BROWSER_SETTINGS_VIEWER_HANDLERS: Record<string, CommandHandler> = 
   'browser settings viewer': async (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const extra: Record<string, unknown> =
-      action === 'homepage-draft' || action === 'profile-name'
-        ? { value: getRequiredStringFlagAllowingEmpty(ctx.flags, 'value') }
-        : action === 'search-engine'
-          ? { engine: getRequiredStringFlag(ctx.flags, 'value') }
-          : action === 'zoom'
-            ? { value: Number(getRequiredStringFlag(ctx.flags, 'value')) }
-            : action === 'host-select'
-              ? { hostId: getRequiredStringFlag(ctx.flags, 'value') }
-              : action === 'profile-select'
-                ? {
-                    profileId:
-                      getRequiredStringFlag(ctx.flags, 'profile') === 'default'
-                        ? null
-                        : getRequiredStringFlag(ctx.flags, 'profile')
-                  }
-                : {}
+      action === 'browser-use-copy-example'
+        ? { index: Number(getRequiredStringFlag(ctx.flags, 'value')) }
+        : action === 'homepage-draft' || action === 'profile-name'
+          ? { value: getRequiredStringFlagAllowingEmpty(ctx.flags, 'value') }
+          : action === 'search-engine'
+            ? { engine: getRequiredStringFlag(ctx.flags, 'value') }
+            : action === 'zoom'
+              ? { value: Number(getRequiredStringFlag(ctx.flags, 'value')) }
+              : action === 'host-select'
+                ? { hostId: getRequiredStringFlag(ctx.flags, 'value') }
+                : action === 'profile-select'
+                  ? {
+                      profileId:
+                        getRequiredStringFlag(ctx.flags, 'profile') === 'default'
+                          ? null
+                          : getRequiredStringFlag(ctx.flags, 'profile')
+                    }
+                  : {}
     if (
       [
         'profile-status',

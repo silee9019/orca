@@ -1,3 +1,5 @@
+import { useBrowserContextMenuInspect } from './use-browser-context-menu-inspect'
+import { useBrowserContextMenuLinkTab } from './use-browser-context-menu-link-tab'
 import { useBrowserContextMenuClipboard } from './use-browser-context-menu-clipboard'
 import { useBrowserContextMenuExternalOpen } from './use-browser-context-menu-external-open'
 import { useBrowserContextMenuKeyboard } from './use-browser-context-menu-keyboard'
@@ -5,9 +7,7 @@ import { useBrowserContextMenuCommands } from './use-browser-context-menu-comman
 import { windowDipToCssPx } from '@/lib/ui-zoom'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
-import { resolveBrowserSourceUnifiedTab } from '@/lib/browser-workspace-source-resolution'
 import type { BrowserPageContextMenuState } from '../describe-page/browser-page-types'
 
 // `focus:` rather than `focus-visible:` — items are only ever focused programmatically
@@ -32,7 +32,6 @@ export function BrowserPageContextMenu({
   webviewRef: RefObject<Pick<Electron.WebviewTag, 'focus' | 'goBack' | 'goForward'> | null>
   onReload: () => void
 }): React.JSX.Element | null {
-  const createBrowserTab = useAppStore((s) => s.createBrowserTab)
   const [contextMenu, setContextMenu] = useState<BrowserPageContextMenuState | null>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
 
@@ -74,6 +73,8 @@ export function BrowserPageContextMenu({
     }
   }, [webviewRef])
 
+  const inspect = useBrowserContextMenuInspect(browserPageId, closeMenu)
+  const openLink = useBrowserContextMenuLinkTab(contextMenu, closeMenu, worktreeId, browserPageId)
   const copy = useBrowserContextMenuClipboard(contextMenu, closeMenu)
   const openExternal = useBrowserContextMenuExternalOpen(contextMenu, closeMenu)
   const handleMenuKeyDown = useBrowserContextMenuKeyboard(contextMenuRef, contextMenu, closeMenu)
@@ -84,7 +85,9 @@ export function BrowserPageContextMenu({
     ref: contextMenuRef,
     close: closeMenu,
     openExternal,
-    copy
+    copy,
+    openLink,
+    inspect
   })
 
   // Why: ancestor CSS (transform/backdrop-filter) can shift position:fixed even via a body Portal, so measure/correct before paint; also flip on viewport overflow.
@@ -138,26 +141,7 @@ export function BrowserPageContextMenu({
       >
         {contextMenu.linkUrl ? (
           <>
-            <button
-              role="menuitem"
-              className={MENU_ITEM_CLASS}
-              onClick={() => {
-                const sourceUnifiedTab = resolveBrowserSourceUnifiedTab(
-                  useAppStore.getState(),
-                  browserPageId,
-                  worktreeId
-                )
-                createBrowserTab(worktreeId, contextMenu.linkUrl!, {
-                  title: contextMenu.linkUrl!,
-                  activate: false,
-                  ...(sourceUnifiedTab ? { afterTabId: sourceUnifiedTab.id } : {}),
-                  ...(sourceUnifiedTab?.executionHostId
-                    ? { executionHostId: sourceUnifiedTab.executionHostId }
-                    : {})
-                })
-                closeMenu()
-              }}
-            >
+            <button role="menuitem" className={MENU_ITEM_CLASS} onClick={() => openLink()}>
               {translate(
                 'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
                 'Open Link In Orca Browser'
@@ -255,8 +239,7 @@ export function BrowserPageContextMenu({
           role="menuitem"
           className={MENU_ITEM_CLASS}
           onClick={() => {
-            void window.api.browser.openDevTools({ browserPageId })
-            closeMenu()
+            void inspect()
           }}
         >
           {translate('auto.components.browser.pane.BrowserPane.a8f37f70c3', 'Inspect Page')}

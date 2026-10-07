@@ -1,3 +1,4 @@
+import { RemoteFilePickerCommand } from './remote-file-picker-params'
 import { LinkedBrowserCommand } from './linked-browser-params'
 import { FloatingBrowserCommand } from './floating-browser-params'
 import { BrowserContextMenuAction } from './browser-context-menu-params'
@@ -40,6 +41,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('remote-picker'), command: RemoteFilePickerCommand }),
   z.object({ viewer, operation: z.literal('linked-browser'), command: LinkedBrowserCommand }),
   z.object({ viewer, operation: z.literal('floating-browser'), command: FloatingBrowserCommand }),
   BrowserDocumentViewerParams,

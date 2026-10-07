@@ -37,6 +37,7 @@ export type RemoteFileBrowserPathPreview = {
   preview: PreviewState | null
   handleInputChange: (raw: string) => void
   handleInputPaste: (e: ClipboardEvent<HTMLInputElement>) => void
+  handlePastedText: (raw: string) => void
   /** Escape: drop the preview and any pending resolve, keeping the committed-prefix marker. */
   discardPreview: () => void
   /** Navigation: drop the preview, pending resolve, and the committed-prefix fast-path marker. */
@@ -170,15 +171,8 @@ export function useRemoteFileBrowserPathPreview({
     [clearFileHint, preview, resolvePathInput, pathFlavor, setFilter]
   )
 
-  const handleInputPaste = useCallback(
-    (e: ClipboardEvent<HTMLInputElement>) => {
-      if (e.defaultPrevented) {
-        return
-      }
-      if (shouldDeferRemoteFileBrowserPasteResolve(e.clipboardData.getData('text/plain'))) {
-        return
-      }
-      // Paste resolves immediately (no debounce), but defer a tick so onChange has applied the pasted value to filter.
+  const schedulePasteResolve = useCallback(
+    (readValue: () => string) => {
       if (pasteResolveTimerRef.current) {
         clearTimeout(pasteResolveTimerRef.current)
       }
@@ -188,19 +182,41 @@ export function useRemoteFileBrowserPathPreview({
           clearTimeout(debounceTimerRef.current)
           debounceTimerRef.current = null
         }
-        const value = inputRef.current?.value ?? ''
+        const value = readValue()
         if (!isRemoteFileBrowserPathResolveTextTooLarge(value) && isPathMode(value, pathFlavor)) {
-          resolvePathInput(value)
+          void resolvePathInput(value)
         }
       }, 0)
     },
-    [resolvePathInput, pathFlavor, inputRef]
+    [resolvePathInput, pathFlavor]
+  )
+  const handleInputPaste = useCallback(
+    (event: ClipboardEvent<HTMLInputElement>) => {
+      if (
+        event.defaultPrevented ||
+        shouldDeferRemoteFileBrowserPasteResolve(event.clipboardData.getData('text/plain'))
+      ) {
+        return
+      }
+      schedulePasteResolve(() => inputRef.current?.value ?? '')
+    },
+    [schedulePasteResolve, inputRef]
+  )
+  const handlePastedText = useCallback(
+    (raw: string) => {
+      handleInputChange(raw)
+      if (!shouldDeferRemoteFileBrowserPasteResolve(raw)) {
+        schedulePasteResolve(() => raw)
+      }
+    },
+    [handleInputChange, schedulePasteResolve]
   )
 
   return {
     preview,
     handleInputChange,
     handleInputPaste,
+    handlePastedText,
     discardPreview,
     resetPreviewForNavigation,
     cancelPreviewWork
