@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BrowserAnnotationTrayState } from './rpc-contract/browser-annotation-tray-params'
 import { BrowserAddressState } from './rpc-contract/browser-address-params'
 import { BrowserMarkupEditorState } from './rpc-contract/browser-markup-editor-params'
 import type { BrowserViewerCommand } from './rpc-contract/browser-viewer-params'
@@ -13,6 +14,7 @@ export const BrowserViewerResultSchema = z.object({
   persisted: z.literal(false),
   rendered: z.literal(false),
   page: z.string().optional(),
+  annotationTray: BrowserAnnotationTrayState.optional(),
   address: BrowserAddressState.optional(),
   markupEditor: BrowserMarkupEditorState.optional(),
   markup: z

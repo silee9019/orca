@@ -3,6 +3,13 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['browser', 'annotation', 'tray'],
+    summary: 'Use the native host viewer annotation tray and verified clipboard copy',
+    usage:
+      'orca browser annotation tray --viewer host --page <id> --action <open|close|copy|clear|send-menu-open|send-menu-close|status> [--confirm] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'confirm']
+  },
+  {
     path: ['browser', 'address'],
     summary: 'Edit the host viewer address bar; submit/select report navigation requested only',
     usage:

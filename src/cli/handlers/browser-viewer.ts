@@ -61,6 +61,18 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 }
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser annotation tray': (ctx) => {
+    const action = getRequiredStringFlag(ctx.flags, 'action')
+    if (action === 'clear') {
+      confirmed(ctx)
+    }
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      operation: 'annotation-tray',
+      action
+    })
+  },
   'browser address': (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     return runViewerCommand(ctx, {

@@ -1,3 +1,4 @@
+import { requestBrowserAnnotationTray } from './browser-annotation-tray-request'
 import { requestBrowserAddress } from './browser-address-request'
 import {
   browserViewportPresetToOverride,
@@ -139,6 +140,14 @@ export async function applyBrowserViewerRequest(
       preset: current?.viewportPresetId ?? null,
       applied: accepted && current !== null && current?.viewportPresetId === command.preset
     }
+  }
+  if (command.operation === 'annotation-tray') {
+    const annotationTray = await requestBrowserAnnotationTray(
+      page.id,
+      command.action,
+      request.expiresAt
+    )
+    return { ...base, page: page.id, applied: true, annotationTray }
   }
   if (command.operation === 'address') {
     const address = await requestBrowserAddress(page.id, command.command, request.expiresAt)

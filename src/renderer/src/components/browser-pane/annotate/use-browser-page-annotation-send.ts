@@ -1,3 +1,4 @@
+import { writeVerifiedClipboardText } from '@/runtime/clipboard-text-write'
 import {
   useCallback,
   useEffect,
@@ -39,6 +40,7 @@ export function useBrowserPageAnnotationSend({
   handleAnnotationBannerSendOpenChange: (open: boolean) => void
   handleAnnotationTraySendOpenChange: (open: boolean) => void
   handleCopyBrowserAnnotations: () => void
+  copyBrowserAnnotationsVerified: (stillCurrent: () => boolean) => Promise<boolean>
   handleClearBrowserAnnotations: () => void
   handleDeleteBrowserAnnotation: (annotationId: string) => void
   handleUpdateBrowserAnnotation: (
@@ -97,16 +99,34 @@ export function useBrowserPageAnnotationSend({
     }
   }, [])
 
+  const showCopiedFeedback = useCallback((): void => {
+    recordFeatureInteraction('browser-annotations')
+    clearTimeout(annotationCopyTimerRef.current)
+    setBrowserAnnotationsCopied(true)
+    annotationCopyTimerRef.current = setTimeout(() => setBrowserAnnotationsCopied(false), 1400)
+  }, [recordFeatureInteraction])
+
   const handleCopyBrowserAnnotations = useCallback((): void => {
     if (!copyPrompt) {
       return
     }
     void window.api.ui.writeClipboardText(copyPrompt)
-    recordFeatureInteraction('browser-annotations')
-    clearTimeout(annotationCopyTimerRef.current)
-    setBrowserAnnotationsCopied(true)
-    annotationCopyTimerRef.current = setTimeout(() => setBrowserAnnotationsCopied(false), 1400)
-  }, [copyPrompt, recordFeatureInteraction])
+    showCopiedFeedback()
+  }, [copyPrompt, showCopiedFeedback])
+
+  const copyBrowserAnnotationsVerified = useCallback(
+    async (stillCurrent: () => boolean): Promise<boolean> => {
+      if (!copyPrompt || !(await writeVerifiedClipboardText(copyPrompt))) {
+        return false
+      }
+      if (!stillCurrent() || browserAnnotationsRef.current !== browserAnnotations) {
+        return false
+      }
+      showCopiedFeedback()
+      return true
+    },
+    [copyPrompt, browserAnnotations, showCopiedFeedback]
+  )
 
   const handleBrowserAnnotationsSentToAgent = useCallback((): void => {
     recordFeatureInteraction('browser-annotations-sent-to-agent')
@@ -223,6 +243,7 @@ export function useBrowserPageAnnotationSend({
     handleAnnotationBannerSendOpenChange,
     handleAnnotationTraySendOpenChange,
     handleCopyBrowserAnnotations,
+    copyBrowserAnnotationsVerified,
     handleClearBrowserAnnotations,
     handleDeleteBrowserAnnotation,
     handleUpdateBrowserAnnotation,

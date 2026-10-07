@@ -1,3 +1,4 @@
+import { writeVerifiedClipboardText } from '@/runtime/clipboard-text-write'
 import { useCallback, useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react'
 import { BROWSER_GRAB_COMMAND_EVENT, type BrowserGrabEvent } from '@/runtime/browser-grab-request'
 import type { BrowserGrabPayload } from '../../../../../shared/browser-grab-types'
@@ -57,8 +58,7 @@ export function useBrowserGrabClipboard({
         } else {
           const text = formatGrabPayloadAsText(payload)
           if (verified) {
-            await window.api.ui.writeClipboardText(text)
-            if ((await window.api.ui.readClipboardText()) !== text) {
+            if (!(await writeVerifiedClipboardText(text))) {
               return false
             }
           } else {

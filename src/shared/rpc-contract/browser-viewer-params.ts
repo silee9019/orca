@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BrowserAnnotationTrayAction } from './browser-annotation-tray-params'
 import { BrowserAddressCommand } from './browser-address-params'
 import { BrowserMarkupEditorCommand } from './browser-markup-editor-params'
 import { BROWSER_VIEWPORT_PRESETS } from '../browser-viewport-presets'
@@ -29,6 +30,12 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('annotation-tray'),
+    page,
+    action: BrowserAnnotationTrayAction
+  }),
   z.object({ viewer, operation: z.literal('address'), page, command: BrowserAddressCommand }),
   z.object({
     viewer,

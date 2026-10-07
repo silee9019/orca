@@ -20,6 +20,20 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['open', 'close', 'copy', 'clear', 'send-menu-open', 'send-menu-close', 'status'].map(
+    (action) => ({
+      args: [
+        'annotation',
+        'tray',
+        '--page',
+        'p1',
+        '--action',
+        action,
+        ...(action === 'clear' ? ['--confirm'] : [])
+      ],
+      command: { operation: 'annotation-tray', page: 'p1', action }
+    })
+  ),
   ...['open', 'dismiss', 'submit', 'status', 'next', 'previous'].map((action) => ({
     args: ['address', '--action', action, '--page', 'p1'],
     command: { operation: 'address', page: 'p1', command: { action } }
@@ -142,6 +156,7 @@ it.each([
 )
 
 it.each([
+  ['annotation', 'tray', '--page', 'p1', '--action', 'clear', '--viewer', 'host'],
   ['address', '--action', 'draft', '--page', 'p1', '--viewer', 'host'],
   ['address', '--action', 'select', '--page', 'p1', '--viewer', 'host', '--index', '-1'],
   ['address', '--action', 'invalid', '--page', 'p1', '--viewer', 'host'],

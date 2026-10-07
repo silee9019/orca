@@ -39,6 +39,9 @@ const fixture = vi.hoisted(() => {
   }
   return {
     state,
+    annotationTray: vi
+      .fn()
+      .mockResolvedValue({ noteCount: 1, open: true, copied: true, sendMenuOpen: false }),
     address: vi.fn().mockResolvedValue({
       value: 'review',
       open: true,
@@ -71,6 +74,9 @@ const fixture = vi.hoisted(() => {
     webviews: new Map<string, { getZoomLevel: () => number }>()
   }
 })
+vi.mock('./browser-annotation-tray-request', () => ({
+  requestBrowserAnnotationTray: fixture.annotationTray
+}))
 vi.mock('./browser-address-request', () => ({ requestBrowserAddress: fixture.address }))
 vi.mock('./browser-markup-editor-request', () => ({
   requestBrowserMarkupEditor: fixture.markupEditor
@@ -379,4 +385,15 @@ it('routes address editing to the selected host page owner', async () => {
     { action: 'draft', text: 'review' },
     expect.any(Number)
   )
+})
+
+it('routes annotation tray copy to the native owner and returns only its acknowledged state', async () => {
+  expect(
+    await request({ viewer: 'host', operation: 'annotation-tray', page: 'page-1', action: 'copy' })
+  ).toMatchObject({
+    applied: true,
+    rendered: false,
+    annotationTray: { copied: true, noteCount: 1 }
+  })
+  expect(fixture.annotationTray).toHaveBeenCalledWith('page-1', 'copy', expect.any(Number))
 })
