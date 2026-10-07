@@ -44,6 +44,8 @@ export type WorktreeCardMetaBadgesRootProps = WorktreeCardMetaBadgesProps &
   React.HTMLAttributes<HTMLDivElement>
 
 export type WorktreeCardDetailsHoverProps = WorktreeCardMetaBadgesProps & {
+  linkedBrowserWorkspaceId?: string
+  linkedBrowserSurface?: 'card-identity' | 'card-details' | 'card-title'
   children: React.ReactElement
   branchName?: string
   workspaceTitle?: string
@@ -57,10 +59,10 @@ export type WorktreeCardDetailsHoverProps = WorktreeCardMetaBadgesProps & {
   onEditIssue?: (event: React.MouseEvent) => void
   onEditComment?: (event: React.MouseEvent) => void
   onOpenGitHubIssueInOrca?: (event: React.MouseEvent) => void
-  onOpenIssueInBrowser?: (url: string) => void
+  onOpenIssueInBrowser?: (url: string) => void | Promise<boolean>
   onOpenLinearIssueInOrca?: (event: React.MouseEvent) => void
   onOpenReviewInOrca?: (event: React.MouseEvent) => void
-  onOpenReviewInBrowser?: (url: string) => void
+  onOpenReviewInBrowser?: (url: string) => void | Promise<boolean>
   onUnlinkReview?: () => void
   onOpenAutomation?: (event: React.MouseEvent) => void
   onOpenAutomationRun?: (event: React.MouseEvent) => void

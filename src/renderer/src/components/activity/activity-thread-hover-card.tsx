@@ -1,3 +1,4 @@
+import { useLinkedBrowserRequest } from '../sidebar/use-linked-browser-request'
 import React, { useCallback } from 'react'
 import { ExternalLink, MonitorUp, Pencil, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
@@ -105,8 +106,6 @@ function ActivityThreadHoverCardContent({
     prDisplay: review.prDisplay
   })
 
-  const hoverDetailsOpen = detailsHoverControl.hoverOpen
-
   useWorktreeCardLifecycleEffects({
     worktree,
     repo: repo ?? undefined,
@@ -121,7 +120,7 @@ function ActivityThreadHoverCardContent({
     fetchHostedReviewForBranch: foundation.fetchHostedReviewForBranch,
     shouldRefreshHostedReview: false,
     newCardStyle: true,
-    hoverDetailsOpen,
+    hoverDetailsOpen: detailsHoverControl.hoverOpen,
     showIssue: true,
     issueCacheKey: review.issueCacheKey,
     fetchIssue: foundation.fetchIssue,
@@ -161,6 +160,16 @@ function ActivityThreadHoverCardContent({
     settings: foundation.settings
   })
 
+  useLinkedBrowserRequest({
+    workspaceId: worktree.id,
+    surface: 'activity',
+    open: detailsHoverControl.hoverOpen,
+    issue: secondary.hoverIssue,
+    review: secondary.hoverReview,
+    closeHover: detailsHoverControl.closeHover,
+    openIssue: secondary.handleOpenIssueInBrowser,
+    openReview: secondary.handleOpenReviewInBrowser
+  })
   const copyLinkedWorkItemLink = useCallback(async (url: string, label: string) => {
     try {
       await window.api.ui.writeClipboardText(url)

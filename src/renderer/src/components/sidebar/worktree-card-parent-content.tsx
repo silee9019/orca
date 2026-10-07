@@ -77,6 +77,8 @@ export function WorktreeCardParentContent({
   const identityContentWithHover =
     hasHoverDetails && !titleRenaming ? (
       <WorktreeCardDetailsHover
+        linkedBrowserWorkspaceId={worktree.id}
+        linkedBrowserSurface="card-identity"
         issue={hoverIssue}
         linearIssue={hoverLinearIssue}
         jiraIssue={hoverJiraIssue}
