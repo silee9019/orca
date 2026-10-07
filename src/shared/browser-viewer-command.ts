@@ -1,3 +1,6 @@
+import { BrowserClientMarkupReceipt } from './rpc-contract/browser-client-markup-params'
+import { BrowserFeatureWallState } from './rpc-contract/browser-feature-wall-params'
+import { BrowserTakeBackState } from './rpc-contract/browser-take-back-params'
 import { BrowserObservationState } from './rpc-contract/browser-observation-params'
 import { ComputerPermissionsViewerState } from './rpc-contract/computer-permissions-viewer-params'
 import { BrowserSshRouteReceipt } from './rpc-contract/browser-ssh-route-params'
@@ -32,6 +35,9 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  clientMarkup: BrowserClientMarkupReceipt.optional(),
+  browserFeatureWall: BrowserFeatureWallState.optional(),
+  takeBack: BrowserTakeBackState.optional(),
   sshRoute: BrowserSshRouteReceipt.optional(),
   viewer: z.literal('host'),
   viewerId: z.number().int(),

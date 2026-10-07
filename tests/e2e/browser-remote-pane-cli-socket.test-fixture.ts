@@ -1,3 +1,5 @@
+import { BROWSER_TAKE_BACK_COMMAND_SPECS } from '../../src/cli/specs/browser-take-back'
+import { BROWSER_TAKE_BACK_HANDLERS } from '../../src/cli/handlers/browser-take-back'
 import { BROWSER_OBSERVATION_COMMAND_SPECS } from '../../src/cli/specs/browser-observation'
 import { BROWSER_OBSERVATION_HANDLERS } from '../../src/cli/handlers/browser-observation'
 import { BROWSER_WEBAUTHN_DIALOG_COMMAND_SPECS } from '../../src/cli/specs/browser-webauthn-dialog'
@@ -230,7 +232,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runTakeBack = async (extra: string[]) => {
+    const specs = BROWSER_TAKE_BACK_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'take-back', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_TAKE_BACK_HANDLERS['browser take-back']({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
   return {
+    runTakeBack,
     runObservation,
     runWebAuthnDialog,
     runFailure,

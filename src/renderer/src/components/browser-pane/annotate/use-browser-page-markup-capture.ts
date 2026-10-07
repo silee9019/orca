@@ -1,4 +1,7 @@
-import { useBrowserMarkupCommands } from './use-browser-markup-commands'
+import {
+  useBrowserMarkupCommands,
+  type BrowserMarkupAdmission
+} from './use-browser-markup-commands'
 import { useCallback, type MutableRefObject } from 'react'
 import {
   deliverMarkupToClipboard,
@@ -12,7 +15,8 @@ import {
 
 export function useBrowserPageMarkupCapture(
   webviewRef: MutableRefObject<Electron.WebviewTag | null>,
-  owner?: { page: string; active: boolean }
+  owner?: { page: string; active: boolean },
+  admission?: BrowserMarkupAdmission
 ): MarkupModeController {
   const mode = useMarkupMode({
     getCaptureContext: useCallback((): MarkupCaptureContext | null => {
@@ -34,6 +38,6 @@ export function useBrowserPageMarkupCapture(
     onDeliver: deliverMarkupToClipboard,
     onDeliverVerified: deliverMarkupToClipboardVerified
   })
-  useBrowserMarkupCommands(owner?.page ?? '', owner?.active ?? false, mode)
+  useBrowserMarkupCommands(owner?.page ?? '', owner?.active ?? false, mode, admission)
   return { ...mode, commandOwner: owner }
 }

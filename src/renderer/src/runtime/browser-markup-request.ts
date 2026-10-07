@@ -1,9 +1,12 @@
+import type { BrowserClientMarkupTarget } from '../../../shared/rpc-contract/browser-client-markup-params'
 export type BrowserMarkupState = {
   state: 'idle' | 'capturing' | 'drawing' | 'composing'
+  clientTarget?: BrowserClientMarkupTarget
   hasImage: boolean
 }
 export type BrowserMarkupEvent = {
   page: string
+  clientTarget?: BrowserClientMarkupTarget
   action: 'start' | 'cancel' | 'status'
   expiresAt: number
   offer: (active: boolean, execute: () => void) => void
@@ -20,7 +23,8 @@ declare global {
 export function requestBrowserMarkup(
   page: string,
   action: BrowserMarkupEvent['action'],
-  expiresAt: number
+  expiresAt: number,
+  clientTarget?: BrowserClientMarkupTarget
 ): Promise<BrowserMarkupState> {
   return new Promise((resolve, reject) => {
     const offers: (() => void)[] = []
@@ -46,6 +50,7 @@ export function requestBrowserMarkup(
       new CustomEvent(BROWSER_MARKUP_COMMAND_EVENT, {
         detail: {
           page,
+          clientTarget,
           action,
           expiresAt,
           isSettled: () => settled,

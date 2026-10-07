@@ -1,3 +1,5 @@
+import { applyBrowserClientMarkupRequest } from './browser-client-markup-request'
+import { requestBrowserTakeBack } from './browser-take-back-request'
 import { requestBrowserObservation } from './browser-observation-request'
 import { applyComputerPermissionsViewerAction } from './computer-permissions-viewer-actions'
 import { requestBrowserWebAuthnDialog } from './browser-webauthn-dialog-request'
@@ -16,6 +18,8 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'client-markup'
+        | 'take-back'
         | 'observe-page'
         | 'computer-permissions'
         | 'load-failure'
@@ -31,6 +35,13 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'client-markup') {
+    return await applyBrowserClientMarkupRequest(command, expiresAt)
+  }
+  if (command.operation === 'take-back') {
+    const takeBack = await requestBrowserTakeBack(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, takeBack }
+  }
   if (command.operation === 'observe-page') {
     const observation = await requestBrowserObservation(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, observation }

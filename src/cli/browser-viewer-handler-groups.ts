@@ -1,6 +1,16 @@
+import { BROWSER_FEATURE_WALL_HANDLER_GROUPS } from './browser-feature-wall-handler-groups'
+import { BROWSER_TAKE_BACK_HANDLER_GROUPS } from './browser-take-back-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...BROWSER_FEATURE_WALL_HANDLER_GROUPS,
+  ...BROWSER_TAKE_BACK_HANDLER_GROUPS,
+  {
+    name: 'browser-client-markup',
+    keys: ['browser client-markup'],
+    load: async () =>
+      (await import('./handlers/browser-client-markup.js')).BROWSER_CLIENT_MARKUP_HANDLERS
+  },
   {
     name: 'browser-ssh-route',
     keys: ['browser ssh-route'],

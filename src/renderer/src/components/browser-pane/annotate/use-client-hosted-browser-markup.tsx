@@ -1,3 +1,6 @@
+import { useAppStore } from '@/store'
+import { findPage } from '@/store/slices/browser-page-records'
+import { isBrowserClientMarkupTargetCurrent } from '@/runtime/browser-client-markup-request'
 import { useEffect, type RefObject } from 'react'
 import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
 import { MarkupDrawButton } from './MarkupDrawButton'
@@ -21,8 +24,35 @@ export function useClientHostedBrowserMarkup({
   unavailable: boolean
   showFailureOverlay: boolean
 }) {
-  const markup = useBrowserPageMarkupCapture(webviewRef)
   const disabled = !isActive || placement === null || unavailable || showFailureOverlay
+  const page = useAppStore((state) => findPage(state.browserPagesByWorkspace, browserPageId))
+  const handle = useAppStore((state) => state.remoteBrowserPageHandlesByPageId[browserPageId])
+  const target =
+    page && handle && placement
+      ? {
+          worktreeId: page.worktreeId,
+          page: browserPageId,
+          environmentId: runtimeEnvironmentId,
+          remotePageId: handle.remotePageId,
+          browserHostClientId: placement.browserHostClientId,
+          browserHostGeneration: placement.browserHostGeneration,
+          pageHostGeneration: placement.pageHostGeneration
+        }
+      : null
+  const guest = webviewRef.current
+  const markup = useBrowserPageMarkupCapture(
+    webviewRef,
+    { page: browserPageId, active: !disabled && target !== null },
+    target
+      ? {
+          target,
+          isCurrent: () =>
+            !disabled &&
+            webviewRef.current === guest &&
+            isBrowserClientMarkupTargetCurrent(target, placement)
+        }
+      : undefined
+  )
   const showOverlay = !disabled && markup.isActive && markup.baseImage !== null
   const browserHostClientId = placement?.browserHostClientId
   const browserHostGeneration = placement?.browserHostGeneration

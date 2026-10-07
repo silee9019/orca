@@ -1,3 +1,9 @@
+import {
+  BrowserClientMarkupTarget,
+  BrowserClientMarkupAction
+} from './browser-client-markup-params'
+import { BrowserFeatureWallCommand } from './browser-feature-wall-params'
+import { BrowserTakeBackCommand } from './browser-take-back-params'
 import { BrowserObservationCommand } from './browser-observation-params'
 import { ComputerPermissionsViewerCommand } from './computer-permissions-viewer-params'
 import { BrowserSshRouteTarget } from './browser-ssh-route-params'
@@ -56,6 +62,18 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('client-markup'),
+    target: BrowserClientMarkupTarget,
+    action: BrowserClientMarkupAction
+  }),
+  z.object({ viewer, operation: z.literal('take-back'), command: BrowserTakeBackCommand }),
+  z.object({
+    viewer,
+    operation: z.literal('browser-feature-wall'),
+    command: BrowserFeatureWallCommand
+  }),
   z.object({ viewer, operation: z.literal('observe-page'), command: BrowserObservationCommand }),
   z.object({
     viewer,
