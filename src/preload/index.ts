@@ -1,5 +1,6 @@
 import { registerNotificationSoundCliBridge } from './api/notification-sound-cli-bridge'
 import { accountViewerApi } from './api/account-viewer-bridge'
+import { installAppLifecycleControl } from './app-lifecycle-control'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { PreloadApi } from './api-types'
 import {
@@ -89,6 +90,7 @@ import { mobileApi } from './api/mobile-bridge'
 import { agentStatusApi } from './api/agent-status-bridge'
 import { speechApi } from './api/speech-bridge'
 
+installAppLifecycleControl()
 installNativeFileDropHandlers()
 installBrowserFindListener()
 registerNotificationSoundCliBridge()

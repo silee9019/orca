@@ -16,6 +16,16 @@ import { USAGE_METHODS } from './usage'
 import { RATE_LIMIT_METHODS } from './rate-limits'
 import { ORCA_PROFILE_METHODS } from './orca-profiles'
 import { SPARSE_PRESET_METHODS } from './sparse-presets'
+import { DESKTOP_FEEDBACK_METHODS } from './desktop-feedback'
+import { APP_LIFECYCLE_METHODS } from './app-lifecycle'
+import { DESKTOP_UPDATER_METHODS } from './desktop-updater'
+import { DESKTOP_CLI_METHODS } from './desktop-cli'
+import { DESKTOP_SUPPORT_METHODS } from './desktop-support'
+import { DESKTOP_DIAGNOSTICS_METHODS } from './desktop-diagnostics'
+import { DESKTOP_PET_METHODS } from './desktop-pet'
+import { DESKTOP_STAR_PROMPT_METHODS } from './desktop-star-prompt'
+import { DESKTOP_SHELL_METHODS } from './desktop-shell'
+import { APP_VAULT_METHODS } from './app-vault'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -89,6 +99,16 @@ export const ALL_RPC_METHODS = [
   ...OS_PERMISSION_METHODS,
   ...ORCA_PROFILE_METHODS,
   ...SPARSE_PRESET_METHODS,
+  ...DESKTOP_FEEDBACK_METHODS,
+  ...APP_LIFECYCLE_METHODS,
+  ...DESKTOP_UPDATER_METHODS,
+  ...DESKTOP_CLI_METHODS,
+  ...DESKTOP_SUPPORT_METHODS,
+  ...DESKTOP_DIAGNOSTICS_METHODS,
+  ...DESKTOP_PET_METHODS,
+  ...DESKTOP_STAR_PROMPT_METHODS,
+  ...DESKTOP_SHELL_METHODS,
+  ...APP_VAULT_METHODS,
   ...STATUS_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,

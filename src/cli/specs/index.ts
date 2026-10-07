@@ -23,6 +23,7 @@ import { AUTOMATION_EXTENSION_COMMAND_SPECS } from './automation-extensions'
 import { MANAGED_SKILL_COMMAND_SPECS } from './skills-managed'
 import { PLUGIN_MANAGEMENT_COMMAND_SPECS } from './plugins-management'
 import { PLUGIN_COMMAND_SPECS } from './plugins'
+import { APP_LIFECYCLE_COMMAND_SPECS } from './app-lifecycle'
 import type { CommandSpec } from '../args'
 import { ACCOUNT_COMMAND_SPECS } from './account'
 import { BROWSER_ADVANCED_COMMAND_SPECS } from './browser-advanced'
@@ -70,6 +71,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...SKILL_CLOUD_COMMAND_SPECS,
   ...PLUGIN_MANAGEMENT_COMMAND_SPECS,
   ...PLUGIN_COMMAND_SPECS,
+  ...APP_LIFECYCLE_COMMAND_SPECS,
   ...CORE_COMMAND_SPECS,
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,

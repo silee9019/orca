@@ -18,7 +18,7 @@ it('starts a fixture sign-in, cancels its signal and preserves sign-out and muta
   const mutation = vi.fn()
   const beforeSignOut = vi.fn()
   fixtures.connect.mockImplementation(
-    (_path: string, signal: AbortSignal) =>
+    (_path: string, { signal }: { signal: AbortSignal }) =>
       new Promise((resolve) => {
         signal.addEventListener('abort', () => resolve({ status: 'cancelled' }), { once: true })
       })

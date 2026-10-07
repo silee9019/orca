@@ -1,3 +1,4 @@
+import { APP_LIFECYCLE_HANDLER_GROUPS } from './app-lifecycle-handler-groups'
 import { SETTINGS_HANDLER_GROUPS } from './settings-handler-groups'
 import { TCC_THRESHOLD_OBSERVE_HANDLER_GROUPS } from './tcc-threshold-observe-handler-groups'
 import { CODEX_ACCOUNT_OBSERVE_HANDLER_GROUPS } from './codex-account-observe-handler-groups'
@@ -37,6 +38,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   ...SETTINGS_HANDLER_GROUPS,
   ...EXTENSIONS_HANDLER_GROUPS,
+  ...APP_LIFECYCLE_HANDLER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],

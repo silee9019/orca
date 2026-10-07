@@ -12,6 +12,7 @@ export const CLI_COMMAND_NAMES = [
   'secrets',
   'agent',
   'agent-context',
+  'app',
   'artifacts',
   'automations',
   'back',

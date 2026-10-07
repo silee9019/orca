@@ -96,7 +96,8 @@ function loadRegistryAndSchemas(modules) {
       format: 'cjs',
       outfile,
       logLevel: 'error',
-      packages: 'external'
+      packages: 'external',
+      external: ['*?asset', '*?asset&asarUnpack']
     })
     const loaded = createRequire(import.meta.url)(outfile)
     return { methods: loaded.ALL_RPC_METHODS, schemaModules: loaded.SCHEMA_MODULES }
