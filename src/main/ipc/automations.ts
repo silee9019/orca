@@ -1,3 +1,4 @@
+import { setAutomationExtensionsForRpc } from '../runtime/rpc/methods/automation-extensions'
 import { ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type { AutomationService } from '../automations/service'
@@ -71,6 +72,11 @@ export function registerAutomationHandlers(store: Store, service: AutomationServ
     registry: { getSshTargets: () => store.getSshTargets() },
     scheduler: probeScheduler,
     cache: managerCache
+  })
+  setAutomationExtensionsForRpc({
+    external: scopedExternal,
+    precheck: service.runPrecheck.bind(service),
+    snapshotName: store.snapshotAutomationRunWorkspaceDisplayName.bind(store)
   })
   // Why: Orca automation CRUD now arrives over the local runtime RPC surface,
   // so the runtime methods take the lease through this hook instead of an arm here.

@@ -1,3 +1,4 @@
+import { setSkillUpdatesForRpc } from '../runtime/rpc/methods/skills-lifecycle'
 import { app, BrowserWindow } from 'electron'
 import type { Store } from '../persistence'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
@@ -63,6 +64,8 @@ export function registerSkillsHandlers(store: Store, runtime?: OrcaRuntimeServic
       }
     }
   })
+
+  setSkillUpdatesForRpc({ runner, inventory: scanInventory })
 
   handleMainWindowSkillIpc(
     'skills:discover',

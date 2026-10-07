@@ -4,8 +4,12 @@ import { normalizeSparseDirectories } from '../ipc/sparse-checkout-directories'
 import type { RuntimeStore } from './runtime-store-contract'
 
 type RuntimeRepositorySparsePresetDependencies = {
-  getStore: () => RuntimeStore | null
+  getStore: () => Pick<
+    RuntimeStore,
+    'getSparsePresets' | 'saveSparsePreset' | 'removeSparsePreset'
+  > | null
   resolveRepo: (selector: string) => Promise<Repo>
+  changed?: (repoId: string) => void
 }
 
 function normalizeName(name: string): string {
@@ -62,7 +66,7 @@ export class RuntimeRepositorySparsePresets {
     const existing = args.id
       ? store.getSparsePresets(repo.id).find((preset) => preset.id === args.id)
       : undefined
-    return store.saveSparsePreset({
+    const saved = store.saveSparsePreset({
       id: existing?.id ?? randomUUID(),
       repoId: repo.id,
       name,
@@ -70,5 +74,20 @@ export class RuntimeRepositorySparsePresets {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now
     })
+    this.deps.changed?.(repo.id)
+    return saved
+  }
+  async remove(repoSelector: string, presetId: string) {
+    const store = this.deps.getStore()
+    if (!store?.getSparsePresets || !store.removeSparsePreset) {
+      throw new Error('runtime_unavailable')
+    }
+    const repo = await this.deps.resolveRepo(repoSelector)
+    if (!store.getSparsePresets(repo.id).some((preset) => preset.id === presetId)) {
+      throw new Error('Sparse preset not found.')
+    }
+    store.removeSparsePreset(repo.id, presetId)
+    this.deps.changed?.(repo.id)
+    return { presets: store.getSparsePresets(repo.id) }
   }
 }

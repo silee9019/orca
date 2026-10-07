@@ -42,7 +42,7 @@ export class ProfileAuthControls {
     const pending = new AbortController()
     this.pending = pending
     this.outcome = null
-    void connectCurrentOrcaProfile(this.options.userDataPath, pending.signal)
+    void connectCurrentOrcaProfile(this.options.userDataPath, { signal: pending.signal })
       .then((result) => {
         this.outcome = result.status
         if (result.status === 'connected') {

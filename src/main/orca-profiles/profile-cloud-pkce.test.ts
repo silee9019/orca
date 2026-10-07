@@ -67,7 +67,7 @@ async function startedFlow(signal?: AbortSignal): Promise<{
   redirectUri: string
   state: string
 }> {
-  const flow = beginOrcaCloudPkceFlow(config, 'local-default', signal)
+  const flow = beginOrcaCloudPkceFlow(config, 'local-default', { signal })
   await vi.waitFor(() => expect(openExternalMock).toHaveBeenCalledTimes(1))
   const authUrl = new URL(String(openExternalMock.mock.calls[0]?.[0]))
   const nonce = authUrl.searchParams.get('nonce')
@@ -203,5 +203,25 @@ describe('Orca cloud PKCE flow', () => {
     )
     expect(secondResponse.statusCode).toBe(200)
     await expect(second).resolves.toMatchObject({ code: 'second-code', state: secondState })
+  })
+  it('returns a manual authorization URL and closes the isolated loopback on cancellation', async () => {
+    const controller = new AbortController()
+    const authorize = vi.fn(async (_url: string) => {})
+    const flow = beginOrcaCloudPkceFlow(config, 'fixture-cli-profile', {
+      signal: controller.signal,
+      authorize
+    })
+    const outcome = flow.catch((error: unknown) => error)
+    await vi.waitFor(() => expect(authorize).toHaveBeenCalledOnce())
+    expect(openExternalMock).not.toHaveBeenCalled()
+    const url = new URL(String(authorize.mock.calls[0]?.[0]))
+    const callback = url.searchParams.get('redirect_uri')
+    if (!callback) {
+      throw new Error('Missing callback URL')
+    }
+    expect(new URL(callback).hostname).toBe('127.0.0.1')
+    controller.abort()
+    await expect(outcome).resolves.toMatchObject({ message: 'orca_cloud_auth_denied' })
+    await expect(readHttp(callback)).rejects.toThrow()
   })
 })

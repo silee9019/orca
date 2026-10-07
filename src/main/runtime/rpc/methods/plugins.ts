@@ -1,3 +1,10 @@
+import { PLUGIN_MANAGEMENT_METHODS } from './plugins-management'
+import type { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+import {
+  PluginInvokePanelActionParams,
+  PluginInspectPanelParams
+} from '../../../../shared/rpc-contract/plugins-cli-params'
 import { defineMethod, type RpcContext } from '../core'
 import type { PluginPanelEntry } from '../../../../shared/plugins/plugin-panel-bridge'
 import { listPluginsForClients } from '../../../plugins/plugin-client-list'
@@ -53,7 +60,7 @@ async function listForRpc(): Promise<PluginListEntry[]> {
   return listPluginsForClients(requirePluginService())
 }
 
-function rpcPanelOwner(context: RpcContext): string {
+function rpcPanelOwner(context: Pick<RpcContext, 'connectionId' | 'clientId'>): string {
   // Why: the bearer session must not cross paired-client connections even
   // when two sockets authenticate as the same device.
   return `runtime:${context.connectionId ?? context.clientId ?? 'local'}`
@@ -65,7 +72,68 @@ function bindRpcPanelOwner(service: PluginService, context: RpcContext): string 
   return ownerKey
 }
 
+async function withPluginPanel<T>(
+  service: PluginService,
+  params: z.infer<typeof PluginInspectPanelParams>,
+  context: Pick<RpcContext, 'connectionId' | 'clientId' | 'signal'>,
+  run: (owner: string, entry: PluginPanelEntry) => Promise<T>
+) {
+  await service.whenReady()
+  const owner = `${rpcPanelOwner(context)}:command:${randomUUID()}`
+  const abort = (): void => service.panels.revokeOwner(owner)
+  context.signal?.addEventListener('abort', abort, { once: true })
+  try {
+    if (context.signal?.aborted) {
+      throw new Error('Panel action cancelled')
+    }
+    const entry = await service.panels.open(owner, params.pluginKey, params.panelId)
+    if (context.signal?.aborted) {
+      throw new Error('Panel action cancelled')
+    }
+    if (!entry) {
+      throw new Error('Approved plugin panel is not available')
+    }
+    return await run(owner, entry)
+  } finally {
+    context.signal?.removeEventListener('abort', abort)
+    service.panels.revokeOwner(owner)
+  }
+}
+
+export function inspectPluginPanel(
+  service: PluginService,
+  params: z.infer<typeof PluginInspectPanelParams>,
+  context: Pick<RpcContext, 'connectionId' | 'clientId' | 'signal'>
+) {
+  return withPluginPanel(service, params, context, async (_owner, entry) => ({ html: entry.html }))
+}
+
+export function invokePluginPanelAction(
+  service: PluginService,
+  params: z.infer<typeof PluginInvokePanelActionParams>,
+  context: Pick<RpcContext, 'connectionId' | 'clientId' | 'signal'>
+) {
+  return withPluginPanel(service, params, context, async (owner, entry) =>
+    service.panels.execute(owner, {
+      sessionToken: entry.sessionToken,
+      action: params.action,
+      params: params.params
+    })
+  )
+}
+
 export const PLUGIN_METHODS = [
+  ...PLUGIN_MANAGEMENT_METHODS,
+  defineMethod({
+    name: 'plugins.inspectPanel',
+    params: PluginInspectPanelParams,
+    handler: (params, context) => inspectPluginPanel(requirePluginService(), params, context)
+  }),
+  defineMethod({
+    name: 'plugins.invokePanelAction',
+    params: PluginInvokePanelActionParams,
+    handler: (params, context) => invokePluginPanelAction(requirePluginService(), params, context)
+  }),
   defineMethod({
     name: 'plugins.list',
     params: null,
