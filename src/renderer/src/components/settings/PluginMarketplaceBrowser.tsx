@@ -1,3 +1,4 @@
+import { usePluginMarketplaceRequest } from './use-plugin-marketplace-request'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Blocks, Loader2, RefreshCw, SearchX, Settings2, Store } from 'lucide-react'
 import type {
@@ -215,6 +216,18 @@ export function PluginMarketplaceBrowser({
       }
     }
   }
+
+  usePluginMarketplaceRequest({
+    search,
+    filter,
+    visibleCount: visibleListings.length,
+    installedCount: installedPlugins.length,
+    loading,
+    sourcesOpen,
+    previewOpen: preview !== null,
+    setSearch,
+    setFilter
+  })
 
   const currentVersion = Boolean(
     preview && installedByKey.get(preview.pluginKey)?.source?.contentHash === preview.contentHash

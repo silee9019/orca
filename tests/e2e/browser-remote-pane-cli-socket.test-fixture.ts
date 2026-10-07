@@ -1,3 +1,5 @@
+import { BROWSER_PALETTE_COMMAND_SPECS } from '../../src/cli/specs/browser-palette'
+import { BROWSER_PALETTE_HANDLERS } from '../../src/cli/handlers/browser-palette'
 import { REMOTE_FILE_PICKER_COMMAND_SPECS } from '../../src/cli/specs/remote-file-picker'
 import { REMOTE_FILE_PICKER_HANDLERS } from '../../src/cli/handlers/remote-file-picker'
 import { createServer, type Socket } from 'node:net'
@@ -123,7 +125,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runPalette = async (extra: string[]) => {
+    const specs = BROWSER_PALETTE_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'palette-select', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_PALETTE_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
   return {
+    runPalette,
     runPicker,
     run,
     close,

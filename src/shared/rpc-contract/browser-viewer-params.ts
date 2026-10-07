@@ -1,3 +1,5 @@
+import { PluginMarketplaceViewerCommand } from './plugin-marketplace-viewer-params'
+import { BrowserPaletteSelection } from './browser-palette-params'
 import { RemoteFilePickerCommand } from './remote-file-picker-params'
 import { LinkedBrowserCommand } from './linked-browser-params'
 import { FloatingBrowserCommand } from './floating-browser-params'
@@ -44,6 +46,12 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('plugin-marketplace'),
+    command: PluginMarketplaceViewerCommand
+  }),
+  z.object({ viewer, operation: z.literal('palette-select'), selection: BrowserPaletteSelection }),
   z.object({ viewer, operation: z.literal('remote-picker'), command: RemoteFilePickerCommand }),
   z.object({ viewer, operation: z.literal('linked-browser'), command: LinkedBrowserCommand }),
   z.object({ viewer, operation: z.literal('floating-browser'), command: FloatingBrowserCommand }),

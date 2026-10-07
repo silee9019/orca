@@ -1,3 +1,4 @@
+import { useBrowserPaletteFocus } from './use-browser-palette-focus'
 import { useBrowserChromeFocusCommands } from './use-browser-chrome-focus-commands'
 import { useCallback, useEffect, useRef, type MutableRefObject, type RefObject } from 'react'
 import { useAppStore } from '@/store'
@@ -252,6 +253,13 @@ export function useBrowserPageChromeFocus({
   }, [browserTabId, cancelAddressBarFocusGrab, focusGuestNow, isActive, startAddressBarFocusGrab])
 
   useBrowserChromeFocusCommands(browserTabId, isActive, focusAddressBarNow)
+  useBrowserPaletteFocus(
+    browserTabId,
+    isActive,
+    focusAddressBarNow,
+    focusGuestNow,
+    cancelAddressBarFocusGrab
+  )
 
   return { focusAddressBarNow, focusGuestNow, startAddressBarFocusGrab, keepAddressBarFocusRef }
 }

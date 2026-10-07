@@ -1,3 +1,5 @@
+import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
+import { applyBrowserPaletteSelection } from './browser-palette-selection'
 import { requestRemoteFilePicker } from './remote-file-picker-request'
 import { requestLinkedBrowser } from './linked-browser-request'
 import { requestFloatingBrowser } from './floating-browser-request'
@@ -52,6 +54,10 @@ export async function applyBrowserViewerRequest(
     return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'palette-select') {
+    const paletteState = await applyBrowserPaletteSelection(command.selection, request.expiresAt)
+    return { ...base, applied: true, paletteState }
+  }
   if (command.operation === 'floating-browser') {
     const floatingBrowser = requestFloatingBrowser(command.command, request.expiresAt)
     return { ...base, applied: true, floatingBrowser }
@@ -70,6 +76,10 @@ export async function applyBrowserViewerRequest(
   }
   if (state.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
+  }
+  if (command.operation === 'plugin-marketplace') {
+    const marketplace = await applyPluginMarketplaceViewerAction(command.command, request.expiresAt)
+    return { ...base, applied: true, marketplace }
   }
   if (command.operation === 'group-ui') {
     const groupUi = await requestBrowserGroupUi(command.target, command.action, request.expiresAt)
@@ -214,12 +224,8 @@ export async function applyBrowserViewerRequest(
     }
   }
   if (command.operation === 'annotation-row') {
-    const annotationRow = await requestBrowserAnnotationRow(
-      page.id,
-      command.command,
-      request.expiresAt
-    )
-    return { ...base, page: page.id, applied: true, annotationRow }
+    const row = await requestBrowserAnnotationRow(page.id, command.command, request.expiresAt)
+    return { ...base, page: page.id, applied: true, annotationRow: row }
   }
   if (command.operation === 'annotation-tray') {
     const annotationTray = await requestBrowserAnnotationTray(
