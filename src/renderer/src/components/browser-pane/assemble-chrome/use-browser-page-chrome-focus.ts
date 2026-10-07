@@ -1,3 +1,4 @@
+import { useBrowserChromeFocusCommands } from './use-browser-chrome-focus-commands'
 import { useCallback, useEffect, useRef, type MutableRefObject, type RefObject } from 'react'
 import { useAppStore } from '@/store'
 import { getShortcutPlatform } from '@/hooks/useShortcutLabel'
@@ -249,6 +250,8 @@ export function useBrowserPageChromeFocus({
       cancelAddressBarFocusGrab()
     }
   }, [browserTabId, cancelAddressBarFocusGrab, focusGuestNow, isActive, startAddressBarFocusGrab])
+
+  useBrowserChromeFocusCommands(browserTabId, isActive, focusAddressBarNow)
 
   return { focusAddressBarNow, focusGuestNow, startAddressBarFocusGrab, keepAddressBarFocusRef }
 }

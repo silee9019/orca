@@ -33,7 +33,7 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
     path: ['browser', 'address'],
     summary: 'Edit the host viewer address bar; submit/select report navigation requested only',
     usage:
-      'orca browser address --viewer host --page <id> --action <open|blur|draft|highlight|preview|next|previous|select|dismiss|submit|status> [--text <draft>] [--index <suggestion-index>] [--json]',
+      'orca browser address --viewer host --page <id> --action <open|focus|blur|draft|highlight|preview|next|previous|select|dismiss|submit|status> [--text <draft>] [--index <suggestion-index>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'text', 'index']
   },
   {

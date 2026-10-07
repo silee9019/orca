@@ -1,3 +1,4 @@
+import { FloatingBrowserCommand } from './floating-browser-params'
 import { BrowserTabUiTarget, BrowserTabUiAction, BrowserTabUiPoint } from './browser-tab-ui-params'
 import { BrowserGroupUiTarget, BrowserGroupUiAction } from './browser-group-ui-params'
 import { BrowserProfileUiCommand } from './browser-profile-ui-params'
@@ -36,6 +37,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('floating-browser'), command: FloatingBrowserCommand }),
   BrowserDocumentViewerParams,
   z.object({
     viewer,

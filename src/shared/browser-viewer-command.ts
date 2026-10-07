@@ -1,3 +1,4 @@
+import { FloatingBrowserState } from './rpc-contract/floating-browser-params'
 import { BrowserTabUiState } from './rpc-contract/browser-tab-ui-params'
 import { BrowserGroupUiState } from './rpc-contract/browser-group-ui-params'
 import { BrowserProfileUiState } from './rpc-contract/browser-profile-ui-params'
@@ -16,6 +17,7 @@ export type BrowserViewerRequest = { id: string; expiresAt: number; command: Bro
 export const BrowserViewerResultSchema = z.object({
   viewer: z.literal('host'),
   viewerId: z.number().int(),
+  floatingBrowser: FloatingBrowserState.optional(),
   applied: z.boolean(),
   persisted: z.literal(false),
   rendered: z.literal(false),

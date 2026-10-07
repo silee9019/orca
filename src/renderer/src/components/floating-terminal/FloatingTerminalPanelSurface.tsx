@@ -6,7 +6,6 @@ import TerminalPane from '@/components/terminal-pane/TerminalPane'
 import { shouldDeferParkedPtyExitTabClose } from '@/components/terminal-pane/terminal-parked-tab-watchers'
 import { closeTerminalTab } from '@/components/terminal/terminal-tab-actions'
 import { isTerminalImeInputContextRefreshing } from '@/components/terminal-pane/terminal-ime-input-context-refresh'
-import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
@@ -47,6 +46,7 @@ export function renderFloatingTerminalPanelSurface({
   closeToLeft,
   createFloatingTerminalTab,
   createFloatingBrowserTab,
+  duplicateFloatingBrowserTab,
   createFloatingMarkdownTab,
   openFloatingMarkdownTab,
   setTabCustomTitle,
@@ -59,7 +59,6 @@ export function renderFloatingTerminalPanelSurface({
   activeTab,
   activeTabType,
   browserTabs,
-  createBrowserTab,
   closeAllFiles,
   makePreviewFilePermanent,
   pinFile,
@@ -176,17 +175,7 @@ export function renderFloatingTerminalPanelSurface({
               onCloseFile={closeFloatingItemConfirmed}
               onActivateBrowserTab={activateFloatingItem}
               onCloseBrowserTab={closeFloatingItemConfirmed}
-              onDuplicateBrowserTab={(browserTabId, sourceUnifiedTabId) => {
-                const source = browserTabs.find((tab) => tab.id === browserTabId)
-                if (!source) {
-                  return
-                }
-                createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, source.url, {
-                  ...buildDuplicatedBrowserTabOptions(source),
-                  afterTabId: sourceUnifiedTabId,
-                  browserRuntimeEnvironmentId: null
-                })
-              }}
+              onDuplicateBrowserTab={duplicateFloatingBrowserTab}
               onCloseAllFiles={closeAllFiles}
               onMakePreviewFilePermanent={makePreviewFilePermanent}
               onPinFile={pinFile}

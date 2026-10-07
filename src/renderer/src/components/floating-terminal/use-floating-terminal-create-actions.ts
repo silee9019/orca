@@ -1,3 +1,5 @@
+import { useFloatingBrowserRequest } from './use-floating-browser-request'
+import { buildDuplicatedBrowserTabOptions } from '@/lib/duplicate-browser-tab-options'
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { resolveGroupTabFromVisibleId } from '@/components/tab-group/tab-group-visible-id'
@@ -19,10 +21,15 @@ const LOCAL_RUNTIME_SETTINGS = { activeRuntimeEnvironmentId: null } as const
 
 type FloatingTerminalCreateActionsInput = Pick<
   FloatingTerminalPanelStoreState,
-  'activateTab' | 'setActiveTab' | 'createBrowserTab' | 'browserDefaultUrl' | 'openFile'
+  | 'activateTab'
+  | 'setActiveTab'
+  | 'createBrowserTab'
+  | 'browserDefaultUrl'
+  | 'openFile'
+  | 'browserTabs'
 > &
   Pick<FloatingTerminalPanelItems, 'activeGroup' | 'groupTabs'> &
-  Pick<FloatingTerminalPanelLocalState, 'markdownCwd'>
+  Pick<FloatingTerminalPanelLocalState, 'markdownCwd'> & { viewerOpen?: boolean }
 
 export function useFloatingTerminalCreateActions({
   activateTab,
@@ -32,7 +39,9 @@ export function useFloatingTerminalCreateActions({
   openFile,
   activeGroup,
   groupTabs,
-  markdownCwd
+  markdownCwd,
+  browserTabs,
+  viewerOpen = false
 }: FloatingTerminalCreateActionsInput) {
   const activateFloatingItem = useCallback(
     (visibleId: string) => {
@@ -67,7 +76,7 @@ export function useFloatingTerminalCreateActions({
       return
     }
     const url = browserDefaultUrl ?? 'about:blank'
-    createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, url, {
+    return createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, url, {
       title: translate(
         'auto.components.floating.terminal.FloatingTerminalPanel.8b14ba6c17',
         'New Browser Tab'
@@ -77,6 +86,27 @@ export function useFloatingTerminalCreateActions({
       browserRuntimeEnvironmentId: null
     })
   }, [activeGroup, browserDefaultUrl, createBrowserTab])
+
+  const duplicateFloatingBrowserTab = useCallback(
+    (browserTabId: string, sourceUnifiedTabId: string) => {
+      const source = browserTabs.find((tab) => tab.id === browserTabId)
+      if (!source) {
+        return
+      }
+      return createBrowserTab(FLOATING_TERMINAL_WORKTREE_ID, source.url, {
+        ...buildDuplicatedBrowserTabOptions(source),
+        afterTabId: sourceUnifiedTabId,
+        browserRuntimeEnvironmentId: null
+      })
+    },
+    [browserTabs, createBrowserTab]
+  )
+  useFloatingBrowserRequest({
+    viewerOpen,
+    groupId: activeGroup?.id,
+    create: createFloatingBrowserTab,
+    duplicate: duplicateFloatingBrowserTab
+  })
 
   const createFloatingMarkdownTab = useCallback(() => {
     if (!markdownCwd) {
@@ -124,6 +154,7 @@ export function useFloatingTerminalCreateActions({
     activateFloatingItem,
     createFloatingTerminalTab,
     createFloatingBrowserTab,
+    duplicateFloatingBrowserTab,
     createFloatingMarkdownTab,
     openFloatingMarkdownTab
   }

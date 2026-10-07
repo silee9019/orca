@@ -5,7 +5,9 @@ export const BrowserAddressCommand = z.discriminatedUnion('action', [
     action: z.enum(['preview', 'select', 'highlight']),
     index: z.number().int().nonnegative()
   }),
-  z.object({ action: z.enum(['open', 'blur', 'dismiss', 'submit', 'status', 'next', 'previous']) })
+  z.object({
+    action: z.enum(['open', 'focus', 'blur', 'dismiss', 'submit', 'status', 'next', 'previous'])
+  })
 ])
 export type BrowserAddressCommand = z.infer<typeof BrowserAddressCommand>
 export const BrowserAddressState = z.object({
@@ -21,6 +23,10 @@ export const BrowserAddressState = z.object({
       kind: z.enum(['workspace-doc', 'search', 'history'])
     })
   ),
+  chromeFocusOwnerInvoked: z.literal(true).optional(),
+  selection: z
+    .object({ start: z.number().int().nullable(), end: z.number().int().nullable() })
+    .optional(),
   navigationRequested: z.literal(true).optional()
 })
 export type BrowserAddressState = z.infer<typeof BrowserAddressState>

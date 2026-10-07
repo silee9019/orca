@@ -3,9 +3,9 @@ import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { act, cleanup, render } from '@testing-library/react'
 import { createElement, useRef } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
-vi.mock('@/runtime/runtime-rpc-client', async () => ({
-  callRuntimeRpc: vi.fn(async () => ({ ok: true })),
-  RuntimeRpcCallError: (await import('@/runtime/runtime-rpc-result')).RuntimeRpcCallError
+vi.mock(import('@/runtime/runtime-rpc-client'), async (original) => ({
+  ...(await original()),
+  callRuntimeRpc: vi.fn(async () => ({ ok: true }))
 }))
 vi.mock('electron', async () => {
   const { EventEmitter } = await import('node:events')
@@ -33,6 +33,8 @@ import { useRemoteBrowserPageNavigation } from '../../src/renderer/src/component
 import { useRemoteBrowserPaneCommands } from '../../src/renderer/src/components/browser-pane/stream-remote/use-remote-browser-pane-commands'
 import { createRemotePaneCliSocket } from './browser-remote-pane-cli-socket.test-fixture'
 import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
+import { openRemoteContextMenuLink } from '../../src/renderer/src/components/browser-pane/stream-remote/open-remote-context-menu-link'
+import type { RuntimeStatus, RuntimeMobileSessionTabsResult } from '../../src/shared/runtime-types'
 import { useAppStore } from '@/store'
 import { getDefaultSettings } from '../../src/shared/constants'
 import type { BrowserViewerRequest } from '../../src/shared/browser-viewer-command'
@@ -50,20 +52,111 @@ afterEach(() => {
 })
 it('routes remote context menu CLI through actual inspection/menu/navigation owners and provider read-back', async () => {
   expect(initial.activeModal).toBe('none')
+  const hostProvider: { created: string | null; url: string; calls: string[] } = {
+    created: null,
+    url: '',
+    calls: []
+  }
   const provider: {
     clipboard: string
     external: string[]
     navigated: string[]
     inspections: number
     inspectionUnavailable: boolean
-    opened: string[]
+    sourceUrl: string
   } = {
     clipboard: '',
     external: [],
     navigated: [],
     inspections: 0,
     inspectionUnavailable: false,
-    opened: []
+    sourceUrl: 'https://fixture.invalid/'
+  }
+  const status: RuntimeStatus = {
+    runtimeId: 'host-fixture',
+    rendererGraphEpoch: 1,
+    graphStatus: 'ready',
+    authoritativeWindowId: null,
+    liveTabCount: 1,
+    liveLeafCount: 1,
+    capabilities: ['browser.screencast.v1']
+  }
+  const callHost = async ({
+    method,
+    params,
+    selector
+  }: {
+    method: string
+    params?: unknown
+    selector?: string
+  }) => {
+    expect(selector).toBe('env-1')
+    hostProvider.calls.push(method)
+    if (method === 'browser.tabCreate') {
+      expect(params).toMatchObject({
+        activate: false,
+        navigation: 'caller',
+        waitForRegistration: true
+      })
+      hostProvider.created = 'host-created'
+      return { id: 'create', ok: true as const, result: { browserPageId: hostProvider.created } }
+    }
+    if (method === 'browser.goto') {
+      if (
+        params &&
+        typeof params === 'object' &&
+        'url' in params &&
+        typeof params.url === 'string'
+      ) {
+        hostProvider.url = params.url
+      }
+      return { id: 'goto', ok: true as const, result: {} }
+    }
+    if (method === 'session.tabs.list') {
+      const snapshot: RuntimeMobileSessionTabsResult = {
+        worktree: 'folder:fixture',
+        publicationEpoch: 'fixture-epoch',
+        snapshotVersion: 1,
+        activeGroupId: 'group-1',
+        activeTabId: 'host-source',
+        activeTabType: 'browser',
+        tabGroups: [
+          {
+            id: 'group-1',
+            activeTabId: 'host-source',
+            tabOrder: ['host-source', 'host-created-tab']
+          }
+        ],
+        tabs: [
+          {
+            type: 'browser',
+            id: 'host-source',
+            title: 'Fixture',
+            browserWorkspaceId: 'workspace',
+            browserPageId: 'page-1',
+            url: provider.sourceUrl,
+            loading: false,
+            canGoBack: false,
+            canGoForward: false,
+            isActive: true
+          },
+          {
+            type: 'browser',
+            id: 'host-created-tab',
+            title: 'Created',
+            browserWorkspaceId: 'host-created-workspace',
+            browserPageId: 'host-created',
+            url: hostProvider.url || 'about:blank',
+            loading: false,
+            canGoBack: false,
+            canGoForward: false,
+            isActive: false
+          }
+        ]
+      }
+      return { id: 'list', ok: true as const, result: snapshot }
+    }
+    throw new Error(`unexpected fake host method: ${method}`)
   }
   Object.defineProperty(globalThis.window, 'api', {
     configurable: true,
@@ -78,7 +171,8 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
         openUrl: async (url: string) => {
           provider.external.push(url)
         }
-      }
+      },
+      runtimeEnvironments: { call: callHost }
     }
   })
   vi.mocked(callRuntimeRpc).mockImplementation(async (target, method) => {
@@ -97,6 +191,7 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
       }
     }
     provider.navigated.push(method)
+    provider.sourceUrl = 'https://navigated.invalid/'
     return { url: 'https://navigated.invalid/', title: 'Navigated' }
   })
   const window = new BrowserWindow()
@@ -129,7 +224,7 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
   const page = {
     id: 'local-page',
     workspaceId: 'workspace',
-    worktreeId: 'folder',
+    worktreeId: 'folder:fixture',
     url: 'https://fixture.invalid/',
     title: 'Fixture',
     loading: false,
@@ -151,10 +246,33 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
     },
     true
   )
+  useAppStore.setState({
+    runtimeStatusByEnvironmentId: new Map([['env-1', { status, checkedAt: 1 }]]),
+    folderWorkspaces: [
+      {
+        id: 'fixture',
+        projectGroupId: 'project',
+        name: 'Fixture',
+        folderPath: '/fixture',
+        executionHostId: 'runtime:env-1',
+        linkedTask: null,
+        comment: '',
+        isArchived: false,
+        isUnread: false,
+        isPinned: false,
+        sortOrder: 0,
+        lastActivityAt: 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    ],
+    activeWorktreeId: 'folder:fixture',
+    activeWorkspaceExecutionHostId: 'runtime:env-1'
+  })
   const initialPage = useAppStore.getState().browserPagesByWorkspace.workspace[0]
   useAppStore.setState({
     browserTabsByWorktree: {
-      folder: [
+      'folder:fixture': [
         { ...initialPage, id: 'workspace', activePageId: initialPage.id, pageIds: [initialPage.id] }
       ]
     }
@@ -207,9 +325,8 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
         active: true
       },
       onNavigate: (method) => navigation.runRemoteNavigation(method, undefined, () => true),
-      onOpenLink: async (url) => {
-        provider.opened.push(url)
-      },
+      onOpenLink: (url) =>
+        openRemoteContextMenuLink('local-page', 'folder:fixture', 'env-1', url, () => {}),
       busy: false,
       browserTabUrl: currentPage.url,
       imageRef: image,
@@ -302,7 +419,24 @@ it('routes remote context menu CLI through actual inspection/menu/navigation own
     expect(useAppStore.getState().browserPagesByWorkspace.workspace[0].url).toBe(
       'https://navigated.invalid/'
     )
-    expect(provider.opened).toEqual(['https://link.invalid/'])
+    expect(hostProvider.created).toBe('host-created')
+    expect(hostProvider.url).toBe('https://link.invalid/')
+    expect(hostProvider.calls).toContain('session.tabs.list')
+    expect(Object.values(useAppStore.getState().remoteBrowserPageHandlesByPageId)).toContainEqual(
+      expect.objectContaining({ environmentId: 'env-1', remotePageId: 'host-created' })
+    )
+    const writesBeforeUnsupported = hostProvider.calls.length
+    useAppStore.setState({
+      runtimeStatusByEnvironmentId: new Map([
+        ['env-1', { status: { ...status, capabilities: [] }, checkedAt: 2 }]
+      ])
+    })
+    await run('open')
+    await expect(run('open-orca')).rejects.toThrow('Unable to open URL.')
+    expect(hostProvider.calls).toHaveLength(writesBeforeUnsupported)
+    useAppStore.setState({
+      runtimeStatusByEnvironmentId: new Map([['env-1', { status, checkedAt: 3 }]])
+    })
     provider.inspectionUnavailable = true
     await run('open')
     expect(output).toHaveBeenLastCalledWith(expect.stringContaining('"inspected": false'))

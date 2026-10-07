@@ -1,3 +1,4 @@
+import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
@@ -42,6 +43,10 @@ export async function applyBrowserViewerRequest(
     throw new Error('viewer_not_ready')
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'floating-browser') {
+    const floatingBrowser = requestFloatingBrowser(command.command, request.expiresAt)
+    return { ...base, applied: true, floatingBrowser }
+  }
   if (command.operation === 'remote-pane') {
     const remotePane = await applyRemoteBrowserPaneViewerAction(command, request.expiresAt)
     return { ...base, page: command.page, applied: true, remotePane }

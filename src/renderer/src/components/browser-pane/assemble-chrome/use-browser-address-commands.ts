@@ -1,3 +1,4 @@
+import { requestBrowserChromeAddressFocus } from '@/runtime/browser-chrome-focus-request'
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import {
   BROWSER_ADDRESS_COMMAND_EVENT,
@@ -48,6 +49,7 @@ export function useBrowserAddressCommands(
     check: (value: BrowserAddressController) => boolean
     navigation: boolean
     waitForBlur: boolean
+    chromeFocus: boolean
   } | null>(null)
   const [, update] = useState(0)
   useLayoutEffect(() => {
@@ -72,6 +74,15 @@ export function useBrowserAddressCommands(
         accepted ? undefined : new Error('browser_address_edit_not_applied_effect_unknown'),
         {
           ...snapshot(current.current),
+          ...(operation.chromeFocus
+            ? {
+                chromeFocusOwnerInvoked: true as const,
+                selection: {
+                  start: current.current.inputRef.current?.selectionStart ?? null,
+                  end: current.current.inputRef.current?.selectionEnd ?? null
+                }
+              }
+            : {}),
           ...(operation.navigation ? { navigationRequested: true } : {})
         }
       )
@@ -109,8 +120,27 @@ export function useBrowserAddressCommands(
       let check: (value: BrowserAddressController) => boolean
       let navigation = false
       let waitForBlur = false
+      let chromeFocus = false
       try {
-        if (command.action === 'open') {
+        if (command.action === 'focus') {
+          const applied = requestBrowserChromeAddressFocus(owner.page)
+          if (applied !== true) {
+            request.finish(
+              new Error(
+                applied === 'unavailable'
+                  ? 'browser_address_chrome_focus_unavailable'
+                  : 'browser_address_chrome_focus_failed_effect_unknown'
+              )
+            )
+            return
+          }
+          chromeFocus = true
+          check = (value) =>
+            value.open &&
+            document.activeElement === value.inputRef.current &&
+            value.inputRef.current?.selectionStart === 0 &&
+            value.inputRef.current.selectionEnd === value.inputRef.current.value.length
+        } else if (command.action === 'open') {
           before.inputRef.current.focus()
           before.focus()
           check = (value) => value.open && document.activeElement === value.inputRef.current
@@ -179,7 +209,7 @@ export function useBrowserAddressCommands(
           request.finish(new Error('invalid_browser_address_action'))
           return
         }
-        pending.current = { request, check, navigation, waitForBlur }
+        pending.current = { request, check, navigation, waitForBlur, chromeFocus }
         update((value) => value + 1)
       } catch {
         request.finish(new Error('browser_address_action_failed_effect_unknown'))
