@@ -8,14 +8,18 @@ import {
   stepFloatingSidebarReveal,
   type FloatingSidebarRevealEvent
 } from './floating-sidebar-reveal'
-
-const OPEN_POPUP_SELECTOR =
-  '[role="menu"], [role="listbox"], [role="dialog"], [data-radix-popper-content-wrapper]'
+import {
+  hasOpenFloatingSidebarPopup,
+  isFloatingSidebarHeld,
+  isPanelFocusHolding
+} from './floating-sidebar-hold'
 
 export function FloatingSidebarOverlay({
-  children
+  children,
+  topInset = 0
 }: {
   children: React.ReactNode
+  topInset?: number
 }): React.JSX.Element {
   const storeRevealed = useAppStore((s) => s.floatingSidebarRevealed)
   const setStoreRevealed = useAppStore((s) => s.setFloatingSidebarRevealed)
@@ -44,11 +48,12 @@ export function FloatingSidebarOverlay({
 
   const sampleHold = useCallback((): void => {
     const panel = panelRef.current
-    const held =
-      pointerDownInsideRef.current ||
-      (panel !== null && panel.contains(document.activeElement)) ||
-      document.querySelector(OPEN_POPUP_SELECTOR) !== null ||
-      useAppStore.getState().activeModal !== 'none'
+    const held = isFloatingSidebarHeld({
+      pointerDown: pointerDownInsideRef.current,
+      panelHasFocus: isPanelFocusHolding(panel, document.activeElement),
+      hasOpenPopup: hasOpenFloatingSidebarPopup(document),
+      hasModal: useAppStore.getState().activeModal !== 'none'
+    })
     if (held !== stateRef.current.held) {
       dispatch({ type: 'hold-changed', held })
     }
@@ -103,8 +108,8 @@ export function FloatingSidebarOverlay({
       {/* Why: stays mounted while open so a pointer that leaves straight from the strip still reports leave. */}
       <div
         data-floating-sidebar-edge=""
-        className="absolute inset-y-0 left-0 z-20"
-        style={{ width: FLOATING_SIDEBAR_EDGE_HOT_ZONE_PX }}
+        className="absolute bottom-0 left-0 z-20"
+        style={{ top: topInset, width: FLOATING_SIDEBAR_EDGE_HOT_ZONE_PX }}
         onPointerEnter={handleEnter}
         onPointerLeave={handleLeave}
       />
@@ -113,7 +118,8 @@ export function FloatingSidebarOverlay({
         data-floating-sidebar=""
         data-state={storeRevealed ? 'open' : 'closed'}
         // Why: closed panel is hidden from focus and the a11y tree; hover never moves focus into it.
-        className={`absolute inset-y-0 left-0 z-20 flex shadow-floating transition-[transform,visibility] duration-150 motion-reduce:transition-none ${
+        style={{ top: topInset }}
+        className={`absolute bottom-0 left-0 z-20 flex shadow-floating transition-[transform,visibility] duration-150 motion-reduce:transition-none ${
           storeRevealed ? 'translate-x-0 visible' : '-translate-x-full invisible'
         }`}
         onPointerEnter={handleEnter}

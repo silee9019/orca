@@ -1,3 +1,4 @@
+import { isSidebarInLayoutFlow } from '@/lib/sidebar-layout-flow'
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { SYNC_FIT_PANES_EVENT } from '@/constants/terminal'
@@ -49,7 +50,7 @@ export function useAppChromeLayout() {
 
   // Why: floating mode never takes layout width, so flow treats it as collapsed; the pinned value stays untouched.
   const floatingSidebar = settings?.floatingSidebar === true
-  const sidebarOpen = floatingSidebar ? false : pinnedSidebarOpen
+  const sidebarOpen = isSidebarInLayoutFlow({ sidebarOpen: pinnedSidebarOpen, settings })
 
   const systemPrefersDark = useSystemPrefersDark()
   const leftSidebarStyle = useMemo(

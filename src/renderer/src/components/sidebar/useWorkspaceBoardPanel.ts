@@ -16,7 +16,7 @@ function isWorkspaceBoardEditableTarget(target: EventTarget | null): boolean {
   )
 }
 
-const WORKSPACE_BOARD_ESCAPE_BLOCKING_OVERLAY_SELECTOR = [
+export const WORKSPACE_BOARD_ESCAPE_BLOCKING_OVERLAY_SELECTOR = [
   '[data-slot="dropdown-menu-content"][data-state="open"]',
   '[data-slot="context-menu-content"][data-state="open"]',
   '[data-slot="popover-content"][data-state="open"]',

@@ -8,6 +8,7 @@ import { FloatingTerminalToggleButton } from '../components/floating-terminal/Fl
 import { TerminalWorkbenchContainer } from '../components/TerminalWorkbenchContainer'
 import type { VirtualizedScrollAnchor } from '../hooks/useVirtualizedScrollAnchor'
 import { FloatingSidebarOverlay } from '../components/sidebar/FloatingSidebarOverlay'
+import { resolveFloatingSidebarTopInset } from '../components/sidebar/floating-sidebar-hold'
 import { TitlebarLeftControls } from './TitlebarLeftControls'
 import { RightSidebarToggle, TitlebarMainStrip } from './TitlebarMainStrip'
 import type { AppChromeLayout } from './use-app-chrome-layout'
@@ -59,7 +60,9 @@ function WorktreeSidebar({
     >
       {layout.floatingSidebar ? (
         <div className="relative min-h-0 w-0 shrink-0">
-          <FloatingSidebarOverlay>
+          <FloatingSidebarOverlay
+            topInset={resolveFloatingSidebarTopInset(layout.leftTitlebarChromeLayout)}
+          >
             <Sidebar
               forceOpen
               worktreeScrollOffsetRef={scrollRefs.scrollOffsetRef}
