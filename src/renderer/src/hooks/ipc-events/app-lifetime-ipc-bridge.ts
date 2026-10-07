@@ -1,3 +1,4 @@
+import { attachProjectFilterBridge } from '@/runtime/project-filter-bridge'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/runtime-host-status'
 import { getTabIdsAwaitingHostHydrationRemount } from '@/lib/parked-terminal-host-hydration'
 import { emitAutomationsChangedWindowEvent } from '@/lib/automations-changed-window-event'
@@ -61,6 +62,7 @@ export function installAppLifetimeIpcEvents(
   const backgroundWakeDispatcher = createBackgroundSleepingAgentWakeDispatcher()
   unsubs.push(backgroundWakeDispatcher.dispose)
   unsubs.push(attachMobileMarkdownBridge())
+  unsubs.push(attachProjectFilterBridge())
   unsubs.push(
     window.api.automations.onChanged((payload) => emitAutomationsChangedWindowEvent(payload))
   )

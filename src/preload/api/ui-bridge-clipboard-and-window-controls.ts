@@ -1,3 +1,4 @@
+import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
 import { ipcRenderer, webFrame } from 'electron'
 import type {
   RuntimeMobileMarkdownRequest,
@@ -41,6 +42,15 @@ export const uiClipboardAndWindowControlsApi = {
     ) => callback(data)
     ipcRenderer.on('ui:openDiffFromMobile', listener)
     return () => ipcRenderer.removeListener('ui:openDiffFromMobile', listener)
+  },
+  onProjectFilterRequest: (callback: (request: ProjectFilterRequest) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, request: ProjectFilterRequest): void =>
+      callback(request)
+    ipcRenderer.on('ui:projectFilterRequest', listener)
+    return () => ipcRenderer.removeListener('ui:projectFilterRequest', listener)
+  },
+  respondProjectFilter: (response: ProjectFilterResponse): void => {
+    ipcRenderer.send('ui:projectFilterResponse', response)
   },
   onMobileMarkdownRequest: (
     callback: (request: RuntimeMobileMarkdownRequest) => void

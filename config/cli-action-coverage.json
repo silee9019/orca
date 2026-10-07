@@ -50,34 +50,44 @@
     {
       "id": "ui.project-filter.get",
       "effect": "현재 프로젝트 필터 ID와 적용된 목록을 조회합니다.",
-      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
-      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
-      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
-      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "owner": "ui.projectFilter RPC → runtime notifier → project-filter-request-relay → applyProjectFilterRequest → ui.setWithAck; useSidebarWorktreeSelection layout-effect publication",
+      "host": "selected runtime owns durable filterRepoIds and its repo catalog; SSH execution does not retarget the viewer",
+      "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
       "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:ui.get",
           "fingerprint": "5676604018d2235328ab3e02f36dea15bb7c34c84c403f4dd4ef0c10b2399641"
+        },
+        {
+          "id": "command:ui project-filter get",
+          "fingerprint": "7e91c0a677d4640b13fa65b2ce583ac4dcf09790da51bea1bf4b8f679c9063e9"
         }
-      ]
+      ],
+      "command": "ui project-filter get",
+      "evidencePaths": [
+        "src/cli/project-filter.test.ts",
+        "src/main/window/project-filter-request-relay.test.ts",
+        "src/renderer/src/runtime/project-filter-bridge.test.ts",
+        "tests/e2e/project-filter-cli.spec.ts"
+      ],
+      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
     },
     {
       "id": "ui.project-filter.set",
       "effect": "정확한 프로젝트 ID 목록으로 현재 필터를 설정합니다.",
-      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
-      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
-      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
-      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "owner": "ui.projectFilter RPC → runtime notifier → project-filter-request-relay → applyProjectFilterRequest → ui.setWithAck; useSidebarWorktreeSelection layout-effect publication",
+      "host": "selected runtime owns durable filterRepoIds and its repo catalog; SSH execution does not retarget the viewer",
+      "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
       "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 같은 set 두 번과 새 repo 추가 뒤 select-all을 검사합니다.",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:ui.set",
@@ -90,21 +100,32 @@
         {
           "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:1d8686bf3a89b953f0be",
           "fingerprint": "1d8686bf3a89b953f0bed29d2489f71f3365426302ff5f75b09bebe2881ccc75"
+        },
+        {
+          "id": "command:ui project-filter set",
+          "fingerprint": "c7981cea7d89b2600cb8923ce655bd1dd67b8d30117c1d19096a2b0d803466df"
         }
-      ]
+      ],
+      "command": "ui project-filter set",
+      "evidencePaths": [
+        "src/cli/project-filter.test.ts",
+        "src/main/window/project-filter-request-relay.test.ts",
+        "src/renderer/src/runtime/project-filter-bridge.test.ts",
+        "tests/e2e/project-filter-cli.spec.ts"
+      ],
+      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
     },
     {
       "id": "ui.project-filter.clear",
       "effect": "프로젝트 필터만 빈 목록으로 해제합니다.",
-      "owner": "createUiPreferenceActions/setFilterRepoIds → usePersistedUIWriter → ui.set; computeVisibleWorktrees",
-      "host": "active runtime owns durable filterRepoIds; native/SSH/peer repo IDs remain host-qualified",
-      "viewer": "explicit viewer store and rendered sidebar; shared durable projection is preserved",
-      "gap": "No public CLI for this semantic action; persistence response alone is not rendered acknowledgement",
+      "owner": "ui.projectFilter RPC → runtime notifier → project-filter-request-relay → applyProjectFilterRequest → ui.setWithAck; useSidebarWorktreeSelection layout-effect publication",
+      "host": "selected runtime owns durable filterRepoIds and its repo catalog; SSH execution does not retarget the viewer",
+      "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
       "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 다른 sleeping/host 필터를 보존합니다.",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/sidebar/SidebarRepositoryFilterSection.tsx:5623f8697cdc6744ceb3",
@@ -113,8 +134,20 @@
         {
           "id": "control:src/renderer/src/components/sidebar/SidebarFilter.tsx:5623f8697cdc6744ceb3",
           "fingerprint": "5623f8697cdc6744ceb3eea19e067b62087396cd632fb056cab52348727aa4ee"
+        },
+        {
+          "id": "command:ui project-filter clear",
+          "fingerprint": "39ef94fde0c80cbd1fb3d432a5e35f065c48b3b137f92dc87ffdc119c041935b"
         }
-      ]
+      ],
+      "command": "ui project-filter clear",
+      "evidencePaths": [
+        "src/cli/project-filter.test.ts",
+        "src/main/window/project-filter-request-relay.test.ts",
+        "src/renderer/src/runtime/project-filter-bridge.test.ts",
+        "tests/e2e/project-filter-cli.spec.ts"
+      ],
+      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
     },
     {
       "id": "ui.project-filter.remove",

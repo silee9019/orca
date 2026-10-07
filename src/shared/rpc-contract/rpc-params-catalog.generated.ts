@@ -418,6 +418,7 @@ import {
   PreflightDetectRemoteAgents,
   PreflightDetectRemoteWindowsTerminalCapabilities
 } from './preflight-params'
+import { ProjectFilterParams } from './project-filter-params'
 import {
   ProjectHostSetupClone,
   ProjectHostSetupCreate,
@@ -1184,6 +1185,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
   'ui.get': null,
+  'ui.projectFilter': ProjectFilterParams,
   'ui.recordFeatureInteraction': FeatureInteractionIdParam,
   'ui.set': UiUpdate,
   'updater.check': UpdaterCheckParams,

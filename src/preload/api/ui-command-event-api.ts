@@ -1,3 +1,4 @@
+import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
 import type { MarkdownDocument } from '../../shared/filesystem-entry-types'
 import type { PersistedUIState } from '../../shared/persisted-ui-state-types'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -50,6 +51,8 @@ export type UiCommandEventApi = {
    *  folding an unacked patch into its baseline would silently stop retrying it (STA-5781). */
   setWithAck?: (args: Partial<PersistedUIState>) => Promise<void>
   recordFeatureInteraction: (id: FeatureInteractionId) => Promise<PersistedUIState>
+  onProjectFilterRequest?: (callback: (request: ProjectFilterRequest) => void) => () => void
+  respondProjectFilter?: (response: ProjectFilterResponse) => void
   onStateChanged: (callback: (ui: PersistedUIState) => void) => () => void
   onOpenSettings: (callback: () => void) => () => void
   /** Consumes a one-shot tray/menu-bar "open settings" intent queued before mount. */

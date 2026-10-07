@@ -1,3 +1,5 @@
+import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
+import type { ProjectFilterResult } from '../../shared/project-filter'
 import type { SleepingAgentLaunchConfig } from '../../shared/agent-session-resume'
 import type { TerminalPaneSplitSource } from '../../shared/feature-education-telemetry'
 import type { TerminalRevealIdentity } from '../../shared/terminal-reveal-identity'
@@ -22,6 +24,7 @@ import type {
 type DriverState = RuntimeTerminalDriverState
 
 export type RuntimeNotifier = {
+  projectFilter?(command: ProjectFilterOperation): Promise<ProjectFilterResult>
   automationsChanged?(payload: {
     selector?: { kind: 'self' } | { kind: 'ssh'; targetId: string } | { kind: 'orphan' }
     reason?: 'definition' | 'run' | 'usage'

@@ -13,6 +13,11 @@ export type HandlerGroup = {
 // real exports by handler-group-manifest.test.ts, so drift fails CI, not dispatch.
 export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'project-filter',
+    keys: ['ui project-filter get', 'ui project-filter set', 'ui project-filter clear'],
+    load: async () => (await import('./handlers/project-filter.js')).PROJECT_FILTER_HANDLERS
+  },
+  {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],
     load: async () => (await import('./handlers/core.js')).CORE_HANDLERS

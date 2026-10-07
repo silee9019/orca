@@ -1,3 +1,4 @@
+import { ProjectFilterParams } from '../../../../shared/rpc-contract/project-filter-params'
 import { omitPairingLocalUiFields } from '../../../../shared/pairing-local-ui-fields'
 import type { PersistedUIState } from '../../../../shared/persisted-ui-state-types'
 import { defineMethod } from '../core'
@@ -13,6 +14,11 @@ import { FeatureInteractionIdParam, UiUpdate } from './client-ui-schemas'
 import { TerminalQuickCommandsUpdate } from './terminal-quick-command-rpc-schema'
 
 export const CLIENT_UI_METHODS = [
+  defineMethod({
+    name: 'ui.projectFilter',
+    params: ProjectFilterParams,
+    handler: (params, { runtime }) => runtime.projectFilter(params)
+  }),
   defineMethod({
     name: 'settings.get',
     params: null,

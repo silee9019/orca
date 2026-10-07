@@ -1,4 +1,6 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
+import type { ProjectFilterResult } from '../../shared/project-filter'
 import { OrcaRuntimeWithStateFields } from './orca-runtime-state-fields'
 import {
   persistClientHostedBrowserPages,
@@ -173,6 +175,13 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
       throw new Error('runtime_unavailable')
     }
     return collectMemorySnapshot(this.store)
+  }
+
+  async projectFilter(command: ProjectFilterOperation): Promise<ProjectFilterResult> {
+    if (!this.notifier?.projectFilter) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.projectFilter(command)
   }
 
   getUIState(): PersistedUIState {

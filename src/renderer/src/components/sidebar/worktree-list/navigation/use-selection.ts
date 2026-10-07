@@ -1,3 +1,5 @@
+import { useAppStore } from '@/store'
+import { publishProjectFilterView } from '@/runtime/project-filter-view'
 import { useCallback, useLayoutEffect, useMemo } from 'react'
 import type React from 'react'
 import type { Worktree } from '../../../../../../shared/worktree/types'
@@ -19,6 +21,7 @@ export function useSidebarWorktreeSelection(args: {
   pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy
 }) {
   const { sectionRows, pinnedDisplayPolicy } = args
+  const filterRepoIds = useAppStore((state) => state.filterRepoIds)
   // Why: derive order from the built rows, not the flat worktrees array, so Cmd+1–9 match visual positions when grouping reorders cards.
   const renderedWorktrees = useMemo(
     () => getRenderedWorktreesInSidebarOrder(sectionRows, pinnedDisplayPolicy),
@@ -52,6 +55,13 @@ export function useSidebarWorktreeSelection(args: {
       }
     }
     setVisibleWorktreeIds(renderedWorktreeIds)
+    publishProjectFilterView({
+      repoIds: filterRepoIds,
+      visibleWorktreeIds: renderedWorktreeIds,
+      visibleFolderWorkspaceIds: sectionRows.flatMap((row) =>
+        row.type === 'folder-workspace' ? [row.folderWorkspace.id] : []
+      )
+    })
     setVisibleWorktreeShortcutTargets(
       renderedWorktrees.map((worktree) => {
         const lineageGroupKey = chipKeysByIdentity.get(getWorktreeHostIdentity(worktree))
@@ -65,9 +75,10 @@ export function useSidebarWorktreeSelection(args: {
     // Why null, not []: [] is a real rendered order (all collapsed/filtered); null tells shortcuts the list is unmounted.
     return () => {
       setVisibleWorktreeIds(null)
+      publishProjectFilterView(null)
       setVisibleWorktreeShortcutTargets(null)
     }
-  }, [renderedWorktreeIds, renderedWorktrees, sectionRows])
+  }, [filterRepoIds, renderedWorktreeIds, renderedWorktrees, sectionRows])
 
   return {
     renderedWorktreeIds,
