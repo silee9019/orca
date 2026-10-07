@@ -5,6 +5,13 @@ import { PairingOfferSchema, type PairingOffer } from './types'
 // Buffer. Keep the parsing semantics in sync — when one changes, update
 // the other.
 
+// The one list of link schemes a pairing code may arrive under: the store app's `orca` and the
+// Android Dev build's `orca-dev` (app.config.js). A store build taking `orca-dev://` is harmless: the
+// payload is validated the same way and nothing pairs before the confirm screen. Desktop only ever
+// emits `orca://`, so src/shared/pairing.ts stays as it is.
+const PAIRING_URL_SCHEMES = ['orca', 'orca-dev']
+const PAIRING_URL_PREFIX = new RegExp(`^(?:${PAIRING_URL_SCHEMES.join('|')}):\\/\\/`, 'i')
+
 export function decodePairingUrl(url: string): PairingOffer | null {
   try {
     const code = extractPairingCodeFromUrl(url)
@@ -22,7 +29,7 @@ export function decodePairingUrl(url: string): PairingOffer | null {
 // accept the same URL shapes.
 export function extractPairingCodeFromUrl(url: string): string | null {
   const trimmed = url.trim()
-  const match = /^orca:\/\/([^/?#]*)([^?#]*)?/i.exec(trimmed)
+  const match = new RegExp(`${PAIRING_URL_PREFIX.source}([^/?#]*)([^?#]*)?`, 'i').exec(trimmed)
   if (!match) {
     return null
   }
@@ -49,7 +56,7 @@ export function extractPairingCodeFromUrl(url: string): string | null {
   return null
 }
 
-// Why: accept either an `orca://pair?...` URL or the bare base64
+// Why: accept either an `orca://pair?...` (or `orca-dev://`) URL or the bare base64
 // string so the paste-pair flow can take whichever the user actually
 // copied from desktop.
 export function parsePairingCode(input: string): PairingOffer | null {
@@ -58,7 +65,7 @@ export function parsePairingCode(input: string): PairingOffer | null {
     return null
   }
   try {
-    if (/^orca:\/\//i.test(trimmed)) {
+    if (PAIRING_URL_PREFIX.test(trimmed)) {
       return decodePairingUrl(trimmed)
     }
     return decodePairingBase64(trimmed)
