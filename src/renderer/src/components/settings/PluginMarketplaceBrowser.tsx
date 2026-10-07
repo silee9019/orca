@@ -1,11 +1,11 @@
+import { usePluginMarketplaceCatalog } from './use-plugin-marketplace-catalog'
 import { usePluginMarketplaceRequest } from './use-plugin-marketplace-request'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Blocks, Loader2, RefreshCw, SearchX, Settings2, Store } from 'lucide-react'
 import type {
   PluginHostListEntry,
   PluginMarketplaceHostInstallPreview,
-  PluginMarketplaceHostListing,
-  PluginMarketplaceHostSourceState
+  PluginMarketplaceHostListing
 } from '../../../../preload/api-types'
 import { translate } from '@/i18n/i18n'
 import { PluginCatalogEmptyState } from '../plugin-catalog/PluginCatalogEmptyState'
@@ -33,17 +33,26 @@ function marketplaceError(cause: unknown, fallback: string): string {
   return fallback
 }
 
+function marketplaceLoadError(cause: unknown): string {
+  return marketplaceError(
+    cause,
+    translate(
+      'auto.components.settings.PluginMarketplaceBrowser.loadFailed',
+      'Could not load marketplace plugins.'
+    )
+  )
+}
+
 export function PluginMarketplaceBrowser({
   installedPlugins,
   onInstalled,
   onRefreshInstalled,
   renderInstalledContent
 }: PluginMarketplaceBrowserProps): React.JSX.Element {
-  const [sources, setSources] = useState<PluginMarketplaceHostSourceState[]>([])
-  const [listings, setListings] = useState<PluginMarketplaceHostListing[]>([])
-  const [loading, setLoading] = useState(true)
+  const mountedRef = useRef(false)
+  const { sources, listings, loading, error, setError, loadMarketplaceData, reloadWithReceipt } =
+    usePluginMarketplaceCatalog(mountedRef, marketplaceLoadError)
   const [refreshBusy, setRefreshBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<PluginCatalogFilter>('all')
   const [sourcesOpen, setSourcesOpen] = useState(false)
@@ -53,47 +62,13 @@ export function PluginMarketplaceBrowser({
   const [previewBusyKey, setPreviewBusyKey] = useState<string | null>(null)
   const [installBusy, setInstallBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const mountedRef = useRef(false)
-  const requestRef = useRef(0)
   const previewRequestRef = useRef(0)
-
-  const loadMarketplaceData = useCallback(async (): Promise<void> => {
-    const requestId = ++requestRef.current
-    try {
-      const [nextSources, nextListings] = await Promise.all([
-        window.api.plugins.listMarketplaces(),
-        window.api.plugins.listMarketplacePlugins()
-      ])
-      if (mountedRef.current && requestId === requestRef.current) {
-        setSources(nextSources)
-        setListings(nextListings)
-        setError(null)
-      }
-    } catch (cause) {
-      if (mountedRef.current && requestId === requestRef.current) {
-        setError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.loadFailed',
-              'Could not load marketplace plugins.'
-            )
-          )
-        )
-      }
-    } finally {
-      if (mountedRef.current && requestId === requestRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     mountedRef.current = true
     void loadMarketplaceData()
     return () => {
       mountedRef.current = false
-      requestRef.current += 1
       previewRequestRef.current += 1
     }
   }, [loadMarketplaceData])
@@ -224,6 +199,8 @@ export function PluginMarketplaceBrowser({
     visibleCount: visibleListings.length,
     installedCount: installedPlugins.length,
     loading,
+    errorPresent: error !== null,
+    reload: reloadWithReceipt,
     sourcesOpen,
     previewOpen: preview !== null,
     setSearch,

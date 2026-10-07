@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PluginMarketplaceViewerCommand } from '../../../../shared/rpc-contract/plugin-marketplace-viewer-params'
 import {
   PLUGIN_MARKETPLACE_EVENT,
@@ -12,6 +12,8 @@ type CatalogOwner = {
   visibleCount: number
   installedCount: number
   loading: boolean
+  errorPresent: boolean
+  reload: () => Promise<(() => boolean) | undefined>
   sourcesOpen: boolean
   previewOpen: boolean
   setSourcesOpen: (value: boolean) => void
@@ -23,9 +25,12 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
   const current = useRef(owner)
   current.current = owner
   const pending = useRef<PluginMarketplaceEvent | null>(null)
+  const ready = useRef(true)
+  const reloadReceipt = useRef<(() => boolean) | undefined>(undefined)
+  const [, publishCompletion] = useState(0)
   const finishCommitted = (): void => {
     const request = pending.current
-    if (!request) {
+    if (!request || !ready.current) {
       return
     }
     pending.current = null
@@ -42,13 +47,18 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
       request.finish(new Error('plugin_marketplace_readback_expired_effect_unknown'))
       return
     }
+    if (request.command.action === 'reload' && !reloadReceipt.current?.()) {
+      request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
+      return
+    }
     const next = current.current
     const command = request.command
     if (
       (command.action === 'search' && next.search !== command.value) ||
       (command.action === 'filter' && next.filter !== command.value) ||
       (command.action === 'sources-open' && !next.sourcesOpen) ||
-      (command.action === 'sources-close' && next.sourcesOpen)
+      (command.action === 'sources-close' && next.sourcesOpen) ||
+      (command.action === 'reload' && next.errorPresent)
     ) {
       request.finish(new Error('plugin_marketplace_readback_unknown'))
     } else {
@@ -58,6 +68,7 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
         visibleCount: next.visibleCount,
         installedCount: next.installedCount,
         loading: next.loading,
+        errorPresent: next.errorPresent,
         sourcesOpen: next.sourcesOpen,
         previewOpen: next.previewOpen
       })
@@ -94,10 +105,35 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
             throw new Error('plugin_marketplace_source_not_open')
           }
           pending.current = request
+          ready.current = true
+          reloadReceipt.current = undefined
           if (command.action === 'search' && current.current.search !== command.value) {
             current.current.setSearch(command.value)
           } else if (command.action === 'filter' && current.current.filter !== command.value) {
             current.current.setFilter(command.value)
+          } else if (command.action === 'reload') {
+            ready.current = false
+            void current.current
+              .reload()
+              .then((receipt) => {
+                if (pending.current !== request || request.isSettled()) {
+                  return
+                }
+                if (!receipt) {
+                  pending.current = null
+                  request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
+                  return
+                }
+                reloadReceipt.current = receipt
+                ready.current = true
+                publishCompletion((value) => value + 1)
+              })
+              .catch(() => {
+                if (pending.current === request) {
+                  pending.current = null
+                }
+                request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
+              })
           } else if (command.action === 'sources-open' && !current.current.sourcesOpen) {
             current.current.setSourcesOpen(true)
           } else if (command.action === 'sources-close') {

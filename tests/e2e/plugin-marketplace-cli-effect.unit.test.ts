@@ -1,5 +1,9 @@
 // @vitest-environment happy-dom
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
+import {
+  readFixtureMarketplaceListings,
+  verifyMarketplaceCatalogReload
+} from './plugin-marketplace-catalog-story.fixture'
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -84,7 +88,7 @@ it.skipIf(process.platform === 'win32')(
           },
           listMarketplacePlugins: async () => {
             providerCalls.push('listings')
-            return listings
+            return await readFixtureMarketplaceListings(listings)
           }
         }
       }
@@ -217,6 +221,7 @@ it.skipIf(process.platform === 'win32')(
     try {
       expect(providerCalls).toEqual(['sources', 'listings'])
       expect(container.querySelectorAll('[data-marketplace-plugin-key]')).toHaveLength(2)
+      await verifyMarketplaceCatalogReload(invoke, container)
       await invoke('search', 'private-fixture-query')
       expect(container.querySelector('input')?.value).toBe('private-fixture-query')
       expect(container.querySelectorAll('[data-marketplace-plugin-key]')).toHaveLength(1)
@@ -325,13 +330,7 @@ it.skipIf(process.platform === 'win32')(
       await invoke('sources-close')
       expect(document.querySelector('[role="dialog"]')).toBeNull()
       expect(JSON.parse(output.mock.calls.at(-1)?.[0]).result.marketplace.sourcesOpen).toBe(false)
-      expect(providerCalls).toEqual([
-        'sources',
-        'listings',
-        'source-refresh',
-        'sources',
-        'listings'
-      ])
+      expect(providerCalls.slice(-3)).toEqual(['source-refresh', 'sources', 'listings'])
       await renderOwner(false)
       await renderOwner(true, 2)
       expect(container.querySelectorAll('input[aria-label="Search plugins"]')).toHaveLength(2)
