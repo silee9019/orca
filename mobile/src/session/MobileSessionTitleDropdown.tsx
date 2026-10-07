@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState, type RefObject } from 'react'
 import {
   FlatList,
   Modal,
@@ -22,13 +22,15 @@ const FALLBACK_ANCHOR_TOP = 96
 
 /** The session title as a button that drops the host's session list down over the screen. */
 export function MobileSessionTitleDropdown({
-  controller
+  controller,
+  anchorRef
 }: {
   controller: MobileSessionController
+  /** The header bar the list hangs from, so the panel starts below the title and its subtitle. */
+  anchorRef: RefObject<View | null>
 }) {
   const { hostId, worktreeId, client, connState, worktreeName, requestSwitchSession } = controller
   const dropdown = useSessionTitleDropdown({ hostId, client, connState })
-  const titleRef = useRef<View>(null)
   const [anchorTop, setAnchorTop] = useState(FALLBACK_ANCHOR_TOP)
   const { height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
@@ -54,10 +56,9 @@ export function MobileSessionTitleDropdown({
   return (
     <>
       <Pressable
-        ref={titleRef}
         style={[dropdownStyles.titleButton, dropdown.open && dropdownStyles.titleButtonOpen]}
         onPress={() => {
-          titleRef.current?.measureInWindow((_x, y, _w, h) => {
+          anchorRef.current?.measureInWindow((_x, y, _w, h) => {
             // The header's native safe-area padding is not in the measured y.
             setAnchorTop(insets.top + y + h)
             dropdown.show()
@@ -68,12 +69,13 @@ export function MobileSessionTitleDropdown({
         accessibilityState={{ expanded: dropdown.open }}
       >
         <View style={dropdownStyles.titleText}>{title}</View>
-        <ChevronDown
-          size={14}
-          color={dropdown.open ? colors.textPrimary : colors.textSecondary}
-          strokeWidth={2.2}
-          style={dropdown.open ? dropdownStyles.chevronOpen : undefined}
-        />
+        <View style={dropdown.open ? dropdownStyles.chevronOpen : undefined}>
+          <ChevronDown
+            size={14}
+            color={dropdown.open ? colors.textPrimary : colors.textSecondary}
+            strokeWidth={2.2}
+          />
+        </View>
       </Pressable>
       <Modal
         visible={dropdown.open}
@@ -121,6 +123,7 @@ const dropdownStyles = StyleSheet.create({
   titleButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: spacing.xs,
     borderRadius: radii.button,
     paddingHorizontal: spacing.xs

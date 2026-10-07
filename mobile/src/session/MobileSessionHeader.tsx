@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -61,9 +62,10 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
     showHeaderMoreButton
   } = controller
   const tabBarKeepsKeyboard = useKeyboardPersistingTaps('handled')
+  const topBarRef = useRef<View>(null)
   return (
     <SafeAreaView style={styles.sessionChrome} edges={['top']}>
-      <View style={styles.sessionTopBar}>
+      <View ref={topBarRef} style={styles.sessionTopBar}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           onPress={requestLeaveSession}
@@ -80,7 +82,7 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
               {worktreeName || 'Terminal'}
             </Text>
           ) : (
-            <MobileSessionTitleDropdown controller={controller} />
+            <MobileSessionTitleDropdown controller={controller} anchorRef={topBarRef} />
           )}
           <Pressable
             style={styles.sessionMetaRow}
