@@ -2,13 +2,7 @@
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { act, cleanup, render } from '@testing-library/react'
 import { createElement, useRef, useState } from 'react'
-import { createServer } from 'node:net'
-import { once } from 'node:events'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import path from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
-import { z } from 'zod'
 vi.mock('@/runtime/runtime-rpc-client', async () => ({
   callRuntimeRpc: vi.fn(async () => ({})),
   RuntimeRpcCallError: (await import('@/runtime/runtime-rpc-result')).RuntimeRpcCallError
@@ -26,9 +20,9 @@ vi.mock('electron', async () => {
   }
 })
 import { BrowserWindow, ipcMain } from 'electron'
+import { createRemotePaneCliSocket } from './browser-remote-pane-cli-socket.test-fixture'
+import BrowserAddressBar from '../../src/renderer/src/components/browser-pane/assemble-chrome/BrowserAddressBar'
 import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
-import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
-import { BROWSER_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/browser-viewer'
 import { requestBrowserViewerFromRenderer } from '../../src/main/window/browser-viewer-request-relay'
 import { applyBrowserViewerRequest } from '../../src/renderer/src/runtime/browser-viewer-bridge'
 import { createHarness } from '../../src/renderer/src/components/browser-pane/stream-remote/remote-browser-stream-lifecycle-test-harness'
@@ -40,20 +34,9 @@ import {
   useRemoteBrowserPageInputQueue
 } from '../../src/renderer/src/components/browser-pane/stream-remote/use-remote-browser-page-input'
 import { useRemoteBrowserPaneCommands } from '../../src/renderer/src/components/browser-pane/stream-remote/use-remote-browser-pane-commands'
-import { BROWSER_REMOTE_PANE_COMMAND_SPECS } from '../../src/cli/specs/browser-remote-pane'
-import { BROWSER_REMOTE_PANE_HANDLERS } from '../../src/cli/handlers/browser-remote-pane'
-import { RuntimeClient } from '../../src/cli/runtime-client'
-import { parseArgs, validateCommandAndFlags } from '../../src/cli/args'
-import { getRuntimeMetadataPath } from '../../src/shared/runtime-bootstrap'
 import type { BrowserViewerRequest } from '../../src/shared/browser-viewer-command'
 import { useAppStore } from '@/store'
 import { getDefaultSettings } from '../../src/shared/constants'
-const Request = z.object({
-  id: z.string(),
-  method: z.string(),
-  params: z.unknown(),
-  authToken: z.literal('fixture-token')
-})
 const initial = useAppStore.getInitialState()
 const originalApi = Object.getOwnPropertyDescriptor(window, 'api')
 afterEach(() => {
@@ -71,7 +54,6 @@ it('runs CLI parser/socket/dispatcher/service/relay/owner read-back without borr
     configurable: true,
     value: { ui: { set: async () => ({}) } }
   })
-  const dir = await mkdtemp(path.join(tmpdir(), 'orca-remote-pane-'))
   const window = new BrowserWindow()
   const runtime = new OrcaRuntimeService()
   runtime.setNotifier({
@@ -291,7 +273,15 @@ it('runs CLI parser/socket/dispatcher/service/relay/owner read-back without borr
       { ref: viewport, 'data-testid': 'owner-generation' },
       stream.reconnectGeneration,
       createElement('img', { ref: image, tabIndex: 0, alt: 'remote frame' }),
-      createElement('span', { 'data-testid': 'address' }, address)
+      createElement('span', { 'data-testid': 'address' }, address),
+      createElement(BrowserAddressBar, {
+        commandOwner: { page: 'local-page', active: true },
+        value: address,
+        onChange: setAddress,
+        onSubmit: navigation.submitAddressBar,
+        onNavigate: navigation.navigateToUrl,
+        inputRef: useRef<HTMLInputElement>(null)
+      })
     )
   }
   const view = render(createElement(Owner))
@@ -301,72 +291,10 @@ it('runs CLI parser/socket/dispatcher/service/relay/owner read-back without borr
   expect(harness.currentStatusKind).toBe('stopped')
   expect(harness.streams).toHaveLength(0)
   harness.setCapabilities(['browser.screencast.v1'])
-  let dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_VIEWER_METHODS })
-  const endpoint = path.join(dir, 'runtime.sock')
-  const server = createServer((socket) => {
-    socket.setEncoding('utf8')
-    let pending = ''
-    socket.on('data', (chunk) => {
-      pending += chunk.toString()
-      const index = pending.indexOf('\n')
-      if (index === -1) {
-        return
-      }
-      const request = Request.parse(JSON.parse(pending.slice(0, index)))
-      void dispatcher
-        .dispatch(request)
-        .then((response) => socket.end(`${JSON.stringify(response)}\n`))
-    })
-  })
-  server.listen(endpoint)
-  await once(server, 'listening')
+  const cli = await createRemotePaneCliSocket(runtime)
+  const run = cli.run
   try {
-    await writeFile(
-      getRuntimeMetadataPath(dir),
-      JSON.stringify({
-        runtimeId: runtime.getRuntimeId(),
-        pid: process.pid,
-        transports: [{ kind: 'unix', endpoint }],
-        authToken: 'fixture-token',
-        startedAt: Date.now()
-      })
-    )
     const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const run = async (
-      environmentId: string,
-      action = 'reconnect',
-      remotePage = 'none',
-      extra: string[] = []
-    ) => {
-      const specs = BROWSER_REMOTE_PANE_COMMAND_SPECS
-      const parsed = parseArgs(
-        [
-          'browser',
-          'remote-pane',
-          '--viewer',
-          'host',
-          '--page',
-          'local-page',
-          '--runtime-environment',
-          environmentId,
-          '--remote-page',
-          remotePage,
-          '--action',
-          action,
-          ...extra
-        ],
-        specs.map((spec) => spec.path),
-        specs
-      )
-      validateCommandAndFlags(specs, parsed)
-      const handler = BROWSER_REMOTE_PANE_HANDLERS[parsed.commandPath.join(' ')]
-      await handler({
-        ...parsed,
-        client: new RuntimeClient(dir),
-        cwd: '/fixture/folder',
-        json: true
-      })
-    }
     let pending: Promise<void> | undefined
     await act(async () => {
       pending = run('env-1')
@@ -445,16 +373,39 @@ it('runs CLI parser/socket/dispatcher/service/relay/owner read-back without borr
     expect(useAppStore.getState().browserPagesByWorkspace.workspace[0].loadError?.description).toBe(
       'fixture navigation failed'
     )
+    let addressRequest: Promise<void> | undefined
+    await act(async () => {
+      addressRequest = run('env-1', 'address', 'page-1', [
+        '--address-action',
+        'draft',
+        '--text',
+        'https://address.invalid/'
+      ])
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    await addressRequest
+    const addressInput = view.getByRole('combobox')
+    if (!(addressInput instanceof HTMLInputElement)) {
+      throw new Error('missing actual address bar')
+    }
+    expect(addressInput.value).toBe('https://address.invalid/')
+    expect(document.activeElement).toBe(addressInput)
+    provider.failNavigation = false
+    await act(async () => {
+      addressRequest = run('env-1', 'address', 'page-1', ['--address-action', 'submit'])
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    })
+    await addressRequest
+    expect(output).toHaveBeenLastCalledWith(expect.stringContaining('"navigationRequested": true'))
+    expect(provider.url).toBe('https://address.invalid/')
+    expect(useAppStore.getState().browserPagesByWorkspace.workspace[0].url).toBe(provider.url)
     expect(ipcMain.listenerCount('ui:browserViewerResponse')).toBe(0)
-    dispatcher = new RpcDispatcher({ runtime, methods: [] })
+    cli.useLegacyPeer()
     await expect(run('env-1', 'status')).rejects.toThrow(
       'This runtime does not support remote browser pane receipts.'
     )
   } finally {
     view.unmount()
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve()))
-    )
-    await rm(dir, { recursive: true, force: true })
+    await cli.close()
   }
 })

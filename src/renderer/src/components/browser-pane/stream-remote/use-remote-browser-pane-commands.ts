@@ -164,6 +164,10 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
           })
         return
       }
+      if (request.command.action !== 'reconnect') {
+        request.finish(new Error('remote_browser_pane_action_unavailable'))
+        return
+      }
       if (value.streamStatus.kind !== 'stopped') {
         request.finish(new Error('remote_browser_reconnect_unavailable'))
         return

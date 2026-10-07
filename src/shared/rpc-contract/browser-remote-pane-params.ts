@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BrowserAddressCommand, BrowserAddressState } from './browser-address-params'
 
 export const BrowserRemotePaneInputCommand = z.discriminatedUnion('action', [
   z.object({
@@ -35,7 +36,8 @@ export const BrowserRemotePaneCommand = z.intersection(
   z.union([
     z.object({ action: z.enum(['reconnect', 'status']) }),
     BrowserRemotePaneInputCommand,
-    BrowserRemotePaneNavigationCommand
+    BrowserRemotePaneNavigationCommand,
+    z.object({ action: z.literal('address'), address: BrowserAddressCommand })
   ])
 )
 export type BrowserRemotePaneCommand = z.infer<typeof BrowserRemotePaneCommand>
@@ -48,6 +50,7 @@ export const BrowserRemotePaneState = z.object({
   reconnectRequested: z.boolean(),
   inputAccepted: z.boolean().optional(),
   navigationApplied: z.boolean().optional(),
+  address: BrowserAddressState.optional(),
   reconnectGeneration: z.number().int().nonnegative()
 })
 export type BrowserRemotePaneState = z.infer<typeof BrowserRemotePaneState>

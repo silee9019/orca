@@ -6,7 +6,7 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
     summary:
       'Read, reconnect or send bounded input to an exact remote browser pane in the host viewer',
     usage:
-      'orca browser remote-pane --viewer host --page <local-page> --runtime-environment <id> --remote-page <id|none> --action <status|reconnect|click|key|navigate> [--x <n> --y <n> --button <left|middle> | --key <key> --meta --ctrl --alt --shift] [--json]',
+      'orca browser remote-pane --viewer host --page <local-page> --runtime-environment <id> --remote-page <id|none> --action <status|reconnect|click|key|navigate|address> [--x <n> --y <n> --button <left|middle> | --key <key> --meta --ctrl --alt --shift] [--json]',
     allowedFlags: [
       ...GLOBAL_FLAGS,
       'viewer',
@@ -14,6 +14,9 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
       'runtime-environment',
       'remote-page',
       'action',
+      'address-action',
+      'text',
+      'index',
       'navigation',
       'url',
       'x',
@@ -26,6 +29,7 @@ export const BROWSER_REMOTE_PANE_COMMAND_SPECS: CommandSpec[] = [
       'shift'
     ],
     notes: [
+      'Address reuses the mounted address bar: --address-action <draft|submit|open|dismiss|status|preview|select|highlight|next|previous> [--text <draft> --index <n>]. Submission receipts report navigation requested; they do not claim completed navigation.',
       'Navigate requires --navigation <goto|back|forward|reload>; goto also requires --url <url>.',
       'Click coordinates are CSS pixels relative to the viewer viewport. Input receipts prove host RPC completion, not a rendered frame.',
       'A reconnect receipt proves the existing pane owner restarted its open effect. streamConnected separately reports the current stream state.'

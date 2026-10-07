@@ -378,6 +378,7 @@ export function RemoteBrowserPagePane({
         />
       ) : null}
       <RemoteBrowserPageToolbar
+        commandOwner={{ page: browserTab.id, active: isActive && !stagedPage }}
         runtimeEnvironmentId={runtimeEnvironmentId}
         addressBarValue={addressBarValue}
         onAddressBarChange={setAddressBarValue}

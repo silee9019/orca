@@ -1,5 +1,10 @@
 import type { CommandHandler } from '../dispatch'
-import { getRequiredStringFlag, getOptionalStringFlag, getOptionalNumberFlag } from '../flags'
+import {
+  getRequiredStringFlag,
+  getRequiredStringFlagAllowingEmpty,
+  getOptionalStringFlag,
+  getOptionalNumberFlag
+} from '../flags'
 import { printResult } from '../format'
 import { RuntimeClientError, RuntimeRpcFailureError } from '../runtime-client'
 import {
@@ -16,10 +21,21 @@ export const BROWSER_REMOTE_PANE_HANDLERS: Record<string, CommandHandler> = {
       )
     }
     const remotePage = getRequiredStringFlag(ctx.flags, 'remote-page')
+    const action = getRequiredStringFlag(ctx.flags, 'action')
+    const addressAction =
+      action === 'address' ? getRequiredStringFlag(ctx.flags, 'address-action') : undefined
     const command = BrowserRemotePaneCommand.safeParse({
       environmentId: getRequiredStringFlag(ctx.flags, 'runtime-environment'),
       expectedRemotePageId: remotePage === 'none' ? null : remotePage,
-      action: getRequiredStringFlag(ctx.flags, 'action'),
+      action,
+      address: {
+        action: addressAction,
+        text:
+          addressAction === 'draft'
+            ? getRequiredStringFlagAllowingEmpty(ctx.flags, 'text')
+            : undefined,
+        index: getOptionalNumberFlag(ctx.flags, 'index')
+      },
       x: getOptionalNumberFlag(ctx.flags, 'x'),
       y: getOptionalNumberFlag(ctx.flags, 'y'),
       button: getOptionalStringFlag(ctx.flags, 'button') ?? 'left',

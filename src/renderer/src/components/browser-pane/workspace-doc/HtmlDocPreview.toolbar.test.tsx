@@ -99,6 +99,38 @@ describe('HtmlDocPreview browser chrome', () => {
     expect(hasLiveBrowserGuest('preview-1')).toBe(false)
   })
 
+  it('keeps an internal address focus change and exits after the outside blur grace', async () => {
+    await renderPreview(container, root)
+    const opening = requestBrowserAddress('preview-1', { action: 'open' }, Date.now() + 1000)
+    await act(async () => {})
+    await opening
+    const input = container.querySelector('input')
+    expect(input).not.toBeNull()
+    if (!input) {
+      throw new Error('document address input missing')
+    }
+    vi.useFakeTimers()
+    try {
+      await act(async () => {
+        input.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: input }))
+        vi.advanceTimersByTime(200)
+      })
+      expect(container.querySelector('input')).toBe(input)
+      await act(async () => {
+        input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }))
+        vi.advanceTimersByTime(199)
+      })
+      expect(container.querySelector('input')).toBe(input)
+      await act(async () => vi.advanceTimersByTime(1))
+      expect(container.querySelector('input')).toBeNull()
+      await expect(
+        requestBrowserAddress('preview-1', { action: 'status' }, Date.now() + 1000)
+      ).resolves.toMatchObject({ open: false })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('opens and closes the actual reload menu through the document owner', async () => {
     await renderPreview(container, root)
     for (const [action, open] of [
