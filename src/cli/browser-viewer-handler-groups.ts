@@ -49,6 +49,7 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'browser markup cancel',
       'browser markup status',
       'browser grab start',
+      'browser grab toggle',
       'browser grab cancel',
       'browser grab rearm',
       'browser grab exit',

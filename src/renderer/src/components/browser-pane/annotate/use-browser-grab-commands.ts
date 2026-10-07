@@ -52,6 +52,7 @@ export function useBrowserGrabCommands(page: string, controller: Controller): vo
       if (
         request.page !== page ||
         request.action === 'intent-start' ||
+        request.action === 'toggle' ||
         request.action === 'copy' ||
         request.action === 'copy-screenshot' ||
         !request.claim()

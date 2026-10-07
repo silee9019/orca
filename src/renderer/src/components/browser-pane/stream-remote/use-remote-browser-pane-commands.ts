@@ -6,6 +6,8 @@ import {
 import type {
   BrowserRemotePaneState,
   BrowserRemotePaneCommand,
+  BrowserRemoteDocumentCommand,
+  BrowserRemoteDocumentState,
   BrowserRemotePaneInputCommand,
   BrowserRemotePaneNavigationCommand
 } from '../../../../../shared/rpc-contract/browser-remote-pane-params'
@@ -24,6 +26,7 @@ type RemotePaneOwner = {
     isCurrent: () => boolean
   ) => Promise<void>
   performInput?: (command: BrowserRemotePaneInputCommand, isCurrent: () => boolean) => Promise<void>
+  performDocument?: (command: BrowserRemoteDocumentCommand) => BrowserRemoteDocumentState
   performMenu?: (
     command: Extract<BrowserRemotePaneCommand, { action: 'menu' }>,
     isCurrent: () => boolean,
@@ -122,6 +125,21 @@ export function useRemoteBrowserPaneCommands(owner: RemotePaneOwner): void {
         (inputPending.current && !cancellingMarkup && !dismissingMenu)
       ) {
         request.finish(new Error('remote_browser_pane_busy'))
+        return
+      }
+      if (request.command.action === 'document') {
+        if (!value.performDocument) {
+          request.finish(new Error('remote_browser_document_owner_unavailable'))
+          return
+        }
+        try {
+          const document = value.performDocument(request.command)
+          request.finish(undefined, { ...snapshot(value, false), document })
+        } catch (error) {
+          request.finish(
+            error instanceof Error ? error : new Error('remote_browser_document_effect_unknown')
+          )
+        }
         return
       }
       if (

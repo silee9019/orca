@@ -114,6 +114,10 @@ it.each([
       command: { operation: 'annotation-tray', page: 'p1', action }
     })
   ),
+  {
+    args: ['grab', 'toggle', '--page', 'p1', '--intent', 'annotate'],
+    command: { operation: 'grab', page: 'p1', action: 'toggle', intent: 'annotate' }
+  },
   ...['open', 'focus', 'blur', 'dismiss', 'submit', 'status', 'next', 'previous'].map((action) => ({
     args: ['address', '--action', action, '--page', 'p1'],
     command: { operation: 'address', page: 'p1', command: { action } }

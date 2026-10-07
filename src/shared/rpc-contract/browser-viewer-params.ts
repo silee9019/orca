@@ -16,6 +16,7 @@ export const BrowserViewerPreset = z.enum(BROWSER_VIEWPORT_PRESETS.map((preset) 
 
 export const BrowserGrabViewerAction = z.enum([
   'start',
+  'toggle',
   'cancel',
   'rearm',
   'exit',
@@ -96,9 +97,13 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
       action: BrowserGrabViewerAction,
       intent: z.enum(['copy', 'annotate']).optional()
     })
-    .refine((command) => command.action !== 'start' || command.intent !== undefined, {
-      message: 'Grab start requires an explicit intent'
-    }),
+    .refine(
+      (command) =>
+        (command.action !== 'start' && command.action !== 'toggle') || command.intent !== undefined,
+      {
+        message: 'Grab start/toggle requires an explicit intent'
+      }
+    ),
   z.object({
     viewer,
     operation: z.literal('toolbar-navigation'),

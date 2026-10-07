@@ -50,7 +50,7 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'api')
 })
 
-function mount(invalidateBeforePendingEffect = false, isActive = false) {
+function mount(invalidateBeforePendingEffect = false, isActive = false, markupIsActive = false) {
   const selection = deferred<BrowserGrabResult>()
   const screenshot = deferred<BrowserCaptureSelectionScreenshotResult>()
   const awaitGrabSelection = vi
@@ -79,6 +79,7 @@ function mount(invalidateBeforePendingEffect = false, isActive = false) {
     const annotations = useBrowserPageGrabAnnotations({
       browserTabId: 'page-1',
       isActive,
+      markupIsActive,
       grab,
       containerRef,
       webviewRef,
@@ -100,7 +101,8 @@ function mount(invalidateBeforePendingEffect = false, isActive = false) {
     screenshot,
     awaitGrabSelection,
     captureSelectionScreenshot,
-    cancelGrab
+    cancelGrab,
+    setBrowserAnnotationTrayOpen
   }
 }
 
@@ -111,7 +113,9 @@ function selected(): BrowserGrabResult {
 describe('capture cancellation on a document boundary', () => {
   it('does not restore pending capture when loading cancels between commit and passive effects', async () => {
     const h = mount(true)
-    act(() => h.result.current.annotations.startGrabIntent('annotate'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('annotate')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
     await act(async () => {
       h.selection.resolve(selected())
@@ -127,7 +131,9 @@ describe('capture cancellation on a document boundary', () => {
 
   it('ignores a same-page selection that completes after document invalidation', async () => {
     const h = mount()
-    act(() => h.result.current.annotations.startGrabIntent('annotate'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('annotate')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
     act(() => h.result.current.annotations.cancelPendingBrowserCapture())
     await act(async () => {
@@ -143,7 +149,9 @@ describe('capture cancellation on a document boundary', () => {
 
   it('ignores a same-URL screenshot that finishes after cancellation without creating eligible geometry', async () => {
     const h = mount()
-    act(() => h.result.current.annotations.startGrabIntent('annotate'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('annotate')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
     await act(async () => {
       h.selection.resolve(selected())
@@ -162,7 +170,9 @@ describe('capture cancellation on a document boundary', () => {
 
   it('blocks an already-rendered Add callback after invalidation and permits a fresh capture', async () => {
     const h = mount()
-    act(() => h.result.current.annotations.startGrabIntent('annotate'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('annotate')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
     await act(async () => {
       h.selection.resolve(selected())
@@ -181,7 +191,9 @@ describe('capture cancellation on a document boundary', () => {
 
     const fresh = deferred<BrowserGrabResult>()
     h.awaitGrabSelection.mockReturnValueOnce(fresh.promise)
-    act(() => h.result.current.annotations.startGrabIntent('annotate'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('annotate')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledTimes(2))
     await act(async () => {
       fresh.resolve(selected())
@@ -242,7 +254,9 @@ it('refuses explicit intent starts in inactive viewers before native selection b
 
 it('adds the actual pending annotation through its owner and reads back the saved id', async () => {
   const h = mount(false, true)
-  act(() => h.result.current.annotations.startGrabIntent('annotate'))
+  act(() => {
+    void h.result.current.annotations.startGrabIntent('annotate')
+  })
   await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
   await act(async () => {
     h.selection.resolve(selected())
@@ -320,7 +334,9 @@ it.each(['copy', 'copy-screenshot'] as const)(
         writeVerifiedClipboardImage: imageWrite
       }
     })
-    act(() => h.result.current.annotations.startGrabIntent('copy'))
+    act(() => {
+      void h.result.current.annotations.startGrabIntent('copy')
+    })
     await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
     await act(async () => {
       h.selection.resolve({
@@ -363,3 +379,80 @@ it.each(['copy', 'copy-screenshot'] as const)(
     expect(h.result.current.grab.state).not.toBe('confirming')
   }
 )
+
+async function toggle(intent: 'copy' | 'annotate') {
+  let response: Promise<BrowserGrabState> | undefined
+  await act(async () => {
+    response = requestBrowserGrab('page-1', 'toggle', Date.now() + 9000, intent)
+    void response.catch(() => {})
+  })
+  if (!response) {
+    throw new Error('toggle response missing')
+  }
+  return response
+}
+it('toggles the original intent owner off only after native cancellation acknowledgment', async () => {
+  const h = mount(false, true)
+  h.cancelGrab.mockResolvedValue(true)
+  expect(await toggle('copy')).toMatchObject({ state: 'awaiting', intent: 'copy' })
+  expect(h.awaitGrabSelection).toHaveBeenCalledOnce()
+  expect(await toggle('copy')).toMatchObject({ state: 'idle', intent: 'copy' })
+  expect(h.cancelGrab).toHaveBeenCalledWith({ browserPageId: 'page-1' })
+})
+it('switches intent on the original live picker and opens its annotation tray without restarting selection', async () => {
+  const h = mount(false, true)
+  h.cancelGrab.mockResolvedValue(true)
+  await toggle('copy')
+  expect(await toggle('annotate')).toMatchObject({ state: 'awaiting', intent: 'annotate' })
+  expect(h.setBrowserAnnotationTrayOpen).toHaveBeenCalledWith(true)
+  expect(h.awaitGrabSelection).toHaveBeenCalledOnce()
+  expect(h.cancelGrab).not.toHaveBeenCalled()
+  expect(await toggle('copy')).toMatchObject({ state: 'awaiting', intent: 'copy' })
+  expect(h.result.current.annotations.pendingAnnotationPayload).toBeNull()
+})
+it('refuses a false native cancel acknowledgment even though the original UI already became idle', async () => {
+  const h = mount(false, true)
+  await toggle('annotate')
+  h.cancelGrab.mockResolvedValue(false)
+  await expect(toggle('annotate')).rejects.toThrow('toggle_native_rejected')
+  expect(h.result.current.grab.state).toBe('idle')
+})
+it('refuses an inactive toggle before any original picker action', async () => {
+  const h = mount(false, false)
+  await expect(toggle('copy')).rejects.toThrow('viewer_inactive')
+  expect(h.awaitGrabSelection).not.toHaveBeenCalled()
+})
+
+it('preserves the original markup-overlay shortcut guard before the grab owner runs', async () => {
+  const h = mount(false, true, true)
+  await expect(toggle('annotate')).rejects.toThrow('markup_active')
+  expect(h.awaitGrabSelection).not.toHaveBeenCalled()
+  expect(h.setBrowserAnnotationTrayOpen).not.toHaveBeenCalled()
+})
+it('keeps toggle-off pending through native acknowledgment and refuses a competing intent', async () => {
+  const h = mount(false, true)
+  await toggle('copy')
+  const native = deferred<boolean>()
+  h.cancelGrab.mockReturnValueOnce(native.promise)
+  let pending: Promise<BrowserGrabState> | undefined
+  let settled = false
+  await act(async () => {
+    pending = requestBrowserGrab('page-1', 'toggle', Date.now() + 9000, 'copy')
+    void pending.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      }
+    )
+  })
+  expect(h.result.current.grab.state).toBe('idle')
+  expect(settled).toBe(false)
+  await expect(toggle('annotate')).rejects.toThrow('browser_grab_busy')
+  expect(h.setBrowserAnnotationTrayOpen).not.toHaveBeenCalled()
+  await act(async () => {
+    native.resolve(true)
+  })
+  await expect(pending).resolves.toMatchObject({ state: 'idle', intent: 'copy' })
+})

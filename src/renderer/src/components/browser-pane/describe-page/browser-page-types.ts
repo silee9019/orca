@@ -39,6 +39,7 @@ export type BrowserPageGrabToastState = {
 }
 
 export type BrowserPageGrabAnnotationsOptions = {
+  markupIsActive?: boolean
   /** Scopes the stored annotations. Stable for the life of the surface. */
   browserTabId: string
   /**

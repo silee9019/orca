@@ -39,6 +39,7 @@ export function useBrowserPageGrabAnnotations({
   browserTabId,
   toolTargetId = browserTabId,
   isActive,
+  markupIsActive = false,
   grab,
   containerRef,
   trackingContainer,
@@ -49,7 +50,7 @@ export function useBrowserPageGrabAnnotations({
   setBrowserAnnotationTrayOpen
 }: BrowserPageGrabAnnotationsOptions): {
   grabIntent: GrabIntent
-  startGrabIntent: (nextIntent: GrabIntent) => void
+  startGrabIntent: (nextIntent: GrabIntent) => void | Promise<boolean>
   pendingAnnotationPayload: BrowserGrabPayload | null
   setPendingAnnotationPayload: Dispatch<SetStateAction<BrowserGrabPayload | null>>
   grabToast: BrowserPageGrabToastState | null
@@ -179,7 +180,7 @@ export function useBrowserPageGrabAnnotations({
   })
 
   const startGrabIntent = useCallback(
-    (nextIntent: GrabIntent): void => {
+    (nextIntent: GrabIntent): void | Promise<boolean> => {
       recordFeatureInteraction('browser-grab')
       if (nextIntent === 'annotate') {
         recordFeatureInteraction('browser-annotations')
@@ -191,13 +192,20 @@ export function useBrowserPageGrabAnnotations({
         setBrowserAnnotationTrayOpen(true)
       }
       if (grab.state === 'idle' || grab.state === 'error' || grabIntent === nextIntent) {
-        grab.toggle()
+        return grab.toggle()
       }
     },
     [grab, grabIntent, recordFeatureInteraction, setBrowserAnnotationTrayOpen]
   )
 
-  useBrowserGrabIntentCommands(toolTargetId, isActive, grab, startGrabIntent)
+  useBrowserGrabIntentCommands(
+    toolTargetId,
+    isActive,
+    grab,
+    grabIntent,
+    startGrabIntent,
+    markupIsActive
+  )
 
   // C / S copy the hovered element without clicking: extract via IPC while armed/awaiting, else use the captured payload.
   const handleGrabActionShortcut = useCallback(

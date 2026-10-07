@@ -30,6 +30,11 @@ export const BROWSER_REMOTE_PANE_HANDLERS: Record<string, CommandHandler> = {
       environmentId: getRequiredStringFlag(ctx.flags, 'runtime-environment'),
       expectedRemotePageId: remotePage === 'none' ? null : remotePage,
       action,
+      document: {
+        kind: 'workspace-doc',
+        worktreeId: getOptionalStringFlag(ctx.flags, 'document-workspace'),
+        filePath: getOptionalStringFlag(ctx.flags, 'file')
+      },
       menuAction: getOptionalStringFlag(ctx.flags, 'menu-action'),
       markupAction: getOptionalStringFlag(ctx.flags, 'markup-action'),
       editor: {

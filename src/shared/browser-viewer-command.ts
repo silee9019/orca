@@ -39,7 +39,8 @@ export const BrowserViewerResultSchema = z.object({
       state: z.enum(['idle', 'armed', 'awaiting', 'confirming', 'error']),
       hasSelection: z.boolean(),
       hasScreenshot: z.boolean(),
-      contextMenu: z.boolean()
+      contextMenu: z.boolean(),
+      intent: z.enum(['copy', 'annotate']).optional()
     })
     .optional(),
   toolbar: z

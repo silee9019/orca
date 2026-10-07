@@ -4,6 +4,7 @@ export type BrowserGrabState = {
   hasSelection: boolean
   hasScreenshot: boolean
   contextMenu: boolean
+  intent?: 'copy' | 'annotate'
 }
 export type BrowserGrabEvent = {
   page: string

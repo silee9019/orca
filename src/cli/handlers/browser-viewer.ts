@@ -18,14 +18,16 @@ function runFindCommand(
 }
 function runGrabCommand(
   ctx: HandlerContext,
-  action: 'start' | 'cancel' | 'rearm' | 'exit' | 'status' | 'copy' | 'copy-screenshot'
+  action: 'start' | 'toggle' | 'cancel' | 'rearm' | 'exit' | 'status' | 'copy' | 'copy-screenshot'
 ): Promise<void> {
   return runViewerCommand(ctx, {
     viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
     operation: 'grab',
     page: getRequiredStringFlag(ctx.flags, 'page'),
     action,
-    ...(action === 'start' ? { intent: getRequiredStringFlag(ctx.flags, 'intent') } : {})
+    ...(action === 'start' || action === 'toggle'
+      ? { intent: getRequiredStringFlag(ctx.flags, 'intent') }
+      : {})
   })
 }
 
@@ -117,6 +119,7 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
       action: 'status'
     }),
 
+  'browser grab toggle': (ctx) => runGrabCommand(ctx, 'toggle'),
   'browser grab start': (ctx) => runGrabCommand(ctx, 'start'),
   'browser grab cancel': (ctx) => runGrabCommand(ctx, 'cancel'),
   'browser grab rearm': (ctx) => runGrabCommand(ctx, 'rearm'),

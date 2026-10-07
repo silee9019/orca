@@ -93,6 +93,23 @@ export const BrowserRemoteMenuState = z.object({
   externalRequested: z.literal(true).optional()
 })
 export type BrowserRemoteMenuState = z.infer<typeof BrowserRemoteMenuState>
+export const BrowserRemoteDocumentCommand = z.object({
+  action: z.literal('document'),
+  document: z.object({
+    kind: z.literal('workspace-doc'),
+    worktreeId: z.string().min(1),
+    filePath: z.string().min(1)
+  })
+})
+export type BrowserRemoteDocumentCommand = z.infer<typeof BrowserRemoteDocumentCommand>
+export const BrowserRemoteDocumentState = z.object({
+  outcome: z.enum(['converted', 'activated-existing', 'opened-in-owning-worktree']),
+  page: z.string().min(1),
+  workspace: z.string().min(1),
+  worktree: z.string().min(1),
+  remoteRetirementRequested: z.boolean().optional()
+})
+export type BrowserRemoteDocumentState = z.infer<typeof BrowserRemoteDocumentState>
 export const BrowserRemotePaneCommand = z.intersection(
   z.object({
     environmentId: z.string().min(1),
@@ -105,6 +122,7 @@ export const BrowserRemotePaneCommand = z.intersection(
     z.object({ action: z.literal('address'), address: BrowserAddressCommand }),
     BrowserRemoteFailureCommand,
     BrowserRemoteMenuCommand,
+    BrowserRemoteDocumentCommand,
     z.object({ action: z.literal('markup'), markupAction: z.enum(['start', 'cancel', 'status']) }),
     z.object({ action: z.literal('markup-editor'), editor: BrowserMarkupEditorCommand })
   ])
@@ -122,6 +140,7 @@ export const BrowserRemotePaneState = z.object({
   address: BrowserAddressState.optional(),
   failure: BrowserRemoteFailureState.optional(),
   menu: BrowserRemoteMenuState.optional(),
+  document: BrowserRemoteDocumentState.optional(),
   markup: z
     .object({ state: z.enum(['idle', 'capturing', 'drawing', 'composing']), hasImage: z.boolean() })
     .optional(),

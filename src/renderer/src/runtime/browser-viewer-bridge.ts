@@ -120,6 +120,13 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, draft, applied: true }
   }
   if (command.operation === 'grab') {
+    if (command.action === 'toggle') {
+      if (!command.intent) {
+        throw new Error('invalid_grab_intent')
+      }
+      const grab = await requestBrowserGrab(page.id, 'toggle', request.expiresAt, command.intent)
+      return { ...base, page: page.id, grab, applied: true }
+    }
     if (command.action === 'start') {
       if (!command.intent) {
         throw new Error('invalid_grab_intent')

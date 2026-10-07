@@ -174,6 +174,22 @@ describe('browser viewer request effects', () => {
       ['page-1', 'await-ready', expiresAt]
     ])
   })
+  it('routes explicit intent toggles once to the original intent owner', async () => {
+    const expiresAt = Date.now() + 9000
+    await request(
+      { viewer: 'host', operation: 'grab', page: 'page-1', action: 'toggle', intent: 'copy' },
+      expiresAt
+    )
+    expect(fixture.grab.mock.calls).toEqual([['page-1', 'toggle', expiresAt, 'copy']])
+    expect(
+      BrowserViewerCommand.safeParse({
+        viewer: 'host',
+        operation: 'grab',
+        page: 'page-1',
+        action: 'toggle'
+      }).success
+    ).toBe(false)
+  })
   it('routes state-aware toolbar navigation to the exact owning page', async () => {
     const expiresAt = Date.now() + 9000
     expect(

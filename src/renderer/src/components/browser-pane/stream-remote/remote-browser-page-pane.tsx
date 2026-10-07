@@ -4,6 +4,7 @@ import { BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY } from '../../../../../sha
 import type { BrowserPage as BrowserPageState } from '../../../../../shared/browser-workspace-types'
 import { runtimeEnvironmentSupportsCapability } from '@/runtime/runtime-rpc-client'
 import { convertBrowserPageToWorkspaceDoc } from '@/lib/file-preview'
+import { openRemoteBrowserWorkspaceDocument } from './open-remote-browser-workspace-document'
 import { openRemoteContextMenuLink } from './open-remote-context-menu-link'
 import { useBrowserPageChromeFocus } from '../assemble-chrome/use-browser-page-chrome-focus'
 import { useBrowserAddressBarEditSession } from '../assemble-chrome/use-browser-address-bar-edit-session'
@@ -56,12 +57,10 @@ export function RemoteBrowserPagePane({
   onUpdatePageState: (tabId: string, updates: BrowserTabPageState) => void
   onSetUrl: BrowserPageUrlSetter
 }): React.JSX.Element {
-  const activeRuntimeEnvironmentId = runtimeEnvironmentId
   const addressBarInputRef = useRef<HTMLInputElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const remoteViewportRef = useRef<HTMLDivElement | null>(null)
-  // Why: the screencast <img> only exists once a frame lands, so before the first one the
-  // viewport is the only place guest focus can go.
+  // Before the first frame, only the viewport can receive guest focus.
   const guestFocus = useElementGuestFocus(imageRef, remoteViewportRef)
   const { startAddressBarFocusGrab } = useBrowserPageChromeFocus({
     browserTabId: browserTab.id,
@@ -159,7 +158,7 @@ export function RemoteBrowserPagePane({
   } = useRemoteBrowserPageLifecycle({
     browserTab,
     worktreeId,
-    activeRuntimeEnvironmentId,
+    activeRuntimeEnvironmentId: runtimeEnvironmentId,
     isActive,
     setPaneNotice,
     setPaneBusy,
@@ -234,7 +233,7 @@ export function RemoteBrowserPagePane({
   }, [hasStreamFrame])
 
   const { reconnectRemoteStream, reconnectGeneration } = useRemoteBrowserPageStream({
-    activeRuntimeEnvironmentId,
+    activeRuntimeEnvironmentId: runtimeEnvironmentId,
     browserPageId: browserTab.id,
     isActive,
     lifecycle,
@@ -286,7 +285,7 @@ export function RemoteBrowserPagePane({
   const markup = useRemoteBrowserMarkupCapture(imageRef, remoteViewportRef, {
     page: browserTab.id,
     active: isActive && !stagedPage,
-    environmentId: activeRuntimeEnvironmentId,
+    environmentId: runtimeEnvironmentId,
     remotePageId: lifecycle.tokens.remotePage
   })
 
@@ -319,7 +318,7 @@ export function RemoteBrowserPagePane({
     commandOwner: {
       page: browserTab.id,
       active: isActive && !stagedPage,
-      environmentId: activeRuntimeEnvironmentId,
+      environmentId: runtimeEnvironmentId,
       remotePageId: lifecycle.tokens.remotePage
     },
     onNavigate: (method) => {
@@ -353,9 +352,13 @@ export function RemoteBrowserPagePane({
     setPaneNotice
   })
 
+  const openWorkspaceDocument = (
+    location: Parameters<typeof openRemoteBrowserWorkspaceDocument>[2]
+  ) => convertBrowserPageToWorkspaceDoc(browserTab.id, location)
+
   useRemoteBrowserPaneCommands({
     page: browserTab.id,
-    environmentId: activeRuntimeEnvironmentId,
+    environmentId: runtimeEnvironmentId,
     remotePageId: lifecycle.tokens.remotePage,
     active: isActive,
     staged: stagedPage,
@@ -365,6 +368,13 @@ export function RemoteBrowserPagePane({
     performInput: performRemoteInput,
     performMarkup: markup.performCommand,
     performMenu,
+    performDocument: (command) =>
+      openRemoteBrowserWorkspaceDocument(
+        browserTab.id,
+        runtimeEnvironmentId,
+        command.document,
+        openWorkspaceDocument
+      ),
     performNavigation: (command, isCurrent) =>
       runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
   })
@@ -386,9 +396,7 @@ export function RemoteBrowserPagePane({
         onAddressBarChange={setAddressBarValue}
         onSubmitAddressBar={submitAddressBar}
         onNavigateToUrl={navigateToUrl}
-        onOpenWorkspaceDoc={(docLocation) =>
-          convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)
-        }
+        onOpenWorkspaceDoc={(docLocation) => openWorkspaceDocument(docLocation)}
         addressBarInputRef={addressBarInputRef}
         addressBarEditSession={addressBarEditSession}
         busy={busy}
@@ -414,7 +422,7 @@ export function RemoteBrowserPagePane({
         remoteCertificateTrustSupported={remoteCertificateTrustSupported}
         certificateFailure={certificateFailure}
         remotePageHandle={remotePageHandle}
-        activeRuntimeEnvironmentId={activeRuntimeEnvironmentId}
+        activeRuntimeEnvironmentId={runtimeEnvironmentId}
         worktreeId={worktreeId}
         runtimeWorktree={runtimeWorktree}
         runtimeTarget={runtimeTarget}

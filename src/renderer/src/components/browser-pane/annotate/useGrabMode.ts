@@ -24,7 +24,7 @@ export type GrabModeHook = {
   /** True when the user right-clicked to select, signalling the renderer
    *  should show the full action menu instead of auto-copying. */
   contextMenu: boolean
-  toggle: () => void
+  toggle: () => void | Promise<boolean>
   cancel: () => void
   /** Called after Copy — re-arms grab for another pick. */
   rearm: () => void
@@ -214,14 +214,14 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
       .catch(() => false)
   }, [browserPageId])
 
-  const toggle = useCallback(() => {
+  const toggle = useCallback((): void | Promise<boolean> => {
     if ((state === 'idle' || state === 'error') && grabTabIdRef.current === null) {
       setError(null)
       setPayload(null)
       setContextMenu(false)
       void armAndAwait()
     } else {
-      cancel()
+      return cancel()
     }
   }, [state, armAndAwait, cancel])
 

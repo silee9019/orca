@@ -105,6 +105,12 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   },
 
   {
+    path: ['browser', 'grab', 'toggle'],
+    summary: 'Use the original grab intent toggle in the native host viewer',
+    usage: 'orca browser grab toggle --viewer host --page <id> --intent <copy|annotate> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'intent']
+  },
+  {
     path: ['browser', 'grab', 'start'],
     summary: 'start the existing element picker in the host viewer',
     usage: 'orca browser grab start --viewer host --page <id> --intent <copy|annotate> [--json]',
