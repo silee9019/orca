@@ -1,4 +1,4 @@
-import { createElement, type ReactNode } from 'react'
+import { createElement, type ReactElement } from 'react'
 import { act, create } from 'react-test-renderer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -288,7 +288,7 @@ describe('Back after switching sessions', () => {
       })
       return null
     }
-    const wrap = (id: string): ReactNode =>
+    const wrap = (id: string): ReactElement =>
       createElement(
         SessionHistoryContext.Provider,
         { value: history },
