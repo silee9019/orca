@@ -25,6 +25,70 @@ function requestId(window: BrowserWindow): string {
   return value.id
 }
 describe('emulator viewer focus acknowledgement', () => {
+  it('uses a separate frame channel and rejects old-viewer focus-only acknowledgements', async () => {
+    const window = new BrowserWindow()
+    const pending = requestEmulatorFocus(window, 'folder-mobile', undefined, {
+      tabId: 'sim-tab',
+      action: { type: 'wheel', clientX: 50, clientY: 100, deltaX: 0, deltaY: 10, deltaMode: 0 }
+    })
+    expect(window.webContents.send).toHaveBeenCalledWith('emulator:frameRequest', expect.anything())
+    ipcMain.emit(
+      'emulator:focusResponse',
+      { sender: window.webContents },
+      {
+        id: requestId(window),
+        ok: true,
+        result: {
+          viewer: 'host',
+          viewerId: 7,
+          worktreeId: 'folder-mobile',
+          tabId: 'sim-tab',
+          groupId: 'group',
+          applied: true
+        }
+      }
+    )
+    await expect(pending).rejects.toThrow('invalid_renderer_response')
+  })
+  it('requires exact requested tab identity in the read-back', async () => {
+    const window = new BrowserWindow()
+    const pending = requestEmulatorFocus(window, 'folder-mobile', undefined, {
+      tabId: 'sim-tab',
+      action: { type: 'wheel', clientX: 50, clientY: 100, deltaX: 0, deltaY: 10, deltaMode: 0 }
+    })
+    ipcMain.emit(
+      'emulator:focusResponse',
+      { sender: window.webContents },
+      {
+        id: requestId(window),
+        ok: true,
+        result: {
+          viewer: 'host',
+          viewerId: 7,
+          worktreeId: 'folder-mobile',
+          tabId: 'wrong-tab',
+          groupId: 'group',
+          applied: true,
+          frameState: { streamError: false, streamSize: { width: 200, height: 100 } }
+        }
+      }
+    )
+    await expect(pending).rejects.toThrow('invalid_renderer_response')
+  })
+  it('times out an old viewer without sending a focus request', async () => {
+    vi.useFakeTimers()
+    const window = new BrowserWindow()
+    const pending = requestEmulatorFocus(window, 'folder-mobile', undefined, {
+      tabId: 'sim-tab',
+      action: { type: 'wheel', clientX: 50, clientY: 100, deltaX: 0, deltaY: 10, deltaMode: 0 }
+    })
+    const rejected = expect(pending).rejects.toThrow('viewer_focus_timeout_applied_unknown')
+    await vi.advanceTimersByTimeAsync(10000)
+    await rejected
+    expect(vi.mocked(window.webContents.send).mock.calls.map((call) => call[0])).toEqual([
+      'emulator:frameRequest'
+    ])
+  })
   it('accepts only the authoritative viewer response and scopes it to the workspace', async () => {
     const window = new BrowserWindow()
     const pending = requestEmulatorFocus(window, 'folder-mobile')

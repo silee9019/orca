@@ -36,6 +36,7 @@ type UseMarkupModeParams = {
 }
 
 export type MarkupModeController = {
+  commandOwner?: { page: string; active: boolean }
   state: MarkupModeState
   isActive: boolean
   baseImage: MarkupBaseImage | null

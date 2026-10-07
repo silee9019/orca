@@ -171,7 +171,7 @@ export function BrowserPagePane({
     worktreeId
   })
   const grab = useGrabMode(browserTab.id)
-  const markup = useBrowserPageMarkupCapture(webviewRef)
+  const markup = useBrowserPageMarkupCapture(webviewRef, { page: browserTab.id, active: isActive })
   const grabAnnotations = useBrowserPageGrabAnnotations({
     browserTabId: browserTab.id,
     isActive,

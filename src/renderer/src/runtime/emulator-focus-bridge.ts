@@ -2,6 +2,7 @@ import { useAppStore } from '@/store'
 import { ensureSimulatorTab } from '@/lib/ensure-simulator-tab'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
 import type { EmulatorFocusRequest, EmulatorFocusResult } from '../../../shared/emulator-focus'
+import { applyEmulatorFrame } from './emulator-frame-bridge'
 
 export async function applyEmulatorFocus(
   request: EmulatorFocusRequest
@@ -81,7 +82,7 @@ export function attachEmulatorFocusBridge(): () => void {
     return () => {}
   }
   let queue = Promise.resolve()
-  return api.onFocusRequest((request) => {
+  const focus = api.onFocusRequest((request) => {
     queue = queue.then(async () => {
       try {
         api.respondFocus?.({ id: request.id, ok: true, result: await applyEmulatorFocus(request) })
@@ -90,4 +91,17 @@ export function attachEmulatorFocusBridge(): () => void {
       }
     })
   })
+  const frame = api.onFrameRequest?.((request) => {
+    queue = queue.then(async () => {
+      try {
+        api.respondFocus?.({ id: request.id, ok: true, result: await applyEmulatorFrame(request) })
+      } catch {
+        api.respondFocus?.({ id: request.id, ok: false, error: 'emulator_frame_not_applied' })
+      }
+    })
+  })
+  return () => {
+    focus()
+    frame?.()
+  }
 }

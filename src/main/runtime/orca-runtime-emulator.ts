@@ -1,5 +1,5 @@
-import { requestEmulatorFocus } from '../emulator/emulator-focus-request-relay'
-import type { RuntimeEmulatorCommandHost } from './runtime-emulator-command-host'
+import type { EmulatorFrameParams } from '../../shared/emulator-frame-command'
+import { RuntimeEmulatorViewerCommands } from './runtime-emulator-viewer-commands'
 export type { RuntimeEmulatorCommandHost } from './runtime-emulator-command-host'
 import type { EmulatorBridge } from '../emulator/emulator-bridge'
 import { EmulatorError } from '../emulator/emulator-errors'
@@ -16,8 +16,13 @@ import type { EmulatorDevice } from '../emulator/backends/emulator-backend'
 
 type EmulatorTargetParams = { device?: string; emulator?: string; worktree?: string }
 
-export class RuntimeEmulatorCommands {
-  constructor(private readonly host: RuntimeEmulatorCommandHost) {}
+export class RuntimeEmulatorCommands extends RuntimeEmulatorViewerCommands {
+  override emulatorFocus(params: { worktree: string }, signal?: AbortSignal) {
+    return super.emulatorFocus(params, signal)
+  }
+  override emulatorFrame(params: EmulatorFrameParams, signal?: AbortSignal) {
+    return super.emulatorFrame(params, signal)
+  }
 
   private requireEmulatorBridge(): EmulatorBridge {
     const bridge = this.host.getEmulatorBridge()
@@ -175,11 +180,6 @@ export class RuntimeEmulatorCommands {
     }
     // Default: no auto steal (mirror browser tab create/switch). --focus sends emulator:pane-focus only when requested.
     return { attached: true, info }
-  }
-
-  async emulatorFocus(params: { worktree: string }, signal?: AbortSignal) {
-    const worktreeId = await this.host.resolveEmulatorWorkspaceId(params.worktree)
-    return requestEmulatorFocus(this.host.getAuthoritativeWindow(), worktreeId, signal)
   }
 
   async emulatorStreamInfo(params: { worktree: string }): Promise<EmulatorSessionInfo> {

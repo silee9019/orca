@@ -4,6 +4,7 @@ import { toRuntimeExecutionHostId } from '../../../../shared/execution-host'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
+import { useSearchSettingsCommands } from './use-search-settings-commands'
 import {
   getRuntimeServerConnectionState,
   isRuntimeServerTransportConnected,
@@ -63,18 +64,19 @@ export function SessionHistoryServerRow({
     onStateChange?.(environment.id, state)
   }, [environment.id, onStateChange, state])
 
-  async function setEnabled(next: boolean): Promise<void> {
+  async function setEnabled(next: boolean): Promise<boolean> {
     setBusy(true)
     onError(null)
     try {
       adopt(await window.api.aiVault.setSearchEnabled(hostId, next))
+      return true
     } catch (error) {
       if (!mounted.current) {
-        return
+        return false
       }
       if (isHostTooOldError(error)) {
         setTooOldOnSet(true)
-        return
+        return false
       }
       onError(
         translate(
@@ -83,6 +85,7 @@ export function SessionHistoryServerRow({
           { host: environment.name }
         )
       )
+      return false
     } finally {
       if (mounted.current) {
         setBusy(false)
@@ -90,7 +93,7 @@ export function SessionHistoryServerRow({
     }
   }
 
-  function toggle(): Promise<void> {
+  function toggle(): Promise<boolean> {
     return setEnabled(!enabled)
   }
 
@@ -98,6 +101,28 @@ export function SessionHistoryServerRow({
     openSettingsPage()
     openSettingsTarget({ pane: 'servers', repoId: null, sectionId: environment.id })
   }
+
+  useSearchSettingsCommands(hostId, async (command) => {
+    if (command.operation === 'server-settings-open') {
+      if (!tooOld) {
+        throw new Error('search_settings_action_not_offered')
+      }
+      openServerSettings()
+      return { viewer: 'host', applied: true, persisted: false }
+    }
+    if (command.operation !== 'server-toggle' || busy || !connected || tooOld) {
+      throw new Error('search_settings_action_not_offered')
+    }
+    const expected = !enabled
+    const applied = await toggle()
+    const status = await window.api.aiVault.searchStatus(hostId)
+    return {
+      viewer: 'host',
+      applied: applied && mounted.current && status.enabled === expected,
+      persisted: applied && status.enabled === expected,
+      enabled: status.enabled
+    }
+  })
 
   const row = {
     kind: 'server' as const,

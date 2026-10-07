@@ -1,18 +1,9 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent,
-  type WheelEvent
-} from 'react'
+import { useEmulatorStreamGeometry } from './use-emulator-stream-geometry'
+import { useCallback, useEffect, useMemo, useRef, type PointerEvent, type WheelEvent } from 'react'
 import {
   fitDeviceFrameToPane,
-  resolveVisualStreamGeometry,
   resolveDeviceFrameKind,
-  type EmulatorDeviceVisualOrientation,
-  type StreamSize
+  type EmulatorDeviceVisualOrientation
 } from './emulator-device-frame-layout'
 import {
   buildWheelGesturePoints,
@@ -32,6 +23,7 @@ import { useEmulatorControlStream } from './use-emulator-control-stream'
 import { useEmulatorPaneSize } from './use-emulator-pane-size'
 import { useEmulatorScreenKeyboard } from './use-emulator-screen-keyboard'
 import { useEmulatorStreamWindowVisible } from './use-emulator-stream-window-visibility'
+import { useEmulatorFrameCommands } from './use-emulator-frame-commands'
 
 type EmulatorDeviceFrameProps = {
   previewUrl?: string
@@ -80,28 +72,25 @@ export function EmulatorDeviceFrame({
   const liveTouchEdgeRef = useRef<number | undefined>(undefined)
   const lastTouchPointRef = useRef<EmulatorScreenPoint | null>(null)
   const wheelGestureRef = useRef<PendingWheelGesture | null>(null)
-  const [streamError, setStreamError] = useState(false)
-  const [streamSize, setStreamSize] = useState<StreamSize | null>(null)
-  const visualStreamGeometry = useMemo(
-    () => resolveVisualStreamGeometry(streamSize, visualOrientation),
-    [streamSize, visualOrientation]
-  )
+  const { streamError, streamSize, visualStreamGeometry, handleStreamSize, handleStreamError } =
+    useEmulatorStreamGeometry(previewUrl, streamKey, visualOrientation)
   const canInteract = isLive && !loading && !streamError
   const { cancelKeyboardFrames, sendKeyboardFrames, sendTouch } = useEmulatorControlStream(
     wsUrl,
     canInteract
   )
-  const { enableKeyboardCapture, handleBlur, handleKeyDown, handlePaste, keyboardCaptureActive } =
-    useEmulatorScreenKeyboard({
-      cancelKeyboardFrames,
-      canInteract,
-      sendKeyboardFrames
-    })
-
-  useEffect(() => {
-    setStreamError(false)
-    setStreamSize(null)
-  }, [previewUrl, streamKey])
+  const {
+    enableKeyboardCapture,
+    handleBlur,
+    handleKeyDown,
+    handlePaste,
+    keyboardCaptureActive,
+    pasteText
+  } = useEmulatorScreenKeyboard({
+    cancelKeyboardFrames,
+    canInteract,
+    sendKeyboardFrames
+  })
 
   const mapEventToScreenPoint = useCallback(
     (event: ScreenCoordinateEvent): EmulatorScreenPoint | null =>
@@ -282,7 +271,18 @@ export function EmulatorDeviceFrame({
   )
 
   const handleWheel = useCallback(
-    (event: WheelEvent<HTMLDivElement>) => {
+    (
+      event: Pick<
+        WheelEvent<HTMLDivElement>,
+        | 'clientX'
+        | 'clientY'
+        | 'deltaX'
+        | 'deltaY'
+        | 'deltaMode'
+        | 'currentTarget'
+        | 'preventDefault'
+      >
+    ) => {
       if (!canInteract) {
         return
       }
@@ -325,16 +325,13 @@ export function EmulatorDeviceFrame({
     [canInteract, flushWheelGesture, sendTouch, visualStreamGeometry]
   )
 
-  const handleStreamSize = useCallback((size: NonNullable<StreamSize>) => {
-    setStreamError(false)
-    setStreamSize((current) =>
-      current?.width === size.width && current.height === size.height ? current : size
-    )
-  }, [])
-
-  const handleStreamError = useCallback(() => {
-    setStreamError(true)
-  }, [])
+  useEmulatorFrameCommands(
+    paneRef,
+    { streamSize, streamError, keyboardCaptureActive },
+    canInteract,
+    handleWheel,
+    pasteText
+  )
 
   // Why: a hidden/occluded window (or a background tab) still receives emulator
   // frames, including over SSH; parking the stream avoids background decode/IPC
@@ -359,6 +356,7 @@ export function EmulatorDeviceFrame({
   return (
     <div
       ref={paneRef}
+      data-emulator-frame-owner
       className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted"
     >
       <div

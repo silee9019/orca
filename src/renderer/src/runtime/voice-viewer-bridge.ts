@@ -1,4 +1,6 @@
-import { requestVoiceDictation } from './voice-dictation-request'
+import { applyVoiceMicrophoneViewerAction } from './voice-microphone-viewer-actions'
+import { applyVmRuntimeViewerAction } from './vm-runtime-viewer-actions'
+import { applyVoiceDictationViewerAction } from './voice-dictation-viewer-actions'
 import { requireHostViewer, waitForView } from './voice-viewer-target'
 import { applyVoiceDialogViewerAction } from './voice-dialog-viewer-actions'
 import { requestVoiceKeyDialog } from './voice-key-dialog-request'
@@ -9,17 +11,8 @@ import {
   type VoiceViewerRequest,
   type VoiceViewerResult
 } from '../../../shared/voice-viewer'
-import { EPHEMERAL_VM_SETUP_PROMPT } from '../../../shared/ephemeral-vm-setup-prompt'
-import {
-  listVoiceMicrophoneDevices,
-  normalizeMicrophoneDeviceId
-} from '@/components/dictation/microphone-devices'
-import {
-  cancelMicrophoneRequest,
-  cancelPendingMicrophoneRequests,
-  readMicrophoneRequest,
-  startMicrophoneRequest
-} from './voice-microphone-requests'
+import { applyVmPaneViewerAction } from './vm-pane-viewer-actions'
+import { cancelPendingMicrophoneRequests } from './voice-microphone-requests'
 
 export async function applyVoiceViewerRequest(
   request: VoiceViewerRequest
@@ -31,42 +24,12 @@ export async function applyVoiceViewerRequest(
   }
   const result = { viewer: 'host' as const, applied: true, persisted: false }
   switch (command.operation) {
-    case 'microphones-list': {
-      if (!navigator.mediaDevices?.enumerateDevices) {
-        throw new Error('microphone_unavailable')
-      }
-      const devices = listVoiceMicrophoneDevices(await navigator.mediaDevices.enumerateDevices())
-      requireHostViewer()
-      return { ...result, devices }
-    }
-    case 'microphone-select': {
-      const id = normalizeMicrophoneDeviceId(command.deviceId)
-      const devices = listVoiceMicrophoneDevices(await navigator.mediaDevices.enumerateDevices())
-      requireHostViewer()
-      const device = devices.find((entry) => entry.deviceId === id)
-      if (id && !device) {
-        throw new Error('microphone_device_not_found')
-      }
-      const voice = useAppStore.getState().settings?.voice ?? getDefaultVoiceSettings()
-      await initial.updateSettingsOrThrow({
-        voice: { ...voice, microphoneDeviceId: id, microphoneDeviceLabel: device?.label ?? null }
-      })
-      requireHostViewer()
-      const durable = await window.api.settings.get()
-      const current = useAppStore.getState().settings?.voice
-      return {
-        ...result,
-        microphoneDeviceId: id,
-        persisted: durable.voice?.microphoneDeviceId === id,
-        applied: current?.microphoneDeviceId === id
-      }
-    }
+    case 'microphones-list':
+    case 'microphone-select':
     case 'microphone-request-start':
-      return { ...result, ...startMicrophoneRequest(), persisted: false }
     case 'microphone-request-status':
-      return { ...result, ...readMicrophoneRequest(command.operationId), persisted: false }
     case 'microphone-request-cancel':
-      return { ...result, ...cancelMicrophoneRequest(command.operationId), persisted: false }
+      return (await applyVoiceMicrophoneViewerAction(command, request.expiresAt)) ?? result
     case 'settings-open': {
       initial.openSettingsTarget({ pane: 'voice', repoId: null })
       initial.openSettingsPage()
@@ -93,7 +56,10 @@ export async function applyVoiceViewerRequest(
           throw new Error('voice_pane_not_rendered')
         }
       }
-      requestVoiceKeyDialog(command.operation === 'key-dialog-open')
+      requestVoiceKeyDialog(
+        command.operation === 'key-dialog-open',
+        command.operation === 'key-dialog-open' ? (command.modelId ?? null) : null
+      )
       return {
         ...result,
         persisted: false,
@@ -205,50 +171,26 @@ export async function applyVoiceViewerRequest(
         )
       }
     }
-    case 'vm-copy-prompt': {
-      await window.api.ui.writeClipboardText(EPHEMERAL_VM_SETUP_PROMPT)
-      await requireHostViewer().recordFeatureInteraction('ephemeral-vm-setup')
-      return {
-        ...result,
-        applied: (await window.api.ui.readClipboardText()) === EPHEMERAL_VM_SETUP_PROMPT
-      }
-    }
-    case 'vm-copy-cleanup': {
-      const cleanup = await window.api.ephemeralVm.getCleanupCommand({
-        runtimeId: command.runtimeId
-      })
-      requireHostViewer()
-      const text = cleanup.command
-        ? `${cleanup.command}\n\n# Cleanup payload:\n${cleanup.payloadJson}`
-        : cleanup.payloadJson
-      await window.api.ui.writeClipboardText(text)
-      return { ...result, applied: (await window.api.ui.readClipboardText()) === text }
-    }
+    case 'vm-copy-prompt':
+    case 'vm-catalog-refresh':
+      return applyVmPaneViewerAction(command.operation, request.expiresAt)
+    case 'vm-copy-cleanup':
+    case 'vm-runtimes-refresh':
+    case 'vm-runtime-cleanup':
+    case 'vm-runtime-stop':
+    case 'vm-runtime-status':
+      return applyVmRuntimeViewerAction(command, request.expiresAt)
     case 'dictation-start':
     case 'dictation-toggle':
-      return {
-        ...result,
-        ...requestVoiceDictation({
-          action: command.operation === 'dictation-start' ? 'start' : 'toggle'
-        }),
-        persisted: false
-      }
     case 'dictation-stop':
     case 'dictation-cancel':
     case 'dictation-status':
-      return {
-        ...result,
-        ...requestVoiceDictation({
-          action:
-            command.operation === 'dictation-stop'
-              ? 'stop'
-              : command.operation === 'dictation-cancel'
-                ? 'cancel'
-                : 'status',
-          operationId: command.operationId
-        }),
-        persisted: false
-      }
+      return applyVoiceDictationViewerAction(command)
+    case 'voice-toggle':
+    case 'voice-refresh-models':
+    case 'voice-pane-status':
+    case 'key-save':
+    case 'key-clear':
     case 'key-draft':
     case 'key-draft-clear':
     case 'model-delete-start':

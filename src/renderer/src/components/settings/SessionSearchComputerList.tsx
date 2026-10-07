@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import { useSearchSettingsCommands } from './use-search-settings-commands'
 
 /** Local computer plus five servers. Past that the list stops being a list and becomes a wall. */
 const VISIBLE_COMPUTER_LIMIT = 6
@@ -23,10 +24,17 @@ export function SessionSearchComputerList({
   const visibleServerCount = VISIBLE_COMPUTER_LIMIT - 1
   const hiddenCount = Math.max(0, servers.length - visibleServerCount)
   const shownServers = expanded ? servers : servers.slice(0, visibleServerCount)
+  useSearchSettingsCommands('list', async (command) => {
+    if (command.operation !== 'list-toggle' || hiddenCount === 0) {
+      throw new Error('search_settings_action_not_offered')
+    }
+    setExpanded(!expanded)
+    return { viewer: 'host', applied: true, persisted: false, expanded: !expanded }
+  })
   // One row needs no heading to tell it apart from the rest; the pair of subheads appears together or not at all.
   const showSubheads = servers.length > 0
   return (
-    <div>
+    <div data-search-computers-expanded={expanded}>
       {showSubheads ? (
         <p className="pt-4 text-[11px] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
           {translate('sessionHistory.settings.thisComputer', 'This computer')}

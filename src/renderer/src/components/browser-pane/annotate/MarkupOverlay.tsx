@@ -8,9 +8,11 @@ import { MarkupToolbar } from './MarkupToolbar'
 import type { MarkupBaseImage } from './markup-base-image'
 import type { MarkupShape } from './markup-drawing-model'
 import { TEXT_FONT_FAMILY } from './markup-shape-render'
+import { useBrowserMarkupEditorCommands } from './use-browser-markup-editor-commands'
 import { useMarkupEditor } from './useMarkupEditor'
 
 export type MarkupOverlayProps = {
+  commandOwner?: { page: string; active: boolean }
   baseImage: MarkupBaseImage
   busy: boolean
   onComplete: (input: { imageElement: HTMLImageElement; shapes: MarkupShape[] }) => void
@@ -19,6 +21,7 @@ export type MarkupOverlayProps = {
 
 export function MarkupOverlay({
   baseImage,
+  commandOwner,
   busy,
   onComplete,
   onCancel
@@ -26,6 +29,7 @@ export function MarkupOverlay({
   const baseImgRef = useRef<HTMLImageElement | null>(null)
   const [baseLoaded, setBaseLoaded] = useState(false)
   const editor = useMarkupEditor(busy, onCancel)
+  useBrowserMarkupEditorCommands(commandOwner, busy, editor)
   const { pendingText } = editor
 
   const handleDone = useCallback(() => {

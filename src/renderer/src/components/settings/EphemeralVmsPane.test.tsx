@@ -1,3 +1,4 @@
+import { requestVmPaneAction } from '@/runtime/vm-pane-request'
 // @vitest-environment happy-dom
 
 import { act } from 'react'
@@ -54,6 +55,7 @@ describe('EphemeralVmsPane', () => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
     toastMocks.error.mockClear()
     storeMocks.openModal.mockClear()
+    let clipboard = ''
     let pluginChangeListener: ((event: { contentPacksChanged: boolean }) => void) | null = null
     Object.assign(globalThis.window, {
       api: {
@@ -94,7 +96,10 @@ describe('EphemeralVmsPane', () => {
           get: vi.fn().mockReturnValue({ platform: 'darwin' })
         },
         ui: {
-          writeClipboardText: vi.fn().mockResolvedValue(undefined)
+          writeClipboardText: vi.fn(async (text: string) => {
+            clipboard = text
+          }),
+          readClipboardText: vi.fn(async () => clipboard)
         },
         plugins: {
           onChanged: vi.fn((listener) => {
@@ -114,6 +119,47 @@ describe('EphemeralVmsPane', () => {
       act(() => root.unmount())
     })
     document.body.replaceChildren()
+  })
+
+  it('refreshes the actual catalog and copied feedback through the typed owner', async () => {
+    const container = await renderPane()
+    let finish: ((value: []) => void) | undefined
+    vi.mocked(window.api.ephemeralVm.listRecipeCatalog).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    let refreshed: Promise<boolean> | undefined
+    await act(async () => {
+      refreshed = requestVmPaneAction('refresh')
+    })
+    expect(container.querySelector('[data-vm-catalog-loading="true"]')).not.toBeNull()
+    await act(async () => {
+      finish?.([])
+      expect(await refreshed).toBe(true)
+    })
+    expect(container.querySelector('[data-vm-recipe-count="0"]')).not.toBeNull()
+    expect(container.querySelector('[data-vm-catalog-loading="false"]')).not.toBeNull()
+    await act(async () => {
+      expect(await requestVmPaneAction('copy')).toBe(true)
+    })
+    expect(container.querySelector('[data-vm-prompt-copied="true"]')).not.toBeNull()
+    expect(mockStoreState.recordFeatureInteraction).toHaveBeenCalledWith('ephemeral-vm-setup')
+    await act(async () => {
+      roots.pop()?.unmount()
+    })
+    expect(() => requestVmPaneAction('refresh')).toThrow('vm_pane_unavailable')
+  })
+
+  it('reports failed clipboard readback without copied feedback', async () => {
+    const container = await renderPane()
+    vi.mocked(window.api.ui.readClipboardText).mockResolvedValueOnce('different clipboard')
+    await act(async () => {
+      expect(await requestVmPaneAction('copy')).toBe(false)
+    })
+    expect(container.querySelector('[data-vm-prompt-copied="true"]')).toBeNull()
+    expect(toastMocks.error).toHaveBeenCalled()
   })
 
   it('renders the skill panel and recipe, and opens the composer with the recipe selected', async () => {

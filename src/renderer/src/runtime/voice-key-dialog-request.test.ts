@@ -11,7 +11,10 @@ it('delivers only typed dialog visibility without accepting key material', () =>
   target.dispatchEvent(
     new CustomEvent('orca:voice-key-dialog', { detail: { key: 'fixture-secret' } })
   )
-  expect(receive.mock.calls).toEqual([[true], [false]])
+  expect(receive.mock.calls).toEqual([
+    [true, null],
+    [false, null]
+  ])
   detach()
   requestVoiceKeyDialog(true)
   expect(receive).toHaveBeenCalledTimes(2)

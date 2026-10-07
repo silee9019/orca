@@ -1,3 +1,9 @@
+import {
+  refreshVoiceMicrophoneOwner,
+  selectVoiceMicrophoneOwner,
+  startVoiceMicrophoneOwner
+} from '@/runtime/voice-microphone-owner'
+import { cancelMicrophoneRequest, readMicrophoneRequest } from '@/runtime/voice-microphone-requests'
 // @vitest-environment happy-dom
 
 import { act } from 'react'
@@ -29,7 +35,9 @@ function namedError(name: string, message = 'boom'): Error {
   return error
 }
 
-function installMediaDevices(getUserMedia: () => Promise<Pick<MediaStream, 'getTracks'>>): void {
+function installMediaDevices(
+  getUserMedia: () => Promise<{ getTracks: () => { stop: () => void }[] }>
+): void {
   Object.assign(navigator, {
     mediaDevices: {
       getUserMedia: vi.fn(getUserMedia),
@@ -58,14 +66,15 @@ function installPermissionsApi(result: DeveloperPermissionRequestResult | Error)
 let container: HTMLDivElement
 let root: Root
 
-async function renderSetting(settings: VoiceSettings = voiceSettings): Promise<void> {
+async function renderSetting(
+  settings: VoiceSettings = voiceSettings,
+  update: (changes: Partial<VoiceSettings>) => void = () => {}
+): Promise<void> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root.render(
-      <VoiceMicrophoneSetting voiceSettings={settings} onUpdateVoiceSettings={() => {}} />
-    )
+    root.render(<VoiceMicrophoneSetting voiceSettings={settings} onUpdateVoiceSettings={update} />)
   })
 }
 
@@ -94,6 +103,103 @@ describe('VoiceMicrophoneSetting access failures', () => {
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
+  })
+
+  it('refreshes and selects through the actual microphone owner and renders the selection', async () => {
+    installMediaDevices(async () => ({ getTracks: () => [] }))
+    let current = voiceSettings
+    const update = (changes: Partial<VoiceSettings>) => {
+      current = { ...current, ...changes }
+      root.render(<VoiceMicrophoneSetting voiceSettings={current} onUpdateVoiceSettings={update} />)
+    }
+    await renderSetting(current, update)
+    Object.assign(navigator.mediaDevices, {
+      enumerateDevices: vi.fn(async () => [
+        { kind: 'audioinput', deviceId: 'typed-mic', label: 'Typed Mic' }
+      ])
+    })
+    await act(async () => {
+      expect(await refreshVoiceMicrophoneOwner()).toEqual([
+        { deviceId: 'typed-mic', label: 'Typed Mic' }
+      ])
+    })
+    expect(
+      container
+        .querySelector('[data-voice-microphone-devices]')
+        ?.getAttribute('data-voice-microphone-devices')
+    ).toBe('1')
+    await act(async () => {
+      await selectVoiceMicrophoneOwner('typed-mic')
+    })
+    expect(current.microphoneDeviceId).toBe('typed-mic')
+    expect(container.textContent).toContain('Typed Mic')
+    await act(async () => {
+      await selectVoiceMicrophoneOwner(null)
+    })
+    expect(current.microphoneDeviceId).toBeNull()
+    expect(container.textContent).toContain('System default')
+  })
+
+  it('refuses typed device selection while voice is disabled', async () => {
+    installMediaDevices(async () => ({ getTracks: () => [] }))
+    await renderSetting({ ...voiceSettings, enabled: false })
+    await expect(selectVoiceMicrophoneOwner(null)).rejects.toThrow(
+      'voice_microphone_select_disabled'
+    )
+  })
+
+  it('keeps typed cancellation pending through the native promise and stops a late stream without fallback', async () => {
+    let grant: ((stream: { getTracks: () => { stop: () => void }[] }) => void) | undefined
+    const stop = vi.fn()
+    installMediaDevices(
+      () =>
+        new Promise((resolve) => {
+          grant = resolve
+        })
+    )
+    await renderSetting()
+    let id = ''
+    await act(async () => {
+      id = startVoiceMicrophoneOwner().operationId
+    })
+    expect(readMicrophoneRequest(id).requestState).toBe('pending')
+    expect(
+      container
+        .querySelector('[data-voice-microphone-access-pending]')
+        ?.getAttribute('data-voice-microphone-access-pending')
+    ).toBe('true')
+    cancelMicrophoneRequest(id)
+    expect(() => startVoiceMicrophoneOwner()).toThrow('already_pending')
+    if (!grant) {
+      throw new Error('Missing permission fixture')
+    }
+    await act(async () => grant?.({ getTracks: () => [{ stop }] }))
+    expect(stop).toHaveBeenCalledOnce()
+    expect(readMicrophoneRequest(id)).toMatchObject({
+      requestState: 'cancelled',
+      nativePending: false,
+      osPromptDismissed: false
+    })
+    expect(
+      container
+        .querySelector('[data-voice-microphone-access-pending]')
+        ?.getAttribute('data-voice-microphone-access-pending')
+    ).toBe('false')
+    expect(window.api.developerPermissions.request).not.toHaveBeenCalled()
+  })
+
+  it('routes the typed permission workflow through the same denial fallback and visible error', async () => {
+    installMediaDevices(async () => {
+      throw namedError('NotAllowedError')
+    })
+    await renderSetting()
+    let id = ''
+    await act(async () => {
+      id = startVoiceMicrophoneOwner().operationId
+    })
+    expect(readMicrophoneRequest(id).requestState).toBe('denied')
+    expect(window.api.developerPermissions.request).toHaveBeenCalledWith({ id: 'microphone' })
+    expect(alertText()).toContain('Microphone access is blocked')
   })
 
   it('routes a denied getUserMedia to the OS permission request and says where to grant it', async () => {

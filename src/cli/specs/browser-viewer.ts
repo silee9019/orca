@@ -3,6 +3,81 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['browser', 'address'],
+    summary: 'Edit the host viewer address bar; submit/select report navigation requested only',
+    usage:
+      'orca browser address --viewer host --page <id> --action <open|draft|highlight|preview|next|previous|select|dismiss|submit|status> [--text <draft>] [--index <suggestion-index>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'text', 'index']
+  },
+  {
+    path: ['browser', 'markup', 'tool'],
+    summary: 'Use the existing markup editor tool control in the host viewer',
+    usage: 'orca browser markup tool --viewer host --page <id> --tool <value> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'tool']
+  },
+  {
+    path: ['browser', 'markup', 'color'],
+    summary: 'Use the existing markup editor color control in the host viewer',
+    usage: 'orca browser markup color --viewer host --page <id> --color <value> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'color']
+  },
+  {
+    path: ['browser', 'markup', 'width'],
+    summary: 'Use the existing markup editor width control in the host viewer',
+    usage: 'orca browser markup width --viewer host --page <id> --width <value> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'width']
+  },
+  {
+    path: ['browser', 'markup', 'font-size'],
+    summary: 'Use the existing markup editor font-size control in the host viewer',
+    usage: 'orca browser markup font-size --viewer host --page <id> --font-size <value> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'font-size']
+  },
+  {
+    path: ['browser', 'markup', 'undo'],
+    summary: 'Use the existing markup editor undo control in the host viewer',
+    usage: 'orca browser markup undo --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'redo'],
+    summary: 'Use the existing markup editor redo control in the host viewer',
+    usage: 'orca browser markup redo --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'clear'],
+    summary: 'Use the existing markup editor clear control in the host viewer',
+    usage: 'orca browser markup clear --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'editor-status'],
+    summary: 'Use the existing markup editor editor-status control in the host viewer',
+    usage: 'orca browser markup editor-status --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+
+  {
+    path: ['browser', 'markup', 'start'],
+    summary: 'start the existing screenshot markup mode in the host viewer',
+    usage: 'orca browser markup start --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'cancel'],
+    summary: 'cancel the existing screenshot markup mode in the host viewer',
+    usage: 'orca browser markup cancel --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'markup', 'status'],
+    summary: 'status the existing screenshot markup mode in the host viewer',
+    usage: 'orca browser markup status --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+
+  {
     path: ['browser', 'grab', 'start'],
     summary: 'start the existing element picker in the host viewer',
     usage: 'orca browser grab start --viewer host --page <id> --intent <copy|annotate> [--json]',

@@ -1,12 +1,86 @@
 import type { CommandHandler } from '../dispatch'
-import { getRequiredStringFlag } from '../flags'
+import { getRequiredStringFlag, getRequiredFiniteNumber, getOptionalNumberFlag } from '../flags'
 import { printResult } from '../format'
 import { getEmulatorCommandTarget } from '../selectors'
 import { RuntimeClientError } from '../runtime-client'
 import { EmulatorControlParams } from '../../shared/rpc-contract/emulator-control-params'
 import { getComputerTextActionFlags } from './computer-action-flags'
+import { EmulatorFrameParams } from '../../shared/emulator-frame-command'
 
 export const EMULATOR_CONTROL_HANDLERS: Record<string, CommandHandler> = {
+  'emulator focus-group': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: { type: 'focus-group', groupId: getRequiredStringFlag(flags, 'group-id') }
+    })
+    const result = await client.call('emulator.focusGroup', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator select-tab': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: {
+        type: 'select-tab',
+        executionHostId: getRequiredStringFlag(flags, 'execution-host')
+      }
+    })
+    const result = await client.call('emulator.selectTab', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator screen-key': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: { type: 'key', key: getRequiredStringFlag(flags, 'key'), shift: flags.has('shift') }
+    })
+    const result = await client.call('emulator.screenKey', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator screen-paste': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: { type: 'paste', text: (await getComputerTextActionFlags(flags)).text }
+    })
+    const result = await client.call('emulator.screenPaste', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator rotate-view': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.parse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: { type: 'rotate' }
+    })
+    const result = await client.call('emulator.rotateView', params)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
+  'emulator wheel': async ({ flags, client, cwd, json }) => {
+    const target = await getEmulatorCommandTarget(flags, cwd, client)
+    const params = EmulatorFrameParams.safeParse({
+      worktree: target.worktree,
+      tabId: getRequiredStringFlag(flags, 'tab-id'),
+      action: {
+        type: 'wheel',
+        clientX: getRequiredFiniteNumber(flags, 'x'),
+        clientY: getRequiredFiniteNumber(flags, 'y'),
+        deltaX: getOptionalNumberFlag(flags, 'delta-x') ?? 0,
+        deltaY: getRequiredFiniteNumber(flags, 'delta-y'),
+        deltaMode: getOptionalNumberFlag(flags, 'delta-mode') ?? 0
+      }
+    })
+    if (!params.success) {
+      throw new RuntimeClientError('invalid_argument', 'Invalid emulator wheel input or target.')
+    }
+    const result = await client.call('emulator.wheel', params.data)
+    printResult(result, json, (value) => JSON.stringify(value))
+  },
   'emulator focus': async ({ flags, client, cwd, json }) => {
     const target = await getEmulatorCommandTarget(flags, cwd, client)
     if (!target.worktree) {

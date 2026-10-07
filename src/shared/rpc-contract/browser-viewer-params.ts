@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { BrowserAddressCommand } from './browser-address-params'
+import { BrowserMarkupEditorCommand } from './browser-markup-editor-params'
 import { BROWSER_VIEWPORT_PRESETS } from '../browser-viewport-presets'
 import { GRAB_BUDGET } from '../browser-grab-types'
 
@@ -27,6 +29,19 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('address'), page, command: BrowserAddressCommand }),
+  z.object({
+    viewer,
+    operation: z.literal('markup-editor'),
+    page,
+    command: BrowserMarkupEditorCommand
+  }),
+  z.object({
+    viewer,
+    operation: z.literal('markup'),
+    page,
+    action: z.enum(['start', 'cancel', 'status'])
+  }),
   z
     .object({
       viewer,

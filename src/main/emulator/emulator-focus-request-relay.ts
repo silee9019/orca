@@ -3,13 +3,15 @@ import { ipcMain, type BrowserWindow } from 'electron'
 import {
   EmulatorFocusResultSchema,
   type EmulatorFocusResult,
+  type EmulatorFocusRequest,
   type EmulatorFocusResponse
 } from '../../shared/emulator-focus'
 
 export function requestEmulatorFocus(
   window: BrowserWindow,
   worktreeId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  frame?: EmulatorFocusRequest['frame']
 ): Promise<EmulatorFocusResult> {
   if (signal?.aborted) {
     return Promise.reject(new Error('viewer_focus_cancelled_applied_unknown'))
@@ -54,7 +56,16 @@ export function requestEmulatorFocus(
         return
       }
       const parsed = EmulatorFocusResultSchema.safeParse(value.result)
-      if (!parsed.success || parsed.data.worktreeId !== worktreeId) {
+      if (
+        !parsed.success ||
+        parsed.data.worktreeId !== worktreeId ||
+        (frame &&
+          (parsed.data.tabId !== frame.tabId ||
+            (frame.action.type !== 'focus-group' &&
+              frame.action.type !== 'select-tab' &&
+              !parsed.data.frameState) ||
+            (frame.action.type === 'focus-group' && parsed.data.groupId !== frame.action.groupId)))
+      ) {
         finish(new Error('invalid_renderer_response'))
         return
       }
@@ -68,7 +79,12 @@ export function requestEmulatorFocus(
     contents.once('render-process-gone', unavailable)
     contents.once('did-start-loading', unavailable)
     try {
-      contents.send('emulator:focusRequest', { id, worktreeId, expiresAt: Date.now() + 9000 })
+      contents.send(frame ? 'emulator:frameRequest' : 'emulator:focusRequest', {
+        id,
+        worktreeId,
+        expiresAt: Date.now() + 9000,
+        ...(frame ? { frame } : {})
+      })
     } catch {
       unavailable()
     }

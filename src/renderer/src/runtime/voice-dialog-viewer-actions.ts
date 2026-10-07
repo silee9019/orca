@@ -1,3 +1,4 @@
+import { startVoicePaneRequest, readVoicePaneRequest } from './voice-pane-request'
 import type { VoiceViewerOperation, VoiceViewerResult } from '../../../shared/voice-viewer'
 import { requireHostViewer, waitForView } from './voice-viewer-target'
 import { requestVoiceKeyDraft } from './voice-key-draft-request'
@@ -10,6 +11,46 @@ export async function applyVoiceDialogViewerAction(
 ): Promise<Omit<VoiceViewerResult, 'viewerId'> | null> {
   const result = { viewer: 'host' as const, persisted: false, applied: true }
   switch (command.operation) {
+    case 'voice-toggle':
+    case 'voice-refresh-models':
+    case 'key-save':
+    case 'key-clear': {
+      const pane = requireHostViewer()
+      if (command.operation !== 'key-save') {
+        pane.openSettingsTarget({ pane: 'voice', repoId: null })
+        pane.openSettingsPage()
+      }
+      if (
+        !(await waitForView(
+          () => document.querySelector('[data-voice-settings-pane]') !== null,
+          expiresAt
+        ))
+      ) {
+        throw new Error('voice_pane_not_rendered')
+      }
+      const operation = startVoicePaneRequest(
+        command.operation === 'voice-toggle'
+          ? 'toggle'
+          : command.operation === 'voice-refresh-models'
+            ? 'refresh-models'
+            : command.operation === 'key-save'
+              ? 'save-key'
+              : 'clear-key'
+      )
+      return { ...result, ...operation }
+    }
+    case 'voice-pane-status': {
+      const operation = readVoicePaneRequest(command.operationId)
+      const voice = requireHostViewer().settings?.voice
+      return {
+        ...result,
+        ...operation,
+        voiceEnabled: voice?.enabled === true,
+        keyConfigured: voice?.openAiApiKeyConfigured === true,
+        applied: operation.paneState !== 'failed',
+        reason: operation.paneState === 'failed' ? 'voice_pane_operation_failed' : undefined
+      }
+    }
     case 'key-draft':
     case 'key-draft-clear': {
       const draft = command.operation === 'key-draft' ? command.apiKey : ''
@@ -113,8 +154,13 @@ export async function applyVoiceDialogViewerAction(
     case 'tip-show':
     case 'tip-skip':
     case 'vm-composer':
+    case 'vm-runtimes-refresh':
+    case 'vm-runtime-cleanup':
+    case 'vm-runtime-stop':
+    case 'vm-runtime-status':
     case 'vm-copy-cleanup':
     case 'vm-copy-prompt':
+    case 'vm-catalog-refresh':
       return null
   }
 }

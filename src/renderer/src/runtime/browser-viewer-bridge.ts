@@ -1,3 +1,10 @@
+import { requestBrowserAddress } from './browser-address-request'
+import {
+  browserViewportPresetToOverride,
+  getBrowserViewportPreset
+} from '../../../shared/browser-viewport-presets'
+import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
+import { requestBrowserMarkup } from './browser-markup-request'
 import { requestBrowserAnnotationDraft } from './browser-annotation-draft-request'
 import { requestBrowserGrab } from './browser-grab-request'
 import { requestBrowserToolbar } from './browser-toolbar-request'
@@ -117,14 +124,37 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, applied }
   }
   if (command.operation === 'viewport-preset') {
-    state.setBrowserPageViewportPreset(page.id, command.preset)
+    const preset = getBrowserViewportPreset(command.preset)
+    const accepted = await window.api.browser.setViewportOverride({
+      browserPageId: page.id,
+      override: preset ? browserViewportPresetToOverride(preset) : null
+    })
+    if (accepted) {
+      state.setBrowserPageViewportPreset(page.id, command.preset)
+    }
     const current = findPage(useAppStore.getState().browserPagesByWorkspace, page.id)
     return {
       ...base,
       page: page.id,
       preset: current?.viewportPresetId ?? null,
-      applied: current !== null && current?.viewportPresetId === command.preset
+      applied: accepted && current !== null && current?.viewportPresetId === command.preset
     }
+  }
+  if (command.operation === 'address') {
+    const address = await requestBrowserAddress(page.id, command.command, request.expiresAt)
+    return { ...base, page: page.id, applied: true, address }
+  }
+  if (command.operation === 'markup-editor') {
+    const markupEditor = await requestBrowserMarkupEditor(
+      page.id,
+      command.command,
+      request.expiresAt
+    )
+    return { ...base, page: page.id, applied: true, markupEditor }
+  }
+  if (command.operation === 'markup') {
+    const markup = await requestBrowserMarkup(page.id, command.action, request.expiresAt)
+    return { ...base, page: page.id, applied: true, markup }
   }
   const before = state.browserAnnotationsByPageId[page.id] ?? []
   if (command.operation === 'annotation-update' || command.operation === 'annotation-delete') {

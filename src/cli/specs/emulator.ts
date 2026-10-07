@@ -3,6 +3,55 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['emulator', 'focus-group'],
+    summary: 'Focus the exact owning group of an existing simulator tab',
+    usage: 'orca emulator focus-group --worktree <selector> --tab-id <id> --group-id <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'group-id']
+  },
+  {
+    path: ['emulator', 'select-tab'],
+    summary: 'Select an exact simulator tab through the existing Palette owner',
+    usage:
+      'orca emulator select-tab --worktree <selector> --tab-id <id> --execution-host <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'execution-host']
+  },
+  {
+    path: ['emulator', 'screen-key'],
+    summary: 'Send a key through the existing screen capture owner',
+    usage:
+      'orca emulator screen-key --worktree <selector> --tab-id <id> --key <value> --shift [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'key', 'shift']
+  },
+  {
+    path: ['emulator', 'screen-paste'],
+    summary: 'Paste through the existing screen capture, batching and cancellation owner',
+    usage:
+      'orca emulator screen-paste --worktree <selector> --tab-id <id> --text <value> --text-stdin [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'text', 'text-stdin']
+  },
+  {
+    path: ['emulator', 'rotate-view'],
+    summary: 'Rotate through the pane owner and update its visual orientation',
+    usage: 'orca emulator rotate-view --worktree <selector> --tab-id <id>  [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id']
+  },
+  {
+    path: ['emulator', 'wheel'],
+    summary: 'Scroll an existing emulator viewer using its wheel input owner',
+    usage:
+      'orca emulator wheel --worktree <selector> --tab-id <id> --x <pixels> --y <pixels> --delta-y <pixels> [--delta-x <pixels>] [--delta-mode <0|1|2>] [--json]',
+    allowedFlags: [
+      ...GLOBAL_FLAGS,
+      'worktree',
+      'tab-id',
+      'x',
+      'y',
+      'delta-x',
+      'delta-y',
+      'delta-mode'
+    ]
+  },
+  {
     path: ['emulator', 'focus'],
     summary: 'Focus the host viewer simulator pane and await rendered state read-back',
     usage: 'orca emulator focus --worktree <selector> [--json]',

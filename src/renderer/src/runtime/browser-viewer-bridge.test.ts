@@ -39,6 +39,24 @@ const fixture = vi.hoisted(() => {
   }
   return {
     state,
+    address: vi.fn().mockResolvedValue({
+      value: 'review',
+      open: true,
+      focused: true,
+      selectedIndex: 0,
+      suggestions: []
+    }),
+    markupEditor: vi.fn().mockResolvedValue({
+      tool: 'rect',
+      color: '#3b82f6',
+      width: 4,
+      fontSize: 18,
+      shapeCount: 0,
+      pendingText: false,
+      canUndo: false,
+      canRedo: false
+    }),
+    markup: vi.fn().mockResolvedValue({ state: 'drawing', hasImage: true }),
     draft: vi.fn().mockReturnValue({ hasDraft: false, annotationId: 'saved-note' }),
     grab: vi.fn().mockResolvedValue({
       state: 'awaiting',
@@ -53,6 +71,11 @@ const fixture = vi.hoisted(() => {
     webviews: new Map<string, { getZoomLevel: () => number }>()
   }
 })
+vi.mock('./browser-address-request', () => ({ requestBrowserAddress: fixture.address }))
+vi.mock('./browser-markup-editor-request', () => ({
+  requestBrowserMarkupEditor: fixture.markupEditor
+}))
+vi.mock('./browser-markup-request', () => ({ requestBrowserMarkup: fixture.markup }))
 vi.mock('./browser-annotation-draft-request', () => ({
   requestBrowserAnnotationDraft: fixture.draft
 }))
@@ -83,6 +106,7 @@ beforeEach(() => {
     api: {
       browser: {
         cancelDownload: vi.fn().mockResolvedValue(true),
+        setViewportOverride: vi.fn().mockResolvedValue(true),
         respondWebAuthnAccount: vi.fn().mockResolvedValue(true),
         openDevTools: vi.fn().mockResolvedValue(true)
       }
@@ -316,4 +340,43 @@ it('routes annotation drafts to the exact active page owner without returning ca
   await expect(
     request({ viewer: 'host', operation: 'annotation-draft', page: 'page-1', action: 'cancel' })
   ).rejects.toThrow('browser_annotation_draft_missing')
+})
+
+it('routes markup lifecycle to the exact page owner without claiming rendering', async () => {
+  expect(
+    await request({ viewer: 'host', operation: 'markup', page: 'page-1', action: 'start' })
+  ).toMatchObject({ applied: true, rendered: false, markup: { state: 'drawing', hasImage: true } })
+  expect(fixture.markup).toHaveBeenCalledWith('page-1', 'start', expect.any(Number))
+})
+
+it('routes editor commands to the exact markup owner without exposing raster or text contents', async () => {
+  expect(
+    await request({
+      viewer: 'host',
+      operation: 'markup-editor',
+      page: 'page-1',
+      command: { action: 'tool', value: 'rect' }
+    })
+  ).toMatchObject({ applied: true, rendered: false, markupEditor: { tool: 'rect', shapeCount: 0 } })
+  expect(fixture.markupEditor).toHaveBeenCalledWith(
+    'page-1',
+    { action: 'tool', value: 'rect' },
+    expect.any(Number)
+  )
+})
+
+it('routes address editing to the selected host page owner', async () => {
+  expect(
+    await request({
+      viewer: 'host',
+      operation: 'address',
+      page: 'page-1',
+      command: { action: 'draft', text: 'review' }
+    })
+  ).toMatchObject({ applied: true, rendered: false, address: { value: 'review', open: true } })
+  expect(fixture.address).toHaveBeenCalledWith(
+    'page-1',
+    { action: 'draft', text: 'review' },
+    expect.any(Number)
+  )
 })

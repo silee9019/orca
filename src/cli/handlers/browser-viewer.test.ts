@@ -20,6 +20,39 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['open', 'dismiss', 'submit', 'status', 'next', 'previous'].map((action) => ({
+    args: ['address', '--action', action, '--page', 'p1'],
+    command: { operation: 'address', page: 'p1', command: { action } }
+  })),
+  ...['preview', 'select', 'highlight'].map((action) => ({
+    args: ['address', '--action', action, '--page', 'p1', '--index', '1'],
+    command: { operation: 'address', page: 'p1', command: { action, index: 1 } }
+  })),
+  {
+    args: ['address', '--action', 'draft', '--page', 'p1', '--text', ''],
+    command: { operation: 'address', page: 'p1', command: { action: 'draft', text: '' } }
+  },
+  ...['undo', 'redo', 'clear', 'editor-status'].map((action) => ({
+    args: ['markup', action, '--page', 'p1'],
+    command: {
+      operation: 'markup-editor',
+      page: 'p1',
+      command: { action: action === 'editor-status' ? 'status' : action }
+    }
+  })),
+  ...[
+    { action: 'tool', value: 'rect' },
+    { action: 'color', value: '#3b82f6' },
+    { action: 'width', value: 8 },
+    { action: 'font-size', value: 32 }
+  ].map(({ action, value }) => ({
+    args: ['markup', action, '--page', 'p1', `--${action}`, String(value)],
+    command: { operation: 'markup-editor', page: 'p1', command: { action, value } }
+  })),
+  ...['start', 'cancel', 'status'].map((action) => ({
+    args: ['markup', action, '--page', 'p1'],
+    command: { operation: 'markup', page: 'p1', action }
+  })),
   {
     args: ['annotation', 'draft-status', '--page', 'p1'],
     command: { operation: 'annotation-draft', page: 'p1', action: 'status' }
@@ -109,6 +142,9 @@ it.each([
 )
 
 it.each([
+  ['address', '--action', 'draft', '--page', 'p1', '--viewer', 'host'],
+  ['address', '--action', 'select', '--page', 'p1', '--viewer', 'host', '--index', '-1'],
+  ['address', '--action', 'invalid', '--page', 'p1', '--viewer', 'host'],
   ['grab', 'start', '--page', 'p1', '--viewer', 'host'],
   ['grab', 'start', '--page', 'p1', '--viewer', 'host', '--intent', 'invalid'],
   ['annotation', 'list', '--page', 'p1'],

@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { BrowserAddressState } from './rpc-contract/browser-address-params'
+import { BrowserMarkupEditorState } from './rpc-contract/browser-markup-editor-params'
 import type { BrowserViewerCommand } from './rpc-contract/browser-viewer-params'
 import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browser-viewer-params'
 
@@ -11,6 +13,11 @@ export const BrowserViewerResultSchema = z.object({
   persisted: z.literal(false),
   rendered: z.literal(false),
   page: z.string().optional(),
+  address: BrowserAddressState.optional(),
+  markupEditor: BrowserMarkupEditorState.optional(),
+  markup: z
+    .object({ state: z.enum(['idle', 'capturing', 'drawing', 'composing']), hasImage: z.boolean() })
+    .optional(),
   grab: z
     .object({
       state: z.enum(['idle', 'armed', 'awaiting', 'confirming', 'error']),

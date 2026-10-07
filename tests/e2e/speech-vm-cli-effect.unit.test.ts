@@ -1,3 +1,9 @@
+import {
+  FixtureSpeechModelManager,
+  installTinySpeechManifest
+} from './speech-model-download.fixture'
+import { attachVoiceMicrophoneOwner } from '../../src/renderer/src/runtime/voice-microphone-owner'
+import { listVoiceMicrophoneDevices } from '../../src/renderer/src/components/dictation/microphone-devices'
 import { attachVoiceKeyDraftRequest } from '../../src/renderer/src/runtime/voice-key-draft-request'
 import { attachVmCleanupConfirmRequest } from '../../src/renderer/src/runtime/vm-cleanup-confirm-request'
 import { attachVoiceModelDeleteRequest } from '../../src/renderer/src/runtime/voice-model-delete-request'
@@ -10,7 +16,7 @@ import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import type * as NodeOs from 'node:os'
 import { Readable } from 'node:stream'
 import { z } from 'zod'
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer, type Socket } from 'node:net'
@@ -28,7 +34,6 @@ import type { SttEventSink } from '../../src/main/speech/stt-service'
 import { SPEECH_METHODS } from '../../src/main/runtime/rpc/methods/speech'
 import { SPEECH_CONTROL_METHODS } from '../../src/main/runtime/rpc/methods/speech-control'
 import { upsertEphemeralVmRuntime } from '../../src/shared/ephemeral-vm-runtime-store'
-import { ModelManager } from '../../src/main/speech/model-manager'
 import { SttService } from '../../src/main/speech/stt-service'
 import { setSpeechServiceFactories } from '../../src/main/speech/speech-runtime-service'
 import { setSecretStore, _resetSecretStoreForTests } from '../../src/shared/secret-store'
@@ -141,6 +146,21 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       }
     })
     vi.stubGlobal('window', { api: { settings: { get: async () => store.getSettings() } } })
+    const detachMicrophone = attachVoiceMicrophoneOwner({
+      refresh: async () =>
+        listVoiceMicrophoneDevices(await navigator.mediaDevices.enumerateDevices()),
+      select: async (id) => {
+        store.updateSettings({
+          voice: {
+            ...store.getSettings().voice,
+            microphoneDeviceId: id,
+            microphoneDeviceLabel: 'Socket Mic'
+          }
+        })
+        return { deviceId: id, label: 'Socket Mic' }
+      },
+      access: async () => true
+    })
     let draft = ''
     let confirmRuntime: string | null = null
     let deleteModelId = ''
@@ -182,7 +202,8 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
         viewerId: 7
       })
     })
-    const manager = new ModelManager(join(root, 'models'))
+    installTinySpeechManifest('whisper-tiny')
+    const manager = new FixtureSpeechModelManager(join(root, 'models'))
     let downloadStatus: 'downloading' | 'not-downloaded' = 'downloading'
     vi.spyOn(manager, 'cancelDownload').mockImplementation(() => {
       downloadStatus = 'not-downloaded'
@@ -408,6 +429,39 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       await expect(
         invoke(['speech', 'models', 'rm', '--model', 'whisper-tiny', '--confirm', 'wrong'])
       ).rejects.toThrow('--confirm')
+      vi.mocked(manager.getModelStates).mockRestore()
+      vi.mocked(manager.getModelState).mockRestore()
+      await invoke(['speech', 'models', 'download', '--model', 'whisper-tiny'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"started": true')
+      expect(await manager.getModelState('whisper-tiny')).toMatchObject({ status: 'downloading' })
+      expect(existsSync(`${manager.getModelDir('whisper-tiny')}.partial`)).toBe(true)
+      manager.release()
+      await vi.waitFor(async () =>
+        expect(await manager.getModelState('whisper-tiny')).toMatchObject({ status: 'ready' })
+      )
+      expect(manager.receivedFiles.length).toBeGreaterThan(0)
+      for (const file of manager.receivedFiles) {
+        expect(file).toContain('.partial')
+        expect(readFileSync(file.replace('.partial', ''), 'utf8')).toBe('fixture model bytes')
+      }
+      expect(existsSync(`${manager.getModelDir('whisper-tiny')}.partial`)).toBe(false)
+      await invoke(['speech', 'models', 'list'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"status": "ready"')
+      expect(store.getSettings().voice?.sttModel).toBe('whisper-tiny')
+      await invoke([
+        'speech',
+        'models',
+        'rm',
+        '--model',
+        'whisper-tiny',
+        '--confirm',
+        'whisper-tiny'
+      ])
+      expect(existsSync(manager.getModelDir('whisper-tiny'))).toBe(false)
+      expect(store.getSettings().voice?.sttModel).toBe('')
+      expect(await manager.getModelState('whisper-tiny')).toMatchObject({
+        status: 'not-downloaded'
+      })
       await invoke([
         'speech',
         'viewer',
@@ -549,6 +603,7 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
         'fixture-workspace'
       )
     } finally {
+      detachMicrophone()
       detachDraft()
       detachConfirm()
       detachDelete()

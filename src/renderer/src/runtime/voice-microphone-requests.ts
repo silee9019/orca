@@ -3,7 +3,7 @@ import { createNonSecureContextUuid } from '../../../shared/non-secure-context-u
 export type MicrophoneRequestState = 'pending' | 'granted' | 'denied' | 'cancelled'
 const requests = new Map<string, { state: MicrophoneRequestState; acquiring: boolean }>()
 
-export function startMicrophoneRequest() {
+export function startMicrophoneRequest(acquire?: (isCancelled: () => boolean) => Promise<boolean>) {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('microphone_unavailable')
   }
@@ -23,10 +23,16 @@ export function startMicrophoneRequest() {
   requests.set(operationId, request)
   void (async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach((track) => track.stop())
+      let granted: boolean
+      if (acquire) {
+        granted = await acquire(() => request.state === 'cancelled')
+      } else {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop())
+        granted = true
+      }
       if (request.state === 'pending') {
-        request.state = 'granted'
+        request.state = granted ? 'granted' : 'denied'
       }
     } catch {
       if (request.state === 'pending') {

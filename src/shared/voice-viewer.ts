@@ -9,7 +9,6 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
       'microphones-list',
       'microphone-request-start',
       'settings-open',
-      'key-dialog-open',
       'key-dialog-close',
       'key-draft-clear',
       'tip-settings-open',
@@ -18,7 +17,8 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
       'tip-skip',
       'tip-enable',
       'tip-focus-primary',
-      'vm-copy-prompt'
+      'vm-copy-prompt',
+      'vm-catalog-refresh'
     ])
   }),
   z.object({
@@ -26,6 +26,12 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
     operation: z.literal('microphone-select'),
     deviceId: z.string().max(1024)
   }),
+  z.object({ ...target, operation: z.literal('key-dialog-open'), modelId: operationId.optional() }),
+  z.object({
+    ...target,
+    operation: z.enum(['voice-toggle', 'voice-refresh-models', 'key-save', 'key-clear'])
+  }),
+  z.object({ ...target, operation: z.literal('voice-pane-status'), operationId }),
   z.object({ ...target, operation: z.literal('microphone-request-status'), operationId }),
   z.object({ ...target, operation: z.literal('microphone-request-cancel'), operationId }),
   z.object({
@@ -35,6 +41,15 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
     recipeId: operationId
   }),
   z.object({ ...target, operation: z.literal('vm-copy-cleanup'), runtimeId: operationId }),
+  z.object({ ...target, operation: z.literal('vm-runtimes-refresh') }),
+  z.object({ ...target, operation: z.literal('vm-runtime-cleanup'), runtimeId: operationId }),
+  z.object({
+    ...target,
+    operation: z.literal('vm-runtime-stop'),
+    runtimeId: operationId,
+    confirmation: operationId
+  }),
+  z.object({ ...target, operation: z.literal('vm-runtime-status'), operationId }),
   z.object({
     ...target,
     operation: z.enum(['vm-stop-confirm-open', 'vm-stop-confirm-cancel']),
@@ -69,6 +84,10 @@ export const VoiceViewerResultSchema = z.object({
   modelId: z.string().optional(),
   deleteState: z.enum(['pending', 'succeeded', 'failed']).optional(),
   draftPresent: z.boolean().optional(),
+  vmActionState: z.enum(['pending', 'succeeded', 'failed']).optional(),
+  voiceEnabled: z.boolean().optional(),
+  keyConfigured: z.boolean().optional(),
+  paneState: z.enum(['pending', 'succeeded', 'failed']).optional(),
   dictationState: z.enum(['idle', 'starting', 'listening', 'stopping', 'error']).optional(),
   targetCaptured: z.boolean().optional(),
   cancellationRequested: z.boolean().optional(),

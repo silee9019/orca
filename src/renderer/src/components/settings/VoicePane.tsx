@@ -1,3 +1,4 @@
+import { attachVoicePaneRequest } from '@/runtime/voice-pane-request'
 import { attachVoiceKeyDraftRequest } from '@/runtime/voice-key-draft-request'
 import { attachVoiceKeyDialogRequest } from '@/runtime/voice-key-dialog-request'
 import { UnsealedCredentialNotice } from './UnsealedCredentialNotice'
@@ -105,8 +106,8 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
     return cleanup
   }, [refreshModelStates])
 
-  const toggleVoiceDictation = async (): Promise<void> => {
-    await handleVoiceDictationToggle({
+  const toggleVoiceDictation = useCallback(async (): Promise<boolean> => {
+    return handleVoiceDictationToggle({
       voiceEnabled: voiceSettings.enabled,
       markFeatureTipsSeen,
       updateVoiceSettings,
@@ -143,7 +144,7 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
           )
         )
     })
-  }
+  }, [voiceSettings.enabled, markFeatureTipsSeen, updateVoiceSettings])
 
   const selectedModel = catalog.find((m) => m.id === voiceSettings.sttModel)
   const showOpenAiSettingsRow =
@@ -160,19 +161,25 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
 
   useEffect(
     () =>
-      attachVoiceKeyDialogRequest((open) => {
+      attachVoiceKeyDialogRequest((open, modelId) => {
         if (openAiKeyPending) {
           return
         }
         if (open) {
-          openOpenAiDialog()
+          if (
+            modelId &&
+            !catalog.some((model) => model.id === modelId && model.provider === 'openai')
+          ) {
+            return
+          }
+          openOpenAiDialog(modelId)
         } else {
           setOpenAiDialogOpen(false)
           setOpenAiApiKeyDraft('')
           setPendingCloudModelId(null)
         }
       }),
-    [openAiKeyPending, openOpenAiDialog]
+    [openAiKeyPending, openOpenAiDialog, catalog]
   )
 
   useEffect(
@@ -187,10 +194,15 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
     [openAiDialogOpen, openAiKeyPending]
   )
 
-  const saveOpenAiApiKey = async (): Promise<void> => {
+  const saveOpenAiApiKey = useCallback(async (): Promise<boolean> => {
     setOpenAiKeyPending(true)
     try {
       await window.api.speech.saveOpenAiApiKey(openAiApiKeyDraft)
+      const status = await window.api.speech.getOpenAiApiKeyStatus()
+      if (!status.configured) {
+        throw new Error('voice_key_save_not_configured')
+      }
+      setOpenAiKeyProtection(status.protection)
       updateVoiceSettings({
         openAiApiKeyConfigured: true,
         sttModel: pendingCloudModelId ?? voiceSettings.sttModel
@@ -202,6 +214,7 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
       toast.success(
         translate('auto.components.settings.VoicePane.506df81ba6', 'OpenAI API key saved')
       )
+      return true
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -211,20 +224,36 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
               'Failed to save OpenAI API key'
             )
       )
+      return false
     } finally {
       if (mountedRef.current) {
         setOpenAiKeyPending(false)
       }
     }
-  }
+  }, [
+    openAiApiKeyDraft,
+    pendingCloudModelId,
+    voiceSettings.sttModel,
+    updateVoiceSettings,
+    refreshModelStates
+  ])
 
-  const clearOpenAiApiKey = async (): Promise<void> => {
+  const clearOpenAiApiKey = useCallback(async (): Promise<boolean> => {
     setOpenAiKeyPending(true)
     try {
       await window.api.speech.clearOpenAiApiKey()
+      const status = await window.api.speech.getOpenAiApiKeyStatus()
+      if (status.configured) {
+        throw new Error('voice_key_clear_still_configured')
+      }
+      setOpenAiKeyProtection(status.protection)
       updateVoiceSettings({
         openAiApiKeyConfigured: false,
-        sttModel: selectedModel?.provider === 'openai' ? '' : voiceSettings.sttModel
+        sttModel:
+          catalog.find((model) => model.id === voiceSettingsRef.current.sttModel)?.provider ===
+          'openai'
+            ? ''
+            : voiceSettingsRef.current.sttModel
       })
       await refreshModelStates()
       setOpenAiDialogOpen(false)
@@ -233,6 +262,7 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
       toast.success(
         translate('auto.components.settings.VoicePane.37aba8bb63', 'OpenAI API key cleared')
       )
+      return true
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -242,15 +272,58 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
               'Failed to clear OpenAI API key'
             )
       )
+      return false
     } finally {
       if (mountedRef.current) {
         setOpenAiKeyPending(false)
       }
     }
-  }
+  }, [catalog, updateVoiceSettings, refreshModelStates])
+
+  useEffect(
+    () =>
+      attachVoicePaneRequest(async (action) => {
+        if (!mountedRef.current || openAiKeyPending || permissionPending) {
+          return false
+        }
+        switch (action) {
+          case 'toggle':
+            await toggleVoiceDictation()
+            return mountedRef.current
+          case 'refresh-models':
+            await refreshModelStates()
+            return mountedRef.current
+          case 'save-key':
+            if (!openAiDialogOpen || !openAiApiKeyDraft.trim()) {
+              return false
+            }
+            return saveOpenAiApiKey()
+          case 'clear-key':
+            return clearOpenAiApiKey()
+        }
+      }),
+    [
+      openAiKeyPending,
+      permissionPending,
+      openAiDialogOpen,
+      openAiApiKeyDraft,
+      toggleVoiceDictation,
+      refreshModelStates,
+      saveOpenAiApiKey,
+      clearOpenAiApiKey
+    ]
+  )
 
   return (
-    <div ref={handlePaneRef} data-voice-settings-pane className="space-y-1">
+    <div
+      ref={handlePaneRef}
+      data-voice-settings-pane
+      data-voice-pane-pending={openAiKeyPending || permissionPending}
+      data-voice-model-count={modelStates.length}
+      data-voice-selected-model={voiceSettings.sttModel}
+      data-voice-key-configured={voiceSettings.openAiApiKeyConfigured}
+      className="space-y-1"
+    >
       <VoiceDictationSettingsSection
         voiceSettings={voiceSettings}
         permissionPending={permissionPending}

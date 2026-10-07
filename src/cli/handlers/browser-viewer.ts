@@ -51,7 +51,74 @@ function runGrabCommand(
   })
 }
 
+function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
+  return runViewerCommand(ctx, {
+    viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+    page: getRequiredStringFlag(ctx.flags, 'page'),
+    operation: 'markup-editor',
+    command
+  })
+}
+
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
+  'browser address': (ctx) => {
+    const action = getRequiredStringFlag(ctx.flags, 'action')
+    return runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      operation: 'address',
+      command: {
+        action,
+        ...(action === 'draft'
+          ? { text: getRequiredStringFlagAllowingEmpty(ctx.flags, 'text') }
+          : {}),
+        ...(action === 'preview' || action === 'select' || action === 'highlight'
+          ? { index: Number(getRequiredStringFlag(ctx.flags, 'index')) }
+          : {})
+      }
+    })
+  },
+  'browser markup tool': (ctx) =>
+    runMarkupEditor(ctx, { action: 'tool', value: getRequiredStringFlag(ctx.flags, 'tool') }),
+  'browser markup color': (ctx) =>
+    runMarkupEditor(ctx, { action: 'color', value: getRequiredStringFlag(ctx.flags, 'color') }),
+  'browser markup width': (ctx) =>
+    runMarkupEditor(ctx, {
+      action: 'width',
+      value: Number(getRequiredStringFlag(ctx.flags, 'width'))
+    }),
+  'browser markup font-size': (ctx) =>
+    runMarkupEditor(ctx, {
+      action: 'font-size',
+      value: Number(getRequiredStringFlag(ctx.flags, 'font-size'))
+    }),
+  'browser markup undo': (ctx) => runMarkupEditor(ctx, { action: 'undo' }),
+  'browser markup redo': (ctx) => runMarkupEditor(ctx, { action: 'redo' }),
+  'browser markup clear': (ctx) => runMarkupEditor(ctx, { action: 'clear' }),
+  'browser markup editor-status': (ctx) => runMarkupEditor(ctx, { action: 'status' }),
+
+  'browser markup start': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'markup',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      action: 'start'
+    }),
+  'browser markup cancel': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'markup',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      action: 'cancel'
+    }),
+  'browser markup status': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'markup',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      action: 'status'
+    }),
+
   'browser grab start': (ctx) => runGrabCommand(ctx, 'start'),
   'browser grab cancel': (ctx) => runGrabCommand(ctx, 'cancel'),
   'browser grab rearm': (ctx) => runGrabCommand(ctx, 'rearm'),

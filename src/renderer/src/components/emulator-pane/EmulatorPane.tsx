@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import { useEmulatorPaneCommands } from './use-emulator-pane-commands'
 import type { Tab } from '../../../../shared/tab-types'
 import { EmulatorPaneToolbar } from './emulator-pane-toolbar'
 import { EmulatorDeviceFrame } from './emulator-device-frame'
@@ -37,8 +39,12 @@ export default function EmulatorPane({ tab, worktreeId, isActive = true }: Emula
     autoAttachOnMount: isActive
   })
 
+  const paneRef = useRef<HTMLDivElement>(null)
+  useEmulatorPaneCommands(paneRef, sendRotate, isLive && !loading)
+
   return (
     <div
+      ref={paneRef}
       data-emulator-pane
       className="flex h-full min-h-0 flex-col bg-background text-sm text-foreground"
     >
