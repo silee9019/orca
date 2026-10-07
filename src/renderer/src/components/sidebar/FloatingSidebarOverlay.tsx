@@ -100,14 +100,14 @@ export function FloatingSidebarOverlay({
 
   return (
     <>
-      {!storeRevealed ? (
-        <div
-          data-floating-sidebar-edge=""
-          className="absolute inset-y-0 left-0 z-20"
-          style={{ width: FLOATING_SIDEBAR_EDGE_HOT_ZONE_PX }}
-          onPointerEnter={handleEnter}
-        />
-      ) : null}
+      {/* Why: stays mounted while open so a pointer that leaves straight from the strip still reports leave. */}
+      <div
+        data-floating-sidebar-edge=""
+        className="absolute inset-y-0 left-0 z-20"
+        style={{ width: FLOATING_SIDEBAR_EDGE_HOT_ZONE_PX }}
+        onPointerEnter={handleEnter}
+        onPointerLeave={handleLeave}
+      />
       <div
         ref={panelRef}
         data-floating-sidebar=""
