@@ -1,3 +1,5 @@
+import { WORKSPACE_FILE_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-file-open'
+import { WORKSPACE_FILE_OPEN_HANDLERS } from '../../src/cli/handlers/workspace-file-open'
 import { WORKSPACE_PORT_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-port-open'
 import { WORKSPACE_PORT_OPEN_HANDLERS } from '../../src/cli/handlers/workspace-port-open'
 import { BROWSER_PALETTE_COMMAND_SPECS } from '../../src/cli/specs/browser-palette'
@@ -157,7 +159,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runFile = async (extra: string[]) => {
+    const specs = WORKSPACE_FILE_OPEN_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'file-open', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await WORKSPACE_FILE_OPEN_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
   return {
+    runFile,
     runPort,
     runPalette,
     runPicker,

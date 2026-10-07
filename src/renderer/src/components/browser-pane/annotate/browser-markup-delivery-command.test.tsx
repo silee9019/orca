@@ -5,6 +5,8 @@ import { requestBrowserMarkupEditor } from '@/runtime/browser-markup-editor-requ
 import { act, cleanup, renderHook, render, fireEvent } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useMarkupMode } from './useMarkupMode'
+import { useBrowserMarkupCommands } from './use-browser-markup-commands'
+import { requestBrowserMarkup } from '@/runtime/browser-markup-request'
 import { deliverMarkupToClipboardVerified } from './markup-clipboard-delivery'
 const fixture = vi.hoisted(() => ({
   capture: vi.fn(),
@@ -199,4 +201,38 @@ it('suppresses success and stale reset when cancellation races an in-flight clip
   await expect(completion).resolves.toBe(false)
   expect(owner.result.current.state).toBe('idle')
   expect(fixture.success).not.toHaveBeenCalled()
+})
+
+it('cancels the actual guest overlay through its shared capture controller and committed receipt', async () => {
+  const target = document.createElement('div')
+  document.body.append(target)
+  const props = makeBrowserGuestOverlayFixture(target)
+  function Owner() {
+    const mode = useMarkupMode({
+      getCaptureContext: () => ({
+        source: { kind: 'image', element: new Image() },
+        cssWidth: 100,
+        cssHeight: 80,
+        outputScale: 1
+      }),
+      onDeliver: vi.fn()
+    })
+    useBrowserMarkupCommands('p1', true, mode)
+    return <BrowserGuestAnnotateOverlays {...props} markup={mode} />
+  }
+  render(<Owner />)
+  let started: Promise<unknown> | undefined
+  await act(async () => {
+    started = requestBrowserMarkup('p1', 'start', Date.now() + 5000)
+  })
+  await expect(started).resolves.toEqual({ state: 'drawing', hasImage: true })
+  expect(target.querySelector('[data-orca-markup-overlay]')).not.toBeNull()
+  let response: Promise<unknown> | undefined
+  await act(async () => {
+    response = requestBrowserMarkup('p1', 'cancel', Date.now() + 5000)
+  })
+  await expect(response).resolves.toEqual({ state: 'idle', hasImage: false })
+  expect(target.querySelector('[data-orca-markup-overlay]')).toBeNull()
+  expect(fixture.write).not.toHaveBeenCalled()
+  target.remove()
 })

@@ -47,6 +47,7 @@ export function PluginMarketplaceBrowser({
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<PluginCatalogFilter>('all')
   const [sourcesOpen, setSourcesOpen] = useState(false)
+  const sourceCloseRef = useRef<(() => boolean) | null>(null)
   const [preview, setPreview] = useState<PluginMarketplaceHostInstallPreview | null>(null)
   const [previewMode, setPreviewMode] = useState<PluginMarketplacePreviewMode>('install')
   const [previewBusyKey, setPreviewBusyKey] = useState<string | null>(null)
@@ -226,7 +227,9 @@ export function PluginMarketplaceBrowser({
     sourcesOpen,
     previewOpen: preview !== null,
     setSearch,
-    setFilter
+    setFilter,
+    setSourcesOpen,
+    closeSources: () => sourceCloseRef.current?.() ?? false
   })
 
   const currentVersion = Boolean(
@@ -375,6 +378,7 @@ export function PluginMarketplaceBrowser({
         sources={sources}
         onOpenChange={setSourcesOpen}
         onChanged={loadMarketplaceData}
+        closeRequestRef={sourceCloseRef}
       />
       <PluginMarketplacePreviewDialog
         key={preview ? `${preview.pluginKey}:${preview.contentHash}` : 'closed'}

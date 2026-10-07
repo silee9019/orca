@@ -1,9 +1,11 @@
+import { WorkspaceFileOpenCommand } from './workspace-file-open-params'
 import { WorkspacePortOpenCommand } from './workspace-port-open-params'
 import { PluginMarketplaceViewerCommand } from './plugin-marketplace-viewer-params'
 import { BrowserPaletteSelection } from './browser-palette-params'
 import { RemoteFilePickerCommand } from './remote-file-picker-params'
 import { LinkedBrowserCommand } from './linked-browser-params'
 import { FloatingBrowserCommand } from './floating-browser-params'
+import { BrowserDownloadAction } from './browser-download-params'
 import { BrowserNewTabTarget } from './browser-new-tab-params'
 import { BrowserReloadMenuAction } from './browser-reload-menu-params'
 import { BrowserAnnotationRowCommand } from './browser-annotation-row-params'
@@ -50,6 +52,11 @@ const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
   z.object({
     viewer,
+    operation: z.literal('workspace-file-open'),
+    command: WorkspaceFileOpenCommand
+  }),
+  z.object({
+    viewer,
     operation: z.literal('workspace-port-open'),
     command: WorkspacePortOpenCommand
   }),
@@ -76,6 +83,13 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
     command: BrowserSettingsCommand
   }),
   z.object({ viewer, operation: z.literal('new-tab'), target: BrowserNewTabTarget }),
+  z.object({
+    viewer,
+    operation: z.literal('download-ui'),
+    page,
+    downloadId: z.string().min(1),
+    action: BrowserDownloadAction
+  }),
   z.object({ viewer, operation: z.literal('reload-menu'), page, action: BrowserReloadMenuAction }),
   z.object({
     viewer,

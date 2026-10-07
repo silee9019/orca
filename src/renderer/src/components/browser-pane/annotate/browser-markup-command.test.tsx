@@ -101,3 +101,25 @@ it('rejects the pending request when its page owner unmounts', async () => {
   }
   await expect(pending).rejects.toThrow('browser_markup_ui_unavailable')
 })
+
+it('selects the active markup owner after an inactive owner without starting the latter', async () => {
+  const inactive = mount(false)
+  const active = mount(true)
+  fixture.capture.mockClear()
+  await expect(command('start')).resolves.toEqual({ state: 'drawing', hasImage: true })
+  expect(inactive.result.current.state).toBe('idle')
+  expect(active.result.current.state).toBe('drawing')
+  expect(fixture.capture).toHaveBeenCalledOnce()
+})
+it('rejects duplicate active markup owners before capture or cancellation', async () => {
+  const first = mount()
+  const second = mount()
+  fixture.capture.mockClear()
+  await expect(command('start')).rejects.toThrow('browser_markup_owner_ambiguous')
+  expect(fixture.capture).not.toHaveBeenCalled()
+  await act(async () => first.result.current.start())
+  expect(first.result.current.state).toBe('drawing')
+  await expect(command('cancel')).rejects.toThrow('browser_markup_owner_ambiguous')
+  expect(first.result.current.state).toBe('drawing')
+  expect(second.result.current.state).toBe('idle')
+})

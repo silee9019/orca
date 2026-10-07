@@ -41,6 +41,7 @@ it.skipIf(process.platform === 'win32')(
     })
     const runtime = new OrcaRuntimeService(store)
     const providerCalls: string[] = []
+    let releaseSourceRefresh: (() => void) | undefined
     const source: PluginMarketplaceHostSourceState = {
       id: 'fixture-source',
       source: { kind: 'git', url: 'https://example.invalid/catalog.git', ref: 'main' },
@@ -69,6 +70,12 @@ it.skipIf(process.platform === 'win32')(
     Object.assign(window, {
       api: {
         plugins: {
+          refreshMarketplaces: async () => {
+            providerCalls.push('source-refresh')
+            await new Promise<void>((resolve) => {
+              releaseSourceRefresh = resolve
+            })
+          },
           list: async () => [],
           onChanged: () => () => {},
           listMarketplaces: async () => {
@@ -294,7 +301,37 @@ it.skipIf(process.platform === 'win32')(
         'plugin_marketplace_dialog_busy'
       )
       expect(container.querySelector('input')?.value).toBe('')
-      expect(providerCalls).toEqual(['sources', 'listings'])
+      await invoke('sources-close')
+      expect(document.querySelector('[role="dialog"]')).toBeNull()
+      expect(JSON.parse(output.mock.calls.at(-1)?.[0]).result.marketplace.sourcesOpen).toBe(false)
+      await invoke('sources-open')
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+      const refreshSource = document.querySelector<HTMLButtonElement>(
+        '[aria-label="Refresh Fixture catalog"]'
+      )
+      expect(refreshSource).not.toBeNull()
+      await act(async () => refreshSource?.click())
+      const done = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')
+      ).find((button) => button.textContent === 'Done')
+      expect(done?.disabled).toBe(true)
+      await expect(invoke('sources-close')).rejects.toThrow('plugin_marketplace_source_busy')
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+      await act(async () => releaseSourceRefresh?.())
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        expect(done?.disabled).toBe(false)
+      })
+      await invoke('sources-close')
+      expect(document.querySelector('[role="dialog"]')).toBeNull()
+      expect(JSON.parse(output.mock.calls.at(-1)?.[0]).result.marketplace.sourcesOpen).toBe(false)
+      expect(providerCalls).toEqual([
+        'sources',
+        'listings',
+        'source-refresh',
+        'sources',
+        'listings'
+      ])
       await renderOwner(false)
       await renderOwner(true, 2)
       expect(container.querySelectorAll('input[aria-label="Search plugins"]')).toHaveLength(2)
@@ -306,6 +343,8 @@ it.skipIf(process.platform === 'win32')(
           (input) => input.value
         )
       ).toEqual(['', ''])
+      await expect(invoke('sources-open')).rejects.toThrow('plugin_marketplace_owner_ambiguous')
+      expect(document.querySelector('[role="dialog"]')).toBeNull()
       await renderOwner(false)
       await renderOwner(true, 1, 'browser')
       await expect(invoke('search', 'wrong-pane')).rejects.toThrow(
@@ -337,7 +376,10 @@ it.skipIf(process.platform === 'win32')(
       await renderOwner(false)
       await expect(invoke('status')).rejects.toThrow('plugin_marketplace_owner_unavailable')
     } finally {
-      await act(async () => root.unmount())
+      await act(async () => {
+        releaseSourceRefresh?.()
+        root.unmount()
+      })
       container.remove()
       for (const socket of sockets) {
         socket.destroy()

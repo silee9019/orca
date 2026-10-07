@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const PluginMarketplaceViewerCommand = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('status') }),
+  z.object({ action: z.enum(['status', 'sources-open', 'sources-close']) }),
   z.object({ action: z.literal('search'), value: z.string().max(2048) }),
   z.object({ action: z.literal('filter'), value: z.enum(['all', 'installed']) })
 ])

@@ -187,6 +187,7 @@ export function BrowserPagePane({
     setBrowserAnnotationTrayOpen: annotationSend.setBrowserAnnotationTrayOpen
   })
   const nav = useBrowserPageNavigationDownloads({
+    isActive,
     browserTabId: browserTab.id,
     worktreeId,
     webviewRef,

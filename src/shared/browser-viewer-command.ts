@@ -1,9 +1,11 @@
+import { WorkspaceFileOpenState } from './rpc-contract/workspace-file-open-params'
 import { WorkspacePortOpenState } from './rpc-contract/workspace-port-open-params'
 import { PluginMarketplaceViewerState } from './rpc-contract/plugin-marketplace-viewer-params'
 import { BrowserPaletteState } from './rpc-contract/browser-palette-params'
 import { RemoteFilePickerState } from './rpc-contract/remote-file-picker-params'
 import { LinkedBrowserState } from './rpc-contract/linked-browser-params'
 import { FloatingBrowserState } from './rpc-contract/floating-browser-params'
+import { BrowserDownloadReceipt } from './rpc-contract/browser-download-params'
 import { BrowserNewTabState } from './rpc-contract/browser-new-tab-params'
 import { BrowserReloadMenuState } from './rpc-contract/browser-reload-menu-params'
 import { BrowserAnnotationRowState } from './rpc-contract/browser-annotation-row-params'
@@ -32,11 +34,13 @@ export const BrowserViewerResultSchema = z.object({
   applied: z.boolean(),
   persisted: z.literal(false),
   rendered: z.literal(false),
+  fileOpenState: WorkspaceFileOpenState.optional(),
   portOpenState: WorkspacePortOpenState.optional(),
   marketplace: PluginMarketplaceViewerState.optional(),
   paletteState: BrowserPaletteState.optional(),
   page: z.string().optional(),
   newTab: BrowserNewTabState.optional(),
+  download: BrowserDownloadReceipt.optional(),
   reloadMenu: BrowserReloadMenuState.optional(),
   contextMenu: BrowserContextMenuState.optional(),
   tabUi: BrowserTabUiState.optional(),

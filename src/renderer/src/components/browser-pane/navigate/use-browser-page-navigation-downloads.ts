@@ -22,7 +22,7 @@ import { resolveBrowserAddressBarSubmission } from './browser-address-bar-naviga
 import { navigateBrowserPageToUrl } from './navigate-browser-page-url'
 import type { BrowserDownloadState } from './browser-download-progress'
 import { toDisplayUrl } from '../describe-page/browser-page-url-display'
-import { useBrowserPageDownloadEvents } from './use-browser-page-download-events'
+import { useBrowserPageDownloadActions } from './use-browser-page-download-actions'
 import type {
   BrowserPageRecoveryNavigationValidation,
   BrowserPageUrlSetter,
@@ -31,6 +31,7 @@ import type {
 
 export function useBrowserPageNavigationDownloads({
   browserTabId,
+  isActive,
   worktreeId,
   webviewRef,
   activeLoadFailureRef,
@@ -47,6 +48,7 @@ export function useBrowserPageNavigationDownloads({
   browserTabUrl
 }: {
   browserTabId: string
+  isActive: boolean
   worktreeId: string
   webviewRef: MutableRefObject<Electron.WebviewTag | null>
   activeLoadFailureRef: MutableRefObject<BrowserLoadError | null>
@@ -68,16 +70,18 @@ export function useBrowserPageNavigationDownloads({
   navigateToUrl: (url: string) => void
   visibleDownloads: BrowserDownloadState[]
   dismissBrowserDownload: (downloadId: string) => void
-  handleOpenDownloadedFile: (download: BrowserDownloadState) => Promise<void>
-  handleShowDownloadedFile: (download: BrowserDownloadState) => Promise<void>
+  handleOpenDownloadedFile: (download: BrowserDownloadState) => Promise<boolean>
+  handleShowDownloadedFile: (download: BrowserDownloadState) => Promise<boolean>
   handleInternalFileDragOverRef: MutableRefObject<(event: DragEvent<HTMLDivElement>) => void>
   handleInternalFileDropRef: MutableRefObject<(event: DragEvent<HTMLDivElement>) => void>
 } {
   const [addressBarValue, setAddressBarValue] = useState(() => toDisplayUrl(browserTabUrl))
-  const { downloadStates, setDownloadStates } = useBrowserPageDownloadEvents({
-    browserTabId,
-    setResourceNotice
-  })
+  const {
+    visibleDownloads,
+    dismissBrowserDownload,
+    handleOpenDownloadedFile,
+    handleShowDownloadedFile
+  } = useBrowserPageDownloadActions(browserTabId, isActive, setResourceNotice)
   const handleInternalFileDragOverRef = useRef<(event: DragEvent<HTMLDivElement>) => void>(() => {})
   const handleInternalFileDropRef = useRef<(event: DragEvent<HTMLDivElement>) => void>(() => {})
 
@@ -211,72 +215,6 @@ export function useBrowserPageNavigationDownloads({
     handleInternalFileDragOverRef.current = handleInternalFileDragOver
     handleInternalFileDropRef.current = handleInternalFileDrop
   }, [handleInternalFileDragOver, handleInternalFileDrop])
-
-  const dismissBrowserDownload = useCallback(
-    (downloadId: string) => {
-      setDownloadStates((current) =>
-        current.filter((download) => download.downloadId !== downloadId)
-      )
-    },
-    [setDownloadStates]
-  )
-
-  const handleOpenDownloadedFile = useCallback(
-    async (download: BrowserDownloadState) => {
-      if (!download.savePath) {
-        setResourceNotice(
-          translate(
-            'auto.components.browser.pane.BrowserPane.9f6f2e8c19',
-            'The downloaded file path is unavailable.'
-          )
-        )
-        return
-      }
-      const opened = await window.api.shell.openFilePath(download.savePath)
-      if (!opened) {
-        setResourceNotice(
-          translate(
-            'auto.components.browser.pane.BrowserPane.0c79b7634d',
-            'Could not open the downloaded file. It may have been moved or deleted.'
-          )
-        )
-      }
-    },
-    [setResourceNotice]
-  )
-
-  const handleShowDownloadedFile = useCallback(
-    async (download: BrowserDownloadState) => {
-      if (!download.savePath) {
-        setResourceNotice(
-          translate(
-            'auto.components.browser.pane.BrowserPane.9f6f2e8c19',
-            'The downloaded file path is unavailable.'
-          )
-        )
-        return
-      }
-      const result = await window.api.shell.openInFileManager(download.savePath)
-      if (!result.ok) {
-        setResourceNotice(
-          translate(
-            'auto.components.browser.pane.BrowserPane.397d9dc923',
-            'Could not show the downloaded file. It may have been moved or deleted.'
-          )
-        )
-      }
-    },
-    [setResourceNotice]
-  )
-
-  const visibleDownloads = (() => {
-    const active = downloadStates.filter((download) => download.status === 'downloading')
-    const recent = downloadStates
-      .filter((download) => download.status !== 'downloading')
-      .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
-      .slice(0, 3)
-    return [...active, ...recent]
-  })()
 
   return {
     addressBarValue,

@@ -1,3 +1,4 @@
+import { requestWorkspaceFileOpen } from './workspace-file-open-request'
 import { requestWorkspacePortOpen } from './workspace-port-open-request'
 import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
 import { applyBrowserPaletteSelection } from './browser-palette-selection'
@@ -7,7 +8,8 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
-import { requestBrowserCopyShortcut } from './browser-copy-shortcut-request'
+import { applyBrowserGrabRequest } from './browser-viewer-grab-request'
+import { requestBrowserDownload } from './browser-download-request'
 import { requestBrowserNewTab } from './browser-new-tab-request'
 import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
@@ -24,7 +26,6 @@ import {
 import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
 import { requestBrowserMarkup } from './browser-markup-request'
 import { requestBrowserAnnotationDraft } from './browser-annotation-draft-request'
-import { requestBrowserGrab } from './browser-grab-request'
 import { requestBrowserToolbar } from './browser-toolbar-request'
 import { requestBrowserFind } from './browser-find-request'
 import { webviewRegistry } from '@/components/browser-pane/host-guest/webview-registry'
@@ -56,6 +57,10 @@ export async function applyBrowserViewerRequest(
     return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'workspace-file-open') {
+    const fileOpenState = requestWorkspaceFileOpen(command.command, request.expiresAt)
+    return { ...base, applied: true, fileOpenState }
+  }
   if (command.operation === 'workspace-port-open') {
     const portOpenState = await requestWorkspacePortOpen(command.command, request.expiresAt)
     return { ...base, applied: true, portOpenState }
@@ -152,6 +157,15 @@ export async function applyBrowserViewerRequest(
     )
     return { ...base, page: page.id, draft, applied: true }
   }
+  if (command.operation === 'download-ui') {
+    const download = await requestBrowserDownload(
+      page.id,
+      command.downloadId,
+      command.action,
+      request.expiresAt
+    )
+    return { ...base, page: page.id, download, applied: true }
+  }
   if (command.operation === 'reload-menu') {
     const reloadMenu = await requestBrowserReloadMenu(page.id, command.action, request.expiresAt)
     return { ...base, page: page.id, reloadMenu, applied: true }
@@ -161,28 +175,7 @@ export async function applyBrowserViewerRequest(
     return { ...base, page: page.id, contextMenu, applied: true }
   }
   if (command.operation === 'grab') {
-    if (command.action === 'shortcut-copy') {
-      const grab = await requestBrowserCopyShortcut(page.id, request.expiresAt)
-      return { ...base, page: page.id, grab, applied: true }
-    }
-    if (command.action === 'toggle') {
-      if (!command.intent) {
-        throw new Error('invalid_grab_intent')
-      }
-      const grab = await requestBrowserGrab(page.id, 'toggle', request.expiresAt, command.intent)
-      return { ...base, page: page.id, grab, applied: true }
-    }
-    if (command.action === 'start') {
-      if (!command.intent) {
-        throw new Error('invalid_grab_intent')
-      }
-      await requestBrowserGrab(page.id, 'intent-start', request.expiresAt, command.intent)
-    }
-    const grab = await requestBrowserGrab(
-      page.id,
-      command.action === 'start' ? 'await-ready' : command.action,
-      request.expiresAt
-    )
+    const grab = await applyBrowserGrabRequest(command, request.expiresAt)
     return { ...base, page: page.id, grab, applied: true }
   }
   if (command.operation === 'toolbar-navigation') {

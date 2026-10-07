@@ -1,32 +1,34 @@
-export type BrowserMarkupState = {
-  state: 'idle' | 'capturing' | 'drawing' | 'composing'
-  hasImage: boolean
-}
-export type BrowserMarkupEvent = {
+import type {
+  BrowserDownloadAction,
+  BrowserDownloadReceipt
+} from '../../../shared/rpc-contract/browser-download-params'
+export type BrowserDownloadEvent = {
   page: string
-  action: 'start' | 'cancel' | 'status'
+  downloadId: string
+  action: BrowserDownloadAction
   expiresAt: number
   offer: (active: boolean, execute: () => void) => void
   isSettled: () => boolean
-  finish: (error?: Error, state?: BrowserMarkupState) => void
+  finish: (error?: Error, state?: BrowserDownloadReceipt) => void
 }
-export const BROWSER_MARKUP_COMMAND_EVENT = 'orca:browser-markup-command'
+export const BROWSER_DOWNLOAD_COMMAND_EVENT = 'orca:browser-download-command'
 declare global {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- DOM event map augmentation requires declaration merging.
   interface WindowEventMap {
-    'orca:browser-markup-command': CustomEvent<BrowserMarkupEvent>
+    'orca:browser-download-command': CustomEvent<BrowserDownloadEvent>
   }
 }
-export function requestBrowserMarkup(
+export function requestBrowserDownload(
   page: string,
-  action: BrowserMarkupEvent['action'],
+  downloadId: string,
+  action: BrowserDownloadAction,
   expiresAt: number
-): Promise<BrowserMarkupState> {
+): Promise<BrowserDownloadReceipt> {
   return new Promise((resolve, reject) => {
     const offers: (() => void)[] = []
     let matchingOwners = 0
     let settled = false
-    const finish = (error?: Error, state?: BrowserMarkupState): void => {
+    const finish = (error?: Error, state?: BrowserDownloadReceipt): void => {
       if (settled) {
         return
       }
@@ -39,13 +41,14 @@ export function requestBrowserMarkup(
       }
     }
     const timer = window.setTimeout(
-      () => finish(new Error('markup_timeout_effect_unknown')),
+      () => finish(new Error('download_ui_timeout_effect_unknown')),
       Math.max(0, expiresAt - Date.now())
     )
     window.dispatchEvent(
-      new CustomEvent(BROWSER_MARKUP_COMMAND_EVENT, {
+      new CustomEvent(BROWSER_DOWNLOAD_COMMAND_EVENT, {
         detail: {
           page,
+          downloadId,
           action,
           expiresAt,
           isSettled: () => settled,
@@ -62,11 +65,11 @@ export function requestBrowserMarkup(
     if (Date.now() >= expiresAt) {
       finish(new Error('request_expired'))
     } else if (offers.length > 1) {
-      finish(new Error('browser_markup_owner_ambiguous'))
+      finish(new Error('browser_download_ui_owner_ambiguous'))
     } else if (offers.length === 0) {
       finish(
         new Error(
-          matchingOwners ? 'browser_markup_viewer_inactive' : 'browser_markup_ui_unavailable'
+          matchingOwners ? 'browser_download_ui_inactive' : 'browser_download_ui_ui_unavailable'
         )
       )
     } else {

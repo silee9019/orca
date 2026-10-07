@@ -14,6 +14,8 @@ type CatalogOwner = {
   loading: boolean
   sourcesOpen: boolean
   previewOpen: boolean
+  setSourcesOpen: (value: boolean) => void
+  closeSources: () => boolean
   setSearch: (value: string) => void
   setFilter: (value: 'all' | 'installed') => void
 }
@@ -44,7 +46,9 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
     const command = request.command
     if (
       (command.action === 'search' && next.search !== command.value) ||
-      (command.action === 'filter' && next.filter !== command.value)
+      (command.action === 'filter' && next.filter !== command.value) ||
+      (command.action === 'sources-open' && !next.sourcesOpen) ||
+      (command.action === 'sources-close' && next.sourcesOpen)
     ) {
       request.finish(new Error('plugin_marketplace_readback_unknown'))
     } else {
@@ -76,18 +80,30 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
           requirePluginMarketplaceViewer()
           if (
             command.action !== 'status' &&
-            (current.current.sourcesOpen || current.current.previewOpen)
+            (current.current.previewOpen ||
+              (current.current.sourcesOpen &&
+                command.action !== 'sources-open' &&
+                command.action !== 'sources-close'))
           ) {
             throw new Error('plugin_marketplace_dialog_busy')
           }
           if (pending.current && !pending.current.isSettled()) {
             throw new Error('plugin_marketplace_request_busy')
           }
+          if (command.action === 'sources-close' && !current.current.sourcesOpen) {
+            throw new Error('plugin_marketplace_source_not_open')
+          }
           pending.current = request
           if (command.action === 'search' && current.current.search !== command.value) {
             current.current.setSearch(command.value)
           } else if (command.action === 'filter' && current.current.filter !== command.value) {
             current.current.setFilter(command.value)
+          } else if (command.action === 'sources-open' && !current.current.sourcesOpen) {
+            current.current.setSourcesOpen(true)
+          } else if (command.action === 'sources-close') {
+            if (!current.current.closeSources()) {
+              throw new Error('plugin_marketplace_source_busy')
+            }
           } else {
             finishCommitted()
           }
