@@ -1139,6 +1139,10 @@
           "ea943d0db0": "Choose which indicators appear at the bottom of the window. You can also right-click the status bar for the same toggles.",
           "f687711a9b": "Scale the entire application interface. Use",
           "fa882a3e6b": "Show the Automations button at the top of the left sidebar.",
+          "floatingSidebar": {
+            "description": "Collapse the sidebar and reveal it over the content when the pointer touches the left edge.",
+            "title": "Floating sidebar"
+          },
           "statusBarCount": "{{value0}} indicators visible.",
           "workspaceCardLayoutGuidance": "Managed from the workspace sidebar."
         },
