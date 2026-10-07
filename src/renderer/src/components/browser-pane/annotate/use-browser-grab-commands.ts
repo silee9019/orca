@@ -49,7 +49,13 @@ export function useBrowserGrabCommands(page: string, controller: Controller): vo
   useEffect(() => {
     const receive = (event: WindowEventMap['orca:browser-grab-command']): void => {
       const request = event.detail
-      if (request.page !== page || request.action === 'intent-start' || !request.claim()) {
+      if (
+        request.page !== page ||
+        request.action === 'intent-start' ||
+        request.action === 'copy' ||
+        request.action === 'copy-screenshot' ||
+        !request.claim()
+      ) {
         return
       }
       if (Date.now() >= request.expiresAt) {

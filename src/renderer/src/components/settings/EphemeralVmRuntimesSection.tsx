@@ -1,3 +1,4 @@
+import { attachVmCleanupConfirmRequest } from '@/runtime/vm-cleanup-confirm-request'
 import { Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
@@ -251,6 +252,29 @@ export function EphemeralVmRuntimesSection({
       }
     }
   }
+
+  useEffect(
+    () =>
+      attachVmCleanupConfirmRequest((request) => {
+        if (!active || stoppingId !== null) {
+          return false
+        }
+        if (request.operation === 'cancel') {
+          if (pendingStop?.id !== request.runtimeId) {
+            return false
+          }
+          setPendingStop(null)
+          return true
+        }
+        const runtime = runtimes.find((value) => value.id === request.runtimeId)
+        if (!runtime || (pendingStop && pendingStop.id !== request.runtimeId)) {
+          return false
+        }
+        setPendingStop(runtime)
+        return true
+      }),
+    [active, pendingStop, runtimes, stoppingId]
+  )
 
   const hasRuntimes = runtimes.length > 0
   return (

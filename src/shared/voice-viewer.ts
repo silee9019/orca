@@ -11,6 +11,7 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
       'settings-open',
       'key-dialog-open',
       'key-dialog-close',
+      'key-draft-clear',
       'tip-settings-open',
       'tip-show',
       'tip-close',
@@ -33,7 +34,26 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
     repoId: operationId,
     recipeId: operationId
   }),
-  z.object({ ...target, operation: z.literal('vm-copy-cleanup'), runtimeId: operationId })
+  z.object({ ...target, operation: z.literal('vm-copy-cleanup'), runtimeId: operationId }),
+  z.object({
+    ...target,
+    operation: z.enum(['vm-stop-confirm-open', 'vm-stop-confirm-cancel']),
+    runtimeId: operationId
+  }),
+  z.object({ ...target, operation: z.literal('key-draft'), apiKey: z.string().min(1).max(8192) }),
+  z.object({
+    ...target,
+    operation: z.literal('model-delete-start'),
+    modelId: operationId,
+    confirmation: operationId
+  }),
+  z.object({ ...target, operation: z.literal('model-delete-status'), operationId }),
+  z.object({ ...target, operation: z.enum(['dictation-start', 'dictation-toggle']) }),
+  z.object({
+    ...target,
+    operation: z.enum(['dictation-stop', 'dictation-cancel', 'dictation-status']),
+    operationId
+  })
 ])
 export type VoiceViewerOperation = z.infer<typeof VoiceViewerParams>
 export type VoiceViewerRequest = { id: string; expiresAt: number; command: VoiceViewerOperation }
@@ -46,6 +66,12 @@ export const VoiceViewerResultSchema = z.object({
   microphoneDeviceId: z.string().nullable().optional(),
   operationId: z.string().optional(),
   requestState: z.enum(['pending', 'granted', 'denied', 'cancelled']).optional(),
+  modelId: z.string().optional(),
+  deleteState: z.enum(['pending', 'succeeded', 'failed']).optional(),
+  draftPresent: z.boolean().optional(),
+  dictationState: z.enum(['idle', 'starting', 'listening', 'stopping', 'error']).optional(),
+  targetCaptured: z.boolean().optional(),
+  cancellationRequested: z.boolean().optional(),
   nativePending: z.boolean().optional(),
   osPromptDismissed: z.literal(false).optional(),
   reason: z.string().optional()

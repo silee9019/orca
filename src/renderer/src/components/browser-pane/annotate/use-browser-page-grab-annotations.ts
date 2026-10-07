@@ -1,3 +1,5 @@
+import { useBrowserGrabClipboard } from './use-browser-grab-clipboard'
+import { useBrowserAnnotationDraftCommands } from './use-browser-annotation-draft-commands'
 import {
   useCallback,
   useEffect,
@@ -9,7 +11,10 @@ import {
   type SetStateAction
 } from 'react'
 import { useBrowserGrabIntentCommands } from './use-browser-grab-intent-commands'
-import { translate } from '@/i18n/i18n'
+import {
+  copiedGrabToastMessage,
+  annotationAddedGrabToastMessage
+} from './browser-grab-toast-messages'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import type {
@@ -29,22 +34,6 @@ import type {
   BrowserPageGrabToastState,
   GrabIntent
 } from '../describe-page/browser-page-types'
-
-const copiedGrabToastMessage = (): string =>
-  translate(
-    'auto.components.browser.pane.annotate.use.browser.page.grab.annotations.0c7b9b2b7a',
-    'Copied'
-  )
-const screenshottedGrabToastMessage = (): string =>
-  translate(
-    'auto.components.browser.pane.annotate.use.browser.page.grab.annotations.c937229f19',
-    'Screenshotted'
-  )
-const annotationAddedGrabToastMessage = (): string =>
-  translate(
-    'auto.components.browser.pane.annotate.use.browser.page.grab.annotations.1f5cb19034',
-    'Annotation added'
-  )
 
 export function useBrowserPageGrabAnnotations({
   browserTabId,
@@ -70,7 +59,10 @@ export function useBrowserPageGrabAnnotations({
   handleGrabCopy: () => void
   handleGrabCopyScreenshot: () => void
   grabMenuActionTakenRef: MutableRefObject<boolean>
-  handleAddBrowserAnnotation: (comment: string, intent: BrowserAnnotationIntent) => void
+  handleAddBrowserAnnotation: (
+    comment: string,
+    intent: BrowserAnnotationIntent
+  ) => string | undefined
   handleCancelPendingBrowserAnnotation: () => void
   cancelPendingBrowserCapture: () => void
   handleGrabActionShortcut: (key: 'c' | 's') => void
@@ -223,43 +215,25 @@ export function useBrowserPageGrabAnnotations({
     [grab, grabIntent, recordFeatureInteraction, showGrabToast]
   )
 
-  const handleGrabCopy = useCallback(() => {
-    grabMenuActionTakenRef.current = true
-    const payload = grabPayloadRef.current
-    if (!payload) {
-      return
-    }
-    const text = formatGrabPayloadAsText(payload)
-    void window.api.ui.writeClipboardText(text)
-    recordFeatureInteraction('browser-grab')
-    showGrabToast(copiedGrabToastMessage(), 'success', payload)
-    grab.rearm()
-  }, [grab, recordFeatureInteraction, showGrabToast])
-
-  const handleGrabCopyScreenshot = useCallback(() => {
-    grabMenuActionTakenRef.current = true
-    const payload = grabPayloadRef.current
-    if (!payload) {
-      return
-    }
-    const dataUrl = payload.screenshot?.dataUrl
-    if (!dataUrl?.startsWith('data:image/png;base64,')) {
-      return
-    }
-    void window.api.ui.writeClipboardImage(dataUrl)
-    recordFeatureInteraction('browser-grab')
-    showGrabToast(screenshottedGrabToastMessage(), 'success', payload)
-    grab.rearm()
-  }, [grab, recordFeatureInteraction, showGrabToast])
+  const { handleGrabCopy, handleGrabCopyScreenshot } = useBrowserGrabClipboard({
+    page: toolTargetId,
+    isActive,
+    grab,
+    payloadRef: grabPayloadRef,
+    menuActionTaken: grabMenuActionTakenRef,
+    record: recordFeatureInteraction,
+    toast: showGrabToast
+  })
 
   const handleAddBrowserAnnotation = useCallback(
-    (comment: string, intent: BrowserAnnotationIntent): void => {
+    (comment: string, intent: BrowserAnnotationIntent): string | undefined => {
       const payload = pendingAnnotationPayloadRef.current
       if (!payload) {
         return
       }
+      const annotationId = createBrowserAnnotationId()
       addBrowserPageAnnotation({
-        id: createBrowserAnnotationId(),
+        id: annotationId,
         browserPageId: browserTabId,
         comment,
         intent,
@@ -273,6 +247,7 @@ export function useBrowserPageGrabAnnotations({
       setBrowserAnnotationTrayOpen(true)
       showGrabToast(annotationAddedGrabToastMessage(), 'success', payload)
       grab.rearm()
+      return annotationId
     },
     [
       addBrowserPageAnnotation,
@@ -291,6 +266,14 @@ export function useBrowserPageGrabAnnotations({
       grab.rearm()
     }
   }, [grab, grabIntent])
+
+  useBrowserAnnotationDraftCommands(
+    toolTargetId,
+    isActive,
+    pendingAnnotationPayloadRef,
+    handleAddBrowserAnnotation,
+    handleCancelPendingBrowserAnnotation
+  )
 
   const cancelPendingBrowserCapture = useCallback((): void => {
     grabRef.current.cancel()

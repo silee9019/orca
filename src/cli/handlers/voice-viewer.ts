@@ -1,3 +1,4 @@
+import { readSpeechKeyInput } from '../speech-key-input'
 import type { CommandHandler } from '../dispatch'
 import { VoiceViewerParams, VoiceViewerResultSchema } from '../../shared/voice-viewer'
 import { getOptionalStringFlag, getRequiredStringFlag } from '../flags'
@@ -6,9 +7,17 @@ import { printResult } from '../format'
 
 export const VOICE_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'speech viewer': async ({ client, flags, json }) => {
+    const operation = getRequiredStringFlag(flags, 'operation')
+    const apiKey =
+      operation === 'key-draft'
+        ? await readSpeechKeyInput(getRequiredStringFlag(flags, 'input-file'))
+        : undefined
     const command = VoiceViewerParams.parse({
       viewer: getRequiredStringFlag(flags, 'viewer'),
-      operation: getRequiredStringFlag(flags, 'operation'),
+      operation,
+      apiKey,
+      modelId: getOptionalStringFlag(flags, 'model'),
+      confirmation: getOptionalStringFlag(flags, 'confirm'),
       deviceId: getOptionalStringFlag(flags, 'device') ?? '',
       operationId: getOptionalStringFlag(flags, 'operation-id'),
       repoId: getOptionalStringFlag(flags, 'repo'),

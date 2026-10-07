@@ -4,7 +4,15 @@ import { GRAB_BUDGET } from '../browser-grab-types'
 
 export const BrowserViewerPreset = z.enum(BROWSER_VIEWPORT_PRESETS.map((preset) => preset.id))
 
-export const BrowserGrabViewerAction = z.enum(['start', 'cancel', 'rearm', 'exit', 'status'])
+export const BrowserGrabViewerAction = z.enum([
+  'start',
+  'cancel',
+  'rearm',
+  'exit',
+  'status',
+  'copy',
+  'copy-screenshot'
+])
 export type BrowserGrabViewerAction = z.infer<typeof BrowserGrabViewerAction>
 
 export const BrowserToolbarAction = z.enum([
@@ -57,6 +65,19 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
     credentialId: z.string().min(1).max(4096).nullable()
   }),
   z.object({ viewer, operation: z.literal('devtools-open'), page }),
+  z.object({
+    viewer,
+    operation: z.literal('annotation-draft'),
+    page,
+    action: z.enum(['status', 'cancel'])
+  }),
+  z.object({
+    viewer,
+    operation: z.literal('annotation-add'),
+    page,
+    comment: z.string().max(GRAB_BUDGET.annotationCommentMaxLength),
+    intent: z.enum(['fix', 'change', 'question', 'approve'])
+  }),
   z.object({ viewer, operation: z.literal('annotation-list'), page }),
   z.object({
     viewer,

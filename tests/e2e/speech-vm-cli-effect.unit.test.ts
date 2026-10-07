@@ -1,3 +1,6 @@
+import { attachVoiceKeyDraftRequest } from '../../src/renderer/src/runtime/voice-key-draft-request'
+import { attachVmCleanupConfirmRequest } from '../../src/renderer/src/runtime/vm-cleanup-confirm-request'
+import { attachVoiceModelDeleteRequest } from '../../src/renderer/src/runtime/voice-model-delete-request'
 import type { VoiceSettings } from '../../src/shared/speech-types'
 import { VOICE_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/voice-viewer'
 import { VOICE_VIEWER_HANDLERS } from '../../src/cli/handlers/voice-viewer'
@@ -113,13 +116,18 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
         repos: [
           { id: 'fixture-repo', path: root, displayName: 'Fixture', badgeColor: '#000', addedAt: 1 }
         ],
-        settings: { voice: { enabled: true, sttModel: 'whisper-tiny', dictationMode: 'toggle' } }
+        settings: {
+          experimentalEphemeralVms: true,
+          voice: { enabled: true, sttModel: 'whisper-tiny', dictationMode: 'toggle' }
+        }
       }),
       dataFile: join(root, 'profile.json')
     })
     const runtime = new OrcaRuntimeService(store)
     viewerFixture.getState = () => ({
       persistedUIReady: true,
+      openSettingsTarget: () => {},
+      openSettingsPage: () => {},
       settings: store.getSettings(),
       updateSettingsOrThrow: async (updates: { voice: VoiceSettings }) => {
         store.updateSettings(updates)
@@ -133,6 +141,37 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       }
     })
     vi.stubGlobal('window', { api: { settings: { get: async () => store.getSettings() } } })
+    let draft = ''
+    let confirmRuntime: string | null = null
+    let deleteModelId = ''
+    let finishDelete: (() => void) | undefined
+    const detachDraft = attachVoiceKeyDraftRequest((value) => {
+      draft = value
+      return true
+    })
+    const detachConfirm = attachVmCleanupConfirmRequest((request) => {
+      if (request.runtimeId !== 'fixture-vm') {
+        return false
+      }
+      confirmRuntime = request.operation === 'open' ? request.runtimeId : null
+      return true
+    })
+    const detachDelete = attachVoiceModelDeleteRequest(async (modelId) => {
+      deleteModelId = modelId
+      await new Promise<void>((resolve) => {
+        finishDelete = resolve
+      })
+      deleteModelId = ''
+    })
+    vi.stubGlobal('document', {
+      querySelector: (selector: string) => (selector.includes('input') ? { value: draft } : {}),
+      querySelectorAll: (selector: string) => {
+        const value = selector.includes('cleanup-confirm')
+          ? confirmRuntime
+          : JSON.stringify([deleteModelId])
+        return value ? [{ getAttribute: () => value }] : []
+      }
+    })
     runtime.setNotifier({
       voiceViewer: async (command) => ({
         ...(await applyVoiceViewerRequest({
@@ -310,6 +349,32 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       expect(output.mock.calls.at(-1)?.[0]).toContain('fixture final')
       const keyFile = join(root, 'key-input')
       writeFileSync(keyFile, 'fixture-api-key-private')
+      await invoke([
+        'speech',
+        'viewer',
+        '--viewer',
+        'host',
+        '--operation',
+        'key-draft',
+        '--input-file',
+        keyFile
+      ])
+      expect(draft).toBe('fixture-api-key-private')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"draftPresent": true')
+      await invoke(['speech', 'viewer', '--viewer', 'host', '--operation', 'key-draft-clear'])
+      expect(draft).toBe('')
+      await expect(
+        invoke([
+          'speech',
+          'viewer',
+          '--viewer',
+          'host',
+          '--operation',
+          'key-draft',
+          '--api-key',
+          'forbidden'
+        ])
+      ).rejects.toThrow('Unknown flag')
       await invoke(['speech', 'key', 'save', '--input-file', keyFile])
       await invoke(['speech', 'key', 'status'])
       expect(store.getSettings().voice?.openAiApiKeyConfigured).toBe(true)
@@ -343,6 +408,62 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       await expect(
         invoke(['speech', 'models', 'rm', '--model', 'whisper-tiny', '--confirm', 'wrong'])
       ).rejects.toThrow('--confirm')
+      await invoke([
+        'speech',
+        'viewer',
+        '--viewer',
+        'host',
+        '--operation',
+        'vm-stop-confirm-open',
+        '--runtime',
+        'fixture-vm'
+      ])
+      expect(confirmRuntime).toBe('fixture-vm')
+      await invoke([
+        'speech',
+        'viewer',
+        '--viewer',
+        'host',
+        '--operation',
+        'vm-stop-confirm-cancel',
+        '--runtime',
+        'fixture-vm'
+      ])
+      expect(confirmRuntime).toBeNull()
+      await invoke([
+        'speech',
+        'viewer',
+        '--viewer',
+        'host',
+        '--operation',
+        'model-delete-start',
+        '--model',
+        'whisper-tiny',
+        '--confirm',
+        'whisper-tiny'
+      ])
+      expect(deleteModelId).toBe('whisper-tiny')
+      const deletion = z
+        .object({
+          result: z.object({ operationId: z.string(), deleteState: z.literal('pending') })
+        })
+        .parse(JSON.parse(output.mock.calls.at(-1)?.[0]))
+      if (!finishDelete) {
+        throw new Error('Missing deletion fixture')
+      }
+      finishDelete()
+      await invoke([
+        'speech',
+        'viewer',
+        '--viewer',
+        'host',
+        '--operation',
+        'model-delete-status',
+        '--operation-id',
+        deletion.result.operationId
+      ])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('succeeded')
+      expect(deleteModelId).toBe('')
       await invoke(['vm', 'recipes', '--repo', 'fixture-repo'])
       expect(output.mock.calls.at(-1)?.[0]).toContain('fixture-provider')
       expect(output.mock.calls.at(-1)?.[0]).not.toContain(providerScript)
@@ -428,6 +549,9 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
         'fixture-workspace'
       )
     } finally {
+      detachDraft()
+      detachConfirm()
+      detachDelete()
       for (const socket of sockets) {
         socket.destroy()
       }

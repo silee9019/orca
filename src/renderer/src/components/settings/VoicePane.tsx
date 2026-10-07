@@ -1,3 +1,4 @@
+import { attachVoiceKeyDraftRequest } from '@/runtime/voice-key-draft-request'
 import { attachVoiceKeyDialogRequest } from '@/runtime/voice-key-dialog-request'
 import { UnsealedCredentialNotice } from './UnsealedCredentialNotice'
 import type { SecretAtRestProtection } from '../../../../shared/secret-at-rest-protection'
@@ -172,6 +173,18 @@ export function VoicePane({ settings, updateSettings }: VoicePaneProps): React.J
         }
       }),
     [openAiKeyPending, openOpenAiDialog]
+  )
+
+  useEffect(
+    () =>
+      attachVoiceKeyDraftRequest((draft) => {
+        if (!openAiDialogOpen || openAiKeyPending) {
+          return false
+        }
+        setOpenAiApiKeyDraft(draft)
+        return true
+      }),
+    [openAiDialogOpen, openAiKeyPending]
   )
 
   const saveOpenAiApiKey = async (): Promise<void> => {

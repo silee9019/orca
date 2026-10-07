@@ -35,6 +35,7 @@ export const BrowserViewerResultSchema = z.object({
       totalMatches: z.number().int()
     })
     .optional(),
+  draft: z.object({ hasDraft: z.boolean(), annotationId: z.string().optional() }).optional(),
   zoomLevel: z.number().finite().optional(),
   annotations: z
     .array(

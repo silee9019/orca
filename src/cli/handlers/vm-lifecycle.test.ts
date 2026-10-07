@@ -39,14 +39,12 @@ describe('VM lifecycle CLI results', () => {
     expect(log).not.toHaveBeenCalled()
   })
   it('rejects failed cleanup and a mismatched stop target', async () => {
-    const call = vi
-      .spyOn(RuntimeClient.prototype, 'call')
-      .mockResolvedValue({
-        id: 'fixture',
-        ok: true,
-        result: { cleanupStatus: 'failed' },
-        _meta: { runtimeId: 'fixture' }
-      })
+    const call = vi.spyOn(RuntimeClient.prototype, 'call').mockResolvedValue({
+      id: 'fixture',
+      ok: true,
+      result: { cleanupStatus: 'failed' },
+      _meta: { runtimeId: 'fixture' }
+    })
     await expect(invoke('vm cleanup', [['runtime', 'r']])).rejects.toThrow('cleanup failed')
     call.mockClear()
     await expect(

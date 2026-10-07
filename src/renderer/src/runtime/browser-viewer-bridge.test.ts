@@ -39,6 +39,7 @@ const fixture = vi.hoisted(() => {
   }
   return {
     state,
+    draft: vi.fn().mockReturnValue({ hasDraft: false, annotationId: 'saved-note' }),
     grab: vi.fn().mockResolvedValue({
       state: 'awaiting',
       hasSelection: false,
@@ -52,6 +53,9 @@ const fixture = vi.hoisted(() => {
     webviews: new Map<string, { getZoomLevel: () => number }>()
   }
 })
+vi.mock('./browser-annotation-draft-request', () => ({
+  requestBrowserAnnotationDraft: fixture.draft
+}))
 vi.mock('./browser-grab-request', () => ({ requestBrowserGrab: fixture.grab }))
 vi.mock('./browser-toolbar-request', () => ({ requestBrowserToolbar: fixture.toolbar }))
 vi.mock('./browser-find-request', () => ({ requestBrowserFind: fixture.find }))
@@ -280,4 +284,36 @@ it('uses the existing page zoom event and verifies the guest level changed', asy
     })
   )
   fixture.webviews.clear()
+})
+
+it('routes annotation drafts to the exact active page owner without returning capture contents', async () => {
+  const expiresAt = Date.now() + 1000
+  expect(
+    await request(
+      {
+        viewer: 'host',
+        operation: 'annotation-add',
+        page: 'page-1',
+        comment: 'review',
+        intent: 'question'
+      },
+      expiresAt
+    )
+  ).toMatchObject({
+    applied: true,
+    persisted: false,
+    rendered: false,
+    draft: { hasDraft: false, annotationId: 'saved-note' }
+  })
+  expect(fixture.draft).toHaveBeenCalledWith(
+    'page-1',
+    { action: 'add', comment: 'review', intent: 'question' },
+    expiresAt
+  )
+  fixture.draft.mockImplementationOnce(() => {
+    throw new Error('browser_annotation_draft_missing')
+  })
+  await expect(
+    request({ viewer: 'host', operation: 'annotation-draft', page: 'page-1', action: 'cancel' })
+  ).rejects.toThrow('browser_annotation_draft_missing')
 })

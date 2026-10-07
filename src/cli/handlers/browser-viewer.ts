@@ -40,7 +40,7 @@ function runFindCommand(
 }
 function runGrabCommand(
   ctx: HandlerContext,
-  action: 'start' | 'cancel' | 'rearm' | 'exit' | 'status'
+  action: 'start' | 'cancel' | 'rearm' | 'exit' | 'status' | 'copy' | 'copy-screenshot'
 ): Promise<void> {
   return runViewerCommand(ctx, {
     viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
@@ -56,6 +56,8 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'browser grab cancel': (ctx) => runGrabCommand(ctx, 'cancel'),
   'browser grab rearm': (ctx) => runGrabCommand(ctx, 'rearm'),
   'browser grab exit': (ctx) => runGrabCommand(ctx, 'exit'),
+  'browser grab copy': (ctx) => runGrabCommand(ctx, 'copy'),
+  'browser grab copy-screenshot': (ctx) => runGrabCommand(ctx, 'copy-screenshot'),
   'browser grab status': (ctx) => runGrabCommand(ctx, 'status'),
   'browser toolbar-nav': (ctx) =>
     runViewerCommand(ctx, {
@@ -127,6 +129,28 @@ export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
     }
     return runViewerCommand(ctx, { viewer, operation: 'webauthn-respond', requestId, credentialId })
   },
+  'browser annotation draft-status': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-draft',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      action: 'status'
+    }),
+  'browser annotation draft-cancel': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-draft',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      action: 'cancel'
+    }),
+  'browser annotation add': (ctx) =>
+    runViewerCommand(ctx, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      operation: 'annotation-add',
+      page: getRequiredStringFlag(ctx.flags, 'page'),
+      comment: getRequiredStringFlagAllowingEmpty(ctx.flags, 'comment'),
+      intent: getRequiredStringFlag(ctx.flags, 'intent')
+    }),
   'browser annotation list': (ctx) =>
     runViewerCommand(ctx, {
       viewer: getRequiredStringFlag(ctx.flags, 'viewer'),

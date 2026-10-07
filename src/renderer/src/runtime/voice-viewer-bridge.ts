@@ -1,3 +1,6 @@
+import { requestVoiceDictation } from './voice-dictation-request'
+import { requireHostViewer, waitForView } from './voice-viewer-target'
+import { applyVoiceDialogViewerAction } from './voice-dialog-viewer-actions'
 import { requestVoiceKeyDialog } from './voice-key-dialog-request'
 import { useAppStore } from '@/store'
 import { getDefaultVoiceSettings } from '../../../shared/constants'
@@ -17,28 +20,6 @@ import {
   readMicrophoneRequest,
   startMicrophoneRequest
 } from './voice-microphone-requests'
-
-function requireHostViewer(): ReturnType<typeof useAppStore.getState> {
-  const state = useAppStore.getState()
-  if (!state.persistedUIReady || !state.settings) {
-    throw new Error('viewer_not_ready')
-  }
-  if (state.settings.activeRuntimeEnvironmentId) {
-    throw new Error('viewer_runtime_mismatch')
-  }
-  return state
-}
-
-async function waitForView(test: () => boolean, expiresAt: number): Promise<boolean> {
-  while (Date.now() < expiresAt) {
-    requireHostViewer()
-    if (test()) {
-      return true
-    }
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-  }
-  return false
-}
 
 export async function applyVoiceViewerRequest(
   request: VoiceViewerRequest
@@ -243,6 +224,45 @@ export async function applyVoiceViewerRequest(
       await window.api.ui.writeClipboardText(text)
       return { ...result, applied: (await window.api.ui.readClipboardText()) === text }
     }
+    case 'dictation-start':
+    case 'dictation-toggle':
+      return {
+        ...result,
+        ...requestVoiceDictation({
+          action: command.operation === 'dictation-start' ? 'start' : 'toggle'
+        }),
+        persisted: false
+      }
+    case 'dictation-stop':
+    case 'dictation-cancel':
+    case 'dictation-status':
+      return {
+        ...result,
+        ...requestVoiceDictation({
+          action:
+            command.operation === 'dictation-stop'
+              ? 'stop'
+              : command.operation === 'dictation-cancel'
+                ? 'cancel'
+                : 'status',
+          operationId: command.operationId
+        }),
+        persisted: false
+      }
+    case 'key-draft':
+    case 'key-draft-clear':
+    case 'model-delete-start':
+    case 'model-delete-status':
+    case 'vm-stop-confirm-open':
+    case 'vm-stop-confirm-cancel':
+      return (
+        (await applyVoiceDialogViewerAction(command, request.expiresAt)) ?? {
+          viewer: 'host',
+          applied: false,
+          persisted: false,
+          reason: 'voice_viewer_operation_unavailable'
+        }
+      )
   }
 }
 

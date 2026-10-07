@@ -1,3 +1,4 @@
+import { requestBrowserAnnotationDraft } from './browser-annotation-draft-request'
 import { requestBrowserGrab } from './browser-grab-request'
 import { requestBrowserToolbar } from './browser-toolbar-request'
 import { requestBrowserFind } from './browser-find-request'
@@ -59,6 +60,16 @@ export async function applyBrowserViewerRequest(
   }
   if (page.browserRuntimeEnvironmentId || state.remoteBrowserPageHandlesByPageId[page.id]) {
     throw new Error('browser_page_host_mismatch')
+  }
+  if (command.operation === 'annotation-draft' || command.operation === 'annotation-add') {
+    const draft = requestBrowserAnnotationDraft(
+      page.id,
+      command.operation === 'annotation-add'
+        ? { action: 'add', comment: command.comment, intent: command.intent }
+        : { action: command.action },
+      request.expiresAt
+    )
+    return { ...base, page: page.id, draft, applied: true }
   }
   if (command.operation === 'grab') {
     if (command.action === 'start') {

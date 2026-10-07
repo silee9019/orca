@@ -20,7 +20,19 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
-  ...['start', 'cancel', 'rearm', 'exit', 'status'].map((action) => ({
+  {
+    args: ['annotation', 'draft-status', '--page', 'p1'],
+    command: { operation: 'annotation-draft', page: 'p1', action: 'status' }
+  },
+  {
+    args: ['annotation', 'draft-cancel', '--page', 'p1'],
+    command: { operation: 'annotation-draft', page: 'p1', action: 'cancel' }
+  },
+  {
+    args: ['annotation', 'add', '--page', 'p1', '--comment', '', '--intent', 'question'],
+    command: { operation: 'annotation-add', page: 'p1', comment: '', intent: 'question' }
+  },
+  ...['start', 'cancel', 'rearm', 'exit', 'status', 'copy', 'copy-screenshot'].map((action) => ({
     args: ['grab', action, '--page', 'p1', ...(action === 'start' ? ['--intent', 'annotate'] : [])],
     command: {
       operation: 'grab',

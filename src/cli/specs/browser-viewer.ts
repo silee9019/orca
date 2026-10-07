@@ -27,6 +27,18 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
   },
   {
+    path: ['browser', 'grab', 'copy'],
+    summary: 'Copy the selected element contents using the host viewer clipboard owner',
+    usage: 'orca browser grab copy --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'grab', 'copy-screenshot'],
+    summary: 'Copy the selected element screenshot with a native write acknowledgment',
+    usage: 'orca browser grab copy-screenshot --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
     path: ['browser', 'grab', 'status'],
     summary: 'status the existing element picker in the host viewer',
     usage: 'orca browser grab status --viewer host --page <id> [--json]',
@@ -106,6 +118,25 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Cancel a WebAuthn account request owned by the host viewer',
     usage: 'orca browser webauthn cancel --viewer host --request <id> --confirm [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'request', 'confirm']
+  },
+  {
+    path: ['browser', 'annotation', 'draft-status'],
+    summary: 'Inspect whether the host viewer owns a pending annotation draft',
+    usage: 'orca browser annotation draft-status --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'annotation', 'draft-cancel'],
+    summary: 'Dismiss the pending annotation draft in the host viewer',
+    usage: 'orca browser annotation draft-cancel --viewer host --page <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
+  },
+  {
+    path: ['browser', 'annotation', 'add'],
+    summary: 'Save the pending annotation draft with a comment and intent',
+    usage:
+      'orca browser annotation add --viewer host --page <id> --comment <text> --intent <fix|change|question|approve> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'comment', 'intent']
   },
   {
     path: ['browser', 'annotation', 'list'],

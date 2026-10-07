@@ -1,3 +1,4 @@
+import { requestBrowserAnnotationDraft } from '@/runtime/browser-annotation-draft-request'
 // @vitest-environment happy-dom
 import { requestBrowserGrab, type BrowserGrabState } from '@/runtime/browser-grab-request'
 import { useLayoutEffect } from 'react'
@@ -14,14 +15,22 @@ import { useBrowserPageGrabAnnotations } from './use-browser-page-grab-annotatio
 
 const state = vi.hoisted((): { store?: ReturnType<typeof createTestStore> } => ({}))
 vi.mock('@/store', () => ({
-  useAppStore: (
-    selector: (value: ReturnType<ReturnType<typeof createTestStore>['getState']>) => unknown
-  ) => {
-    if (!state.store) {
-      throw new Error('Missing test store')
+  useAppStore: Object.assign(
+    (selector: (value: ReturnType<ReturnType<typeof createTestStore>['getState']>) => unknown) => {
+      if (!state.store) {
+        throw new Error('Missing test store')
+      }
+      return state.store(selector)
+    },
+    {
+      getState: () => {
+        if (!state.store) {
+          throw new Error('Missing store')
+        }
+        return state.store.getState()
+      }
     }
-    return state.store(selector)
-  }
+  )
 }))
 vi.mock('@/i18n/i18n', () => ({ translate: (_key: string, fallback: string) => fallback }))
 
@@ -230,3 +239,127 @@ it('refuses explicit intent starts in inactive viewers before native selection b
   ).rejects.toThrow('browser_grab_viewer_inactive')
   expect(h.awaitGrabSelection).not.toHaveBeenCalled()
 })
+
+it('adds the actual pending annotation through its owner and reads back the saved id', async () => {
+  const h = mount(false, true)
+  act(() => h.result.current.annotations.startGrabIntent('annotate'))
+  await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
+  await act(async () => {
+    h.selection.resolve(selected())
+    h.screenshot.resolve({ ok: false, reason: 'fixture' })
+    await h.screenshot.promise
+  })
+  await waitFor(() => expect(h.result.current.annotations.pendingAnnotationPayload).not.toBeNull())
+  expect(requestBrowserAnnotationDraft('page-1', { action: 'status' }, Date.now() + 1000)).toEqual({
+    hasDraft: true
+  })
+  let savedId: string | undefined
+  act(() => {
+    const result = requestBrowserAnnotationDraft(
+      'page-1',
+      { action: 'add', comment: 'Owned draft', intent: 'fix' },
+      Date.now() + 1000
+    )
+    expect(result.hasDraft).toBe(false)
+    savedId = result.annotationId
+  })
+  const notes = state.store?.getState().browserAnnotationsByPageId['page-1']
+  expect(notes).toHaveLength(1)
+  expect(notes?.[0]).toMatchObject({ id: savedId, comment: 'Owned draft', intent: 'fix' })
+  expect(h.result.current.annotations.pendingAnnotationPayload).toBeNull()
+  expect(() =>
+    requestBrowserAnnotationDraft(
+      'page-1',
+      { action: 'add', comment: 'duplicate', intent: 'fix' },
+      Date.now() + 1000
+    )
+  ).toThrow('browser_annotation_draft_missing')
+})
+
+it('cancels the actual draft and rejects expired, inactive and missing owners', async () => {
+  const h = mount(false, true)
+  const selection = selected()
+  if (selection.kind !== 'selected') {
+    throw new Error('Expected selected fixture')
+  }
+  act(() => h.result.current.annotations.setPendingAnnotationPayload(selection.payload))
+  act(() => {
+    expect(
+      requestBrowserAnnotationDraft('page-1', { action: 'cancel' }, Date.now() + 1000)
+    ).toEqual({ hasDraft: false })
+  })
+  expect(h.result.current.annotations.pendingAnnotationPayload).toBeNull()
+  expect(() =>
+    requestBrowserAnnotationDraft('page-1', { action: 'status' }, Date.now() - 1)
+  ).toThrow('request_expired')
+  expect(() =>
+    requestBrowserAnnotationDraft('other', { action: 'status' }, Date.now() + 1000)
+  ).toThrow('browser_annotation_draft_ui_unavailable')
+  h.unmount()
+  mount(false, false)
+  expect(() =>
+    requestBrowserAnnotationDraft('page-1', { action: 'cancel' }, Date.now() + 1000)
+  ).toThrow('browser_annotation_viewer_inactive')
+})
+
+it.each(['copy', 'copy-screenshot'] as const)(
+  'copies selected %s only after the native effect is acknowledged',
+  async (action) => {
+    const h = mount(false, true)
+    let copiedText = ''
+    let readbackMatches = false
+    const textWrite = vi.fn(async (text: string) => {
+      copiedText = text
+    })
+    const imageWrite = vi.fn().mockResolvedValue({ written: true }).mockResolvedValueOnce(undefined)
+    Object.defineProperty(window.api, 'ui', {
+      configurable: true,
+      value: {
+        writeClipboardText: textWrite,
+        readClipboardText: async () => (readbackMatches ? copiedText : 'changed by fixture'),
+        writeVerifiedClipboardImage: imageWrite
+      }
+    })
+    act(() => h.result.current.annotations.startGrabIntent('copy'))
+    await waitFor(() => expect(h.awaitGrabSelection).toHaveBeenCalledOnce())
+    await act(async () => {
+      h.selection.resolve({
+        opId: 'fixture',
+        kind: 'context-selected',
+        payload: makeAnnotation('page-1').payload
+      })
+      h.screenshot.resolve({
+        ok: true,
+        screenshot: {
+          mimeType: 'image/png',
+          dataUrl: 'data:image/png;base64,AAAA',
+          width: 100,
+          height: 40
+        }
+      })
+    })
+    await waitFor(() => expect(h.result.current.grab.state).toBe('confirming'))
+    await expect(requestBrowserGrab('page-1', action, Date.now() + 1000)).rejects.toThrow(
+      'browser_grab_copy_failed_effect_unknown'
+    )
+    expect(h.result.current.grab.state).toBe('confirming')
+    readbackMatches = true
+    textWrite.mockClear()
+    imageWrite.mockClear()
+    let copied: Promise<BrowserGrabState> | undefined
+    await act(async () => {
+      copied = requestBrowserGrab('page-1', action, Date.now() + 1000)
+      void copied.catch(() => {})
+    })
+    expect((await copied)?.hasSelection).toBe(false)
+    if (action === 'copy') {
+      expect(textWrite).toHaveBeenCalledOnce()
+      expect(copiedText).toContain('Submit')
+      expect(imageWrite).not.toHaveBeenCalled()
+    } else {
+      expect(imageWrite).toHaveBeenCalledExactlyOnceWith('data:image/png;base64,AAAA')
+      expect(textWrite).not.toHaveBeenCalled()
+    }
+    expect(h.result.current.grab.state).not.toBe('confirming')
+  }
+)

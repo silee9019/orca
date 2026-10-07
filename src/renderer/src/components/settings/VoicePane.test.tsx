@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 
+import { requestVoiceKeyDialog } from '@/runtime/voice-key-dialog-request'
+import { requestVoiceKeyDraft } from '@/runtime/voice-key-draft-request'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -118,6 +120,38 @@ async function clickSwitch(button: HTMLButtonElement): Promise<void> {
 }
 
 describe('VoicePane', () => {
+  it('changes only the actual password draft through the typed receiver while the dialog is open', async () => {
+    const { root } = await renderVoicePane({
+      voiceEnabled: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: vi.fn()
+    })
+    expect(requestVoiceKeyDraft('fixture-private-key')).toBe(false)
+    await act(async () => {
+      requestVoiceKeyDialog(true)
+    })
+    await act(async () => {
+      expect(requestVoiceKeyDraft('fixture-private-key')).toBe(true)
+    })
+    expect(
+      document.querySelector<HTMLInputElement>('[data-voice-key-dialog] input[type="password"]')
+        ?.value
+    ).toBe('fixture-private-key')
+    expect(window.api.speech.saveOpenAiApiKey).not.toHaveBeenCalled()
+    await act(async () => {
+      expect(requestVoiceKeyDraft('')).toBe(true)
+    })
+    expect(
+      document.querySelector<HTMLInputElement>('[data-voice-key-dialog] input[type="password"]')
+        ?.value
+    ).toBe('')
+    await act(async () => {
+      requestVoiceKeyDialog(false)
+    })
+    expect(requestVoiceKeyDraft('fixture-private-key')).toBe(false)
+    act(() => root.unmount())
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
     document.body.innerHTML = ''

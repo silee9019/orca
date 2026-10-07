@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { requestVmCleanupConfirm } from '@/runtime/vm-cleanup-confirm-request'
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -108,6 +109,29 @@ describe('EphemeralVmRuntimesSection helpers', () => {
 })
 
 describe('EphemeralVmRuntimesSection', () => {
+  it('opens and cancels the exact renderer confirmation without stopping cleanup', async () => {
+    const container = await renderSection()
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'open', runtimeId: 'runtime-1' })).toBe(true)
+    })
+    expect(
+      container
+        .querySelector('[data-vm-cleanup-confirm-runtime]')
+        ?.getAttribute('data-vm-cleanup-confirm-runtime')
+    ).toBe('runtime-1')
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'cancel', runtimeId: 'other-runtime' })).toBe(
+        false
+      )
+    })
+    expect(container.textContent).toContain('Stop cleanup?')
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'cancel', runtimeId: 'runtime-1' })).toBe(true)
+    })
+    expect(container.querySelector('[data-vm-cleanup-confirm-runtime]')).toBeNull()
+    expect(window.api.ephemeralVm.stopCleanup).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
     toastMocks.success.mockClear()

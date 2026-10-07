@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { readArtifactFileWithinLimit } from '../../shared/artifact-file-read'
+import { readSpeechKeyInput } from '../speech-key-input'
 import type { CommandHandler } from '../dispatch'
 import { getOptionalStringFlag, getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
@@ -66,35 +66,7 @@ export const SPEECH_HANDLERS: Record<string, CommandHandler> = {
   },
   'speech key save': async ({ client, flags, json }) => {
     const path = getRequiredStringFlag(flags, 'input-file')
-    let apiKey: string
-    if (path === '-') {
-      if (process.stdin.isTTY) {
-        throw new RuntimeClientError('invalid_argument', 'API key input requires piped stdin')
-      }
-      const chunks: Buffer[] = []
-      let bytes = 0
-      for await (const chunk of process.stdin) {
-        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))
-        bytes += buffer.length
-        if (bytes > 8192) {
-          throw new RuntimeClientError('invalid_argument', 'API key input is too large')
-        }
-        chunks.push(buffer)
-      }
-      apiKey = Buffer.concat(chunks).toString('utf8').trim()
-    } else {
-      const input = await readArtifactFileWithinLimit(path, 8192)
-      if (input.status !== 'ok') {
-        throw new RuntimeClientError(
-          'invalid_argument',
-          'API key input must be a nonempty file of at most 8192 bytes'
-        )
-      }
-      apiKey = input.content.trim()
-    }
-    if (!apiKey) {
-      throw new RuntimeClientError('invalid_argument', 'API key input is empty')
-    }
+    const apiKey = await readSpeechKeyInput(path)
     const response = await client.call('speech.key.save', { apiKey })
     // A peer response must never echo the submitted credential into terminal output.
     const status = z
