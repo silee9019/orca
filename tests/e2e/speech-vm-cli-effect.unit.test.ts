@@ -204,6 +204,8 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
     })
     installTinySpeechManifest('whisper-tiny')
     const manager = new FixtureSpeechModelManager(join(root, 'models'))
+    const progress: number[] = []
+    manager.setProgressCallback((_model, value) => progress.push(value))
     let downloadStatus: 'downloading' | 'not-downloaded' = 'downloading'
     vi.spyOn(manager, 'cancelDownload').mockImplementation(() => {
       downloadStatus = 'not-downloaded'
@@ -368,6 +370,16 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       ).rejects.toThrow('fixture_audio_failed')
       await invoke(['speech', 'dictation', 'transcribe', '--audio-file', audioFile])
       expect(output.mock.calls.at(-1)?.[0]).toContain('fixture final')
+      vi.mocked(stt.feedAudio).mockImplementationOnce(() => {
+        if (!sink) {
+          throw new Error('Missing speech event sink')
+        }
+        sink({ type: 'error', error: 'fixture-engine-private diagnostic' })
+      })
+      await expect(
+        invoke(['speech', 'dictation', 'transcribe', '--audio-file', audioFile])
+      ).rejects.toThrow('speech_transcription_failed')
+      expect(JSON.stringify(output.mock.calls)).not.toContain('fixture-engine-private')
       const keyFile = join(root, 'key-input')
       writeFileSync(keyFile, 'fixture-api-key-private')
       await invoke([
@@ -436,6 +448,16 @@ if (mode === 'create' || mode === 'resume') console.log(JSON.stringify({ schemaV
       expect(await manager.getModelState('whisper-tiny')).toMatchObject({ status: 'downloading' })
       expect(existsSync(`${manager.getModelDir('whisper-tiny')}.partial`)).toBe(true)
       manager.release()
+      await vi.waitFor(async () =>
+        expect(await manager.getModelState('whisper-tiny')).toMatchObject({
+          status: 'downloading',
+          progress: 0.5
+        })
+      )
+      await invoke(['speech', 'models', 'list'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"progress": 0.5')
+      expect(progress).toContain(0.5)
+      manager.resumeProgress()
       await vi.waitFor(async () =>
         expect(await manager.getModelState('whisper-tiny')).toMatchObject({ status: 'ready' })
       )

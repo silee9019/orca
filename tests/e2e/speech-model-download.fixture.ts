@@ -28,9 +28,16 @@ export class FixtureSpeechModelManager extends ModelManager {
   private gate = new Promise<void>((resolve) => {
     this.releaseDownload = resolve
   })
+  private releaseProgress: (() => void) | undefined
+  private progressGate = new Promise<void>((resolve) => {
+    this.releaseProgress = resolve
+  })
   readonly receivedFiles: string[] = []
   release(): void {
     this.releaseDownload?.()
+  }
+  resumeProgress(): void {
+    this.releaseProgress?.()
   }
   protected override async downloadFile(
     url: string,
@@ -50,5 +57,6 @@ export class FixtureSpeechModelManager extends ModelManager {
     writeFileSync(dest, payload)
     this.receivedFiles.push(dest)
     this.reportDownloadProgress(modelId, 0.5)
+    await this.progressGate
   }
 }
