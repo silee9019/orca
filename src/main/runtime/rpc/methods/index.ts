@@ -14,6 +14,8 @@ import { ACCOUNT_LOGIN_METHODS } from './account-login'
 import { OS_PERMISSION_METHODS } from './os-permissions'
 import { USAGE_METHODS } from './usage'
 import { RATE_LIMIT_METHODS } from './rate-limits'
+import { ORCA_PROFILE_METHODS } from './orca-profiles'
+import { SPARSE_PRESET_METHODS } from './sparse-presets'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -85,6 +87,8 @@ export const ALL_RPC_METHODS = [
   ...ACCOUNT_CREDENTIAL_METHODS,
   ...ACCOUNT_LOGIN_METHODS,
   ...OS_PERMISSION_METHODS,
+  ...ORCA_PROFILE_METHODS,
+  ...SPARSE_PRESET_METHODS,
   ...STATUS_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,

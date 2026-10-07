@@ -27,6 +27,7 @@ import {
 } from '../mobile-relay-credential-contract'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
 import { pluginConsentRequestSchema } from '../plugins/plugin-consent-request'
+import { pluginMarketplaceGitSourceSchema } from '../plugins/plugin-marketplace'
 import {
   AccountCredentialSaveParams,
   AccountCredentialStatusParams
@@ -63,6 +64,15 @@ import {
   AntigravityAccountTargetParams
 } from './antigravity-accounts-params'
 import { ArtifactsDeleteParams, ListOptions, SourceRequest, WriteRequest } from './artifacts-params'
+import {
+  AutomationRunPrecheckParams,
+  AutomationSnapshotNameParams,
+  ExternalAutomationActionParams,
+  ExternalAutomationCreateParams,
+  ExternalAutomationListParams,
+  ExternalAutomationRunsParams,
+  ExternalAutomationUpdateParams
+} from './automation-extensions-params'
 import {
   AutomationCreate,
   AutomationId,
@@ -373,6 +383,20 @@ import {
   NotificationsSubscribeParams
 } from './notifications-params'
 import {
+  ProfileAuthOperationParams,
+  ProfileCloudCreateParams,
+  ProfileCreateParams,
+  ProfileCurrentParams,
+  ProfileFindProjectsParams,
+  ProfileOrgInviteParams,
+  ProfileOrgParams,
+  ProfileOrgRemoveParams,
+  ProfileOrgRevokeParams,
+  ProfileOrgRoleParams,
+  ProfileTransferParams,
+  ProfileUseParams
+} from './orca-profile-params'
+import {
   FederationDispatchParams,
   FederationFleetSnapshotParams,
   FederationOutputReadParams,
@@ -434,6 +458,15 @@ import {
   TccPromptOwnerParams,
   TccPromptReleaseParams
 } from './os-permissions-params'
+import { PluginInspectPanelParams, PluginInvokePanelActionParams } from './plugins-cli-params'
+import {
+  PluginInstallParams,
+  PluginKeyParams,
+  PluginMarketplaceInstallParams,
+  PluginMarketplacePreviewParams,
+  PluginMarketplaceRefreshParams,
+  PluginMarketplaceSourceParams
+} from './plugins-management-params'
 import {
   PluginInvokeCommandParams,
   PluginReadPanelEntryParams,
@@ -490,10 +523,28 @@ import {
 } from './session-tabs-schemas-params'
 import { SettingsKeybindingUpdate, SettingsWarpImportSource } from './settings-control-params'
 import {
+  SkillAuthorizedBundlePackageInstallParams,
+  SkillAuthorizedBundleShareInstallParams,
+  SkillAuthorizedPackageInstallParams,
+  SkillAuthorizedShareInstallParams
+} from './skills-authorized-install-params'
+import {
+  SkillPackageIdParams,
+  SkillPackageVersionParams,
+  SkillShareIdParams
+} from './skills-cloud-params'
+import {
+  SkillPreparationIdParams,
+  SkillUpdateStartParams,
+  skillSharePrepareIpcSchema,
+  skillSharePublishIpcSchema
+} from './skills-lifecycle-params'
+import {
   SkillsCancelInstallParams,
   SkillsDiscoverParams,
   SkillsGetInstallProgressParams
 } from './skills-params'
+import { SparsePresetRemoveParams } from './sparse-preset-params'
 import {
   DictationChunk,
   DictationHandle,
@@ -589,7 +640,10 @@ import {
   WorktreeSortOrder,
   WorktreeTeardownMissingTerminalsParams
 } from './worktree-params'
-import { SkillBundleInstallRequestSchema } from '../skill-bundle-install-contract'
+import {
+  SkillBundleInstallPreviewRequestSchema,
+  SkillBundleInstallRequestSchema
+} from '../skill-bundle-install-contract'
 import { SkillDeleteRequestSchema } from '../skill-delete-contract'
 import {
   SkillInstallPreviewRequestSchema,
@@ -692,10 +746,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'artifacts.update': WriteRequest,
   'automation.create': AutomationCreate,
   'automation.delete': AutomationId,
+  'automation.externalAction': ExternalAutomationActionParams,
+  'automation.externalCreate': ExternalAutomationCreateParams,
+  'automation.externalList': ExternalAutomationListParams,
+  'automation.externalRuns': ExternalAutomationRunsParams,
+  'automation.externalUpdate': ExternalAutomationUpdateParams,
   'automation.list': AutomationList,
+  'automation.precheck': AutomationRunPrecheckParams,
   'automation.runNow': AutomationId,
   'automation.runs': AutomationRuns,
   'automation.show': AutomationId,
+  'automation.snapshotWorkspaceName': AutomationSnapshotNameParams,
   'automation.update': AutomationUpdate,
   'browser.back': BrowserTarget,
   'browser.capture.start': BrowserTarget,
@@ -1123,11 +1184,27 @@ export const RPC_PARAMS_BY_METHOD = {
   'orchestration.workerTerminalUserInput': OrchestrationWorkerTerminalUserInputParams,
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
+  'plugins.addMarketplace': pluginMarketplaceGitSourceSchema,
   'plugins.consent': pluginConsentRequestSchema,
+  'plugins.getLogs': PluginKeyParams,
+  'plugins.inspectPanel': PluginInspectPanelParams,
+  'plugins.install': PluginInstallParams,
+  'plugins.installMarketplacePlugin': PluginMarketplaceInstallParams,
   'plugins.invokeCommand': PluginInvokeCommandParams,
+  'plugins.invokePanelAction': PluginInvokePanelActionParams,
   'plugins.list': null,
+  'plugins.listLanguagePacks': null,
+  'plugins.listMarketplacePlugins': null,
+  'plugins.listMarketplaces': null,
   'plugins.panelAction': PluginsPanelActionParams,
+  'plugins.previewMarketplacePlugin': PluginMarketplacePreviewParams,
+  'plugins.previewMarketplaceUpdate': PluginKeyParams,
   'plugins.readPanelEntry': PluginReadPanelEntryParams,
+  'plugins.refresh': null,
+  'plugins.refreshMarketplaces': PluginMarketplaceRefreshParams,
+  'plugins.remove': PluginKeyParams,
+  'plugins.removeMarketplace': PluginMarketplaceSourceParams,
+  'plugins.rollbackMarketplacePlugin': PluginKeyParams,
   'plugins.setEnabled': PluginSetEnabledParams,
   'preflight.check': PreflightCheck,
   'preflight.detectAgents': null,
@@ -1136,6 +1213,24 @@ export const RPC_PARAMS_BY_METHOD = {
     PreflightDetectRemoteWindowsTerminalCapabilities,
   'preflight.refreshAgents': null,
   'preflight.zcodeInteractiveCapability': null,
+  'profile.authCancel': ProfileAuthOperationParams,
+  'profile.authOperation': ProfileAuthOperationParams,
+  'profile.authStart': ProfileCurrentParams,
+  'profile.authStatus': null,
+  'profile.createCloudLinked': ProfileCloudCreateParams,
+  'profile.createLocal': ProfileCreateParams,
+  'profile.findProjects': ProfileFindProjectsParams,
+  'profile.list': null,
+  'profile.orgInvite': ProfileOrgInviteParams,
+  'profile.orgMembers': ProfileOrgParams,
+  'profile.orgRemoveMember': ProfileOrgRemoveParams,
+  'profile.orgRevokeInvite': ProfileOrgRevokeParams,
+  'profile.orgSetRole': ProfileOrgRoleParams,
+  'profile.refreshAuth': null,
+  'profile.selectOrg': ProfileOrgParams,
+  'profile.signOut': ProfileCurrentParams,
+  'profile.transferProject': ProfileTransferParams,
+  'profile.use': ProfileUseParams,
   'profileAuth.control': ProfileAuthControlParams,
   'project.list': null,
   'project.update': ProjectUpdate,
@@ -1173,6 +1268,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'repo.issueCommandRead': RepoSelector,
   'repo.issueCommandWrite': RepoIssueCommandWrite,
   'repo.list': null,
+  'repo.removeSparsePreset': SparsePresetRemoveParams,
   'repo.reorder': RepoReorder,
   'repo.rm': RepoSelector,
   'repo.saveSparsePreset': RepoSparsePresetSave,
@@ -1216,20 +1312,40 @@ export const RPC_PARAMS_BY_METHOD = {
   'settings.update': SettingsUpdate,
   'settings.updatePRBotAuthorOverride': PRBotAuthorOverrideUpdate,
   'settings.updateTerminalQuickCommands': TerminalQuickCommandsUpdate,
+  'skills.acknowledgeUpdateRun': null,
   'skills.beginUpload': SkillUploadBeginRequestSchema,
   'skills.cancelInstall': SkillsCancelInstallParams,
+  'skills.cancelShare': SkillPreparationIdParams,
+  'skills.cancelUpdateRun': null,
   'skills.cancelUpload': SkillUploadCommitRequestSchema,
   'skills.commitUpload': SkillUploadCommitRequestSchema,
   'skills.delete': SkillDeleteRequestSchema,
+  'skills.deletePackage': SkillPackageIdParams,
+  'skills.deletePackageVersion': SkillPackageVersionParams,
   'skills.discover': SkillsDiscoverParams,
+  'skills.freshnessInventory': null,
   'skills.getInstallProgress': SkillsGetInstallProgressParams,
+  'skills.getPackage': SkillPackageIdParams,
+  'skills.getUpdateRun': null,
   'skills.install': SkillInstallRequestSchema,
   'skills.installBundle': SkillBundleInstallRequestSchema,
+  'skills.installBundlePackageVersion': SkillAuthorizedBundlePackageInstallParams,
+  'skills.installBundleShare': SkillAuthorizedBundleShareInstallParams,
+  'skills.installPackageVersion': SkillAuthorizedPackageInstallParams,
+  'skills.installShare': SkillAuthorizedShareInstallParams,
   'skills.listManagedInstalls': null,
+  'skills.listOwnedShares': null,
+  'skills.prepareShare': skillSharePrepareIpcSchema,
+  'skills.previewBundleInstall': SkillBundleInstallPreviewRequestSchema,
   'skills.previewDelete': SkillDeleteRequestSchema,
   'skills.previewInstall': SkillInstallPreviewRequestSchema,
+  'skills.publishShare': skillSharePublishIpcSchema,
+  'skills.releaseShare': SkillPreparationIdParams,
   'skills.removeInstall': SkillRemoveRequestSchema,
+  'skills.resolveShare': SkillShareIdParams,
+  'skills.revokeShare': SkillShareIdParams,
   'skills.share': AgentSkillShareRequestSchema,
+  'skills.startUpdateRun': SkillUpdateStartParams,
   'skills.uploadChunk': SkillUploadChunkRequestSchema,
   'speech.dictation.cancel': DictationHandle,
   'speech.dictation.chunk': DictationChunk,

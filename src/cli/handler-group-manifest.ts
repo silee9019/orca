@@ -7,6 +7,7 @@ import { ACCOUNT_INSPECTION_HANDLER_GROUPS } from './account-inspection-handler-
 import { ACCOUNT_HANDLER_GROUPS } from './account-handler-groups'
 import { ACCOUNT_VIEWER_HANDLER_GROUPS } from './account-viewer-handler-groups'
 import { USAGE_HANDLER_GROUPS } from './usage-handler-groups'
+import { EXTENSIONS_HANDLER_GROUPS } from './extensions-handler-groups'
 import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 
@@ -35,6 +36,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/project-filter.js')).PROJECT_FILTER_HANDLERS
   },
   ...SETTINGS_HANDLER_GROUPS,
+  ...EXTENSIONS_HANDLER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],

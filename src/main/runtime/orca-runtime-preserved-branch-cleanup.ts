@@ -294,7 +294,8 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
 
   protected readonly repositorySparsePresets = new RuntimeRepositorySparsePresets({
     getStore: () => this.store,
-    resolveRepo: (selector) => this.resolveRepoSelector(selector)
+    resolveRepo: (selector) => this.resolveRepoSelector(selector),
+    changed: (repoId) => this.notifier?.sparsePresetsChanged?.(repoId)
   })
 
   protected readonly repositoryRefQueries = new RuntimeRepositoryRefQueries({
