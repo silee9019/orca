@@ -51,6 +51,7 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
     action: z.enum([
       'status',
       'homepage-save',
+      'kagi-clear',
       'profile-dialog-open',
       'profile-dialog-close',
       'profile-dialog-status',
@@ -80,6 +81,8 @@ export const BrowserSettingsCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserSettingsCommand = z.infer<typeof BrowserSettingsCommand>
 export const BrowserSettingsState = z.object({
+  kagiConfigured: z.boolean().optional(),
+  kagiDraftPresent: z.boolean().optional(),
   clipboardCopied: z.boolean().optional(),
   cookiesScrolled: z.boolean().optional(),
   browserUseEnabled: z.boolean().optional(),

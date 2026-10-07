@@ -8,6 +8,9 @@ import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
 export const BROWSER_SETTINGS_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'browser settings viewer': async (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
+    if (action === 'kagi-clear' && (ctx.flags.has('value') || ctx.flags.has('file'))) {
+      throw new RuntimeClientError('invalid_argument', 'kagi-clear accepts no link or file input.')
+    }
     const extra: Record<string, unknown> =
       action === 'browser-use-copy-example'
         ? { index: Number(getRequiredStringFlag(ctx.flags, 'value')) }

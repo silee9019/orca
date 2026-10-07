@@ -1,6 +1,7 @@
 import { RemoteFilePickerCommand } from './remote-file-picker-params'
 import { LinkedBrowserCommand } from './linked-browser-params'
 import { FloatingBrowserCommand } from './floating-browser-params'
+import { BrowserAnnotationRowCommand } from './browser-annotation-row-params'
 import { BrowserContextMenuAction } from './browser-context-menu-params'
 import { BrowserTabUiTarget, BrowserTabUiAction, BrowserTabUiPoint } from './browser-tab-ui-params'
 import { BrowserGroupUiTarget, BrowserGroupUiAction } from './browser-group-ui-params'
@@ -81,6 +82,12 @@ export const BrowserViewerCommand = z.discriminatedUnion('operation', [
       message: 'Menu open requires an explicit client point'
     }),
   z.object({ viewer, operation: z.literal('profile-ui'), page, command: BrowserProfileUiCommand }),
+  z.object({
+    viewer,
+    operation: z.literal('annotation-row'),
+    page,
+    command: BrowserAnnotationRowCommand
+  }),
   z.object({
     viewer,
     operation: z.literal('annotation-tray'),

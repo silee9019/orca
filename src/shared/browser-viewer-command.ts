@@ -1,6 +1,7 @@
 import { RemoteFilePickerState } from './rpc-contract/remote-file-picker-params'
 import { LinkedBrowserState } from './rpc-contract/linked-browser-params'
 import { FloatingBrowserState } from './rpc-contract/floating-browser-params'
+import { BrowserAnnotationRowState } from './rpc-contract/browser-annotation-row-params'
 import { BrowserContextMenuState } from './rpc-contract/browser-context-menu-params'
 import { BrowserTabUiState } from './rpc-contract/browser-tab-ui-params'
 import { BrowserGroupUiState } from './rpc-contract/browser-group-ui-params'
@@ -31,6 +32,7 @@ export const BrowserViewerResultSchema = z.object({
   tabUi: BrowserTabUiState.optional(),
   groupUi: BrowserGroupUiState.optional(),
   profileUi: BrowserProfileUiState.optional(),
+  annotationRow: BrowserAnnotationRowState.optional(),
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),
   settings: BrowserSettingsState.optional(),

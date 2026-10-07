@@ -1,9 +1,13 @@
+import { BROWSER_ANNOTATION_TRAY_COMMAND_SPECS } from './browser-annotation-tray'
+import { BROWSER_ANNOTATION_ROW_COMMAND_SPECS } from './browser-annotation-row'
 import { BROWSER_CONTEXT_MENU_COMMAND_SPECS } from './browser-context-menu'
 import { BROWSER_PROFILE_UI_COMMAND_SPECS } from './browser-profile-ui'
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
+  ...BROWSER_ANNOTATION_TRAY_COMMAND_SPECS,
+  ...BROWSER_ANNOTATION_ROW_COMMAND_SPECS,
   ...BROWSER_PROFILE_UI_COMMAND_SPECS,
   ...BROWSER_CONTEXT_MENU_COMMAND_SPECS,
   {
@@ -23,13 +27,6 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Cancel the existing pending markup text placement',
     usage: 'orca browser markup text-cancel --viewer host --page <id> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page']
-  },
-  {
-    path: ['browser', 'annotation', 'tray'],
-    summary: 'Use the native host viewer annotation tray and verified clipboard copy',
-    usage:
-      'orca browser annotation tray --viewer host --page <id> --action <open|close|copy|clear|send-menu-open|send-menu-close|status> [--confirm] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action', 'confirm']
   },
   {
     path: ['browser', 'address'],

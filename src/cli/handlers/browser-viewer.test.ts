@@ -20,6 +20,38 @@ async function run(args: string[]) {
 afterEach(() => vi.restoreAllMocks())
 
 it.each([
+  ...['save', 'cancel', 'status'].map((action) => ({
+    args: [
+      'annotation',
+      'row',
+      '--page',
+      'p1',
+      '--action',
+      action,
+      ...(action === 'save' ? ['--confirm'] : [])
+    ],
+    command: { operation: 'annotation-row', page: 'p1', command: { action } }
+  })),
+  {
+    args: ['annotation', 'row', '--page', 'p1', '--action', 'start', '--annotation', 'note'],
+    command: {
+      operation: 'annotation-row',
+      page: 'p1',
+      command: { action: 'start', annotationId: 'note' }
+    }
+  },
+  {
+    args: ['annotation', 'row', '--page', 'p1', '--action', 'comment', '--text', ''],
+    command: { operation: 'annotation-row', page: 'p1', command: { action: 'comment', value: '' } }
+  },
+  {
+    args: ['annotation', 'row', '--page', 'p1', '--action', 'intent', '--intent', 'question'],
+    command: {
+      operation: 'annotation-row',
+      page: 'p1',
+      command: { action: 'intent', value: 'question' }
+    }
+  },
   ...['open-link-external', 'open-page-external', 'open-link', 'inspect'].map((action) => ({
     args: ['context-menu', '--action', action, '--page', 'p1', '--confirm'],
     command: { operation: 'context-menu', page: 'p1', action }
@@ -337,5 +369,25 @@ it('requires confirmation before external context menu handoff', async () => {
   await expect(
     run(['context-menu', '--action', 'open-link-external', '--viewer', 'host', '--page', 'p1'])
   ).rejects.toThrow('confirm')
+  expect(call).not.toHaveBeenCalled()
+})
+
+it.each([
+  ['annotation', 'row', '--action', 'save', '--viewer', 'host', '--page', 'p1'],
+  [
+    'annotation',
+    'row',
+    '--action',
+    'intent',
+    '--intent',
+    'invalid',
+    '--viewer',
+    'host',
+    '--page',
+    'p1'
+  ]
+])('rejects invalid annotation row requests before transport %j', async (...args) => {
+  const call = vi.spyOn(client, 'call')
+  await expect(run(args)).rejects.toMatchObject({ code: 'invalid_argument' })
   expect(call).not.toHaveBeenCalled()
 })

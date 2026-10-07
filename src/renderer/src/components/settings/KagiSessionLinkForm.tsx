@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { getBrowserSettingsHostId } from '@/store/slices/browser/browser-host-state'
 import { toast } from 'sonner'
 import { normalizeKagiSessionLink } from '../../../../shared/browser-url'
 import { useAppStore } from '../../store'
@@ -78,6 +80,31 @@ export function KagiSessionLinkForm(): React.JSX.Element {
     )
   }
 
+  const clearSessionLink = (): void => {
+    setBrowserKagiSessionLink(null)
+    setDraftState(createKagiSessionLinkDraftState(''))
+    toast.success(
+      translate(
+        'auto.components.settings.KagiSessionLinkForm.9f741627a7',
+        'Kagi session link cleared.'
+      )
+    )
+  }
+  useBrowserSettingsRequest({
+    accepts: (command) => command.action === 'kagi-clear',
+    apply: () => {
+      if (!browserKagiSessionLink) {
+        throw new Error('kagi_clear_owner_unavailable')
+      }
+      clearSessionLink()
+    },
+    read: () => ({
+      hostId: getBrowserSettingsHostId(useAppStore.getState()),
+      kagiConfigured: !!browserKagiSessionLink,
+      kagiDraftPresent: draft.length > 0
+    })
+  })
+
   return (
     <form
       className="flex flex-col items-end gap-1.5"
@@ -120,16 +147,7 @@ export function KagiSessionLinkForm(): React.JSX.Element {
             size="sm"
             variant="ghost"
             className="h-7 text-xs"
-            onClick={() => {
-              setBrowserKagiSessionLink(null)
-              setDraftState(createKagiSessionLinkDraftState(''))
-              toast.success(
-                translate(
-                  'auto.components.settings.KagiSessionLinkForm.9f741627a7',
-                  'Kagi session link cleared.'
-                )
-              )
-            }}
+            onClick={clearSessionLink}
           >
             {translate('auto.components.settings.KagiSessionLinkForm.92f0b4e472', 'Clear')}
           </Button>

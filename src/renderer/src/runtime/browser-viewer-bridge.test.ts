@@ -42,6 +42,9 @@ const fixture = vi.hoisted(() => {
     annotationTray: vi
       .fn()
       .mockResolvedValue({ noteCount: 1, open: true, copied: true, sendMenuOpen: false }),
+    annotationRow: vi
+      .fn()
+      .mockResolvedValue({ editingAnnotationId: 'note', comment: 'draft', intent: 'change' }),
     contextMenu: vi.fn().mockResolvedValue({
       open: false,
       focusedItem: null,
@@ -84,6 +87,9 @@ const fixture = vi.hoisted(() => {
 })
 vi.mock('./browser-annotation-tray-request', () => ({
   requestBrowserAnnotationTray: fixture.annotationTray
+}))
+vi.mock('./browser-annotation-row-request', () => ({
+  requestBrowserAnnotationRow: fixture.annotationRow
 }))
 vi.mock('./browser-context-menu-request', () => ({
   requestBrowserContextMenu: fixture.contextMenu
@@ -439,4 +445,24 @@ it('routes context menu copy to its selected native page owner', async () => {
     contextMenu: { open: false, clipboardWritten: true }
   })
   expect(fixture.contextMenu).toHaveBeenCalledWith('page-1', 'copy-link', expect.any(Number))
+})
+
+it('routes annotation row editing to the exact native page owner', async () => {
+  expect(
+    await request({
+      viewer: 'host',
+      operation: 'annotation-row',
+      page: 'page-1',
+      command: { action: 'start', annotationId: 'note' }
+    })
+  ).toMatchObject({
+    applied: true,
+    rendered: false,
+    annotationRow: { editingAnnotationId: 'note' }
+  })
+  expect(fixture.annotationRow).toHaveBeenCalledWith(
+    'page-1',
+    { action: 'start', annotationId: 'note' },
+    expect.any(Number)
+  )
 })

@@ -1,5 +1,6 @@
+import { useBrowserAnnotationRowEditor } from './use-browser-annotation-row-editor'
+import { useBrowserAnnotationRowCommands } from './use-browser-annotation-row-commands'
 import { ImeTextarea } from '@/lib/ime-text-field'
-import { useEffect, useState } from 'react'
 import { CircleCheck, Copy, MessageSquarePlus, Pencil, Send, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,6 +24,7 @@ import { browserAnnotationMatchesPageUrl } from './browser-annotation-page-url'
 
 export function BrowserPageAnnotationTray({
   browserAnnotations,
+  commandOwner,
   currentUrl,
   annotationTraySendOpen,
   handleAnnotationTraySendOpenChange,
@@ -37,6 +39,7 @@ export function BrowserPageAnnotationTray({
   handleDeleteBrowserAnnotation,
   handleUpdateBrowserAnnotation
 }: {
+  commandOwner?: { page: string; active: boolean }
   browserAnnotations: BrowserPageAnnotation[]
   currentUrl?: string
   annotationTraySendOpen: boolean
@@ -56,38 +59,18 @@ export function BrowserPageAnnotationTray({
     intent: BrowserAnnotationIntent
   ) => void
 }): React.JSX.Element {
-  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null)
-  const [editComment, setEditComment] = useState('')
-  const [editIntent, setEditIntent] = useState<BrowserAnnotationIntent>('change')
-
-  // Why: a delete or clear while a row is mid-edit must not leave edit state pointing at nothing.
-  useEffect(() => {
-    if (
-      editingAnnotationId &&
-      !browserAnnotations.some((annotation) => annotation.id === editingAnnotationId)
-    ) {
-      setEditingAnnotationId(null)
-    }
-  }, [browserAnnotations, editingAnnotationId])
-
-  const handleStartEdit = (annotation: BrowserPageAnnotation): void => {
-    setEditingAnnotationId(annotation.id)
-    setEditComment(annotation.comment)
-    setEditIntent(annotation.intent)
-  }
-
-  const handleCancelEdit = (): void => {
-    setEditingAnnotationId(null)
-  }
-
-  const handleSaveEdit = (): void => {
-    const trimmed = editComment.trim()
-    if (!trimmed || !editingAnnotationId) {
-      return
-    }
-    handleUpdateBrowserAnnotation(editingAnnotationId, trimmed, editIntent)
-    setEditingAnnotationId(null)
-  }
+  const editor = useBrowserAnnotationRowEditor(browserAnnotations, handleUpdateBrowserAnnotation)
+  useBrowserAnnotationRowCommands(commandOwner, editor)
+  const {
+    editingAnnotationId,
+    editComment,
+    editIntent,
+    setEditComment,
+    setEditIntent,
+    handleStartEdit,
+    handleCancelEdit,
+    handleSaveEdit
+  } = editor
 
   return (
     <div className="absolute right-3 bottom-3 z-30 flex max-h-[45%] w-[min(20rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-[0_10px_24px_rgba(0,0,0,0.18)]">
@@ -230,8 +213,11 @@ export function BrowserPageAnnotationTray({
                     variant="outline"
                     value={editIntent}
                     onValueChange={(value) => {
-                      if (value) {
-                        setEditIntent(value as BrowserAnnotationIntent)
+                      const option = BROWSER_ANNOTATION_INTENT_OPTIONS.find(
+                        (item) => item.value === value
+                      )
+                      if (option) {
+                        setEditIntent(option.value)
                       }
                     }}
                     className="mt-1.5 h-7 w-full [&_[data-slot=toggle-group-item]]:h-7 [&_[data-slot=toggle-group-item]]:flex-1 [&_[data-slot=toggle-group-item]]:px-1.5"

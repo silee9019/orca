@@ -344,9 +344,37 @@ it.skipIf(process.platform === 'win32')(
         container.querySelector('input[aria-label="Kagi private session link"]')
       ).not.toBeNull()
       expect(store.getUI().browserKagiSessionLink).toBeUndefined()
+      const privateKagiFixtureLink = 'https://kagi.com/search?token=fixture-private-kagi-clear'
+      store.updateUI({ browserKagiSessionLink: privateKagiFixtureLink })
+      await act(async () =>
+        useAppStore.setState({ browserKagiSessionLink: privateKagiFixtureLink })
+      )
+      const kagiInput = container.querySelector('input[aria-label="Kagi private session link"]')
+      expect(kagiInput).toHaveProperty('type', 'password')
+      expect(kagiInput).toHaveProperty('value', privateKagiFixtureLink)
+      await expect(invoke('kagi-clear', ['--value', 'disallowed-link-input'])).rejects.toThrow(
+        'accepts no link or file input'
+      )
+      await expect(invoke('kagi-clear', ['--file', 'disallowed-file-input'])).rejects.toThrow(
+        'accepts no link or file input'
+      )
+      await expect(invoke('kagi-clear', [], 'runtime:missing')).rejects.toThrow()
+      expect(store.getUI().browserKagiSessionLink).toBe(privateKagiFixtureLink)
+      await invoke('kagi-clear')
+      expect(useAppStore.getState().browserKagiSessionLink).toBeNull()
+      expect(store.getUI().browserKagiSessionLink).toBeNull()
+      expect(kagiInput).toHaveProperty('value', '')
+      expect(successToast).toHaveBeenCalledWith('Kagi session link cleared.')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"kagiConfigured": false')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"kagiDraftPresent": false')
+      expect(JSON.stringify(output.mock.calls)).not.toContain(privateKagiFixtureLink)
+      expect(JSON.stringify(output.mock.calls)).not.toContain('fixture-private-kagi-clear')
+      await expect(invoke('kagi-clear')).rejects.toThrow()
+
       await invoke('search-engine', ['--value', 'google'])
       expect(store.getUI().browserDefaultSearchEngine).toBeNull()
       expect(container.querySelector('input[aria-label="Kagi private session link"]')).toBeNull()
+      await expect(invoke('kagi-clear')).rejects.toThrow()
       await invoke('search-engine', ['--value', 'bing'])
       expect(useAppStore.getState().browserDefaultSearchEngine).toBe('bing')
       expect(store.getUI().browserDefaultSearchEngine).toBe('bing')

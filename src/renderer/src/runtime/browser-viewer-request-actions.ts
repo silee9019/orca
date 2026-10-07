@@ -4,6 +4,7 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
+import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
 import { requestBrowserContextMenu } from './browser-context-menu-request'
 import { requestBrowserTabUi } from './browser-tab-ui-request'
 import { requestBrowserGroupUi } from './browser-group-ui-request'
@@ -201,6 +202,14 @@ export async function applyBrowserViewerRequest(
       preset: current?.viewportPresetId ?? null,
       applied: accepted && current !== null && current?.viewportPresetId === command.preset
     }
+  }
+  if (command.operation === 'annotation-row') {
+    const annotationRow = await requestBrowserAnnotationRow(
+      page.id,
+      command.command,
+      request.expiresAt
+    )
+    return { ...base, page: page.id, applied: true, annotationRow }
   }
   if (command.operation === 'annotation-tray') {
     const annotationTray = await requestBrowserAnnotationTray(

@@ -116,6 +116,7 @@ export function BrowserGuestAnnotateOverlays({
       ) : null}
       {browserAnnotations.length > 0 && browserAnnotationTrayOpen ? (
         <BrowserPageAnnotationTray
+          commandOwner={markup.commandOwner}
           browserAnnotations={browserAnnotations}
           currentUrl={currentUrl}
           annotationTraySendOpen={annotationTraySendOpen}
