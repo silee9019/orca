@@ -54,6 +54,7 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'webauthn-dialog' ||
     command.operation === 'load-failure' ||
     command.operation === 'workspace-file-open' ||
     command.operation === 'workspace-port-open' ||

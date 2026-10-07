@@ -1,3 +1,4 @@
+import { requestBrowserWebAuthnDialog } from './browser-webauthn-dialog-request'
 import { requestWorkspaceFileOpen } from './workspace-file-open-request'
 import { requestWorkspacePortOpen } from './workspace-port-open-request'
 import { applyBrowserPaletteSelection } from './browser-palette-selection'
@@ -14,6 +15,7 @@ export async function applyBrowserPlacementViewerAction(
     {
       operation:
         | 'load-failure'
+        | 'webauthn-dialog'
         | 'workspace-file-open'
         | 'workspace-port-open'
         | 'palette-select'
@@ -25,6 +27,10 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'webauthn-dialog') {
+    const webAuthnDialog = await requestBrowserWebAuthnDialog(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, webAuthnDialog }
+  }
   if (command.operation === 'load-failure') {
     const failureState = await requestBrowserFailure(command.page, command.command, expiresAt)
     return { ...base, page: command.page, applied: true, failureState }

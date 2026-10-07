@@ -1,3 +1,4 @@
+import { BrowserWebAuthnDialogTarget } from './browser-webauthn-dialog-params'
 import { BrowserFailureTarget } from './browser-failure-params'
 import { BrowserGrabActionKey } from './browser-grab-action-params'
 import { WorkspaceFileOpenCommand } from './workspace-file-open-params'
@@ -52,6 +53,11 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('webauthn-dialog'),
+    command: BrowserWebAuthnDialogTarget
+  }),
   z.object({ viewer, operation: z.literal('load-failure'), page, command: BrowserFailureTarget }),
   z.object({ viewer, operation: z.literal('grab-action'), page, key: BrowserGrabActionKey }),
   z.object({

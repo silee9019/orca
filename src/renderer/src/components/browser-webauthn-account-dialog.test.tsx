@@ -95,4 +95,18 @@ describe('BrowserWebAuthnAccountDialog', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+  it.each(['Cancel', /Work/])(
+    'sends one response for two %s clicks before React commits',
+    (name) => {
+      respondMock.mockImplementation(() => new Promise(() => {}))
+      render(<BrowserWebAuthnAccountDialog />)
+      showRequest()
+      const cancel = screen.getByRole('button', { name })
+      act(() => {
+        cancel.click()
+        cancel.click()
+      })
+      expect(respondMock).toHaveBeenCalledTimes(1)
+    }
+  )
 })

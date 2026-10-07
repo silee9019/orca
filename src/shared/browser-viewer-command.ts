@@ -1,3 +1,4 @@
+import { BrowserWebAuthnDialogState } from './rpc-contract/browser-webauthn-dialog-params'
 import { BrowserFailureState } from './rpc-contract/browser-failure-params'
 import { BrowserGrabActionReceipt } from './rpc-contract/browser-grab-action-params'
 import { WorkspaceFileOpenState } from './rpc-contract/workspace-file-open-params'
@@ -53,6 +54,7 @@ export const BrowserViewerResultSchema = z.object({
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),
   failureState: BrowserFailureState.optional(),
+  webAuthnDialog: BrowserWebAuthnDialogState.optional(),
   settings: BrowserSettingsState.optional(),
   annotationTray: BrowserAnnotationTrayState.optional(),
   address: BrowserAddressState.optional(),
