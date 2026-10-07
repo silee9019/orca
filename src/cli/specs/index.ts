@@ -1,4 +1,5 @@
 import { PROJECT_FILTER_COMMAND_SPECS } from './project-filter'
+import { SETTINGS_COMMAND_SPECS } from './settings'
 import type { CommandSpec } from '../args'
 import { ACCOUNT_COMMAND_SPECS } from './account'
 import { BROWSER_ADVANCED_COMMAND_SPECS } from './browser-advanced'
@@ -23,6 +24,7 @@ import { PROFILE_STATE_COMMAND_SPECS } from './profile-state'
 
 export const COMMAND_SPECS: CommandSpec[] = [
   ...PROJECT_FILTER_COMMAND_SPECS,
+  ...SETTINGS_COMMAND_SPECS,
   ...CORE_COMMAND_SPECS,
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,

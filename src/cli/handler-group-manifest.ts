@@ -18,6 +18,28 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/project-filter.js')).PROJECT_FILTER_HANDLERS
   },
   {
+    name: 'settings',
+    keys: [
+      'settings fields',
+      'settings import ghostty',
+      'settings import warp',
+      'settings desktop get',
+      'settings desktop update',
+      'settings fonts',
+      'settings keybindings get',
+      'settings keybindings reload',
+      'settings keybindings set',
+      'settings preflight check',
+      'settings agents detect',
+      'settings agents refresh',
+      'settings agents zcode-capability',
+      'settings get',
+      'settings update',
+      'settings review-bot'
+    ],
+    load: async () => (await import('./handlers/settings.js')).SETTINGS_HANDLERS
+  },
+  {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],
     load: async () => (await import('./handlers/core.js')).CORE_HANDLERS

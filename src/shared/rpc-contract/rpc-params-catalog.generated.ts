@@ -18,6 +18,9 @@ import {
   BrowserNetworkTunnelAttachParams
 } from '../browser-client-host-protocol'
 import { BrowserClientPageMetadataParams } from '../browser-client-page-metadata-protocol'
+import { CliDesktopSettingsUpdate } from '../cli-desktop-settings'
+import { CliSettingsUpdate } from '../cli-runtime-settings'
+import { SettingsPreflightCheck, SettingsPreflightContext } from '../cli-settings-preflight'
 import {
   PairingGetEndpointsParamsSchema,
   PairingProvisionRelayParamsSchema
@@ -459,6 +462,7 @@ import {
   UpdatePaneLayout,
   WorktreeTabSelector
 } from './session-tabs-schemas-params'
+import { SettingsKeybindingUpdate, SettingsWarpImportSource } from './settings-control-params'
 import {
   SkillsCancelInstallParams,
   SkillsDiscoverParams,
@@ -949,6 +953,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.status': null,
   'jira.testConnection': SiteSelection,
   'jira.updateIssue': IssueUpdate,
+  'keybindings.get': null,
+  'keybindings.reload': null,
+  'keybindings.setAction': SettingsKeybindingUpdate,
   'linear.addIssueComment': IssueCommentOfLinearParams,
   'linear.agentIssueList': LinearIssueList,
   'linear.agentProjectList': LinearProjectList,
@@ -1060,6 +1067,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'preflight.detectRemoteWindowsTerminalCapabilities':
     PreflightDetectRemoteWindowsTerminalCapabilities,
   'preflight.refreshAgents': null,
+  'preflight.zcodeInteractiveCapability': null,
   'project.list': null,
   'project.update': ProjectUpdate,
   'projectGroup.create': ProjectGroupCreate,
@@ -1110,6 +1118,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
   'session.tabs.updatePaneLayout': UpdatePaneLayout,
+  'settings.control.detectAgents': SettingsPreflightContext,
+  'settings.control.get': null,
+  'settings.control.listFonts': null,
+  'settings.control.preflightCheck': SettingsPreflightCheck,
+  'settings.control.previewGhosttyImport': null,
+  'settings.control.previewWarpThemes': SettingsWarpImportSource,
+  'settings.control.refreshAgents': SettingsPreflightContext,
+  'settings.control.update': CliSettingsUpdate,
+  'settings.control.updatePRBotAuthorOverride': PRBotAuthorOverrideUpdate,
+  'settings.desktop.get': null,
+  'settings.desktop.update': CliDesktopSettingsUpdate,
   'settings.get': null,
   'settings.getTerminalQuickCommands': null,
   'settings.mutateNativeChatSessionOptions': NativeChatSessionOptionsMutation,
