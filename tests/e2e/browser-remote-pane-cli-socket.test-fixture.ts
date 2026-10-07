@@ -1,3 +1,5 @@
+import { BROWSER_FAILURE_COMMAND_SPECS } from '../../src/cli/specs/browser-failure'
+import { BROWSER_FAILURE_HANDLERS } from '../../src/cli/handlers/browser-failure'
 import { WORKSPACE_FILE_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-file-open'
 import { WORKSPACE_FILE_OPEN_HANDLERS } from '../../src/cli/handlers/workspace-file-open'
 import { WORKSPACE_PORT_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-port-open'
@@ -174,7 +176,23 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
       json: true
     })
   }
+  const runFailure = async (extra: string[]) => {
+    const specs = BROWSER_FAILURE_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'failure', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_FAILURE_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
   return {
+    runFailure,
     runFile,
     runPort,
     runPalette,

@@ -12,6 +12,11 @@ import type {
 let nextPreview: (() => Promise<PluginMarketplaceHostInstallPreview>) | undefined
 let installedPlugins: PluginHostListEntry[] = []
 const installedListeners = new Set<() => void>()
+export function notifyFixtureInstalledChanged(): void {
+  for (const listener of installedListeners) {
+    listener()
+  }
+}
 let releaseInstall: (() => void) | undefined
 export function fixtureMarketplacePreviewApi(listings: PluginMarketplaceHostListing[]) {
   return {

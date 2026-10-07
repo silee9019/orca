@@ -6,8 +6,13 @@ import {
 } from './plugin-marketplace-catalog-story.fixture'
 import { act, createElement } from 'react'
 import {
+  fixtureMarketplaceRefreshApi,
+  verifyMarketplaceRefresh
+} from './plugin-marketplace-refresh-story.fixture'
+import {
   fixtureMarketplacePreviewApi,
   marketplaceViewerArguments,
+  notifyFixtureInstalledChanged,
   verifyMarketplacePreview
 } from './plugin-marketplace-preview-story.fixture'
 import { createRoot } from 'react-dom/client'
@@ -79,12 +84,9 @@ it.skipIf(process.platform === 'win32')(
     Object.assign(window, {
       api: {
         plugins: {
-          refreshMarketplaces: async () => {
-            providerCalls.push('source-refresh')
-            await new Promise<void>((resolve) => {
-              releaseSourceRefresh = resolve
-            })
-          },
+          ...fixtureMarketplaceRefreshApi(providerCalls, (release) => {
+            releaseSourceRefresh = release
+          }),
           ...fixtureMarketplacePreviewApi(listings),
           listMarketplaces: async () => {
             providerCalls.push('sources')
@@ -221,6 +223,7 @@ it.skipIf(process.platform === 'win32')(
       expect(providerCalls).toEqual(['sources', 'listings'])
       expect(container.querySelectorAll('[data-marketplace-plugin-key]')).toHaveLength(2)
       await verifyMarketplaceCatalogReload(invoke, container)
+      await verifyMarketplaceRefresh(invoke, container, notifyFixtureInstalledChanged)
       await verifyMarketplacePreview(invoke, source.id, listings)
       await invoke('search', 'private-fixture-query')
       expect(container.querySelector('input')?.value).toBe('private-fixture-query')

@@ -33,7 +33,10 @@ export function registerBrowserNewTabCommands(create: () => Promise<void>): () =
         request.finish(new Error('browser_new_tab_invocation_mismatch'))
         return
       }
-      if (!before.groupsByWorktree[target.worktree]?.some((group) => group.id === target.group)) {
+      if (
+        target.group &&
+        !before.groupsByWorktree[target.worktree]?.some((group) => group.id === target.group)
+      ) {
         request.finish(new Error('browser_new_tab_group_missing'))
         return
       }
@@ -79,7 +82,7 @@ export function registerBrowserNewTabCommands(create: () => Promise<void>): () =
             )
             const tab = tabs.length === 1 ? tabs[0] : undefined
             const group = after.groupsByWorktree[target.worktree]?.find(
-              (group) => group.id === target.group
+              (group) => group.id === (target.group ?? tab?.groupId)
             )
             if (
               disposed ||
@@ -93,13 +96,13 @@ export function registerBrowserNewTabCommands(create: () => Promise<void>): () =
               page.browserRuntimeEnvironmentId ||
               after.remoteBrowserPageHandlesByPageId[page.id] ||
               (tab.executionHostId && tab.executionHostId !== 'local') ||
-              tab.groupId !== target.group ||
+              tab.groupId !== group.id ||
               !after.browserTabsByWorktree[target.worktree]?.some(
                 (entry) => entry.id === workspace.id
               ) ||
               !after.browserPagesByWorkspace[workspace.id]?.some((entry) => entry.id === page.id) ||
               group.activeTabId !== tab.id ||
-              after.activeGroupIdByWorktree[target.worktree] !== target.group ||
+              after.activeGroupIdByWorktree[target.worktree] !== group.id ||
               after.activeBrowserTabIdByWorktree[target.worktree] !== workspace.id ||
               after.activeTabTypeByWorktree[target.worktree] !== 'browser' ||
               group.tabOrder.length !== oldOrder.length + 1 ||

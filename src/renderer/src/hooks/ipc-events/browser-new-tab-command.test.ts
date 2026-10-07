@@ -226,3 +226,58 @@ it('guards overlapping creation and finishes unknown when its actual registratio
   await Promise.resolve()
   await expect(request()).rejects.toThrow('unavailable')
 })
+
+it('reuses terminal no-group creation and observes the resulting group, active page and address focus', async () => {
+  const store = fixture.getStore()
+  store.setState({ groupsByWorktree: {}, activeGroupIdByWorktree: {} })
+  const original = vi.spyOn(store.getState(), 'createBrowserTab')
+  const result = await requestBrowserNewTab({ worktree }, Date.now() + 5000)
+  expect(original).toHaveBeenCalledWith(
+    worktree,
+    'https://default.invalid/',
+    expect.objectContaining({ focusAddressBar: true })
+  )
+  expect(result).toMatchObject({
+    target: { worktree },
+    placement: 'workspace',
+    addressFocusRequested: true
+  })
+  const after = store.getState()
+  const tab = after.unifiedTabsByWorktree[worktree]?.find((entry) => entry.id === result.unifiedTab)
+  expect(after.groupsByWorktree[worktree]).toEqual([
+    expect.objectContaining({ id: tab?.groupId, activeTabId: tab?.id, tabOrder: [tab?.id] })
+  ])
+  expect(after.activeGroupIdByWorktree[worktree]).toBe(tab?.groupId)
+})
+
+it('refuses a missing explicit group when the invoking workspace has a group', async () => {
+  const original = vi.spyOn(fixture.getStore().getState(), 'createBrowserTab')
+  await expect(requestBrowserNewTab({ worktree }, Date.now() + 5000)).rejects.toThrow(
+    'invocation_mismatch'
+  )
+  expect(original).not.toHaveBeenCalled()
+})
+it('keeps no-group paired creation unsupported before any original effect', async () => {
+  const store = fixture.getStore()
+  store.setState({ groupsByWorktree: {}, activeGroupIdByWorktree: {} })
+  fixture.provider = 'paired-runtime'
+  const original = vi.spyOn(store.getState(), 'createBrowserTab')
+  await expect(requestBrowserNewTab({ worktree }, Date.now() + 5000)).rejects.toThrow(
+    'paired_or_disabled'
+  )
+  expect(original).not.toHaveBeenCalled()
+})
+
+it('preserves the original IPC no-group no-op while typed creation explicitly uses the terminal fallback', async () => {
+  const store = fixture.getStore()
+  store.setState({ groupsByWorktree: {}, activeGroupIdByWorktree: {} })
+  const original = vi.spyOn(store.getState(), 'createBrowserTab')
+  fixture.onNew?.()
+  await Promise.resolve()
+  expect(original).not.toHaveBeenCalled()
+  expect(store.getState().browserTabsByWorktree[worktree]).toBeUndefined()
+  await expect(requestBrowserNewTab({ worktree }, Date.now() + 5000)).resolves.toMatchObject({
+    addressFocusRequested: true
+  })
+  expect(original).toHaveBeenCalledOnce()
+})

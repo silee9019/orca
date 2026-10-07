@@ -1,3 +1,4 @@
+import { openBrowserFailureExternalUrl } from '../navigate/use-browser-failure-commands'
 import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react'
 import { BrowserPageZoomIndicator } from './browser-page-zoom-indicator'
 import { Globe } from 'lucide-react'
@@ -96,6 +97,12 @@ export function BrowserPageViewportOverlays({
       />
       {showFailureOverlay && browserTab.loadError ? (
         <BrowserLoadFailureOverlay
+          commandOwner={{
+            page: browserTab.id,
+            worktreeId,
+            placement: 'local',
+            environmentId: null
+          }}
           loadError={browserTab.loadError}
           externalUrl={failureExternalUrl}
           currentUrl={toDisplayUrl(failedNavigationUrl)}
@@ -113,13 +120,13 @@ export function BrowserPageViewportOverlays({
             retryBrowserTabLoad(webview, browserTab, onUpdatePageStateRef.current)
           }}
           onTryHttps={navigateToUrl}
-          onCopy={(url) => {
-            void window.api.ui.writeClipboardText(url)
+          onCopy={async (url) => {
+            await window.api.ui.writeClipboardText(url)
             setResourceNotice(
               translate('browser.loadFailure.addressCopied', 'Copied the current page address.')
             )
           }}
-          onOpenExternal={(url) => void window.api.shell.openUrl(url)}
+          onOpenExternal={openBrowserFailureExternalUrl}
           certificateFailure={certificateFailure}
           sshRoutedHint={sshRouted}
           onRecheckSshRoute={sshRouted ? recheckSshRoute : null}

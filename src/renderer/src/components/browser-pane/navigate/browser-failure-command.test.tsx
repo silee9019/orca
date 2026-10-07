@@ -1,0 +1,236 @@
+// @vitest-environment happy-dom
+import { act, cleanup, render, screen } from '@testing-library/react'
+import { afterEach, expect, it, vi } from 'vitest'
+import { BrowserLoadFailureOverlay } from './browser-load-failure-overlay'
+import { requestBrowserFailure, BrowserFailureEvent } from '@/runtime/browser-failure-request'
+import { useAppStore } from '@/store'
+import type { BrowserFailureTarget } from '../../../../../shared/rpc-contract/browser-failure-params'
+import type { BrowserCertificateProceedResult } from '../../../../../shared/browser-workspace-types'
+import { getDefaultSettings } from '../../../../../shared/constants'
+const initial = useAppStore.getInitialState()
+const api = Object.getOwnPropertyDescriptor(window, 'api')
+afterEach(() => {
+  cleanup()
+  useAppStore.setState(initial, true)
+  vi.useRealTimers()
+  if (api) {
+    Object.defineProperty(window, 'api', api)
+  } else {
+    Reflect.deleteProperty(window, 'api')
+  }
+})
+function seed() {
+  const url = 'https://localhost:3443/'
+  const loadError = { code: -202, description: 'ERR_CERT_AUTHORITY_INVALID', validatedUrl: url }
+  useAppStore.setState({
+    settings: getDefaultSettings('/fixture'),
+    activeWorktreeId: 'folder:fixture',
+    persistedUIReady: true
+  })
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: { ui: { set: async () => {} } }
+  })
+  useAppStore.getState().createBrowserTab('folder:fixture', url, { browserPageId: 'page' })
+  useAppStore.getState().updateBrowserPageState('page', { loadError })
+  const provider: { clipboard: string; external: string[]; approved: string[] } = {
+    clipboard: '',
+    external: [],
+    approved: []
+  }
+  const props = {
+    commandOwner: {
+      page: 'page',
+      worktreeId: 'folder:fixture',
+      placement: 'local' as const,
+      environmentId: null
+    },
+    loadError,
+    currentUrl: url,
+    externalUrl: url,
+    httpsRecoveryUrl: null,
+    expectedBrowserPageId: 'page',
+    certificateFailure: {
+      challengeId: 'challenge',
+      browserPageId: 'page',
+      errorCode: -202,
+      error: 'ERR_CERT_AUTHORITY_INVALID',
+      origin: 'https://localhost:3443',
+      displayHost: 'localhost:3443',
+      canProceed: true,
+      observedAt: 0
+    },
+    onRetry: () => {},
+    onTryHttps: () => {},
+    onCopy: vi.fn(async (value: string) => {
+      provider.clipboard = value
+    }),
+    onOpenExternal: vi.fn(async (value: string) => {
+      provider.external.push(value)
+    }),
+    onProceedCertificate: vi.fn(async (value: string): Promise<BrowserCertificateProceedResult> => {
+      provider.approved.push(value)
+      return { ok: true }
+    })
+  }
+  const command: BrowserFailureTarget = {
+    worktreeId: 'folder:fixture',
+    placement: 'local',
+    environmentId: null,
+    expectedUrl: url,
+    errorCode: -202,
+    action: 'copy-address'
+  }
+  const view = render(<BrowserLoadFailureOverlay {...props} />)
+  const run = (
+    action: BrowserFailureTarget['action'] = 'copy-address',
+    changes: Partial<BrowserFailureTarget> = {},
+    expiresAt = Date.now() + 5000
+  ) =>
+    requestBrowserFailure(
+      'page',
+      {
+        ...command,
+        action,
+        ...(action === 'certificate-proceed' ? { challengeId: 'challenge' } : {}),
+        ...changes
+      },
+      expiresAt
+    )
+  return { props, view, provider, command, run }
+}
+it.each(['copy-address', 'open-external', 'certificate-proceed'] as const)(
+  'reuses the actual mounted failure owner for %s and reads provider acceptance',
+  async (action) => {
+    const fixture = seed()
+    await act(async () => {
+      expect(await fixture.run(action)).toMatchObject({ action, accepted: true })
+    })
+    if (action === 'copy-address') {
+      expect(fixture.provider.clipboard).toBe(fixture.props.currentUrl)
+    }
+    if (action === 'open-external') {
+      expect(fixture.provider.external).toEqual([fixture.props.externalUrl])
+    }
+    if (action === 'certificate-proceed') {
+      expect(fixture.provider.approved).toEqual(['challenge'])
+      expect(screen.getByRole('button', { name: 'Copy Address' }).hasAttribute('disabled')).toBe(
+        true
+      )
+    }
+  }
+)
+it('rejects exact target, error, challenge, busy, expiry and duplicate owner mismatches before provider effects', async () => {
+  const { run, view, props, provider } = seed()
+  for (const changes of [
+    { expectedUrl: 'https://wrong.test/' },
+    { errorCode: -105 },
+    { worktreeId: 'other' },
+    { placement: 'client-hosted' as const, environmentId: 'other' }
+  ]) {
+    await expect(run('copy-address', changes)).rejects.toThrow('owner_changed')
+  }
+  await expect(run('certificate-proceed', { challengeId: 'stale' })).rejects.toThrow(
+    'challenge_mismatch'
+  )
+  await expect(run('copy-address', {}, 0)).rejects.toThrow('owner_changed')
+  act(() => useAppStore.getState().openModal('add-repo'))
+  await expect(run()).rejects.toThrow('busy')
+  act(() => useAppStore.getState().closeModal())
+  view.rerender(
+    <>
+      <BrowserLoadFailureOverlay {...props} />
+      <BrowserLoadFailureOverlay {...props} />
+    </>
+  )
+  await expect(run()).rejects.toThrow('owner_ambiguous')
+  expect(provider).toEqual({ clipboard: '', external: [], approved: [] })
+})
+it.each(['replace', 'unmount', 'expire', 'fail'] as const)(
+  'rejects asynchronous %s without a false receipt and keeps in-flight commands busy',
+  async (caseName) => {
+    const { run, view, props } = seed()
+    let finish: (() => void) | undefined
+    let fail: ((error: Error) => void) | undefined
+    props.onCopy.mockImplementation(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          finish = resolve
+          fail = reject
+        })
+    )
+    if (caseName === 'expire') {
+      vi.useFakeTimers()
+    }
+    const request = run('copy-address', {}, Date.now() + 1000)
+    const rejected = expect(request).rejects.toThrow(
+      caseName === 'fail' ? 'provider_failed' : 'effect_unknown'
+    )
+    await expect(run()).rejects.toThrow('busy')
+    if (caseName === 'replace') {
+      view.rerender(<BrowserLoadFailureOverlay {...props} currentUrl="https://replaced.test/" />)
+    }
+    if (caseName === 'unmount') {
+      view.unmount()
+    }
+    if (caseName === 'expire') {
+      await vi.advanceTimersByTimeAsync(1000)
+      await expect(run()).rejects.toThrow('busy')
+    }
+    if (caseName === 'fail') {
+      fail?.(new Error('provider_failed'))
+    } else {
+      finish?.()
+    }
+    await rejected
+  }
+)
+it('preserves the actual certificate failure UI and retries after a new challenge', async () => {
+  const { run, view, props } = seed()
+  props.onProceedCertificate.mockResolvedValue({ ok: false, reason: 'expired' })
+  await act(async () => {
+    await expect(run('certificate-proceed')).rejects.toThrow('certificate_refused:expired')
+  })
+  expect(screen.getByRole('alert').textContent).toContain('expired')
+  view.rerender(
+    <BrowserLoadFailureOverlay
+      {...props}
+      certificateFailure={{ ...props.certificateFailure, challengeId: 'new' }}
+    />
+  )
+  props.onProceedCertificate.mockResolvedValue({ ok: true })
+  await act(async () => {
+    await expect(run('certificate-proceed', { challengeId: 'new' })).resolves.toMatchObject({
+      accepted: true
+    })
+  })
+})
+
+it('rejects a captured owner after unmount before execution without provider calls', async () => {
+  const { command, view, provider } = seed()
+  const event = new BrowserFailureEvent('page', command, Date.now() + 5000)
+  window.dispatchEvent(event)
+  expect(event.offers).toHaveLength(1)
+  view.unmount()
+  await expect(event.offers[0]()).rejects.toThrow('owner_changed')
+  expect(provider).toEqual({ clipboard: '', external: [], approved: [] })
+})
+it('locks the shared certificate submission before React commits a second UI click', async () => {
+  const { props, provider } = seed()
+  let finish: ((result: BrowserCertificateProceedResult) => void) | undefined
+  props.onProceedCertificate.mockImplementation((value) => {
+    provider.approved.push(value)
+    return new Promise((resolve) => {
+      finish = resolve
+    })
+  })
+  const button = screen.getByRole('button', { name: 'Proceed Anyway (Unsafe)' })
+  act(() => {
+    button.click()
+    button.click()
+  })
+  expect(provider.approved).toEqual(['challenge'])
+  await act(async () => {
+    finish?.({ ok: true })
+  })
+})

@@ -1,3 +1,4 @@
+import type { PluginMarketplaceParentReadback } from './plugin-marketplace-parent-readback'
 import type {
   PluginHostListEntry,
   PluginMarketplaceHostInstallPreview,
@@ -19,6 +20,9 @@ type CatalogOwner = {
   loading: boolean
   errorPresent: boolean
   reload: () => Promise<(() => boolean) | undefined>
+  refresh: () => Promise<(() => boolean) | undefined>
+  isRefreshBusy: () => boolean
+  readParent?: () => PluginMarketplaceParentReadback
   sourcesOpen: boolean
   previewOpen: boolean
   preview: PluginMarketplaceHostInstallPreview | null
@@ -44,6 +48,8 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
   const pending = useRef<PluginMarketplaceEvent | null>(null)
   const ready = useRef(true)
   const previewReceipt = useRef<(() => boolean) | undefined>(undefined)
+  const expectedParentGeneration = useRef<number | null>(null)
+  const refreshReceipt = useRef<(() => boolean) | undefined>(undefined)
   const reloadReceipt = useRef<(() => boolean) | undefined>(undefined)
   const [, publishCompletion] = useState(0)
   const finishCommitted = (): void => {
@@ -72,6 +78,20 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
     if (request.command.action === 'preview' && !previewReceipt.current?.()) {
       request.finish(new Error('plugin_marketplace_preview_failed_effect_unknown'))
       return
+    }
+    if (request.command.action === 'refresh') {
+      const parent = current.current.readParent?.()
+      if (
+        !refreshReceipt.current?.() ||
+        !parent?.ready ||
+        parent.errorPresent ||
+        parent.generation !== expectedParentGeneration.current ||
+        parent.currentGeneration !== expectedParentGeneration.current ||
+        parent.installedCount !== current.current.installedCount
+      ) {
+        request.finish(new Error('plugin_marketplace_refresh_failed_effect_unknown'))
+        return
+      }
     }
     const next = current.current
     const command = request.command
@@ -145,28 +165,48 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
           ) {
             throw new Error('plugin_marketplace_preview_busy')
           }
+          if (command.action === 'refresh' && current.current.isRefreshBusy()) {
+            throw new Error('plugin_marketplace_refresh_busy')
+          }
+          if (command.action === 'refresh') {
+            const parent = current.current.readParent?.()
+            if (!parent?.ready) {
+              throw new Error('plugin_marketplace_parent_unavailable')
+            }
+            expectedParentGeneration.current = parent.currentGeneration + 1
+          }
           pending.current = request
           ready.current = true
           reloadReceipt.current = undefined
+          refreshReceipt.current = undefined
           previewReceipt.current = undefined
           if (command.action === 'search' && current.current.search !== command.value) {
             current.current.setSearch(command.value)
           } else if (command.action === 'filter' && current.current.filter !== command.value) {
             current.current.setFilter(command.value)
-          } else if (command.action === 'reload') {
+          } else if (command.action === 'reload' || command.action === 'refresh') {
             ready.current = false
-            void current.current
-              .reload()
+            const operation =
+              command.action === 'reload' ? current.current.reload : current.current.refresh
+            const failure =
+              command.action === 'reload'
+                ? 'plugin_marketplace_load_failed_effect_unknown'
+                : 'plugin_marketplace_refresh_failed_effect_unknown'
+            void operation()
               .then((receipt) => {
                 if (pending.current !== request || request.isSettled()) {
                   return
                 }
                 if (!receipt) {
                   pending.current = null
-                  request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
+                  request.finish(new Error(failure))
                   return
                 }
-                reloadReceipt.current = receipt
+                if (command.action === 'reload') {
+                  reloadReceipt.current = receipt
+                } else {
+                  refreshReceipt.current = receipt
+                }
                 ready.current = true
                 publishCompletion((value) => value + 1)
               })
@@ -174,7 +214,7 @@ export function usePluginMarketplaceRequest(owner: CatalogOwner): void {
                 if (pending.current === request) {
                   pending.current = null
                 }
-                request.finish(new Error('plugin_marketplace_load_failed_effect_unknown'))
+                request.finish(new Error(failure))
               })
           } else if (command.action === 'preview') {
             const matches = current.current.visibleListings.filter(

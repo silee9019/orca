@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { createWorkspaceBrowserShortcut } from '@/components/workspace-browser-shortcut-creation'
 import {
   createFloatingWorkspaceBrowserTab,
   isFloatingWorkspacePanelFocused
@@ -13,7 +14,9 @@ export function resolveBrowserNewTabInvocation(state: AppState) {
     : undefined
   return { worktree, group, floating }
 }
-export async function createBrowserTabForCurrentViewer(): Promise<void> {
+export async function createBrowserTabForCurrentViewer(options?: {
+  workspaceFallback: boolean
+}): Promise<void> {
   const store = useAppStore.getState()
   if (isFloatingWorkspacePanelFocused()) {
     await createFloatingWorkspaceBrowserTab(store)
@@ -23,10 +26,14 @@ export async function createBrowserTabForCurrentViewer(): Promise<void> {
   if (!worktreeId) {
     return
   }
-  const targetGroupId =
+  const group =
     store.activeGroupIdByWorktree[worktreeId] ?? store.groupsByWorktree[worktreeId]?.[0]?.id
-  if (!targetGroupId) {
+  if (!group && !options?.workspaceFallback) {
     return
   }
-  await store.openNewBrowserTabInActiveWorkspace(targetGroupId)
+  await createWorkspaceBrowserShortcut({
+    worktreeId,
+    createBrowserTab: store.createBrowserTab,
+    openNewBrowserTabInActiveWorkspace: store.openNewBrowserTabInActiveWorkspace
+  })
 }

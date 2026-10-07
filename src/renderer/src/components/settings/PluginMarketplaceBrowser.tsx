@@ -1,3 +1,5 @@
+import type { PluginMarketplaceParentReadback } from './plugin-marketplace-parent-readback'
+import { usePluginMarketplaceRefresh } from './use-plugin-marketplace-refresh'
 import { usePluginMarketplaceCatalog } from './use-plugin-marketplace-catalog'
 import { usePluginMarketplaceRequest } from './use-plugin-marketplace-request'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -25,6 +27,7 @@ type PluginMarketplaceBrowserProps = {
   installedPlugins: readonly PluginHostListEntry[]
   onInstalled: (pluginKey: string) => Promise<void>
   onRefreshInstalled?: () => Promise<void>
+  readMarketplaceParent?: () => PluginMarketplaceParentReadback
   renderInstalledContent?: (search: string) => React.ReactNode
 }
 
@@ -47,12 +50,12 @@ export function PluginMarketplaceBrowser({
   installedPlugins,
   onInstalled,
   onRefreshInstalled,
+  readMarketplaceParent,
   renderInstalledContent
 }: PluginMarketplaceBrowserProps): React.JSX.Element {
   const mountedRef = useRef(false)
   const { sources, listings, loading, error, setError, loadMarketplaceData, reloadWithReceipt } =
     usePluginMarketplaceCatalog(mountedRef, marketplaceLoadError)
-  const [refreshBusy, setRefreshBusy] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<PluginCatalogFilter>('all')
   const [sourcesOpen, setSourcesOpen] = useState(false)
@@ -94,30 +97,21 @@ export function PluginMarketplaceBrowser({
     )
   }, [listings, search])
 
-  const refresh = async (): Promise<void> => {
-    setRefreshBusy(true)
-    setError(null)
-    try {
-      await Promise.all([window.api.plugins.refreshMarketplaces({}), onRefreshInstalled?.()])
-      await loadMarketplaceData()
-    } catch (cause) {
-      if (mountedRef.current) {
-        setError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.refreshFailed',
-              'Could not refresh marketplaces. Cached listings remain available.'
-            )
-          )
+  const { refresh, refreshBusy, isRefreshBusy } = usePluginMarketplaceRefresh({
+    mountedRef,
+    onRefreshInstalled,
+    loadMarketplaceData,
+    reloadWithReceipt,
+    setError,
+    formatError: (cause) =>
+      marketplaceError(
+        cause,
+        translate(
+          'auto.components.settings.PluginMarketplaceBrowser.refreshFailed',
+          'Could not refresh marketplaces. Cached listings remain available.'
         )
-      }
-    } finally {
-      if (mountedRef.current) {
-        setRefreshBusy(false)
-      }
-    }
-  }
+      )
+  })
 
   const openPreview = async (
     listing: PluginMarketplaceHostListing,
@@ -212,6 +206,9 @@ export function PluginMarketplaceBrowser({
     loading,
     errorPresent: error !== null,
     reload: reloadWithReceipt,
+    refresh: () => refresh(true),
+    isRefreshBusy,
+    readParent: readMarketplaceParent,
     sourcesOpen,
     previewOpen: preview !== null,
     preview,

@@ -28,6 +28,10 @@ it.each([
     args: ['new-ui', '--worktree', 'folder:new', '--group', 'active', '--confirm'],
     command: { operation: 'new-tab', target: { worktree: 'folder:new', group: 'active' } }
   },
+  {
+    args: ['new-ui', '--worktree', 'folder:new', '--confirm'],
+    command: { operation: 'new-tab', target: { worktree: 'folder:new' } }
+  },
   ...['open', 'close', 'status'].map((action) => ({
     args: ['reload-menu', '--page', 'p1', '--action', action],
     command: { operation: 'reload-menu', page: 'p1', action }
@@ -408,7 +412,7 @@ it.each([
 
 it.each([
   ['new-ui', '--viewer', 'host', '--worktree', 'folder:new', '--group', 'active'],
-  ['new-ui', '--viewer', 'host', '--worktree', 'folder:new', '--confirm'],
+  ['new-ui', '--viewer', 'host', '--worktree', 'folder:new', '--group', '', '--confirm'],
   ['new-ui', '--viewer', 'client', '--worktree', 'folder:new', '--group', 'active', '--confirm']
 ])('refuses invalid new-ui before transport %j', async (...args) => {
   const call = vi.spyOn(client, 'call')

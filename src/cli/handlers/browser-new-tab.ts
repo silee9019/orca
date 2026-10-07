@@ -8,7 +8,7 @@ export const runBrowserNewTab: CommandHandler = (ctx) => {
     operation: 'new-tab',
     target: {
       worktree: getRequiredStringFlag(ctx.flags, 'worktree'),
-      group: getRequiredStringFlag(ctx.flags, 'group')
+      ...(ctx.flags.has('group') ? { group: getRequiredStringFlag(ctx.flags, 'group') } : {})
     }
   })
 }

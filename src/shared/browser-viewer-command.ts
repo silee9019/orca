@@ -1,3 +1,4 @@
+import { BrowserFailureState } from './rpc-contract/browser-failure-params'
 import { BrowserGrabActionReceipt } from './rpc-contract/browser-grab-action-params'
 import { WorkspaceFileOpenState } from './rpc-contract/workspace-file-open-params'
 import { WorkspacePortOpenState } from './rpc-contract/workspace-port-open-params'
@@ -51,6 +52,7 @@ export const BrowserViewerResultSchema = z.object({
   annotationRow: BrowserAnnotationRowState.optional(),
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),
+  failureState: BrowserFailureState.optional(),
   settings: BrowserSettingsState.optional(),
   annotationTray: BrowserAnnotationTrayState.optional(),
   address: BrowserAddressState.optional(),

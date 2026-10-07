@@ -1,11 +1,6 @@
+import { applyBrowserPlacementViewerAction } from './browser-placement-viewer-actions'
 import { requestBrowserGrabAction } from './browser-grab-action-request'
-import { requestWorkspaceFileOpen } from './workspace-file-open-request'
-import { requestWorkspacePortOpen } from './workspace-port-open-request'
 import { applyPluginMarketplaceViewerAction } from './plugin-marketplace-viewer-actions'
-import { applyBrowserPaletteSelection } from './browser-palette-selection'
-import { requestRemoteFilePicker } from './remote-file-picker-request'
-import { requestLinkedBrowser } from './linked-browser-request'
-import { requestFloatingBrowser } from './floating-browser-request'
 import { requestBrowserDocument } from './browser-document-request'
 import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer-actions'
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
@@ -58,33 +53,20 @@ export async function applyBrowserViewerRequest(
     return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
-  if (command.operation === 'workspace-file-open') {
-    const fileOpenState = requestWorkspaceFileOpen(command.command, request.expiresAt)
-    return { ...base, applied: true, fileOpenState }
-  }
-  if (command.operation === 'workspace-port-open') {
-    const portOpenState = await requestWorkspacePortOpen(command.command, request.expiresAt)
-    return { ...base, applied: true, portOpenState }
-  }
-  if (command.operation === 'palette-select') {
-    const paletteState = await applyBrowserPaletteSelection(command.selection, request.expiresAt)
-    return { ...base, applied: true, paletteState }
-  }
-  if (command.operation === 'floating-browser') {
-    const floatingBrowser = requestFloatingBrowser(command.command, request.expiresAt)
-    return { ...base, applied: true, floatingBrowser }
+  if (
+    command.operation === 'load-failure' ||
+    command.operation === 'workspace-file-open' ||
+    command.operation === 'workspace-port-open' ||
+    command.operation === 'palette-select' ||
+    command.operation === 'floating-browser' ||
+    command.operation === 'remote-picker' ||
+    command.operation === 'linked-browser'
+  ) {
+    return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   if (command.operation === 'remote-pane') {
     const remotePane = await applyRemoteBrowserPaneViewerAction(command, request.expiresAt)
     return { ...base, page: command.page, applied: true, remotePane }
-  }
-  if (command.operation === 'remote-picker') {
-    const remotePicker = await requestRemoteFilePicker(command.command, request.expiresAt)
-    return { ...base, applied: true, remotePicker }
-  }
-  if (command.operation === 'linked-browser') {
-    const linkedBrowser = await requestLinkedBrowser(command.command, request.expiresAt)
-    return { ...base, applied: true, linkedBrowser }
   }
   if (state.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
