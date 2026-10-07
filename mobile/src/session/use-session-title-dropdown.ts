@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCachedWorktrees, setCachedWorktrees } from '../cache/worktree-cache'
+import { loadPinnedIds } from '../storage/preferences'
 import type { RpcClient } from '../transport/rpc-client'
 import type { ConnectionState } from '../transport/types'
 import type { Worktree } from '../worktree/workspace-list-sections'
@@ -14,6 +15,7 @@ export function useSessionTitleDropdown(args: {
   const { hostId, client, connState } = args
   const [open, setOpen] = useState(false)
   const [worktrees, setWorktrees] = useState<Worktree[]>([])
+  const [localPins, setLocalPins] = useState<Set<string>>(() => new Set())
   const catalogRef = useRef(new WorktreeCatalogSnapshotClient())
 
   const show = useCallback(() => {
@@ -21,6 +23,9 @@ export function useSessionTitleDropdown(args: {
     const cached = hostId ? (getCachedWorktrees(hostId) as Worktree[] | null) : null
     setWorktrees(cached ?? [])
     setOpen(true)
+    if (hostId) {
+      void loadPinnedIds(hostId).then(setLocalPins)
+    }
   }, [hostId])
   const hide = useCallback(() => setOpen(false), [])
 
@@ -47,5 +52,5 @@ export function useSessionTitleDropdown(args: {
     }
   }, [open, client, connState, hostId])
 
-  return { open, show, hide, worktrees }
+  return { open, show, hide, worktrees, localPins }
 }

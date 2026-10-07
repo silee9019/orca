@@ -10,12 +10,10 @@ import {
 } from 'react-native'
 import { ChevronDown } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { WorktreeListRow } from '../components/WorktreeListRow'
 import { colors } from '../theme/mobile-theme'
-import { repoColor } from '../worktree/repo-color'
-import { getWorktreeStatus } from '../worktree/workspace-list-ordering'
 import type { Worktree } from '../worktree/workspace-list-sections'
-import { resolveDropdownSelection, sessionDropdownRows } from './session-title-dropdown'
+import { SessionDropdownDivider, SessionDropdownRow } from './SessionDropdownRow'
+import { resolveDropdownSelection, sessionDropdownEntries } from './session-title-dropdown'
 import { styles } from './mobile-session-styles'
 import { useSessionTitleDropdown } from './use-session-title-dropdown'
 import type { MobileSessionController } from './use-mobile-session-controller'
@@ -32,7 +30,6 @@ export function MobileSessionTitleDropdown({
   const dropdown = useSessionTitleDropdown({ hostId, client, connState })
   const titleRef = useRef<View>(null)
   const [anchorTop, setAnchorTop] = useState(FALLBACK_ANCHOR_TOP)
-  const [now, setNow] = useState(0)
   const { height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
 
@@ -45,7 +42,7 @@ export function MobileSessionTitleDropdown({
     return title
   }
 
-  const rows = sessionDropdownRows(dropdown.worktrees, worktreeId)
+  const entries = sessionDropdownEntries(dropdown.worktrees, worktreeId, dropdown.localPins)
   const select = (item: Worktree) => {
     const selection = resolveDropdownSelection({ hostId, currentWorktreeId: worktreeId, item })
     dropdown.hide()
@@ -63,7 +60,6 @@ export function MobileSessionTitleDropdown({
           titleRef.current?.measureInWindow((_x, y, _w, h) => {
             // The header's native safe-area padding is not in the measured y.
             setAnchorTop(insets.top + y + h)
-            setNow(Date.now())
             dropdown.show()
           })
         }}
@@ -88,19 +84,21 @@ export function MobileSessionTitleDropdown({
         />
         <View style={[dropdownStyles.panel, { top: anchorTop, maxHeight: height * 0.6 }]}>
           <FlatList
-            data={rows}
-            keyExtractor={(item) => item.worktreeId}
+            data={entries}
+            keyExtractor={(entry) => (entry.kind === 'divider' ? 'divider' : entry.item.worktreeId)}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <WorktreeListRow
-                item={item}
-                isReadOnly={false}
-                now={now}
-                status={getWorktreeStatus(item)}
-                repoColor={repoColor(item.repo)}
-                onPress={select}
-              />
-            )}
+            renderItem={({ item: entry }) =>
+              entry.kind === 'divider' ? (
+                <SessionDropdownDivider />
+              ) : (
+                <SessionDropdownRow
+                  item={entry.item}
+                  pinned={entry.pinned}
+                  current={entry.current}
+                  onPress={select}
+                />
+              )
+            }
           />
         </View>
       </Modal>
