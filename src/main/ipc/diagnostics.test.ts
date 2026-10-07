@@ -53,7 +53,12 @@ vi.mock('../observability', () => ({
   uploadDiagnosticBundle: uploadDiagnosticBundleMock
 }))
 
-import { registerDiagnosticsHandlers } from './diagnostics'
+import {
+  registerDiagnosticsHandlers,
+  getDiagnosticsOperations,
+  readDiagnosticBundlePreview,
+  sendReviewedDiagnosticBundle
+} from './diagnostics'
 
 function captureHandlers(): void {
   handlers.clear()
@@ -105,6 +110,27 @@ describe('diagnostics IPC handlers', () => {
     deleteDiagnosticBundleMock.mockResolvedValue(undefined)
     registerDiagnosticsHandlers()
     captureHandlers()
+  })
+
+  it('requires CLI preview before sending retained bytes and rechecks consent', async () => {
+    const bundle = makeBundle({ bundleSubmissionId: 'clibundleabcdefghijklmnop' })
+    collectDiagnosticBundleMock.mockReturnValue(bundle)
+    getDiagnosticsOperations().collectBundle(30)
+    await expect(sendReviewedDiagnosticBundle(bundle.bundleSubmissionId)).rejects.toThrow(/review/i)
+    expect(readDiagnosticBundlePreview(bundle.bundleSubmissionId)).toEqual({
+      payload: bundle.payload
+    })
+    getDiagnosticsStatusMock.mockReturnValue({ bundleEnabled: false })
+    await expect(sendReviewedDiagnosticBundle(bundle.bundleSubmissionId)).rejects.toThrow(
+      /disabled/
+    )
+    expect(uploadDiagnosticBundleMock).not.toHaveBeenCalled()
+    getDiagnosticsStatusMock.mockReturnValue({ bundleEnabled: true })
+    await sendReviewedDiagnosticBundle(bundle.bundleSubmissionId)
+    expect(uploadDiagnosticBundleMock).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: bundle.payload })
+    )
+    expect(() => readDiagnosticBundlePreview(bundle.bundleSubmissionId)).toThrow(/expired/)
   })
 
   it('rejects upload without a main-collected bundle preview', async () => {

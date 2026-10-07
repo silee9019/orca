@@ -24,7 +24,7 @@ const REPO_ICON_IMAGE_MIME_TYPES: Record<string, string> = {
   '.png': 'image/png'
 }
 
-async function pathExists(pathValue: string): Promise<boolean> {
+export async function pathExists(pathValue: string): Promise<boolean> {
   try {
     await stat(pathValue)
     return true
@@ -50,7 +50,7 @@ function hasActiveRuntime(store: Store): boolean {
   return Boolean(store.getSettings().activeRuntimeEnvironmentId?.trim())
 }
 
-async function openInFileManager(
+export async function openInFileManager(
   store: Store,
   pathValue: string
 ): Promise<ShellOpenLocalPathResult> {
@@ -154,20 +154,7 @@ export function registerShellHandlers(store: Store): void {
       openInExternalEditor(store, request)
   )
 
-  ipcMain.handle('shell:openUrl', (_event, rawUrl: string) => {
-    let parsed: URL
-    try {
-      parsed = new URL(rawUrl)
-    } catch {
-      return
-    }
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      return
-    }
-
-    return shell.openExternal(parsed.toString())
-  })
+  ipcMain.handle('shell:openUrl', (_event, rawUrl: string) => openShellUrl(rawUrl))
 
   ipcMain.handle('shell:openFilePath', async (_event, filePath: string): Promise<boolean> => {
     return openWithSystemDefault(filePath)
@@ -317,4 +304,19 @@ export function registerShellHandlers(store: Store): void {
       await copyFile(src, dest, constants.COPYFILE_EXCL)
     }
   )
+}
+
+export function openShellUrl(rawUrl: string): Promise<void> | undefined {
+  let parsed: URL
+  try {
+    parsed = new URL(rawUrl)
+  } catch {
+    return
+  }
+
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return
+  }
+
+  return shell.openExternal(parsed.toString())
 }

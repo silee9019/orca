@@ -204,14 +204,12 @@ async function confirmBundleUpload(bundle: CollectedBundle): Promise<boolean> {
   return result.response === 0
 }
 
-export function registerDiagnosticsHandlers(): void {
-  ipcMain.handle('diagnostics:getStatus', (): DiagnosticsStatus => {
-    return getDiagnosticsStatus()
-  })
-
-  ipcMain.handle(
-    'diagnostics:collectBundle',
-    (_event, lookbackMinutesIn: unknown): DiagnosticsBundlePreview => {
+export function createDiagnosticsOperations() {
+  return {
+    getStatus: (): DiagnosticsStatus => {
+      return getDiagnosticsStatus()
+    },
+    collectBundle: (lookbackMinutesIn: unknown): DiagnosticsBundlePreview => {
       // Consent gate: main is the consent enforcement boundary; the
       // renderer-side button-hide is UX, not security. A compromised or
       // malicious renderer must not be able to assemble a bundle when the
@@ -237,12 +235,8 @@ export function registerDiagnosticsHandlers(): void {
       })
       rememberBundle(bundle)
       return toBundlePreview(bundle)
-    }
-  )
-
-  ipcMain.handle(
-    'diagnostics:uploadBundle',
-    async (_event, bundleSubmissionId: unknown): Promise<UploadBundleIpcResult> => {
+    },
+    uploadBundle: async (bundleSubmissionId: unknown): Promise<UploadBundleIpcResult> => {
       // Why: the renderer is in the threat model. Upload only a payload main
       // collected and retained for preview, never renderer-supplied bytes.
       const pendingForConfirmation = getPendingBundleForUpload(bundleSubmissionId)
@@ -256,53 +250,105 @@ export function registerDiagnosticsHandlers(): void {
       if (!confirmed) {
         return { canceled: true }
       }
-      // Why: the preview can be discarded or diagnostics can be disabled
-      // while the native confirmation dialog is open.
-      const { bundle, payload } = getPendingBundleForUpload(bundleSubmissionId)
-      if (!getDiagnosticsStatus().bundleEnabled) {
-        throw new Error('sending diagnostics is disabled')
+      return sendReviewedDiagnosticBundle(bundleSubmissionId)
+    },
+    openBundlePreview: async (bundleSubmissionId: unknown) => {
+      const previewFilePath = getPendingPreviewFilePath(bundleSubmissionId)
+      const errorMessage = await shell.openPath(previewFilePath)
+      if (errorMessage) {
+        throw new Error('could not open review file')
+      }
+      const pending = pendingBundles.get(bundleSubmissionId as string)
+      if (pending) {
+        pending.previewOpened = true
+      }
+    },
+    discardBundlePreview: (bundleSubmissionId: unknown) => {
+      discardPendingBundle(bundleSubmissionId)
+    },
+    deleteBundle: async (ticketId: unknown): Promise<void> => {
+      if (!isTicketId(ticketId)) {
+        throw new Error('ticketId has invalid format')
       }
       const tokenEndpoint = resolveDiagnosticTokenEndpoint()
       if (!tokenEndpoint) {
-        throw new Error('sending diagnostics is not configured for this build')
+        throw new Error('diagnostic upload endpoint is not configured for this build')
       }
-      const result = await uploadDiagnosticBundle({
-        tokenEndpoint,
-        payload,
-        bundleSubmissionId: bundle.bundleSubmissionId
-      })
-      const uploadedPending = pendingBundles.get(bundle.bundleSubmissionId)
-      if (uploadedPending) {
-        deletePendingBundle(bundle.bundleSubmissionId)
-      }
-      return result
+      await deleteDiagnosticBundle({ tokenEndpoint, ticketId })
     }
+  }
+}
+const diagnosticsOperations = createDiagnosticsOperations()
+export function getDiagnosticsOperations(): ReturnType<typeof createDiagnosticsOperations> {
+  return diagnosticsOperations
+}
+export function registerDiagnosticsHandlers(): void {
+  const operations = getDiagnosticsOperations()
+  ipcMain.handle(
+    'diagnostics:getStatus',
+    (_event, ...args: Parameters<typeof operations.getStatus>) => operations.getStatus(...args)
   )
+  ipcMain.handle(
+    'diagnostics:collectBundle',
+    (_event, ...args: Parameters<typeof operations.collectBundle>) =>
+      operations.collectBundle(...args)
+  )
+  ipcMain.handle(
+    'diagnostics:uploadBundle',
+    (_event, ...args: Parameters<typeof operations.uploadBundle>) =>
+      operations.uploadBundle(...args)
+  )
+  ipcMain.handle(
+    'diagnostics:openBundlePreview',
+    (_event, ...args: Parameters<typeof operations.openBundlePreview>) =>
+      operations.openBundlePreview(...args)
+  )
+  ipcMain.handle(
+    'diagnostics:discardBundlePreview',
+    (_event, ...args: Parameters<typeof operations.discardBundlePreview>) =>
+      operations.discardBundlePreview(...args)
+  )
+  ipcMain.handle(
+    'diagnostics:deleteBundle',
+    (_event, ...args: Parameters<typeof operations.deleteBundle>) =>
+      operations.deleteBundle(...args)
+  )
+}
 
-  ipcMain.handle('diagnostics:openBundlePreview', async (_event, bundleSubmissionId: unknown) => {
-    const previewFilePath = getPendingPreviewFilePath(bundleSubmissionId)
-    const errorMessage = await shell.openPath(previewFilePath)
-    if (errorMessage) {
-      throw new Error('could not open review file')
-    }
-    const pending = pendingBundles.get(bundleSubmissionId as string)
-    if (pending) {
-      pending.previewOpened = true
-    }
+export async function sendReviewedDiagnosticBundle(
+  bundleSubmissionId: unknown
+): Promise<UploadBundleResult> {
+  // Why: the preview can be discarded or diagnostics can be disabled
+  // while the native confirmation dialog is open.
+  const { bundle, payload } = getPendingBundleForUpload(bundleSubmissionId)
+  if (!getDiagnosticsStatus().bundleEnabled) {
+    throw new Error('sending diagnostics is disabled')
+  }
+  const tokenEndpoint = resolveDiagnosticTokenEndpoint()
+  if (!tokenEndpoint) {
+    throw new Error('sending diagnostics is not configured for this build')
+  }
+  const result = await uploadDiagnosticBundle({
+    tokenEndpoint,
+    payload,
+    bundleSubmissionId: bundle.bundleSubmissionId
   })
+  const uploadedPending = pendingBundles.get(bundle.bundleSubmissionId)
+  if (uploadedPending) {
+    deletePendingBundle(bundle.bundleSubmissionId)
+  }
+  return result
+}
 
-  ipcMain.handle('diagnostics:discardBundlePreview', (_event, bundleSubmissionId: unknown) => {
-    discardPendingBundle(bundleSubmissionId)
-  })
-
-  ipcMain.handle('diagnostics:deleteBundle', async (_event, ticketId: unknown): Promise<void> => {
-    if (!isTicketId(ticketId)) {
-      throw new Error('ticketId has invalid format')
-    }
-    const tokenEndpoint = resolveDiagnosticTokenEndpoint()
-    if (!tokenEndpoint) {
-      throw new Error('diagnostic upload endpoint is not configured for this build')
-    }
-    await deleteDiagnosticBundle({ tokenEndpoint, ticketId })
-  })
+export function readDiagnosticBundlePreview(bundleSubmissionId: unknown): { payload: string } {
+  getPendingPreviewFilePath(bundleSubmissionId)
+  if (typeof bundleSubmissionId !== 'string') {
+    throw new Error('Invalid bundle ID')
+  }
+  const pending = pendingBundles.get(bundleSubmissionId)
+  if (!pending) {
+    throw new Error('Review file has expired')
+  }
+  pending.previewOpened = true
+  return { payload: pending.bundle.payload }
 }
