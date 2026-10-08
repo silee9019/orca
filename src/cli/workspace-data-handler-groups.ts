@@ -1,3 +1,4 @@
+import { WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS } from './workspace-remote-clone-handler-groups'
 import { WORKSPACE_FILE_SEARCH_HANDLER_GROUPS } from './workspace-file-search-handler-groups'
 import { WORKSPACE_NESTED_SCAN_HANDLER_GROUPS } from './workspace-nested-scan-handler-groups'
 import { WORKSPACE_FILE_LIST_HANDLER_GROUPS } from './workspace-file-list-handler-groups'
@@ -15,6 +16,7 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS,
   ...WORKSPACE_FILE_SEARCH_HANDLER_GROUPS,
   ...WORKSPACE_NESTED_SCAN_HANDLER_GROUPS,
   ...WORKSPACE_FILE_LIST_HANDLER_GROUPS,
