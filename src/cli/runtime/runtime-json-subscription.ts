@@ -27,6 +27,7 @@ export async function subscribeCliRuntimeJson(
     method: string
     params: unknown
     localCapability:
+      | 'terminalSpawnStreaming'
       | 'terminalExitStreaming'
       | 'terminalEffectsStreaming'
       | 'agentWorkerRecoveryStreaming'

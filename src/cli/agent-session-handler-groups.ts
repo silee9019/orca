@@ -2,6 +2,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'terminal-spawn-watch',
+    keys: ['terminal watch-spawned'],
+    load: async () =>
+      (await import('./handlers/terminal-spawn-watch.js')).TERMINAL_SPAWN_WATCH_HANDLERS
+  },
+  {
     name: 'terminal-exit-watch',
     keys: ['terminal watch-exit'],
     load: async () =>

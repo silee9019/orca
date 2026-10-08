@@ -5,6 +5,7 @@ const active = new WeakMap<OrcaRuntimeService, Set<string>>()
 export function getActiveRuntimeJsonEventStreamCount(
   runtime: OrcaRuntimeService,
   namespace:
+    | 'terminalSpawn'
     | 'terminalExit'
     | 'terminalEffects'
     | 'terminalPresentation'
@@ -20,6 +21,7 @@ export function getActiveRuntimeJsonEventStreamCount(
 export function createRuntimeJsonEventSubscription(
   context: RpcContext,
   namespace:
+    | 'terminalSpawn'
     | 'terminalExit'
     | 'terminalEffects'
     | 'terminalPresentation'
@@ -78,23 +80,25 @@ export function createRuntimeJsonEventSubscription(
       emit({
         type: 'error',
         code:
-          namespace === 'terminalExit'
-            ? 'terminal_exit_owner_changed_or_unverifiable'
-            : namespace === 'terminalEffects'
-              ? 'terminal_effects_owner_changed'
-              : namespace === 'terminalPresentation'
-                ? 'terminal_presentation_owner_changed'
-                : namespace === 'agentAwake'
-                  ? 'agent_awake_unavailable'
-                  : namespace === 'structuredHeld'
-                    ? 'structured_held_unavailable'
-                    : namespace === 'agentStatus'
-                      ? 'agent_status_unavailable'
-                      : namespace === 'agentStatusMigration'
-                        ? 'agent_migration_unavailable'
-                        : namespace === 'agentWorkerRecovery'
-                          ? 'agent_worker_recovery_unavailable'
-                          : 'remote_workspace_unavailable'
+          namespace === 'terminalSpawn'
+            ? 'terminal_spawn_unavailable'
+            : namespace === 'terminalExit'
+              ? 'terminal_exit_owner_changed_or_unverifiable'
+              : namespace === 'terminalEffects'
+                ? 'terminal_effects_owner_changed'
+                : namespace === 'terminalPresentation'
+                  ? 'terminal_presentation_owner_changed'
+                  : namespace === 'agentAwake'
+                    ? 'agent_awake_unavailable'
+                    : namespace === 'structuredHeld'
+                      ? 'structured_held_unavailable'
+                      : namespace === 'agentStatus'
+                        ? 'agent_status_unavailable'
+                        : namespace === 'agentStatusMigration'
+                          ? 'agent_migration_unavailable'
+                          : namespace === 'agentWorkerRecovery'
+                            ? 'agent_worker_recovery_unavailable'
+                            : 'remote_workspace_unavailable'
       })
       aborted()
       return
