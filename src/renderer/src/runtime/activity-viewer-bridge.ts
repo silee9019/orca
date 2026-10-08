@@ -59,7 +59,10 @@ export async function applyActivityViewerRequest(
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
   const markAllRead = command.operation === 'mark-all-read'
   const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
-  const completed = command.operation === 'clear-completed'
+  const completed =
+    command.operation === 'clear-completed' ||
+    command.operation === 'clear-thread' ||
+    command.operation === 'clear-threads'
   const localOnly = localSearch || markAllRead || threadRead || completed
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
@@ -72,7 +75,7 @@ export async function applyActivityViewerRequest(
       throw new Error('activity_surface_unavailable')
     }
   }
-  const completedAction = completed ? captureActivityCompletedCommand(command.surface) : null
+  const completedAction = completed ? captureActivityCompletedCommand(command) : null
   const readControl = threadRead ? readActivityThreadReadControl(command.surface) : null
   if (threadRead && !readControl) {
     throw new Error('activity_read_control_unavailable')

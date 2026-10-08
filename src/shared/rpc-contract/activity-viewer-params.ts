@@ -9,6 +9,19 @@ export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
   z.object({ ...target, operation: z.literal('mark-all-read') }).strict(),
   z.object({ ...target, operation: z.literal('clear-completed') }).strict(),
+  z
+    .object({ ...target, operation: z.literal('clear-thread'), paneKey: z.string().min(1) })
+    .strict(),
+  z
+    .object({
+      ...target,
+      operation: z.literal('clear-threads'),
+      paneKeys: z
+        .array(z.string().min(1))
+        .min(2)
+        .refine((keys) => new Set(keys).size === keys.length)
+    })
+    .strict(),
   z.object({ ...target, operation: z.literal('read-toggle'), paneKey: z.string().min(1) }).strict(),
   z
     .object({

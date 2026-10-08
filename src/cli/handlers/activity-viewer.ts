@@ -10,7 +10,7 @@ import { RuntimeClientError } from '../runtime-client'
 function handler(operation: ActivityViewerCommand['operation']): CommandHandler {
   return async ({ client, flags, json }) => {
     let paneKeys: unknown
-    if (operation === 'read-toggle-many') {
+    if (operation === 'read-toggle-many' || operation === 'clear-threads') {
       const raw = getOptionalJsonFlag(flags, 'panes')
       try {
         paneKeys = JSON.parse(raw ?? 'null')
@@ -43,8 +43,10 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'read-toggle' ? { paneKey: getRequiredStringFlag(flags, 'pane') } : {}),
-      ...(operation === 'read-toggle-many' ? { paneKeys } : {}),
+      ...(operation === 'read-toggle' || operation === 'clear-thread'
+        ? { paneKey: getRequiredStringFlag(flags, 'pane') }
+        : {}),
+      ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
       ...(operation === 'origin'
         ? { kind: getRequiredStringFlag(flags, 'kind'), hidden: hidden === 'true' }
@@ -82,6 +84,8 @@ export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity mark-all-read': handler('mark-all-read'),
   'ui activity clear-completed': handler('clear-completed'),
+  'ui activity clear-thread': handler('clear-thread'),
+  'ui activity clear-threads': handler('clear-threads'),
   'ui activity read-toggle': handler('read-toggle'),
   'ui activity read-toggle-many': handler('read-toggle-many'),
   'ui activity origin': handler('origin'),

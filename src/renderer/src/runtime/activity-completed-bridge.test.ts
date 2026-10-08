@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import type * as ActivityClearing from '@/components/activity/activity-clear-completed'
 import type { AgentPaneThread } from '@/components/activity/activity-thread-types'
 import {
   makeRepo,
@@ -17,6 +18,9 @@ const fixture = vi.hoisted(() => {
   return {
     mounted: true,
     available: true,
+    logicalAvailable: true,
+    clearOne: vi.fn<(thread: AgentPaneThread) => boolean>(),
+    clearMany: vi.fn<(threads: readonly AgentPaneThread[]) => boolean>(),
     query: '',
     threads,
     run: vi.fn(),
@@ -36,7 +40,14 @@ const fixture = vi.hoisted(() => {
   }
 })
 vi.mock('@/store', () => ({ useAppStore: { getState: () => fixture.state } }))
+vi.mock('@/components/activity/activity-clear-completed', async (importOriginal) => ({
+  ...(await importOriginal<typeof ActivityClearing>()),
+  clearActivityThread: (thread: AgentPaneThread) => fixture.clearOne(thread),
+  clearCompletedActivity: (threads: readonly AgentPaneThread[]) => fixture.clearMany(threads)
+}))
 vi.mock('./activity-viewer-view', () => ({
+  readActivityThreadReadControl: () =>
+    fixture.logicalAvailable ? { visibleThreads: fixture.threads } : null,
   readActivityCompletedControl: () =>
     fixture.available
       ? {
@@ -94,7 +105,16 @@ beforeEach(() => {
     mounted: true,
     available: true,
     query: '',
-    run: vi.fn()
+    run: vi.fn(),
+    logicalAvailable: true
+  })
+  fixture.clearOne.mockReset().mockImplementation(() => {
+    fixture.run()
+    return true
+  })
+  fixture.clearMany.mockReset().mockImplementation(() => {
+    fixture.run()
+    return true
   })
   fixture.state.agentsHideCliCreatedWorkspaces = false
   fixture.run.mockImplementation(() => {
@@ -167,4 +187,67 @@ it('does not report a newer thread turn as the cleared turn', async () => {
     }))
   })
   expect(await request()).toMatchObject({ applied: false, reason: 'viewer_not_applied' })
+})
+
+it.each(['clear-thread', 'clear-threads'] as const)(
+  'preserves the original %s branch and runtime fence',
+  async (operation) => {
+    fixture.threads = [fixture.threads[0], { ...fixture.threads[0], paneKey: 'b' }]
+    const command =
+      operation === 'clear-thread'
+        ? { viewer: 'host' as const, surface: 'activity-page' as const, operation, paneKey: 'a' }
+        : {
+            viewer: 'host' as const,
+            surface: 'activity-page' as const,
+            operation,
+            paneKeys: ['a', 'b']
+          }
+    const original = fixture.run
+    original.mockImplementation(() => {
+      bumpProviderRuntimeSessionGeneration()
+    })
+    expect(
+      await applyActivityViewerRequest({ id: 'target', expiresAt: Date.now() + 120, command })
+    ).toMatchObject({
+      applied: false,
+      dispatched: true,
+      persisted: null,
+      reason: 'viewer_runtime_changed'
+    })
+    expect(original).toHaveBeenCalledTimes(1)
+    expect(
+      operation === 'clear-thread' ? fixture.clearOne : fixture.clearMany
+    ).toHaveBeenCalledTimes(1)
+    expect(
+      operation === 'clear-thread' ? fixture.clearMany : fixture.clearOne
+    ).not.toHaveBeenCalled()
+  }
+)
+it('rejects missing logical controls and hidden targets before any partial clear', async () => {
+  const command = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'clear-thread',
+    paneKey: 'a'
+  } as const
+  fixture.logicalAvailable = false
+  await expect(
+    applyActivityViewerRequest({ id: 'missing', expiresAt: Date.now() + 120, command })
+  ).rejects.toThrow('activity_clear_control_unavailable')
+  fixture.logicalAvailable = true
+  await expect(
+    applyActivityViewerRequest({
+      id: 'hidden',
+      expiresAt: Date.now() + 120,
+      command: {
+        viewer: 'host',
+        surface: 'activity-page',
+        operation: 'clear-threads',
+        paneKeys: ['a', 'hidden']
+      }
+    })
+  ).rejects.toThrow('activity_thread_unavailable')
+  expect(fixture.clearOne).not.toHaveBeenCalled()
+  expect(fixture.clearMany).not.toHaveBeenCalled()
+  expect(fixture.run).not.toHaveBeenCalled()
 })
