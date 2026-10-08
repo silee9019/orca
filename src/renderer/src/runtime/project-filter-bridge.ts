@@ -1,3 +1,4 @@
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { useAppStore } from '@/store'
 import { ProjectFilterParams } from '../../../shared/rpc-contract/project-filter-params'
 import type { ProjectFilterRequest, ProjectFilterResult } from '../../../shared/project-filter'
@@ -11,6 +12,7 @@ export async function applyProjectFilterRequest(
 ): Promise<Omit<ProjectFilterResult, 'viewerId'>> {
   const command = ProjectFilterParams.parse(request.command)
   const initial = useAppStore.getState()
+  const runtimeContextKey = getProviderRuntimeContextKey(initial.settings)
   const initialRepoIds = [...initial.filterRepoIds]
   if (Date.now() >= request.expiresAt) {
     throw new Error('request_expired')
@@ -45,6 +47,7 @@ export async function applyProjectFilterRequest(
       saved = true
       const current = useAppStore.getState()
       if (
+        getProviderRuntimeContextKey(current.settings) === runtimeContextKey &&
         current.settings &&
         !current.settings.activeRuntimeEnvironmentId &&
         sameIds(current.filterRepoIds, initialRepoIds)
@@ -61,11 +64,13 @@ export async function applyProjectFilterRequest(
   const persisted = sameIds(durable.filterRepoIds ?? [], repoIds)
   const view = await waitForProjectFilterView(
     repoIds,
-    Math.max(0, Math.min(5000, request.expiresAt - Date.now() - 100))
+    Math.max(0, Math.min(5000, request.expiresAt - Date.now() - 100)),
+    runtimeContextKey
   )
   const current = useAppStore.getState()
   const applied =
     view !== null &&
+    getProviderRuntimeContextKey(current.settings) === runtimeContextKey &&
     current.settings !== null &&
     !current.settings.activeRuntimeEnvironmentId &&
     sameIds(current.filterRepoIds, repoIds)

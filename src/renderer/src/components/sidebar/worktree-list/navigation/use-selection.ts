@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { publishProjectFilterView } from '@/runtime/project-filter-view'
 import { useCallback, useLayoutEffect, useMemo } from 'react'
 import type React from 'react'
@@ -21,6 +22,7 @@ export function useSidebarWorktreeSelection(args: {
   pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy
 }) {
   const { sectionRows, pinnedDisplayPolicy } = args
+  const runtimeContextKey = useAppStore((state) => getProviderRuntimeContextKey(state.settings))
   const filterRepoIds = useAppStore((state) => state.filterRepoIds)
   // Why: derive order from the built rows, not the flat worktrees array, so Cmd+1–9 match visual positions when grouping reorders cards.
   const renderedWorktrees = useMemo(
@@ -56,6 +58,7 @@ export function useSidebarWorktreeSelection(args: {
     }
     setVisibleWorktreeIds(renderedWorktreeIds)
     publishProjectFilterView({
+      runtimeContextKey,
       repoIds: filterRepoIds,
       visibleWorktreeIds: renderedWorktreeIds,
       visibleFolderWorkspaceIds: sectionRows.flatMap((row) =>
@@ -78,7 +81,7 @@ export function useSidebarWorktreeSelection(args: {
       publishProjectFilterView(null)
       setVisibleWorktreeShortcutTargets(null)
     }
-  }, [filterRepoIds, renderedWorktreeIds, renderedWorktrees, sectionRows])
+  }, [filterRepoIds, renderedWorktreeIds, renderedWorktrees, runtimeContextKey, sectionRows])
 
   return {
     renderedWorktreeIds,
