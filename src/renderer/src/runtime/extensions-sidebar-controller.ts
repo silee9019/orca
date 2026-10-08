@@ -22,7 +22,7 @@ type State = {
   modalOpen: boolean
   busy: boolean
   completed?: {
-    kind: 'open' | 'hide'
+    kind: Exclude<ExtensionsSidebarAction, { kind: 'get' }>['kind']
     page: ExtensionsSidebarPage
     reviewStatus: 'current' | 'changed'
   }
@@ -58,11 +58,13 @@ const settingFor = {
 
 export function useExtensionsSidebarController(form: Form) {
   const { updateSettings } = form
-  const hide = useCallback(
-    (page: ExtensionsSidebarPage) => updateSettings({ [settingFor[page]]: false }),
+  const setVisible = useCallback(
+    (page: ExtensionsSidebarPage, visible: boolean) =>
+      updateSettings({ [settingFor[page]]: visible }),
     [updateSettings]
   )
-  const latest = useRef({ ...form, hide })
+  const hide = useCallback((page: ExtensionsSidebarPage) => setVisible(page, false), [setVisible])
+  const latest = useRef({ ...form, hide, setVisible })
   const pending = useRef<Pending | null>(null)
   const target = useRef({ scope: '', token: createBrowserUuid() })
   const [, setRevision] = useState(0)
@@ -86,7 +88,7 @@ export function useExtensionsSidebarController(form: Form) {
     }
   }
   useLayoutEffect(() => {
-    latest.current = { ...form, hide }
+    latest.current = { ...form, hide, setVisible }
     if (pending.current && pending.current.ownerKey !== form.ownerKey) {
       pending.current.ownerChanged = true
     }
@@ -122,7 +124,11 @@ export function useExtensionsSidebarController(form: Form) {
       if (state.modalOpen) {
         throw new Error('viewer_modal_open')
       }
-      if (!state.visible[action.page]) {
+      const visible = state.visible[action.page]
+      if (action.kind === 'show' && visible) {
+        throw new Error('sidebar_entry_visible')
+      }
+      if ((action.kind === 'open' || action.kind === 'hide') && !visible) {
         throw new Error('sidebar_entry_hidden')
       }
       return new Promise((resolve, reject) => {
@@ -136,10 +142,10 @@ export function useExtensionsSidebarController(form: Form) {
         }
         pending.current = request
         const perform = async () => {
-          if (action.kind === 'open') {
+          if (action.kind === 'open' || action.kind === 'open-page') {
             latest.current.open[action.page]()
           } else {
-            await latest.current.hide(action.page)
+            await latest.current.setVisible(action.page, action.kind === 'show')
           }
         }
         void perform().then(

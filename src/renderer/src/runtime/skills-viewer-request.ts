@@ -1,3 +1,4 @@
+import { applyLinearAccess } from './linear-access-viewer'
 import { applyLinearSkillPrompt } from './linear-skill-prompt-viewer'
 import { applyOrchestrationCommandDialog } from './orchestration-command-dialog-viewer'
 import { applyAgentSkillSetup } from './agent-skill-setup-viewer'
@@ -10,6 +11,9 @@ import { applySkillsViewerAction } from './skills-viewer-controller'
 
 export async function applySkillsViewerRequest(action: SkillsViewerAction) {
   const parsed = SkillsViewerActionSchema.parse(action)
+  if (parsed.kind === 'linear-access-form') {
+    return applyLinearAccess(parsed.action)
+  }
   if (parsed.kind === 'linear-prompt-form') {
     return applyLinearSkillPrompt(parsed.action)
   }

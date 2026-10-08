@@ -1,3 +1,4 @@
+import { LinearAccessViewerActionSchema } from './linear-access-viewer-command'
 import { LinearSkillPromptActionSchema } from './linear-skill-prompt-command'
 import { OrchestrationCommandDialogActionSchema } from './orchestration-command-dialog-command'
 import { AgentSkillSetupViewerActionSchema } from './agent-skill-setup-viewer-command'
@@ -36,6 +37,7 @@ export const SkillsDeleteConfirmationSchema = z
   })
   .strict()
 export const SkillsViewerActionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('linear-access-form'), action: LinearAccessViewerActionSchema }),
   z.strictObject({ kind: z.literal('linear-prompt-form'), action: LinearSkillPromptActionSchema }),
   z.strictObject({
     kind: z.literal('command-dialog-form'),
@@ -89,14 +91,15 @@ export const SkillsViewerActionSchema = z.discriminatedUnion('kind', [
 export type SkillsViewerAction = z.infer<typeof SkillsViewerActionSchema>
 export type SkillsPageAction = Exclude<
   SkillsViewerAction,
-  { kind: 'setup-form' | 'command-dialog-form' | 'linear-prompt-form' }
+  { kind: 'setup-form' | 'command-dialog-form' | 'linear-prompt-form' | 'linear-access-form' }
 >
 export function parseSkillsPageAction(action: SkillsViewerAction): SkillsPageAction {
   const parsed = SkillsViewerActionSchema.parse(action)
   if (
     parsed.kind === 'setup-form' ||
     parsed.kind === 'command-dialog-form' ||
-    parsed.kind === 'linear-prompt-form'
+    parsed.kind === 'linear-prompt-form' ||
+    parsed.kind === 'linear-access-form'
   ) {
     throw new Error('skill_setup_requires_routed_viewer')
   }

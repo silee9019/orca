@@ -31657,10 +31657,10 @@
       "owner": "PluginService / skill / automation / artifact / profile services; source boundary src/renderer/src/components/jira-connect-dialog.tsx:JiraConnectDialog",
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "gap": "고정 URL을 CLI app shell open-url의 http·https 검증을 거쳐 같은 외부 열기 서비스(shell:openUrl)로 보내는 경로를 대조했습니다. 실제 OS 기본 브라우저 실행과 Electron 화면 효과는 검증하지 않았습니다.",
+      "verification": "JiraConnectDialog의 고정 URL(https://id.atlassian.com/manage-profile/security/api-tokens)을 CLI `app shell open-url`로 같은 외부 브라우저 열기 서비스(api.shell.openUrl)에 전달합니다.",
+      "support": "alias",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/jira-connect-dialog.tsx:08457defe0877ce85ef0",
@@ -31668,7 +31668,8 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "app shell open-url"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-native-chat-NativeChatComposer.NativeChatComposerPane.control.picker.retrySkills",
@@ -31786,9 +31787,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "actual Pane과 actual Dialog에서 Cancel과 Escape가 부모 setter로 dialog를 닫고 sign-out을 호출하지 않음을 검증했습니다. 부모 callback을 끊은 RED2fail 및 exact 복원. CLI의 dialog 열기·닫기는 accounts 묶음 viewer action이 소유하며 이 브랜치에는 없습니다.",
+      "support": "internal",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx:22bf504d5f240b243e65",
@@ -31800,7 +31801,11 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "독립 사용자 동작이 아닌 부모 pane의 sign-out 확인 dialog 열림 상태 전달입니다. 열기·닫기 효과는 부모 pane의 setSignOutOpen 행이 소유합니다.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/OrcaAccountSettingsPane.signout-dialog.test.tsx"
+      ],
+      "parent": "surface.accounts-permissions.src-renderer-src-components-settings-OrcaAccountSettingsPane.OrcaAccountSettingsPane.control.setSignOutOpen"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-orca-profiles-OrcaProfileSignOutConfirmDialog.OrcaProfileSignOutConfirmDialog.control.onConfirm",
@@ -31811,9 +31816,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "actual OrcaAccountSettingsPane과 actual Dialog에서 확인 버튼이 sign-out을 한 번만 호출하고 진행 중 Cancel·확인을 비활성화하며 실패 시 dialog를 유지하고 성공 시 닫음을 검증했습니다. CLI profile sign-out이 같은 로그아웃 서비스(api.orcaProfiles.signOutCurrent)를 호출하며 확인 가드는 accounts 묶음 CLI가 소유합니다. 두 callback을 끊은 RED2fail 및 exact 복원. store signOut은 fake이며 실제 계정 로그아웃은 수행하지 않았습니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/orca-profiles/OrcaProfileSignOutConfirmDialog.tsx:cc4efcc8d8b11e2c4f0b",
@@ -31821,7 +31826,13 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/OrcaAccountSettingsPane.signout-dialog.test.tsx",
+        "src/renderer/src/components/settings/OrcaAccountSettingsPane.test.tsx"
+      ],
+      "command": "profile sign-out",
+      "invocation": "command:profile sign-out"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-plugin-catalog-PluginCatalogLayout.PluginCatalogLayout.control.onSearchChange",
@@ -32002,9 +32013,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict extensions sidebar open-page가 Settings pane의 Open Artifacts 버튼과 같은 store 열기 callback을 사용하고 사이드바 항목이 숨겨져 있어도 페이지를 엽니다. 실제 pane 버튼과 CLI가 같은 activeView·nav history·이전 화면 기록을 남기는지 비교했고 낡은 reviewedTarget·modal·busy는 기존 controller 가드가 거부합니다. 새 action 거부로 되돌린 RED7fail/1pass 및 exact byte 복원. happy-dom/fake store이므로 실제 Electron·OS·SSH·mixed peer 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ArtifactsSettingsPane.tsx:074bd9d5fe7851869f36",
@@ -32012,7 +32023,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/renderer/src/components/sidebar/SidebarNav.viewer.test.tsx",
+        "src/cli/handlers/extensions-sidebar.test.ts"
+      ],
+      "command": "extensions sidebar",
+      "invocation": "command:extensions sidebar"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-ArtifactsSettingsPane.ArtifactsSettingsPane.control.updateSettings",
@@ -32023,9 +32041,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "Show Artifacts Button은 extensions sidebar show/hide로 같은 settings key(showArtifactsButton)를 CLI에서 씁니다. 공개 링크 발행 허용(artifactSharingEnabled)은 사용자 권한 부여라 CLI와 RPC가 의도적으로 거부합니다(settings.update 거부 test, artifacts share의 artifact_sharing_disabled 사전 거부와 다음 단계 안내). 사람이 Settings → Artifacts의 토글을 켜야 하며 CLI는 share 호출 결과로 완료를 확인할 뿐 이 권한을 대신 켜지 않습니다. 실제 사용자 권한 부여는 시도하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ArtifactsSettingsPane.tsx:406577cb234ab5dd366b",
@@ -32037,7 +32055,16 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ArtifactsSettingsPane.test.tsx",
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/cli/handlers/artifacts.test.ts",
+        "src/main/runtime/rpc/methods/artifact-sharing-capability-grant.test.ts",
+        "src/shared/artifact-sharing-gate.test.ts"
+      ],
+      "command": "artifacts share",
+      "invocation": "command:artifacts share"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-ArtifactsSettingsPane.ArtifactsSettingsPane.control.connect",
@@ -32048,9 +32075,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "pane의 Sign in 버튼은 store connectCurrentOrcaProfile을 호출하고 CLI profile auth-start가 같은 로그인 시작을 제공합니다(상태·취소는 profile auth-operation). OAuth 완료는 사람 절차라 시도하지 않았습니다. 실제 pane 버튼 호출과 미구성 비활성·재로그인 문구를 기존 pane test로 확인했고 profile 서비스 증거는 api.orcaProfiles.connectCurrent 행과 같습니다. 실제 계정 로그인 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ArtifactsSettingsPane.tsx:539559051a1bb993b51e",
@@ -32058,7 +32085,13 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ArtifactsSettingsPane.test.tsx",
+        "src/main/orca-profiles/profile-cli-auth.test.ts"
+      ],
+      "command": "profile auth-start",
+      "invocation": "command:profile auth-start"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-AutomationsSettingsPane.AutomationsSettingsPane.control.openAutomationsPage",
@@ -32069,9 +32102,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict extensions sidebar open-page가 Settings pane의 Open Automations 버튼과 같은 store 열기 callback을 사용하고 사이드바 항목이 숨겨져 있어도 페이지를 엽니다. 실제 pane 버튼과 CLI가 같은 activeView·nav history·이전 화면 기록을 남기는지 비교했고 낡은 reviewedTarget·modal·busy는 기존 controller 가드가 거부합니다. 새 action 거부로 되돌린 RED7fail/1pass 및 exact byte 복원. happy-dom/fake store이므로 실제 Electron·OS·SSH·mixed peer 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/AutomationsSettingsPane.tsx:06af1898605e87969f81",
@@ -32079,7 +32112,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/renderer/src/components/sidebar/SidebarNav.viewer.test.tsx",
+        "src/cli/handlers/extensions-sidebar.test.ts"
+      ],
+      "command": "extensions sidebar",
+      "invocation": "command:extensions sidebar"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-AutomationsSettingsPane.AutomationsSettingsPane.control.updateSettings",
@@ -32090,9 +32130,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "Automations pane의 유일한 설정 쓰기는 showAutomationsButton입니다. strict extensions sidebar show/hide가 같은 key를 같은 updateSettings 경로로 true/false 기록하며 실제 pane switch와 CLI의 payload 동일성, 이미 보이는 항목 show 거부(sidebar_entry_visible)를 검증했습니다. happy-dom/fake store이므로 실제 Electron·OS·SSH·mixed peer 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/AutomationsSettingsPane.tsx:5632116d2c13dba1bc09",
@@ -32100,7 +32140,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/renderer/src/components/sidebar/SidebarNav.viewer.test.tsx",
+        "src/renderer/src/components/settings/AutomationsSettingsPane.test.tsx"
+      ],
+      "command": "extensions sidebar",
+      "invocation": "command:extensions sidebar"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-CliSection.CliSection.control.refreshCliSkill",
@@ -32269,9 +32316,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillGuide.tsx:0d1f57e4a375575a3409",
@@ -32279,7 +32326,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillGuide.LinearAgentSkillGuide.control.onManageLinearAccess",
@@ -32290,9 +32344,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillGuide.tsx:bf330d95ec7d2244018e",
@@ -32300,7 +32354,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.LinearAgentSkillPane.control.openTaskSources",
@@ -32311,9 +32372,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:19f8dfe256549e334089",
@@ -32321,7 +32382,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.LinearAgentSkillPane.control.setLinearKeyDialogOpen",
@@ -32332,21 +32400,24 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
-        {
-          "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:23af4a5da9d7d5baa4d8",
-          "fingerprint": "23af4a5da9d7d5baa4d86ce07142fef8460891107c1b7cd60690da70fd3f1726"
-        },
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:58128f296dd81706d675",
           "fingerprint": "58128f296dd81706d6753fe8101cdf2ab95e4de543d6d8842dfa67185803b5b1"
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.LinearAgentSkillPane.control.checkLinearConnection",
@@ -32357,9 +32428,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "actual LinearApiKeyDialog의 connect 성공→onOpenChange(false)→onConnected→checkLinearConnection(true) 1회 호출과 dialog 닫힘, 이어진 linear-access-form get의 connected 반영을 검증했습니다. onConnected를 끊은 RED1fail/17pass 및 exact 복원, GREEN 회귀3파일28 PASS. connect store·API key는 fake이며 CLI는 credential을 입력하지 않고 실제 연결·OAuth·외부 쓰기는 수행하지 않았습니다.",
+      "support": "internal",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:6d7d971bf726eca87d50",
@@ -32367,7 +32438,11 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "독립 사용자 동작이 아닌 API key 연결 성공 뒤 연결 상태 갱신 전달입니다. 연결 사실은 Linear connect 경로가 소유하고 부모 Pane은 성공 신호로 상태를 다시 읽기만 합니다.",
+      "parent": "api.linear.connect",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.LinearAgentSkillPane.control.openIntegrationSettings",
@@ -32378,9 +32453,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:c8ffabcfc44140e331c1",
@@ -32388,7 +32463,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.skillPanel.control.skillSetup.refreshSkill",
@@ -32425,9 +32507,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "actual Add app 메뉴에서 preset 선택이 정확한 catalog 행을 settings writer 인자로 한 번 저장하고 이미 추가된 preset과 8개 한도는 저장하지 않음을 검증했습니다. 저장 payload를 바꾼 RED1fail 및 exact 복원. 같은 설정 쓰기는 settings 묶음의 desktop update가 수행하며 이 브랜치에는 그 명령이 없습니다. 임의 command 문자열 검토는 settings 묶음 소유입니다.",
+      "support": "internal",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/OpenInMenuSetting.tsx:a89f36c8986d595f9f90",
@@ -32435,7 +32517,12 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "독립 사용자 동작이 아닌 catalog preset 한 행을 openInApplications 설정 목록에 더하는 입력 보조입니다. 저장 효과는 settings 묶음의 openInApplications 쓰기가 소유합니다.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/OpenInMenuSetting.add-preset.test.tsx",
+        "src/renderer/src/components/settings/OpenInMenuSetting.test.ts"
+      ],
+      "parent": "setting.openInApplications"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-OrchestrationPane.OrchestrationPane.control.refreshOrchestrationSkill",
@@ -34240,9 +34327,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "Show Skills button은 extensions sidebar show/hide로 같은 settings key(showSkillsButton)를 CLI에서 씁니다. 에이전트·CLI의 skill 링크 발행 허용(agentSkillSharingEnabled)은 사용자 권한 부여라 CLI와 RPC가 의도적으로 거부합니다(settings.update 거부 test, skills share의 agent_skill_sharing_disabled 사전 거부와 다음 단계 안내). 사람이 Settings → Share Skills의 토글을 켜야 하며 CLI는 share 호출 결과로 완료를 확인할 뿐 이 권한을 대신 켜지 않습니다. 실제 사용자 권한 부여는 시도하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ShareSkillsSettingsPane.tsx:4686a58d5368637e30cd",
@@ -34254,7 +34341,16 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ShareSkillsSettingsPane.test.tsx",
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/cli/handlers/skill-sharing.test.ts",
+        "src/main/runtime/rpc/methods/agent-skill-sharing-capability-grant.test.ts",
+        "src/shared/agent-skill-sharing-gate.test.ts"
+      ],
+      "command": "skills share",
+      "invocation": "command:skills share"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-ShareSkillsSettingsPane.ShareSkillsSettingsPane.control.connect",
@@ -34265,9 +34361,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "pane의 Sign in 버튼은 store connectCurrentOrcaProfile을 호출하고 CLI profile auth-start가 같은 로그인 시작을 제공합니다(상태·취소는 profile auth-operation). OAuth 완료는 사람 절차라 시도하지 않았습니다. 실제 pane 버튼 호출과 미구성 비활성·재로그인 문구를 기존 pane test로 확인했고 profile 서비스 증거는 api.orcaProfiles.connectCurrent 행과 같습니다. 실제 계정 로그인 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ShareSkillsSettingsPane.tsx:539559051a1bb993b51e",
@@ -34275,7 +34371,13 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ShareSkillsSettingsPane.test.tsx",
+        "src/main/orca-profiles/profile-cli-auth.test.ts"
+      ],
+      "command": "profile auth-start",
+      "invocation": "command:profile auth-start"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-ShareSkillsSettingsPane.ShareSkillsSettingsPane.control.openSkillsPage",
@@ -34286,9 +34388,9 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "strict extensions sidebar open-page가 Settings pane의 Open Skills 버튼과 같은 store 열기 callback을 사용하고 사이드바 항목이 숨겨져 있어도 페이지를 엽니다. 실제 pane 버튼과 CLI가 같은 activeView·nav history·이전 화면 기록을 남기는지 비교했고 낡은 reviewedTarget·modal·busy는 기존 controller 가드가 거부합니다. 새 action 거부로 되돌린 RED7fail/1pass 및 exact byte 복원. happy-dom/fake store이므로 실제 Electron·OS·SSH·mixed peer 효과는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/settings/ShareSkillsSettingsPane.tsx:e30ccd01ffe73cdc104d",
@@ -34296,7 +34398,14 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/ExtensionSettingsPanes.sidebar-viewer.test.tsx",
+        "src/renderer/src/components/sidebar/SidebarNav.viewer.test.tsx",
+        "src/cli/handlers/extensions-sidebar.test.ts"
+      ],
+      "command": "extensions sidebar",
+      "invocation": "command:extensions sidebar"
     },
     {
       "id": "surface.extensions.src-renderer-src-components-settings-sparse-preset-draft-editor.SparsePresetDraftEditor.control.setDraft",
@@ -40579,13 +40688,16 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "구독은 renderer cache 갱신 전용이고 CLI는 같은 호스트 상태를 automations list 호출마다 다시 읽습니다. 5개 polling 명령이 호출마다 호스트 RPC를 다시 부르고 CLI 캐시가 없음을 확인했습니다(CLI 캐시를 넣은 RED1fail 및 exact 복원). push stream은 CLI에 노출하지 않으며 실제 변경 이벤트 전달·실시간 비교는 검증하지 않아 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": ["api:automations.onChanged"]
+      "derivedFrom": ["api:automations.onChanged"],
+      "evidencePaths": ["src/cli/handlers/extensions-observer-polling.test.ts"],
+      "command": "automations list",
+      "invocation": "command:automations list"
     },
     {
       "id": "api.automations.onChanged",
@@ -40640,13 +40752,16 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "구독은 renderer cache 갱신 전용이고 CLI는 같은 호스트 상태를 profile auth-status 호출마다 다시 읽습니다. 5개 polling 명령이 호출마다 호스트 RPC를 다시 부르고 CLI 캐시가 없음을 확인했습니다(CLI 캐시를 넣은 RED1fail 및 exact 복원). push stream은 CLI에 노출하지 않으며 실제 변경 이벤트 전달·실시간 비교는 검증하지 않아 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": ["api:orcaProfiles.onAuthStatusChanged"]
+      "derivedFrom": ["api:orcaProfiles.onAuthStatusChanged"],
+      "evidencePaths": ["src/cli/handlers/extensions-observer-polling.test.ts"],
+      "command": "profile auth-status",
+      "invocation": "command:profile auth-status"
     },
     {
       "id": "api.orcaProfiles.onAuthStatusChanged",
@@ -40679,13 +40794,16 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "구독은 renderer cache 갱신 전용이고 CLI는 같은 호스트 상태를 plugins list 호출마다 다시 읽습니다. 5개 polling 명령이 호출마다 호스트 RPC를 다시 부르고 CLI 캐시가 없음을 확인했습니다(CLI 캐시를 넣은 RED1fail 및 exact 복원). push stream은 CLI에 노출하지 않으며 실제 변경 이벤트 전달·실시간 비교는 검증하지 않아 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": ["api:plugins.onChanged"]
+      "derivedFrom": ["api:plugins.onChanged"],
+      "evidencePaths": ["src/cli/handlers/extensions-observer-polling.test.ts"],
+      "command": "plugins list",
+      "invocation": "command:plugins list"
     },
     {
       "id": "api.plugins.onChanged",
@@ -40718,13 +40836,16 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "구독은 renderer cache 갱신 전용이고 CLI는 같은 호스트 상태를 skills install-progress 호출마다 다시 읽습니다. 5개 polling 명령이 호출마다 호스트 RPC를 다시 부르고 CLI 캐시가 없음을 확인했습니다(CLI 캐시를 넣은 RED1fail 및 exact 복원). push stream은 CLI에 노출하지 않으며 실제 변경 이벤트 전달·실시간 비교는 검증하지 않아 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": ["api:skills.onInstallProgress"]
+      "derivedFrom": ["api:skills.onInstallProgress"],
+      "evidencePaths": ["src/cli/handlers/extensions-observer-polling.test.ts"],
+      "command": "skills install-progress",
+      "invocation": "command:skills install-progress"
     },
     {
       "id": "api.skills.onInstallProgress",
@@ -40801,13 +40922,16 @@
       "host": "contribution owner runtime; preserve consent and capability checks",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "verification": "구독은 renderer cache 갱신 전용이고 CLI는 같은 호스트 상태를 sparse-presets list 호출마다 다시 읽습니다. 5개 polling 명령이 호출마다 호스트 RPC를 다시 부르고 CLI 캐시가 없음을 확인했습니다(CLI 캐시를 넣은 RED1fail 및 exact 복원). push stream은 CLI에 노출하지 않으며 실제 변경 이벤트 전달·실시간 비교는 검증하지 않아 partial입니다. renderer에 sparsePresets.onChanged 소비자가 없음을 git grep으로 확인했습니다.",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": ["api:sparsePresets.onChanged"]
+      "derivedFrom": ["api:sparsePresets.onChanged"],
+      "evidencePaths": ["src/cli/handlers/extensions-observer-polling.test.ts"],
+      "command": "sparse-presets list",
+      "invocation": "command:sparse-presets list"
     },
     {
       "id": "api.sparsePresets.onChanged",
@@ -146517,7 +146641,7 @@
       "sources": [
         {
           "id": "command:extensions sidebar",
-          "fingerprint": "59a6f70f15b9e3bb4b7de2689a1a2348b05fc43dfb7e27401bf7d4e5c83dbbf3"
+          "fingerprint": "8e2d6e832ef02019d9f4d0b9062bec88c673f1dd8ec08690e5a4b1f8f225cb14"
         }
       ],
       "rule": "command",
@@ -147882,6 +148006,34 @@
       "command": "agent status transfer-pane",
       "limitations": "공유 등록 A61(A60 전체 대체본) 1개가 필요하며 소유 6파일 commit 65d48f69c4(+문구 정정 bda7af2ef5)에는 공유 파일이 없습니다. 실제 canonical hook server와 실제 canTransferPaneAuthority/createAgentPaneAuthorityOwnership/rememberPaneKeyForPty, runtime.showTerminal 만 fixture 인 macOS 증거입니다. layout owner 가 이미 옮긴 binding(terminal 의 live 위치 = toPaneKey)을 hook store 가 따라가게 하는 복구이며 pane 이동·생성이 아닙니다. 목적지에 status row 가 이미 있으면 거부하고 목적지의 이전 retirement 는 UI 와 같이 해제됩니다. rendererApplied:false 이며 연결된 viewer 의 sidebar/retained/unread/launch-config 로컬 상태는 옮기지 않습니다. live SSH/paired, 다른 OS, 실제 renderer 는 미실증입니다.",
       "evidencePaths": []
+    },
+    {
+      "id": "surface.extensions.src-renderer-src-components-settings-LinearAgentSkillPane.LinearAgentSkillPane.control.manageLinearAccess",
+      "phase": 8,
+      "bundle": "extensions",
+      "effect": "LinearAgentSkillPane: manageLinearAccess에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "PluginService / skill / automation / artifact / profile services; source boundary src/renderer/src/components/settings/LinearAgentSkillPane.tsx:LinearAgentSkillPane",
+      "host": "contribution owner runtime; preserve consent and capability checks",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "verification": "strict skills viewer/linear-access-form get/open-task-sources/manage-access/open-integrations/close-access-dialog가 actual LinearAgentSkillPane의 동일 callback(openTaskSources·openIntegrationSettings·manageLinearAccess·dialog close)을 재사용하고 실제 settingsNavigationTarget/activeView 또는 LinearApiKeyDialog open/close React commit 뒤 응답합니다. 연결 여부에 따라 integrations/linear section 또는 API key dialog로 가며 credential 입력·저장·OAuth·checkLinearConnection은 수행하지 않습니다. native/CLI 동등성, pane key/review UUID, profile/modal/runtime/connected/callback ABA·busy·premicrotask·no-op/throw·unmount·검색 숨김·다중 pane과 CLI strict schema/old-peer one call/no fallback을 검증했습니다. 열린 dialog의 close는 부모 제어 close와 같은 경로이며 진행 중 connect 요청은 취소하지 않습니다. happy-dom/fake store이므로 실제 Electron/OS/실계정/SSH/mixed peer는 partial입니다.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/LinearAgentSkillPane.tsx:b69dc9254c75d3a3444f",
+          "fingerprint": "b69dc9254c75d3a3444f4b5ef2945dc5f8f9fd72f63dc0e1ffb12970ffdded18"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "skills viewer",
+      "invocation": "command:skills viewer action",
+      "evidencePaths": [
+        "src/renderer/src/components/settings/LinearAgentSkillPane.access-viewer.test.tsx",
+        "src/cli/handlers/linear-access-viewer.test.ts",
+        "src/renderer/src/components/settings/LinearAgentSkillPane.test.tsx"
+      ]
     }
   ]
 }

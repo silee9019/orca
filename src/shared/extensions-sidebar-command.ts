@@ -4,7 +4,7 @@ export const ExtensionsSidebarPageSchema = z.enum(['automations', 'skills', 'art
 export const ExtensionsSidebarActionSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('get') }),
   z.strictObject({
-    kind: z.enum(['open', 'hide']),
+    kind: z.enum(['open', 'hide', 'show', 'open-page']),
     page: ExtensionsSidebarPageSchema,
     reviewedTarget: z.uuid()
   })

@@ -10,7 +10,7 @@ import { ExtensionsSidebarParams } from '../../shared/extensions-sidebar-command
 it('requires strict desktop requests and reviewed open or hide actions', () => {
   const reviewedTarget = '00000000-0000-4000-8000-000000000001'
   for (const page of ['automations', 'skills', 'artifacts']) {
-    for (const kind of ['open', 'hide']) {
+    for (const kind of ['open', 'hide', 'show', 'open-page']) {
       expect(
         ExtensionsSidebarParams.safeParse({
           viewer: 'desktop',

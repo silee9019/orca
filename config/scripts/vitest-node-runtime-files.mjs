@@ -22,6 +22,8 @@ export const NODE_RUNTIME_INCLUDE = [
   'src/shared/own-retained-string.test.ts',
   'src/main/agent-hooks/server-transport-interference.test.ts',
   'src/main/plugins/plugin-worker-supervision.integration.test.ts',
+  'tests/e2e/extensions-plugin-command.unit.test.ts',
+  'tests/e2e/extensions-managed-effects.unit.test.ts',
   'src/main/usage/usage-scan-worker-event-loop.test.ts',
   'src/main/computer/macos-native-provider-client.test.ts',
   'src/main/ai-vault-search/session-search-schema.test.ts',
