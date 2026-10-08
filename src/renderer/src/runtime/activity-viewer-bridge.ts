@@ -1,3 +1,5 @@
+import { readActivityViewerCommandContext } from './activity-viewer-command-context'
+import { applyActivityGroupCollapseRequest } from './activity-group-collapse-command'
 import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
 import { applyActivityNavigationRequest } from './activity-navigation-command'
 import {
@@ -25,7 +27,6 @@ import { useAppStore } from '@/store'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { withTimeout } from '../../../shared/promise-timeout-fallback'
 import type { PersistedUIState } from '../../../shared/persisted-ui-state-types'
-import { ActivityViewerParams } from '../../../shared/rpc-contract/activity-viewer-params'
 import type {
   ActivityViewerRequest,
   ActivityViewerResult
@@ -47,16 +48,9 @@ import { captureActivitySearchControl } from './activity-search-controls'
 export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
-  const command = ActivityViewerParams.parse(request.command)
-  if (Date.now() >= request.expiresAt) {
-    throw new Error('request_expired')
-  }
-  const initial = useAppStore.getState()
-  if (!initial.persistedUIReady || !initial.settings) {
-    throw new Error('viewer_not_ready')
-  }
-  if (initial.settings.activeRuntimeEnvironmentId) {
-    throw new Error('viewer_runtime_mismatch')
+  const { command, initial } = readActivityViewerCommandContext(request)
+  if (command.operation === 'group-toggle') {
+    return applyActivityGroupCollapseRequest(request, command)
   }
   if (command.operation === 'jump' || command.operation === 'select') {
     return applyActivityNavigationRequest(request, command)

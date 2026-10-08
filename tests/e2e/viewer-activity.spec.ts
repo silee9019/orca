@@ -13,6 +13,7 @@ import { assertActivityMarkAllRead } from './helpers/activity-mark-all-read-asse
 import { assertActivityReadToggle } from './helpers/activity-read-toggle-assertions'
 import { assertActivityCompleted } from './helpers/activity-completed-assertions'
 import { assertActivityThreadClear } from './helpers/activity-thread-clear-assertions'
+import { assertActivityGroupCollapse } from './helpers/activity-group-collapse-assertions'
 import { assertActivitySelect } from './helpers/activity-select-assertions'
 import { assertActivityJump } from './helpers/activity-jump-assertions'
 
@@ -442,6 +443,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityReadToggle(orcaPage, call, testInfo)
   await assertActivityCompleted(orcaPage, call, testInfo)
   await assertActivityThreadClear(orcaPage, call, testInfo)
+  await assertActivityGroupCollapse(orcaPage, call, testInfo)
   await assertActivityJump(orcaPage, call, testInfo)
   await assertActivitySelect(orcaPage, call, testInfo)
   await assertHidden()

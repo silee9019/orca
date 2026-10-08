@@ -139,3 +139,58 @@ it('parses and dispatches explicit select without interpreting a partial reply a
     })
   }
 })
+
+it('dispatches a surface-local group key and preserves its acknowledged collapse outcome', async () => {
+  call.mockResolvedValue({
+    id: 'g',
+    ok: true,
+    _meta: { runtimeId: 'host' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      surface: 'activity-page',
+      dispatched: true,
+      applied: true,
+      persisted: null,
+      writeOutcome: 'not_requested',
+      groupBy: 'status',
+      readFilter: 'all',
+      compact: false,
+      showChildAgents: true,
+      rendered: null,
+      groupAction: {
+        key: 'status:done',
+        requestedCollapsed: true,
+        currentCollapsed: true,
+        future: true
+      }
+    }
+  })
+  const parsed = parseArgs(
+    [
+      'ui',
+      'activity',
+      'group-toggle',
+      '--group-key',
+      'status:done',
+      '--viewer',
+      'host',
+      '--surface',
+      'activity-page'
+    ],
+    COMMAND_SPECS.map((spec) => spec.path),
+    COMMAND_SPECS
+  )
+  await dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+  expect(call).toHaveBeenCalledExactlyOnceWith('ui.activityViewer', {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'group-toggle',
+    groupKey: 'status:done'
+  })
+  expect(JSON.parse(String(printed.mock.calls.at(-1)?.[0])).result.groupAction).toEqual({
+    key: 'status:done',
+    requestedCollapsed: true,
+    currentCollapsed: true
+  })
+})

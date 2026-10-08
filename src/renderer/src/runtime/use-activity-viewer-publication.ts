@@ -1,10 +1,11 @@
+import type { ActivityThreadCollapseState } from '@/components/activity/activity-thread-collapse-context'
 import type { ActivityThreadSelectionOutcome } from '@/components/activity/activity-thread-actions'
 import type {
   AgentPaneThread,
   ActivityThreadGroup
 } from '@/components/activity/activity-thread-types'
 import { readActivityScope } from './activity-scope-preferences'
-import { useLayoutEffect } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
@@ -33,6 +34,7 @@ export function useActivityViewerPublication(
     | 'query'
     | 'selectedPaneKey'
   > & {
+    collapse?: ActivityThreadCollapseState
     markAllRead?: { run?: () => void; hasUnreadThreads: boolean }
     navigation?: {
       select?: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
@@ -60,6 +62,9 @@ export function useActivityViewerPublication(
   )
   const { groupBy, readFilter, compact, showChildAgents, querySettled, query, selectedPaneKey } =
     preferences
+  const queryRevision = useRef({ query, version: 0 })
+  const collapsedKeys = preferences.collapse?.collapsedGroupKeys
+  const toggleGroup = preferences.collapse?.onToggleGroupCollapse
   const markAllRead = preferences.markAllRead?.run
   const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
   const { allThreads, markRead, markUnread, markManyRead, markManyUnread, canMarkUnread } =
@@ -73,6 +78,9 @@ export function useActivityViewerPublication(
   useLayoutEffect(() => {
     if (!surface) {
       return
+    }
+    if (queryRevision.current.query !== query) {
+      queryRevision.current = { query, version: queryRevision.current.version + 1 }
     }
     publishActivityViewerView(
       surface,
@@ -88,6 +96,13 @@ export function useActivityViewerPublication(
         scope: readActivityScope(context),
         selectedPaneKey,
         hasUnreadThreads,
+        groups: collapsedKeys
+          ? completedThreads?.map((group) => ({
+              key: group.key,
+              collapsed: collapsedKeys.has(group.key),
+              threadCount: group.threads.length
+            }))
+          : undefined,
         densityMeasured: false,
         renderedRows: [],
         logicalRows: rows.map((row) => ({
@@ -106,6 +121,15 @@ export function useActivityViewerPublication(
       },
       {
         markAllRead,
+        groupCollapse:
+          collapsedKeys && toggleGroup && completedThreads
+            ? {
+                groups: completedThreads,
+                collapsedKeys,
+                toggle: toggleGroup,
+                queryRevision: queryRevision.current.version
+              }
+            : undefined,
         navigation:
           navigationJump && navigationCanJump
             ? {
@@ -152,6 +176,8 @@ export function useActivityViewerPublication(
     selectedPaneKey,
     hasUnreadThreads,
     markAllRead,
+    collapsedKeys,
+    toggleGroup,
     allThreads,
     markRead,
     markUnread,

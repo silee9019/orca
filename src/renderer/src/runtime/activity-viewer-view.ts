@@ -1,7 +1,10 @@
 import type { ActivityViewerSurface } from '../../../shared/rpc-contract/activity-viewer-params'
 import type { ActivityViewerSnapshot } from '../../../shared/activity-viewer-command'
 import type { ActivityThreadSelectionOutcome } from '@/components/activity/activity-thread-actions'
-import type { AgentPaneThread } from '@/components/activity/activity-thread-types'
+import type {
+  ActivityThreadGroup,
+  AgentPaneThread
+} from '@/components/activity/activity-thread-types'
 
 export type ActivityThreadReadCallbacks = {
   allThreads: readonly AgentPaneThread[]
@@ -22,6 +25,13 @@ export type ActivityNavigationControl = {
   canJump: (thread: AgentPaneThread) => boolean
 }
 
+export type ActivityGroupCollapseControl = {
+  queryRevision: number
+  groups: readonly ActivityThreadGroup[]
+  collapsedKeys: ReadonlySet<string>
+  toggle: (key: string) => void
+}
+
 export type ActivityCompletedControl = {
   run: () => void
   hasCompletedThreads: boolean
@@ -39,6 +49,7 @@ const committed: Partial<
         threadReads?: ActivityThreadReadControl
         completed?: ActivityCompletedControl
         navigation?: ActivityNavigationControl
+        groupCollapse?: ActivityGroupCollapseControl
       }
     }
   >
@@ -51,6 +62,7 @@ export function publishActivityViewerView(
     threadReads?: ActivityThreadReadControl
     completed?: ActivityCompletedControl
     navigation?: ActivityNavigationControl
+    groupCollapse?: ActivityGroupCollapseControl
   }
 ): void {
   if (view) {
@@ -119,4 +131,10 @@ export function readActivityNavigationControl(
   surface: ActivityViewerSurface
 ): ActivityNavigationControl | null {
   return committed[surface]?.controls?.navigation ?? null
+}
+
+export function readActivityGroupCollapseControl(
+  surface: ActivityViewerSurface
+): ActivityGroupCollapseControl | null {
+  return committed[surface]?.controls?.groupCollapse ?? null
 }

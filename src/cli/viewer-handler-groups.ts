@@ -7,6 +7,7 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'ui activity get',
       'ui activity jump',
       'ui activity select',
+      'ui activity group-toggle',
       'ui activity mark-all-read',
       'ui activity clear-completed',
       'ui activity clear-thread',

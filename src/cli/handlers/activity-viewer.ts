@@ -51,6 +51,9 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
         : {}),
       ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
+      ...(operation === 'group-toggle'
+        ? { groupKey: getRequiredStringFlag(flags, 'group-key') }
+        : {}),
       ...(operation === 'origin'
         ? { kind: getRequiredStringFlag(flags, 'kind'), hidden: hidden === 'true' }
         : {}),
@@ -87,6 +90,7 @@ export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity jump': handler('jump'),
   'ui activity select': handler('select'),
+  'ui activity group-toggle': handler('group-toggle'),
   'ui activity mark-all-read': handler('mark-all-read'),
   'ui activity clear-completed': handler('clear-completed'),
   'ui activity clear-thread': handler('clear-thread'),

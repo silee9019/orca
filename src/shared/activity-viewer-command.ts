@@ -20,6 +20,17 @@ export const ActivityViewerSnapshotSchema = z
     densityMeasured: z.boolean(),
     selectedPaneKey: z.string().nullable(),
     hasUnreadThreads: z.boolean().optional(),
+    groups: z
+      .array(
+        z
+          .object({
+            key: z.string(),
+            collapsed: z.boolean(),
+            threadCount: z.number().int().nonnegative()
+          })
+          .strip()
+      )
+      .optional(),
     logicalRows: z.array(
       z
         .object({
@@ -45,6 +56,14 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    groupAction: z
+      .object({
+        key: z.string(),
+        requestedCollapsed: z.boolean(),
+        currentCollapsed: z.boolean().nullable()
+      })
+      .strip()
+      .optional(),
     navigationAction: z
       .object({
         operation: openEnum(['jump', 'select', 'unknown'], 'unknown'),

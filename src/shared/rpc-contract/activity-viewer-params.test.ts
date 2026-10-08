@@ -90,3 +90,15 @@ it('requires an explicit target for select and rejects unsupported modifiers', (
   expect(ActivityViewerParams.safeParse({ ...target, paneKey: '' }).success).toBe(false)
   expect(ActivityViewerParams.safeParse({ ...target, ctrlKey: true }).success).toBe(false)
 })
+
+it('requires an explicit group key for a surface-local group toggle', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'group-toggle',
+    groupKey: 'status:done'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, groupKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, collapsed: true }).success).toBe(false)
+})
