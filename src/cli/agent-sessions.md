@@ -59,3 +59,7 @@
 작업공간의 hook은 `agent hooks workspace-check`·`setup-imports`로 조회하며 `--request-file`에 `{repo}`를 전달합니다. 검사 실패는 오류로 반환하고 스크립트를 실행하지 않습니다. folder workspace에는 Git repository hook이 없습니다. `agent hooks issue-read`는 같은 요청으로 private override와 shared command를 읽습니다. 이 조회의 출력에는 요청한 명령 본문이 포함됩니다.
 
 `agent hooks issue-write`는 `{repo, content}`를 파일이나 stdin으로 받아 실행 호스트의 private override를 저장합니다. 빈 content는 override를 지워 shared command를 다시 적용합니다. 이 명령은 스크립트를 실행하거나 저장한 본문을 출력하지 않습니다. Git repository workspace에서만 지원하며 SSH filesystem이 없거나 private override의 ignore 보호를 저장할 수 없으면 실패합니다.
+
+orchestration 메시지 본문은 `orca orchestration send --subject <text> --body-file <path|->` 또는 `orca orchestration reply --id <message-id> --body-file <path|->`로 전달합니다. 파일은 CLI를 실행한 클라이언트에서 읽으며 UTF-8 일반 파일과 최대 1 MiB를 허용합니다. `-`는 파이프로 전달한 stdin입니다. `--body`와 함께 사용할 수 없습니다. 기존 `--body`는 호환을 위해 유지하므로 비공개 본문에는 파일·stdin을 사용합니다.
+
+send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문·payload를 출력하지 않습니다. 본문이 필요한 경우 명시적으로 inbox를 조회합니다. 동일 발송을 재개할 때는 같은 `--retry-request <id>`를 사용합니다.
