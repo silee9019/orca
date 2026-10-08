@@ -63,3 +63,5 @@
 orchestration 메시지 본문은 `orca orchestration send --subject <text> --body-file <path|->` 또는 `orca orchestration reply --id <message-id> --body-file <path|->`로 전달합니다. 파일은 CLI를 실행한 클라이언트에서 읽으며 UTF-8 일반 파일과 최대 1 MiB를 허용합니다. `-`는 파이프로 전달한 stdin입니다. `--body`와 함께 사용할 수 없습니다. 기존 `--body`는 호환을 위해 유지하므로 비공개 본문에는 파일·stdin을 사용합니다.
 
 send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문·payload를 출력하지 않습니다. 본문이 필요한 경우 명시적으로 inbox를 조회합니다. 동일 발송을 재개할 때는 같은 `--retry-request <id>`를 사용합니다.
+
+터미널의 비공개 입력은 `orca terminal send --terminal <handle> --text-file <path|->`로 전달합니다. CLI가 읽는 UTF-8 일반 파일 또는 piped stdin이며, 기존 터미널 입력 상한인 16 MiB를 적용합니다. `--text`와 함께 사용할 수 없습니다. `--enter`·`--wait-submit`·`--retry-request`의 기존 실행 호스트 확인과 재시도 계약은 동일합니다.
