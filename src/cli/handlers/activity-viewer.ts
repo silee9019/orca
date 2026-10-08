@@ -22,7 +22,10 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       }
     }
     const enabled =
-      operation === 'compact' || operation === 'children' || operation === 'search-visible'
+      operation === 'preview' ||
+      operation === 'compact' ||
+      operation === 'children' ||
+      operation === 'search-visible'
         ? getRequiredStringFlag(flags, 'enabled')
         : undefined
     if (enabled !== undefined && enabled !== 'true' && enabled !== 'false') {
@@ -43,7 +46,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'copy' ||
+      ...(operation === 'preview' ||
+      operation === 'copy' ||
       operation === 'read-toggle' ||
       operation === 'clear-thread' ||
       operation === 'jump' ||
@@ -93,6 +97,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity copy': handler('copy'),
+  'ui activity preview': handler('preview'),
   'ui activity close': handler('close'),
   'ui activity resize': handler('resize'),
   'ui activity scroll': handler('scroll'),

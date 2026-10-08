@@ -1,3 +1,4 @@
+import { applyActivityThreadPreviewRequest } from './activity-thread-preview-command'
 import { applyActivityThreadCopyRequest } from './activity-thread-copy-command'
 import { applyActivityListScrollRequest } from './activity-list-scroll-command'
 import { applyActivityThreadListResizeRequest } from './activity-thread-list-resize-command'
@@ -14,6 +15,9 @@ export function applyActivityViewerDirectRequest(
   request: ActivityViewerRequest,
   command: ActivityViewerCommand
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> | null {
+  if (command.operation === 'preview') {
+    return applyActivityThreadPreviewRequest(request, command)
+  }
   if (command.operation === 'copy') {
     return applyActivityThreadCopyRequest(request, command)
   }

@@ -1,3 +1,7 @@
+import {
+  getWorktreeExecutionHostId,
+  getSettingsFocusedExecutionHostId
+} from '../../../../shared/execution-host'
 import React, { useCallback } from 'react'
 import { ExternalLink, MonitorUp, Pencil, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,18 +32,12 @@ import { useWorktreeCardLifecycleEffects } from '../sidebar/use-worktree-card-li
 import { useWorktreeCardSecondaryDetails } from '../sidebar/use-worktree-card-secondary-details'
 import { getReviewLabel } from '../sidebar/worktree-review-helpers'
 import { ActivityThreadHoverCardSummary } from './activity-thread-hover-card-summary'
-import type { AgentPaneThread } from './activity-thread-types'
+import type {
+  ActivityThreadHoverCardProps,
+  ActivityThreadHoverCardContentProps
+} from './activity-thread-hover-card-props'
 
-export type ActivityThreadHoverCardProps = {
-  thread: AgentPaneThread
-  children: React.ReactElement
-  openDelay?: number
-  closeDelay?: number
-  onJumpToWorkspace?: (thread: AgentPaneThread) => void
-  canJumpToWorkspace?: boolean
-  /** Keeps the preview closed, e.g. while the row's right-click menu covers it. */
-  suppressed?: boolean
-}
+export type { ActivityThreadHoverCardProps } from './activity-thread-hover-card-props'
 
 export function ActivityThreadHoverCard({
   thread,
@@ -50,6 +48,7 @@ export function ActivityThreadHoverCard({
   canJumpToWorkspace,
   suppressed = false
 }: ActivityThreadHoverCardProps): React.JSX.Element {
+  const previewId = React.useId()
   const detailsHoverControl = useWorktreeCardDetailsHoverControl()
   const open = detailsHoverControl.hoverOpen && !suppressed
 
@@ -60,10 +59,13 @@ export function ActivityThreadHoverCard({
       openDelay={openDelay}
       closeDelay={closeDelay}
     >
-      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardTrigger asChild data-activity-preview-trigger={previewId}>
+        {children}
+      </HoverCardTrigger>
       {open ? (
         <ActivityThreadHoverCardContent
           thread={thread}
+          previewId={previewId}
           detailsHoverControl={detailsHoverControl}
           onJumpToWorkspace={onJumpToWorkspace}
           canJumpToWorkspace={canJumpToWorkspace}
@@ -75,15 +77,11 @@ export function ActivityThreadHoverCard({
 
 function ActivityThreadHoverCardContent({
   thread,
+  previewId,
   detailsHoverControl,
   onJumpToWorkspace,
   canJumpToWorkspace
-}: {
-  thread: AgentPaneThread
-  detailsHoverControl: ReturnType<typeof useWorktreeCardDetailsHoverControl>
-  onJumpToWorkspace?: (thread: AgentPaneThread) => void
-  canJumpToWorkspace?: boolean
-}): React.JSX.Element {
+}: ActivityThreadHoverCardContentProps): React.JSX.Element {
   const { worktree, repo } = thread
   const foundation = useWorktreeCardFoundation({ worktree, repo: repo ?? undefined })
   const review = useWorktreeCardReviewDetails({
@@ -209,6 +207,14 @@ function ActivityThreadHoverCardContent({
 
   return (
     <HoverCardContent
+      data-activity-preview-owner={previewId}
+      data-activity-preview-pane={thread.paneKey}
+      data-activity-preview-workspace={worktree.id}
+      data-activity-preview-host={getWorktreeExecutionHostId(
+        worktree,
+        repo ?? undefined,
+        getSettingsFocusedExecutionHostId(foundation.settings)
+      )}
       side="right"
       align="start"
       sideOffset={8}

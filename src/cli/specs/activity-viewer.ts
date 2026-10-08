@@ -2,6 +2,8 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 function options(operation: string): { flags: string[]; usage: string } {
   switch (operation) {
+    case 'preview':
+      return { flags: ['pane', 'enabled'], usage: ' --pane <pane-key> --enabled <true|false>' }
     case 'copy':
       return { flags: ['pane', 'kind'], usage: ' --pane <pane-key> --kind <title|path>' }
     case 'read-toggle':
@@ -42,6 +44,7 @@ function options(operation: string): { flags: string[]; usage: string } {
 export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
   'copy',
+  'preview',
   'close',
   'resize',
   'scroll',
@@ -71,6 +74,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Preview sends one mouse enter or leave through the original visible thread trigger and waits for its exact portal. Original delays, context-menu suppression, and pending menu close are preserved. This confirms only the local preview shell, not metadata readiness or remote acknowledgement.',
     'Copy uses the original single-thread menu title/path target and workspace availability gate. The text stays in the host viewer clipboard; the reply reports write acknowledgement and read-back verification separately (a timeout can leave an uncancelled write in flight) without printing it. No durable preference or remote activation acknowledgement is implied.',
     'Scroll moves the original surface scroll container once. Target is clamped to the extent at dispatch. Applied requires its native scroll acknowledgement and actual viewport-intersecting rows, excluding overscan. Sidebar offset memory uses the existing local ref; no durable persistence is claimed.',
     'Resize uses the original page list drag and its 320–720 pixel clamp. Applied requires its actual visible width and drag cleanup; local width is not durable persistence.',
