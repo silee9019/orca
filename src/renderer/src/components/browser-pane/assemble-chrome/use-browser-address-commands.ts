@@ -1,3 +1,8 @@
+import { snapshotBrowserAddressController } from './browser-address-controller-state'
+import {
+  useClientHistoryDocumentCommands,
+  type BrowserHistoryDocumentOwner
+} from './use-client-history-document-commands'
 import { useAppStore } from '@/store'
 import { isBrowserClientPageViewerTargetCurrent } from '@/runtime/browser-client-page-viewer-target'
 import type { BrowserClientAddressTarget } from '../../../../../shared/rpc-contract/browser-client-address-params'
@@ -7,8 +12,6 @@ import {
   BROWSER_ADDRESS_COMMAND_EVENT,
   type BrowserAddressEvent
 } from '@/runtime/browser-address-request'
-import { redactKagiSessionToken } from '../../../../../shared/browser-url'
-import type { BrowserAddressState } from '../../../../../shared/rpc-contract/browser-address-params'
 import { isBrowserAddressBarQueryTooLarge } from './browser-address-bar-suggestions'
 import type { BrowserAddressBarSuggestion } from './browser-address-bar-suggestions'
 export type BrowserAddressController = {
@@ -26,23 +29,8 @@ export type BrowserAddressController = {
   select: (url: string) => void
   submit: () => void
 }
-function snapshot(controller: BrowserAddressController): BrowserAddressState {
-  return {
-    value: redactKagiSessionToken(controller.value),
-    open: controller.open,
-    focused:
-      controller.inputRef.current !== null &&
-      document.activeElement === controller.inputRef.current,
-    selectedIndex: controller.suggestions.findIndex((row) => row.url === controller.selectedValue),
-    suggestions: controller.suggestions.map((row, index) => ({
-      index,
-      url: redactKagiSessionToken(row.url),
-      title: row.title,
-      kind: row.docLocation ? 'workspace-doc' : row.isSearch ? 'search' : 'history'
-    }))
-  }
-}
 export type BrowserAddressCommandOwner = {
+  historyDocumentSource?: BrowserHistoryDocumentOwner['source']
   page: string
   active: boolean
   clientTarget?: BrowserClientAddressTarget
@@ -51,6 +39,12 @@ export function useBrowserAddressCommands(
   owner: BrowserAddressCommandOwner | undefined,
   controller: BrowserAddressController
 ): void {
+  useClientHistoryDocumentCommands(
+    owner?.historyDocumentSource
+      ? { source: owner.historyDocumentSource, active: owner.active }
+      : undefined,
+    controller
+  )
   const current = useRef(controller)
   const clientEpoch = useRef(0)
   const currentOwner = useRef(owner)
@@ -114,7 +108,7 @@ export function useBrowserAddressCommands(
       operation.request.finish(
         accepted ? undefined : new Error('browser_address_edit_not_applied_effect_unknown'),
         {
-          ...snapshot(current.current),
+          ...snapshotBrowserAddressController(current.current),
           ...(operation.chromeFocus
             ? {
                 chromeFocusOwnerInvoked: true as const,
@@ -133,6 +127,9 @@ export function useBrowserAddressCommands(
   useEffect(() => {
     const receive = (event: WindowEventMap['orca:browser-address-command']): void => {
       const request = event.detail
+      if (currentOwner.current?.historyDocumentSource?.kind === 'staged') {
+        return
+      }
       if (!owner || request.page !== owner.page) {
         return
       }
@@ -171,7 +168,7 @@ export function useBrowserAddressCommands(
         const before = current.current
         const command = request.command
         if (command.action === 'status') {
-          request.finish(undefined, snapshot(before))
+          request.finish(undefined, snapshotBrowserAddressController(before))
           return
         }
         if (pending.current && !pending.current.request.isSettled()) {

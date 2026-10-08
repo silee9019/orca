@@ -28,10 +28,13 @@ const fixture = vi.hoisted(() => {
     browserDefaultSearchEngine: string | null
     browserKagiSessionLink: string | null
   } = { browserDefaultSearchEngine: null, browserKagiSessionLink: null }
+  const unsubscribe = vi.fn()
   return {
     ...settings,
     browserUrlHistory: history,
-    workspaceDocHistory: documents
+    workspaceDocHistory: documents,
+    subscribe: vi.fn(() => unsubscribe),
+    unsubscribe
   }
 })
 vi.mock('@/hooks/useShortcutLabel', () => ({ useShortcutLabel: () => '' }))
@@ -42,7 +45,9 @@ vi.mock('./browser-chrome-toolbar', () => ({
   BrowserChromeToolbar: ({ addressSlot }: { addressSlot: ReactNode }) => <>{addressSlot}</>
 }))
 vi.mock('@/store', () => ({
-  useAppStore: (selector: (state: typeof fixture) => unknown) => selector(fixture)
+  useAppStore: Object.assign((selector: (state: typeof fixture) => unknown) => selector(fixture), {
+    subscribe: fixture.subscribe
+  })
 }))
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -61,7 +66,10 @@ beforeEach(() => {
   fixture.browserDefaultSearchEngine = null
   fixture.browserKagiSessionLink = null
 })
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  expect(fixture.unsubscribe).toHaveBeenCalledTimes(fixture.subscribe.mock.calls.length)
+})
 const submit = vi.fn()
 const navigate = vi.fn()
 const openDoc = vi.fn()

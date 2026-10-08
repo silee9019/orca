@@ -1,3 +1,4 @@
+import { useBrowserTabDropCommands } from './use-browser-tab-drop-commands'
 import { openBrowserTabExternallyVerified } from './browser-tab-external-open'
 import { useBrowserTabUiCommands } from './use-browser-tab-ui-commands'
 import { useEffect, useState } from 'react'
@@ -112,6 +113,7 @@ export default function BrowserTab({
     id: tab.id,
     data: dragData
   })
+  useBrowserTabDropCommands({ workspace: tab.id, dragData })
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
   const openMenu = (point: { x: number; y: number }): void => {

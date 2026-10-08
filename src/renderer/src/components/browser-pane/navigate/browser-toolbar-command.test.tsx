@@ -126,3 +126,17 @@ it('does not acknowledge a live guest that rejects reload or an invalid retry UR
     'browser_guest_not_ready'
   )
 })
+
+it.each(['back-shortcut', 'forward-shortcut'] as const)(
+  'leaves %s to the native history owner without claiming or reloading',
+  (action) => {
+    const owner = setup()
+    expect(() => requestBrowserToolbar('page-a', action, Date.now() + 9000)).toThrow(
+      'browser_toolbar_unavailable'
+    )
+    expect(owner.reload).not.toHaveBeenCalled()
+    expect(owner.hard).not.toHaveBeenCalled()
+    expect(owner.stop).not.toHaveBeenCalled()
+    expect(owner.retry).not.toHaveBeenCalled()
+  }
+)

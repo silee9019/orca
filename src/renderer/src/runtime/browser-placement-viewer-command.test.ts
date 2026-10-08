@@ -4,6 +4,9 @@ import { isBrowserPlacementViewerCommand } from './browser-placement-viewer-comm
 describe('browser placement viewer routing boundary', () => {
   it('keeps client submission and existing client navigation before the runtime guard', () => {
     expect(isBrowserPlacementViewerCommand({ operation: 'client-submission' })).toBe(true)
+    expect(isBrowserPlacementViewerCommand({ operation: 'client-document' })).toBe(true)
+    expect(isBrowserPlacementViewerCommand({ operation: 'client-staged-document' })).toBe(true)
+    expect(isBrowserPlacementViewerCommand({ operation: 'client-deferred' })).toBe(true)
     expect(isBrowserPlacementViewerCommand({ operation: 'client-navigation' })).toBe(true)
   })
 

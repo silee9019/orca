@@ -11,6 +11,8 @@ import type {
   BrowserCaptureSelectionScreenshotResult
 } from '../../../../../shared/browser-grab-types'
 import { useGrabMode } from './useGrabMode'
+import { paneChannel } from '../client-hosted-browser-pane-test-rig'
+import { useBrowserPageKeyboardShortcuts } from '../host-guest/use-browser-page-keyboard-shortcuts'
 import { useBrowserPageGrabAnnotations } from './use-browser-page-grab-annotations'
 
 const state = vi.hoisted((): { store?: ReturnType<typeof createTestStore> } => ({}))
@@ -42,15 +44,33 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
+let previousApi: PropertyDescriptor | undefined
 beforeEach(() => {
+  previousApi = Object.getOwnPropertyDescriptor(window, 'api')
   state.store = createTestStore()
 })
 afterEach(() => {
   cleanup()
-  Reflect.deleteProperty(window, 'api')
+  if (previousApi) {
+    Object.defineProperty(window, 'api', previousApi)
+  } else {
+    Reflect.deleteProperty(window, 'api')
+  }
 })
 
-function mount(invalidateBeforePendingEffect = false, isActive = false, markupIsActive = false) {
+function mount(
+  invalidateBeforePendingEffect = false,
+  isActive = false,
+  markupIsActive = false,
+  bindGuestShortcuts = false
+) {
+  const modeEvents = paneChannel<{ browserPageId: string; intent: 'copy' | 'annotate' }>()
+  const actionEvents = paneChannel<{ browserPageId: string; key: 'c' | 's' }>()
+  const extractHoverPayload = vi.fn(async () => ({
+    ok: true,
+    payload: makeAnnotation('page-1').payload
+  }))
+  let copiedText = ''
   const selection = deferred<BrowserGrabResult>()
   const screenshot = deferred<BrowserCaptureSelectionScreenshotResult>()
   const awaitGrabSelection = vi
@@ -62,7 +82,21 @@ function mount(invalidateBeforePendingEffect = false, isActive = false, markupIs
   Object.defineProperty(window, 'api', {
     configurable: true,
     value: {
+      ui: {
+        onBrowserHistoryNavigate: () => () => {},
+        onReloadBrowserPage: () => () => {},
+        onHardReloadBrowserPage: () => () => {},
+        onZoomBrowserPage: () => () => {},
+        writeClipboardText: vi.fn(async (text: string) => {
+          copiedText = text
+        }),
+        readClipboardText: async () => copiedText
+      },
       browser: {
+        onGrabModeToggle: (callback: (page: string, intent: 'copy' | 'annotate') => void) =>
+          modeEvents.subscribe((event) => callback(event.browserPageId, event.intent)),
+        onGrabActionShortcut: actionEvents.subscribe,
+        extractHoverPayload,
         setGrabMode: vi.fn().mockResolvedValue({ ok: true }),
         awaitGrabSelection,
         captureSelectionScreenshot,
@@ -87,6 +121,22 @@ function mount(invalidateBeforePendingEffect = false, isActive = false, markupIs
       setBrowserAnnotationTrayOpen,
       browserAnnotationsLength: 0
     })
+    useBrowserPageKeyboardShortcuts({
+      browserTabId: 'page-1',
+      workspaceId: 'workspace-1',
+      isActive: bindGuestShortcuts,
+      chromeShortcutScope: 'inactive',
+      isActiveRef: { current: true },
+      markupIsActive,
+      webviewRef,
+      paneZoomLevelRef: { current: 0 },
+      setBrowserDefaultZoomLevel: () => {},
+      showBrowserZoomFeedback: () => {},
+      reloadWebviewOrRecoverGuest: () => {},
+      startGrabIntent: annotations.startGrabIntent,
+      handleGrabActionShortcut: annotations.handleGrabActionShortcut,
+      grabIsInteractive: bindGuestShortcuts && grab.state !== 'idle' && grab.state !== 'error'
+    })
     const { cancelPendingBrowserCapture } = annotations
     useLayoutEffect(() => {
       if (invalidateBeforePendingEffect && grab.state === 'confirming') {
@@ -97,6 +147,10 @@ function mount(invalidateBeforePendingEffect = false, isActive = false, markupIs
   })
   return {
     ...hook,
+    modeEvents,
+    actionEvents,
+    extractHoverPayload,
+    readCopied: () => copiedText,
     selection,
     screenshot,
     awaitGrabSelection,
@@ -455,4 +509,37 @@ it('keeps toggle-off pending through native acknowledgment and refuses a competi
     native.resolve(true)
   })
   await expect(pending).resolves.toMatchObject({ state: 'idle', intent: 'copy' })
+})
+
+it('routes guest grab toggles into the actual capture owner and preserves page and markup guards', async () => {
+  const h = mount(false, true, false, true)
+  act(() => h.modeEvents.emit({ browserPageId: 'other', intent: 'copy' }))
+  expect(h.result.current.grab.state).toBe('idle')
+  expect(h.awaitGrabSelection).not.toHaveBeenCalled()
+  act(() => h.modeEvents.emit({ browserPageId: 'page-1', intent: 'copy' }))
+  await waitFor(() => expect(h.result.current.grab.state).toBe('awaiting'))
+  expect(h.awaitGrabSelection).toHaveBeenCalledWith(
+    expect.objectContaining({ browserPageId: 'page-1' })
+  )
+  act(() => h.modeEvents.emit({ browserPageId: 'page-1', intent: 'copy' }))
+  await waitFor(() => expect(h.result.current.grab.state).toBe('idle'))
+  h.unmount()
+  const blocked = mount(false, true, true, true)
+  act(() => blocked.modeEvents.emit({ browserPageId: 'page-1', intent: 'copy' }))
+  expect(blocked.result.current.grab.state).toBe('idle')
+  expect(blocked.awaitGrabSelection).not.toHaveBeenCalled()
+})
+
+it('routes a guest copy shortcut into the actual grab action owner and reads its fake clipboard and toast state', async () => {
+  const h = mount(false, true, false, true)
+  act(() => h.modeEvents.emit({ browserPageId: 'page-1', intent: 'copy' }))
+  await waitFor(() => expect(h.result.current.grab.state).toBe('awaiting'))
+  act(() => h.actionEvents.emit({ browserPageId: 'other', key: 'c' }))
+  expect(h.extractHoverPayload).not.toHaveBeenCalled()
+  act(() => h.actionEvents.emit({ browserPageId: 'page-1', key: 'c' }))
+  await waitFor(() => expect(h.result.current.annotations.grabToast?.message).toBe('Copied'))
+  expect(h.extractHoverPayload).toHaveBeenCalledExactlyOnceWith({ browserPageId: 'page-1' })
+  expect(h.readCopied()).toContain('Submit')
+  expect(h.result.current.annotations.grabToast?.type).toBe('success')
+  expect(h.result.current.grab.state).toBe('awaiting')
 })

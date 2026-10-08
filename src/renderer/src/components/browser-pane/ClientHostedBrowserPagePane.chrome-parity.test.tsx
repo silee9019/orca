@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { Toaster, toast } from 'sonner'
+import type * as SonnerModule from 'sonner'
 import type {
   BrowserCertificateFailure,
   BrowserLoadError,
@@ -22,7 +24,11 @@ const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
   message: vi.fn()
 }))
-vi.mock('sonner', () => ({ toast: toastMocks }))
+vi.mock('sonner', async (importOriginal) => {
+  const actual = await importOriginal<typeof SonnerModule>()
+  toastMocks.message.mockImplementation(actual.toast.message)
+  return { ...actual, toast: { ...actual.toast, ...toastMocks } }
+})
 
 const mocks = vi.hoisted(() => ({ attach: vi.fn() }))
 vi.mock('./browser-client-page-renderer-installation', () => ({
@@ -58,7 +64,11 @@ let proceedCertificate = vi.fn(async () => ({ ok: true as const }))
 let openUrl = vi.fn(async () => {})
 let writeClipboardText = vi.fn(async () => {})
 
+let previousStore = useAppStore.getState()
+let previousApi = Object.getOwnPropertyDescriptor(window, 'api')
 beforeEach(() => {
+  previousStore = useAppStore.getState()
+  previousApi = Object.getOwnPropertyDescriptor(window, 'api')
   Object.defineProperty(navigator, 'userAgent', { configurable: true, value: MAC_USER_AGENT })
   contextMenu = paneChannel()
   contextMenuDismissed = paneChannel()
@@ -95,7 +105,17 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  act(() => {
+    toast.dismiss()
+  })
   cleanup()
+  useAppStore.setState(previousStore, true)
+  expect(useAppStore.getState()).toBe(previousStore)
+  if (previousApi) {
+    Object.defineProperty(window, 'api', previousApi)
+  } else {
+    Reflect.deleteProperty(window, 'api')
+  }
   vi.clearAllMocks()
 })
 
@@ -119,6 +139,16 @@ describe('ClientHostedBrowserPagePane chrome parity', () => {
     act(() => contextMenu.emit(contextMenuEvent()))
     act(() => screen.getByRole('menuitem', { name: 'Copy Page URL' }).click())
     expect(writeClipboardText).toHaveBeenCalledWith('https://example.internal/app')
+  })
+
+  it('dismisses the actual context menu only for the event target page', () => {
+    renderPane()
+    act(() => contextMenu.emit(contextMenuEvent()))
+    expect(screen.getByTestId('browser-context-menu')).not.toBeNull()
+    act(() => contextMenuDismissed.emit({ browserPageId: 'page-b' }))
+    expect(screen.getByTestId('browser-context-menu')).not.toBeNull()
+    act(() => contextMenuDismissed.emit({ browserPageId: 'page-a' }))
+    expect(screen.queryByTestId('browser-context-menu')).toBeNull()
   })
 
   it('opens Find from the chord in chrome and from the chord forwarded out of the guest', () => {
@@ -331,7 +361,7 @@ describe('ClientHostedBrowserPagePane chrome parity', () => {
     expect(screen.queryByRole('button', { name: 'Copy Address' })).toBeNull()
   })
 
-  it('says so when the page asks for a permission Orca denied', () => {
+  it('says so when the page asks for a permission Orca denied', async () => {
     renderPane()
 
     act(() =>
@@ -342,6 +372,11 @@ describe('ClientHostedBrowserPagePane chrome parity', () => {
       })
     )
 
+    expect(
+      await screen.findByText(
+        'https://example.internal asked for camera or microphone access, and Orca denied it.'
+      )
+    ).not.toBeNull()
     expect(toastMocks.message).toHaveBeenCalledWith(
       'https://example.internal asked for camera or microphone access, and Orca denied it.',
       { id: 'browser-permission-denied:page-a:media' }
@@ -408,6 +443,7 @@ function renderPane(
   )
   render(
     <TooltipProvider>
+      <Toaster />
       <ClientHostedBrowserPagePane
         browserTab={page(overrides)}
         workspaceId="workspace-a"

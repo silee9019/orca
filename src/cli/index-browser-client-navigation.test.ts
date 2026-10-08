@@ -56,6 +56,15 @@ beforeEach(() => {
           suggestions: []
         }
       },
+      clientDocument: {
+        ...target,
+        accepted: true,
+        conversion: 'converted',
+        documentWorktreeId: target.worktreeId,
+        documentPageId: 'document-page',
+        documentWorkspaceId: 'workspace',
+        filePath: join(tmpdir(), 'fixture.html')
+      },
       clientSubmission: {
         ...target,
         url: 'https://after.test/',
@@ -85,7 +94,13 @@ afterEach(() => {
   process.exitCode = originalExitCode
 })
 function args(
-  command: 'client-navigate' | 'client-address' | 'client-find' | 'client-reload' | 'client-submit'
+  command:
+    | 'client-navigate'
+    | 'client-address'
+    | 'client-find'
+    | 'client-reload'
+    | 'client-submit'
+    | 'client-document'
 ) {
   return [
     'browser',
@@ -108,13 +123,15 @@ function args(
     '4',
     ...(command === 'client-navigate'
       ? ['--url', 'https://after.test/']
-      : command === 'client-submit'
-        ? ['--value', 'orca cli search']
-        : command === 'client-find'
-          ? ['--action', 'query', '--query', 'needle']
-          : command === 'client-reload'
-            ? []
-            : ['--action', 'draft', '--text', 'https://draft.test/']),
+      : command === 'client-document'
+        ? ['--value', './fixture.html']
+        : command === 'client-submit'
+          ? ['--value', 'orca cli search']
+          : command === 'client-find'
+            ? ['--action', 'query', '--query', 'needle']
+            : command === 'client-reload'
+              ? []
+              : ['--action', 'draft', '--text', 'https://draft.test/']),
     '--json'
   ]
 }
@@ -123,7 +140,8 @@ it.each([
   'client-address',
   'client-find',
   'client-reload',
-  'client-submit'
+  'client-submit',
+  'client-document'
 ] as const)(
   'passes the page environment as identity without selecting it as the viewer runtime',
   async (command) => {
@@ -142,13 +160,15 @@ it.each([
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-submit'
-          ? { entry: 'address-bar', value: 'orca cli search' }
-          : command === 'client-find'
-            ? { action: 'query', query: 'needle' }
-            : command === 'client-reload'
-              ? { entry: 'context-menu' }
-              : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-document'
+          ? { entry: 'address-bar', value: './fixture.html' }
+          : command === 'client-submit'
+            ? { entry: 'address-bar', value: 'orca cli search' }
+            : command === 'client-find'
+              ? { action: 'query', query: 'needle' }
+              : command === 'client-reload'
+                ? { entry: 'context-menu' }
+                : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )
@@ -157,7 +177,8 @@ it.each([
   'client-address',
   'client-find',
   'client-reload',
-  'client-submit'
+  'client-submit',
+  'client-document'
 ] as const)(
   'keeps explicit viewer runtime selection independent of the page environment identity',
   async (command) => {
@@ -176,13 +197,15 @@ it.each([
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-submit'
-          ? { entry: 'address-bar', value: 'orca cli search' }
-          : command === 'client-find'
-            ? { action: 'query', query: 'needle' }
-            : command === 'client-reload'
-              ? { entry: 'context-menu' }
-              : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-document'
+          ? { entry: 'address-bar', value: './fixture.html' }
+          : command === 'client-submit'
+            ? { entry: 'address-bar', value: 'orca cli search' }
+            : command === 'client-find'
+              ? { action: 'query', query: 'needle' }
+              : command === 'client-reload'
+                ? { entry: 'context-menu' }
+                : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )
@@ -191,7 +214,8 @@ it.each([
   'client-address',
   'client-find',
   'client-reload',
-  'client-submit'
+  'client-submit',
+  'client-document'
 ] as const)(
   'preserves ambient viewer selection without replacing the page environment identity',
   async (command) => {
@@ -210,13 +234,47 @@ it.each([
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-submit'
-          ? { entry: 'address-bar', value: 'orca cli search' }
-          : command === 'client-find'
-            ? { action: 'query', query: 'needle' }
-            : command === 'client-reload'
-              ? { entry: 'context-menu' }
-              : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-document'
+          ? { entry: 'address-bar', value: './fixture.html' }
+          : command === 'client-submit'
+            ? { entry: 'address-bar', value: 'orca cli search' }
+            : command === 'client-find'
+              ? { action: 'query', query: 'needle' }
+              : command === 'client-reload'
+                ? { entry: 'context-menu' }
+                : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )
+
+it('keeps the explicit document destination independent of the source page and viewer runtime', async () => {
+  fixture.call.mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: { runtimeId: 'viewer-runtime' },
+    result: {
+      applied: true,
+      clientDocument: {
+        ...target,
+        accepted: true,
+        conversion: 'opened-in-owning-worktree',
+        documentWorktreeId: 'folder:other',
+        documentPageId: 'document',
+        documentWorkspaceId: 'workspace',
+        filePath: join(tmpdir(), 'fixture.html')
+      }
+    }
+  })
+  await main([...args('client-document'), '--document-worktree', 'folder:other'], tmpdir())
+  expect(process.exitCode).toBeUndefined()
+  expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
+  expect(fixture.environments).not.toHaveBeenCalled()
+  expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
+    viewer: 'host',
+    operation: 'client-document',
+    entry: 'address-bar',
+    target,
+    value: './fixture.html',
+    documentWorktreeId: 'folder:other'
+  })
+})

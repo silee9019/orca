@@ -1,3 +1,7 @@
+import { BROWSER_CLIENT_INPUT_FEEDBACK_HANDLER_GROUPS } from './browser-client-input-feedback-handler-groups'
+import { BROWSER_TITLEBAR_PAIRED_ACTIVATION_HANDLER_GROUPS } from './browser-titlebar-paired-activation-handler-groups'
+import { BROWSER_CLIENT_HISTORY_HANDLER_GROUPS } from './browser-client-history-handler-groups'
+import { BROWSER_TOOLBAR_EXTERNAL_HANDLER_GROUPS } from './browser-toolbar-external-handler-groups'
 import { BROWSER_PAIRED_NEW_TAB_HANDLER_GROUPS } from './browser-paired-new-tab-handler-groups'
 import { BROWSER_SERVER_REOPEN_HANDLER_GROUPS } from './browser-server-reopen-handler-groups'
 import { BROWSER_GRAB_TOAST_HANDLER_GROUPS } from './browser-grab-toast-handler-groups'
@@ -43,7 +47,42 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       (await import('./handlers/browser-webauthn-dialog.js')).BROWSER_WEBAUTHN_DIALOG_HANDLERS
   },
 
+  ...BROWSER_CLIENT_INPUT_FEEDBACK_HANDLER_GROUPS,
+  {
+    name: 'browser-client-history-document',
+    keys: ['browser client-history-document', 'browser client-staged-history-document'],
+    load: async () =>
+      (await import('./handlers/browser-client-history-document.js'))
+        .BROWSER_CLIENT_HISTORY_DOCUMENT_HANDLERS
+  },
+  ...BROWSER_TITLEBAR_PAIRED_ACTIVATION_HANDLER_GROUPS,
+  {
+    name: 'browser-tab-drop',
+    keys: ['browser tab-drop', 'browser tab-drag cancel'],
+    load: async () => (await import('./handlers/browser-tab-drop.js')).BROWSER_TAB_DROP_HANDLERS
+  },
+  {
+    name: 'browser-client-staged-document',
+    keys: ['browser client-staged-document'],
+    load: async () =>
+      (await import('./handlers/browser-client-staged-document.js'))
+        .BROWSER_CLIENT_STAGED_DOCUMENT_HANDLERS
+  },
+  ...BROWSER_CLIENT_HISTORY_HANDLER_GROUPS,
+  {
+    name: 'browser-client-deferred',
+    keys: ['browser client-defer'],
+    load: async () =>
+      (await import('./handlers/browser-client-deferred.js')).BROWSER_CLIENT_DEFERRED_HANDLERS
+  },
+  ...BROWSER_TOOLBAR_EXTERNAL_HANDLER_GROUPS,
   ...BROWSER_PAIRED_NEW_TAB_HANDLER_GROUPS,
+  {
+    name: 'browser-client-document',
+    keys: ['browser client-document'],
+    load: async () =>
+      (await import('./handlers/browser-client-document.js')).BROWSER_CLIENT_DOCUMENT_HANDLERS
+  },
   {
     name: 'browser-client-submission',
     keys: ['browser client-submit'],

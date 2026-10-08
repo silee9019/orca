@@ -1,10 +1,11 @@
-import { BrowserClientSubmissionViewerCommand } from './browser-client-submission-params'
-import { BrowserClientReloadViewerCommand } from './browser-client-reload-params'
-import { BrowserClientFindViewerCommand } from './browser-client-find-params'
-import { BrowserClientAddressViewerCommand } from './browser-client-address-params'
+import { BrowserClientNavigationCommands } from './browser-client-navigation-commands'
+import { BrowserTitlebarPairedActivationCommand } from './browser-titlebar-paired-activation-params'
+import { BrowserTabDropViewerCommands } from './browser-tab-drop-params'
+import { BrowserToolbarAction } from './browser-toolbar-navigation-params'
+export { BrowserToolbarAction } from './browser-toolbar-navigation-params'
+import { BrowserToolbarExternalViewerCommand } from './browser-toolbar-external-params'
 import { BrowserPairedNewTabCommand } from './browser-paired-new-tab-params'
 import { BrowserServerReopenCommand } from './browser-server-reopen-params'
-import { BrowserClientNavigationViewerCommand } from './browser-client-navigation-params'
 import { BrowserGrabToastCommand } from './browser-grab-toast-params'
 import { BrowserWebAuthnFocusTarget } from './browser-webauthn-focus-params'
 import { BrowserEgressCommand } from './browser-egress-params'
@@ -55,25 +56,15 @@ import { GRAB_BUDGET } from '../browser-grab-types'
 
 export const BrowserViewerPreset = z.enum(BROWSER_VIEWPORT_PRESETS.map((preset) => preset.id))
 
-export const BrowserToolbarAction = z.enum([
-  'back',
-  'forward',
-  'reload-button',
-  'reload',
-  'hard-reload'
-])
-export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
-
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
-  BrowserClientSubmissionViewerCommand,
-  BrowserClientReloadViewerCommand,
-  BrowserClientFindViewerCommand,
-  BrowserClientAddressViewerCommand,
+  ...BrowserClientNavigationCommands,
+  ...BrowserTabDropViewerCommands,
+  BrowserTitlebarPairedActivationCommand,
+  BrowserToolbarExternalViewerCommand,
   BrowserPairedNewTabCommand,
   z.object({ viewer, operation: z.literal('server-reopen'), command: BrowserServerReopenCommand }),
-  BrowserClientNavigationViewerCommand,
   z.object({ viewer, operation: z.literal('grab-toast'), command: BrowserGrabToastCommand }),
   z.object({
     viewer,

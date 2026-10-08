@@ -1,3 +1,13 @@
+import { requestBrowserClientInputFeedback } from './browser-client-input-feedback-request'
+import { applyBrowserClientHistoryDocumentRequest } from './browser-client-history-document-request'
+import { requestBrowserTabDragCancel } from './browser-tab-drag-cancel-request'
+import { requestBrowserTitlebarPairedActivation } from './browser-titlebar-paired-activation-request'
+import { requestBrowserTabDrop } from './browser-tab-drop-request'
+import { applyBrowserClientStagedDocumentRequest } from './browser-client-staged-document-request'
+import { applyBrowserClientHistoryRequest } from './browser-client-history-request'
+import { applyBrowserClientDeferredRequest } from './browser-client-deferred-request'
+import { requestBrowserToolbarExternal } from './browser-toolbar-external-request'
+import { applyBrowserClientDocumentRequest } from './browser-client-document-request'
 import { applyBrowserClientSubmissionRequest } from './browser-client-submission-request'
 import { applyBrowserClientReloadRequest } from './browser-client-reload-request'
 import { applyBrowserClientFindRequest } from './browser-client-find-request'
@@ -39,6 +49,31 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'tab-drag-cancel') {
+    const tabDragCancel = await requestBrowserTabDragCancel(command.target, expiresAt)
+    return { ...base, applied: true, tabDragCancel }
+  }
+  if (command.operation === 'client-input-feedback') {
+    const clientInputFeedback = await requestBrowserClientInputFeedback(command, expiresAt)
+    return { ...base, applied: true, clientInputFeedback }
+  }
+  if (command.operation === 'client-history-document') {
+    return applyBrowserClientHistoryDocumentRequest(command, expiresAt)
+  }
+  if (command.operation === 'tab-drop') {
+    const tabDrop = await requestBrowserTabDrop(command.target, command.destination, expiresAt)
+    return { ...base, applied: true, tabDrop }
+  }
+  if (command.operation === 'titlebar-activate-paired') {
+    return {
+      ...base,
+      applied: true,
+      titlebarPairedActivation: await requestBrowserTitlebarPairedActivation(
+        command.target,
+        expiresAt
+      )
+    }
+  }
   if (command.operation === 'server-reopen') {
     const serverReopen = await requestBrowserServerReopen(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, serverReopen }
@@ -110,6 +145,22 @@ export async function applyBrowserPlacementViewerAction(
       applied: true,
       pairedNewTab: await requestBrowserPairedNewTab(command.target, expiresAt)
     }
+  }
+  if (command.operation === 'toolbar-external') {
+    const toolbarExternal = await requestBrowserToolbarExternal(command.command, expiresAt)
+    return { ...base, page: command.command.page, applied: true, toolbarExternal }
+  }
+  if (command.operation === 'client-deferred') {
+    return applyBrowserClientDeferredRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-history') {
+    return applyBrowserClientHistoryRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-staged-document') {
+    return applyBrowserClientStagedDocumentRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-document') {
+    return applyBrowserClientDocumentRequest(command, expiresAt)
   }
   if (command.operation === 'client-submission') {
     return applyBrowserClientSubmissionRequest(command, expiresAt)

@@ -56428,7 +56428,7 @@
       "sources": [
         {
           "id": "command:browser toolbar-nav",
-          "fingerprint": "4a4845755d6237c2169cbd8a3feaba76e3d9b3423b98b868db9bdbbafbe7d80b"
+          "fingerprint": "0a82c701d2c192214da2e545cfa940f205386552e9bb358c70568c5461795944"
         }
       ],
       "rule": "command",
@@ -74413,10 +74413,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:BrowserChromeActionButton",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "CLI devtools covers the native browser branch only. Default-OS opening and document editor/download routing still require their exact owner; a single generic onSelect cannot be treated as one service.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:229bf92d1b836d9eac92",
@@ -74433,56 +74433,97 @@
       ],
       "leafMapping": {
         "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-chrome-toolbar.BrowserChromeActionButton.control.action.onSelect",
-        "source": "src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx",
+        "phase": 7,
+        "bundle": "tools",
         "effect": "BrowserChromeActionButton: action.onSelect에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-        "status": "source-traced-gap",
-        "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-        "next": "CLI devtools covers the native browser branch only. Default-OS opening and document editor/download routing still require their exact owner; a single generic onSelect cannot be treated as one service.",
-        "effectGroup": "navigation-toolbar-context",
-        "ownerTrace": {
+        "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:BrowserChromeActionButton",
+        "host": "explicit execution host or browser placement owner",
+        "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "Four actual toolbar descriptor owners, existing devtools/document commands and typed native external shell ACK; root72 focused13files100PASS",
+        "support": "implemented",
+        "evidence": "partial",
+        "sources": [
+          {
+            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:229bf92d1b836d9eac92",
+            "fingerprint": "229bf92d1b836d9eac92e6ed6f67c06d7e8f29149cf765fb8a46a58ba3206ae0"
+          }
+        ],
+        "rule": "control",
+        "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+        "originalSources": [
+          {
+            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:229bf92d1b836d9eac92",
+            "fingerprint": "229bf92d1b836d9eac92e6ed6f67c06d7e8f29149cf765fb8a46a58ba3206ae0"
+          }
+        ],
+        "leafMapping": {
           "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-chrome-toolbar.BrowserChromeActionButton.control.action.onSelect",
+          "source": "src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx",
+          "effect": "BrowserChromeActionButton: action.onSelect에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
           "status": "source-traced-gap",
-          "traceStatus": "source-traced",
-          "traceDepth": "downstream-owner-source-traced",
-          "group": "toolbar-overflow",
-          "ownerPath": "BrowserChromeToolbar action.onSelect / markup.onToggle are supplied toolbar tool descriptors",
-          "parentEffect": "toolbar-overflow",
-          "sourceId": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:229bf92d1b836d9eac92",
-          "sourceFingerprint": "229bf92d1b836d9eac92e6ed6f67c06d7e8f29149cf765fb8a46a58ba3206ae0",
-          "sourceLine": 73,
-          "binding": "Button onClick={action.onSelect}",
-          "calls": [],
-          "callOperations": [],
-          "bindingContext": "70:       size=\"icon\"\n71:       variant=\"ghost\"\n72:       className=\"h-7 w-7\"\n73:       onClick={action.onSelect}\n74:       title={action.label}\n75:       aria-label={action.label}\n76:       disabled={action.disabled}\n77:     >\n78:       <Icon className=\"size-4\" />",
-          "counterpartMatch": "none",
-          "counterpartCommands": ["browser devtools open"],
-          "remainingEffect": "CLI devtools covers the native browser branch only. Default-OS opening and document editor/download routing still require their exact owner; a single generic onSelect cannot be treated as one service.",
-          "verified": false,
-          "graphEvidence": "search_graph/search_code/get_code_snippet/trace_path on current tools worktree; dynamic JSX/returned object properties resolved through exact producer and consumer snippets. No other checkout source was read.",
-          "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-          "parentActionIds": [],
-          "formalInternalBindingReady": false,
-          "originalTraceDepth": "downstream-owner-unresolved",
-          "evidence": "source_only",
-          "resolvedOwnerPath": [
-            "BrowserChromeActionButton(action.onSelect) ← BrowserChromeToolbar.viewSource/openExternal descriptors",
-            "BrowserPageToolbar: browser.openDevTools({browserPageId}) / shell.openUrl(externalUrl)",
-            "DocPreviewToolbar ← HtmlDocPreview: openDocPreviewSource(document) / openDocPreviewExternally(document)",
-            "source: useAppStore.openFile(mode=edit, runtimeEnvironmentId, externalSshTargetId)",
-            "external: resolve per-file connection/runtime owner; local shell.openFilePath only if proven local; remote downloadAndOpenRemoteTerminalFile; unresolved owner refusal"
-          ],
-          "sourceEvidence": [
-            "browser-page-toolbar.tsx:219-244",
-            "workspace-doc/doc-preview-toolbar.tsx:98-119",
-            "workspace-doc/HtmlDocPreview.tsx:378-379",
-            "workspace-doc/doc-preview-document-actions.ts:30-97"
-          ]
+          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
+          "next": "CLI devtools covers the native browser branch only. Default-OS opening and document editor/download routing still require their exact owner; a single generic onSelect cannot be treated as one service.",
+          "effectGroup": "navigation-toolbar-context",
+          "ownerTrace": {
+            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-chrome-toolbar.BrowserChromeActionButton.control.action.onSelect",
+            "status": "source-traced-gap",
+            "traceStatus": "source-traced",
+            "traceDepth": "downstream-owner-source-traced",
+            "group": "toolbar-overflow",
+            "ownerPath": "BrowserChromeToolbar action.onSelect / markup.onToggle are supplied toolbar tool descriptors",
+            "parentEffect": "toolbar-overflow",
+            "sourceId": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar.tsx:229bf92d1b836d9eac92",
+            "sourceFingerprint": "229bf92d1b836d9eac92e6ed6f67c06d7e8f29149cf765fb8a46a58ba3206ae0",
+            "sourceLine": 73,
+            "binding": "Button onClick={action.onSelect}",
+            "calls": [],
+            "callOperations": [],
+            "bindingContext": "70:       size=\"icon\"\n71:       variant=\"ghost\"\n72:       className=\"h-7 w-7\"\n73:       onClick={action.onSelect}\n74:       title={action.label}\n75:       aria-label={action.label}\n76:       disabled={action.disabled}\n77:     >\n78:       <Icon className=\"size-4\" />",
+            "counterpartMatch": "none",
+            "counterpartCommands": ["browser devtools open"],
+            "remainingEffect": "CLI devtools covers the native browser branch only. Default-OS opening and document editor/download routing still require their exact owner; a single generic onSelect cannot be treated as one service.",
+            "verified": false,
+            "graphEvidence": "search_graph/search_code/get_code_snippet/trace_path on current tools worktree; dynamic JSX/returned object properties resolved through exact producer and consumer snippets. No other checkout source was read.",
+            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
+            "parentActionIds": [],
+            "formalInternalBindingReady": false,
+            "originalTraceDepth": "downstream-owner-unresolved",
+            "evidence": "source_only",
+            "resolvedOwnerPath": [
+              "BrowserChromeActionButton(action.onSelect) ← BrowserChromeToolbar.viewSource/openExternal descriptors",
+              "BrowserPageToolbar: browser.openDevTools({browserPageId}) / shell.openUrl(externalUrl)",
+              "DocPreviewToolbar ← HtmlDocPreview: openDocPreviewSource(document) / openDocPreviewExternally(document)",
+              "source: useAppStore.openFile(mode=edit, runtimeEnvironmentId, externalSshTargetId)",
+              "external: resolve per-file connection/runtime owner; local shell.openFilePath only if proven local; remote downloadAndOpenRemoteTerminalFile; unresolved owner refusal"
+            ],
+            "sourceEvidence": [
+              "browser-page-toolbar.tsx:219-244",
+              "workspace-doc/doc-preview-toolbar.tsx:98-119",
+              "workspace-doc/HtmlDocPreview.tsx:378-379",
+              "workspace-doc/doc-preview-document-actions.ts:30-97"
+            ]
+          },
+          "counterpartCommands": ["browser devtools open"]
         },
-        "counterpartCommands": ["browser devtools open"]
+        "domain": "browser",
+        "commands": [
+          "browser devtools open",
+          "browser toolbar-external",
+          "browser document --action open-source",
+          "browser document --action open-external"
+        ],
+        "commandExamples": []
       },
-      "domain": "browser",
-      "commands": [],
-      "commandExamples": []
+      "domain": "browser-formal",
+      "commands": ["browser devtools open", "browser toolbar-external", "browser document"],
+      "commandExamples": [
+        "browser devtools open",
+        "browser toolbar-external",
+        "browser document --action open-source",
+        "browser document --action open-external"
+      ],
+      "command": "browser devtools open"
     },
     {
       "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-chrome-toolbar.BrowserChromeToolbar.control.markup.onToggle",
@@ -78212,7 +78253,7 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:BrowserPane",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다.",
+      "gap": "원본 세 binding은 내부 setter 전달이며 독립 사용자 쓰기 누락을 찾지 못했습니다. 현재 원장 internal은 단일 parent만 허용하므로 native/client/remote producer들의 공통 parent를 증명하기 전까지 분류 승격을 보류합니다. 임의 parent를 지정하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "gap",
       "evidence": "partial",
@@ -78231,7 +78272,7 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "rationale": "원본 세 binding은 Store URL setter를 native/client/remote pane의 onSetUrl prop에 전달합니다. 독립 URL 쓰기 사용자 행동이 아닙니다. native/client guest navigation observer와 remote tab-info readback이 현재 URL을 전달합니다. URL producer의 실제 Chromium 미실증을 새 metadata-write 명령 부재로 세지 않습니다.",
       "originalSources": [
         {
           "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:114536a8b75da009c1fa",
@@ -78254,7 +78295,7 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:BrowserPane",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다.",
+        "gap": "원본 세 binding은 내부 setter 전달이며 독립 사용자 쓰기 누락을 찾지 못했습니다. 현재 원장 internal은 단일 parent만 허용하므로 native/client/remote producer들의 공통 parent를 증명하기 전까지 분류 승격을 보류합니다. 임의 parent를 지정하지 않습니다.",
         "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
         "support": "gap",
         "evidence": "partial",
@@ -78273,7 +78314,7 @@
           }
         ],
         "rule": "control",
-        "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+        "rationale": "원본 세 binding은 Store URL setter를 native/client/remote pane의 onSetUrl prop에 전달합니다. 독립 URL 쓰기 사용자 행동이 아닙니다. native/client guest navigation observer와 remote tab-info readback이 현재 URL을 전달합니다. URL producer의 실제 Chromium 미실증을 새 metadata-write 명령 부재로 세지 않습니다.",
         "originalSources": [
           {
             "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:114536a8b75da009c1fa",
@@ -78288,148 +78329,10 @@
             "fingerprint": "f13520d1e572144839af0cf2b9927ea4be01b702324b969227fd31268530fed3"
           }
         ],
-        "leafMapping": {
-          "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-workspace-pane.BrowserPane.control.setBrowserPageUrl",
-          "source": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-          "effect": "BrowserPane: setBrowserPageUrl에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "status": "source-traced-gap",
-          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-          "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-          "effectGroup": "remaining-trace",
-          "ownerTrace": {
-            "traceStatus": "source-traced",
-            "traceDepth": "source-local-owner",
-            "group": "driver-and-client-host",
-            "ownerPath": "BrowserPane → browser page store setters and reclaimActiveBrowserForDesktop; runtime-owned page streaming",
-            "parentEffect": "driver-and-client-host",
-            "sourceId": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:114536a8b75da009c1fa",
-            "sourceFingerprint": "114536a8b75da009c1fa9f06aad119528785d892eceddd84e7f6b6bac0cd50ea",
-            "sourceLine": 151,
-            "binding": "RemoteBrowserPagePane onSetUrl={setBrowserPageUrl}",
-            "calls": [],
-            "callOperations": [],
-            "bindingContext": "148:           isActive={isActive}\n149:           chromeShortcutScope={resolvedChromeShortcutScope}\n150:           onUpdatePageState={updateBrowserPageState}\n151:           onSetUrl={setBrowserPageUrl}\n152:         />\n153:       )\n154:     ) : (\n155:       <div className=\"flex h-full min-h-0 flex-1 bg-background\" />\n156:     )",
-            "counterpartMatch": "none",
-            "counterpartCommands": [],
-            "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-            "verified": false,
-            "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
-            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-            "parentActionIds": [],
-            "formalInternalBindingReady": false
-          },
-          "counterpartCommands": []
-        },
-        "domain": "browser",
+        "domain": "browser-formal",
         "commands": [],
         "commandExamples": [],
-        "supportProposal": "gap",
-        "evidenceProposal": "partial",
-        "additionalParents": [],
-        "nativeVerified": 0,
-        "reason": "하위 local/remote/client의 여러 navigation·guest observer 부모가 공유하는 store setter 전달 집계입니다. 특정 CLI 부모 하나로 원본 전체를 internal 승격하지 않습니다.",
-        "relatedParents": [
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.runRemoteNavigation",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.submitAddressBar",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.reconnectRemoteStream",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.navigateToUrl",
-            "support": "gap",
-            "commands": ["browser client-navigate"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.reload.reloadWebviewOrRecoverGuest",
-            "support": "gap",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.reload.runReloadTrigger-reload",
-            "support": "gap",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goBack",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.reload",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goForward",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "api.browser.publishClientPageMetadata",
-            "support": "internal",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          }
-        ],
-        "bindings": [
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:114536a8b75da009c1fa",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 151,
-            "fingerprint": "114536a8b75da009c1fa9f06aad119528785d892eceddd84e7f6b6bac0cd50ea",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "RemoteBrowserPagePane onSetUrl={setBrowserPageUrl}"
-          },
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:7fc8c468606adb126e3c",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 139,
-            "fingerprint": "7fc8c468606adb126e3c85ffb036d2d21875d9cda7d7bf8afa705ca320a77fa3",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "ClientHostedBrowserPagePane onSetUrl={setBrowserPageUrl}"
-          },
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:f13520d1e572144839af",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 203,
-            "fingerprint": "f13520d1e572144839af0cf2b9927ea4be01b702324b969227fd31268530fed3",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "BrowserPagePane onSetUrl={setBrowserPageUrl}"
-          }
-        ],
-        "fixtureScope": "실제 BrowserPane + 실제 useAppStore reducer; 하위 pane을 capture-only stub으로 대체한 전달/readback 검증입니다. 실제 guest/provider/socket/native 경로 증거가 아닙니다.",
-        "remainingGate": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다."
+        "classificationProposal": "internal pending a justified common parent; no independent missing CLI effect"
       },
       "domain": "browser-formal",
       "commands": [],
@@ -78557,7 +78460,7 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:BrowserPane",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다.",
+      "gap": "원본 세 binding은 내부 setter 전달이며 독립 사용자 쓰기 누락을 찾지 못했습니다. 현재 원장 internal은 단일 parent만 허용하므로 native/client/remote producer들의 공통 parent를 증명하기 전까지 분류 승격을 보류합니다. 임의 parent를 지정하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "gap",
       "evidence": "partial",
@@ -78576,7 +78479,7 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "rationale": "원본 세 binding은 상태 setter의 prop 전달 자체입니다. native/client/remote loading/title/loadError/favicon producer가 이 콜백을 사용하며 전달 자체에 독립 사용자 조작이나 쓰기 명령은 없습니다. client invalid/file 입력의 오류 피드백 잔여는 ClientHostedBrowserPagePane.navigateToUrl 원본 ID에 귀속합니다.",
       "originalSources": [
         {
           "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:8a0373b3c25babe61e4f",
@@ -78599,7 +78502,7 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:BrowserPane",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다.",
+        "gap": "원본 세 binding은 내부 setter 전달이며 독립 사용자 쓰기 누락을 찾지 못했습니다. 현재 원장 internal은 단일 parent만 허용하므로 native/client/remote producer들의 공통 parent를 증명하기 전까지 분류 승격을 보류합니다. 임의 parent를 지정하지 않습니다.",
         "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
         "support": "gap",
         "evidence": "partial",
@@ -78618,7 +78521,7 @@
           }
         ],
         "rule": "control",
-        "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+        "rationale": "원본 세 binding은 상태 setter의 prop 전달 자체입니다. native/client/remote loading/title/loadError/favicon producer가 이 콜백을 사용하며 전달 자체에 독립 사용자 조작이나 쓰기 명령은 없습니다. client invalid/file 입력의 오류 피드백 잔여는 ClientHostedBrowserPagePane.navigateToUrl 원본 ID에 귀속합니다.",
         "originalSources": [
           {
             "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:8a0373b3c25babe61e4f",
@@ -78633,148 +78536,10 @@
             "fingerprint": "dbc7f814e9877c142073f4a9b4c0326418a2ccfbc8905e52beb1bc83469b91ce"
           }
         ],
-        "leafMapping": {
-          "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-workspace-pane.BrowserPane.control.updateBrowserPageState",
-          "source": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-          "effect": "BrowserPane: updateBrowserPageState에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "status": "source-traced-gap",
-          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-          "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-          "effectGroup": "remaining-trace",
-          "ownerTrace": {
-            "traceStatus": "source-traced",
-            "traceDepth": "source-local-owner",
-            "group": "driver-and-client-host",
-            "ownerPath": "BrowserPane → browser page store setters and reclaimActiveBrowserForDesktop; runtime-owned page streaming",
-            "parentEffect": "driver-and-client-host",
-            "sourceId": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:8a0373b3c25babe61e4f",
-            "sourceFingerprint": "8a0373b3c25babe61e4f7c7c90f3f93d2a0137d16d0f1099d9fd711fc058b591",
-            "sourceLine": 150,
-            "binding": "RemoteBrowserPagePane onUpdatePageState={updateBrowserPageState}",
-            "calls": [],
-            "callOperations": [],
-            "bindingContext": "147:           worktreeId={browserTab.worktreeId}\n148:           isActive={isActive}\n149:           chromeShortcutScope={resolvedChromeShortcutScope}\n150:           onUpdatePageState={updateBrowserPageState}\n151:           onSetUrl={setBrowserPageUrl}\n152:         />\n153:       )\n154:     ) : (\n155:       <div className=\"flex h-full min-h-0 flex-1 bg-background\" />",
-            "counterpartMatch": "none",
-            "counterpartCommands": [],
-            "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-            "verified": false,
-            "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
-            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-            "parentActionIds": [],
-            "formalInternalBindingReady": false
-          },
-          "counterpartCommands": []
-        },
-        "domain": "browser",
+        "domain": "browser-formal",
         "commands": [],
         "commandExamples": [],
-        "supportProposal": "gap",
-        "evidenceProposal": "partial",
-        "additionalParents": [],
-        "nativeVerified": 0,
-        "reason": "하위 local/remote/client의 여러 navigation·guest observer 부모가 공유하는 store setter 전달 집계입니다. 특정 CLI 부모 하나로 원본 전체를 internal 승격하지 않습니다.",
-        "relatedParents": [
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.runRemoteNavigation",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.submitAddressBar",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-stream-remote-remote-browser-page-pane.RemoteBrowserPagePane.control.reconnectRemoteStream",
-            "support": "implemented",
-            "commands": ["browser remote-pane"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.navigateToUrl",
-            "support": "gap",
-            "commands": ["browser client-navigate"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.reload.reloadWebviewOrRecoverGuest",
-            "support": "gap",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.reload.runReloadTrigger-reload",
-            "support": "gap",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goBack",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.reload",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goForward",
-            "support": "implemented",
-            "commands": ["browser toolbar-nav"],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          },
-          {
-            "id": "api.browser.publishClientPageMetadata",
-            "support": "internal",
-            "commands": [],
-            "relationship": "부분 navigation 또는 metadata producer 부모; 원본 전체의 동등 부모 아님"
-          }
-        ],
-        "bindings": [
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:8a0373b3c25babe61e4f",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 150,
-            "fingerprint": "8a0373b3c25babe61e4f7c7c90f3f93d2a0137d16d0f1099d9fd711fc058b591",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "RemoteBrowserPagePane onUpdatePageState={updateBrowserPageState}"
-          },
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:8fe747d66f1fc164ee5e",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 202,
-            "fingerprint": "8fe747d66f1fc164ee5e175262be28f794654d265b42d2420fbea76d68901e9a",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "BrowserPagePane onUpdatePageState={updateBrowserPageState}"
-          },
-          {
-            "id": "control:src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx:dbc7f814e9877c142073",
-            "file": "src/renderer/src/components/browser-pane/assemble-chrome/browser-workspace-pane.tsx",
-            "line": 138,
-            "fingerprint": "dbc7f814e9877c142073f4a9b4c0326418a2ccfbc8905e52beb1bc83469b91ce",
-            "component": "BrowserPane",
-            "calls": [],
-            "callOperations": [],
-            "declaredId": "",
-            "titleKey": "",
-            "detail": "ClientHostedBrowserPagePane onUpdatePageState={updateBrowserPageState}"
-          }
-        ],
-        "fixtureScope": "실제 BrowserPane + 실제 useAppStore reducer; 하위 pane을 capture-only stub으로 대체한 전달/readback 검증입니다. 실제 guest/provider/socket/native 경로 증거가 아닙니다.",
-        "remainingGate": "client navigation/reload 전체 부모 gap, local guest event/metadata refresh와 remote stream tab-info observer의 전 범위 합성 동등성을 검증하지 않았습니다. mounted setter 전달 성공만으로 완료 승격하지 않습니다."
+        "classificationProposal": "internal pending a justified common parent; no independent missing CLI effect"
       },
       "domain": "browser-formal",
       "commands": [],
@@ -81781,9 +81546,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:ClientHostedBrowserPagePane",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "materialized client HTTP(S) 주소 탐색은 실제 Pane의 기존 loadURL→did-navigate→metadata accepted revision으로 연결했습니다. 원본 주소 검색어/로컬 문서 경로 routing/optimistic deferred staging은 이 명령의 지원 범위 밖이므로 전체 navigateToUrl은 gap을 유지합니다.",
+      "gap": "Materialized/staged web/search/document/invalid/file routes use existing actual owner fixtures and Store/DOM readback. Native engine and network completion not observed.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -81823,9 +81588,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:ClientHostedBrowserPagePane",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "materialized client HTTP(S) 주소 탐색은 실제 Pane의 기존 loadURL→did-navigate→metadata accepted revision으로 연결했습니다. 원본 주소 검색어/로컬 문서 경로 routing/optimistic deferred staging은 이 명령의 지원 범위 밖이므로 전체 navigateToUrl은 gap을 유지합니다.",
-        "verification": "browser-client-navigation-owner actual Pane+bridge8; CLI index3/handler5; publisher11+existing5; actual authority store2; existing metadata RPC/IPC12; full86files826PASS1skip; native0",
-        "support": "gap",
+        "gap": "Materialized/staged web/search/document/invalid/file routes use existing actual owner fixtures and Store/DOM readback. Native engine and network completion not observed.",
+        "verification": "root74 materialized/staged document/deferred fixtures; root75 prior socket/owner evidence; input-feedback01 actual owner18+reader7+socket1, root77 integration gate pending",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -81859,44 +81624,112 @@
         ],
         "leafMapping": {
           "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.navigateToUrl",
-          "source": "src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx",
+          "phase": 7,
+          "bundle": "tools",
           "effect": "ClientHostedBrowserPagePane: navigateToUrl에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "status": "source-traced-gap",
-          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-          "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-          "effectGroup": "remote-client-host-lifecycle",
-          "ownerTrace": {
-            "traceStatus": "source-traced",
-            "traceDepth": "source-local-owner",
-            "group": "client-page-ui",
-            "ownerPath": "ClientHostedBrowserPagePane → local address state/native guest actions plus client host placement/lease boundary",
-            "parentEffect": "client-page-ui",
-            "sourceId": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:2f9bc918d3ce41fc5846",
-            "sourceFingerprint": "2f9bc918d3ce41fc58468def922058bba21973ade1d56afc08cecddbe4969fe0",
-            "sourceLine": 363,
-            "binding": "BrowserAddressBar onSubmit={() => navigateToUrl(addressBarValue)}",
-            "calls": ["navigateToUrl"],
-            "callOperations": ["navigateToUrl"],
-            "bindingContext": "360:             <BrowserAddressBar\n361:               value={addressBarValue}\n362:               onChange={setAddressBarValue}\n363:               onSubmit={() => navigateToUrl(addressBarValue)}\n364:               onNavigate={navigateToUrl}\n365:               onOpenWorkspaceDoc={(docLocation) =>\n366:                 convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n367:               }\n368:               inputRef={addressBarInputRef}",
-            "counterpartMatch": "none",
-            "counterpartCommands": [],
-            "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-            "verified": false,
-            "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
-            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-            "parentActionIds": [],
-            "formalInternalBindingReady": false
+          "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:ClientHostedBrowserPagePane",
+          "host": "explicit execution host or browser placement owner",
+          "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+          "gap": "materialized client HTTP(S) 주소 탐색은 실제 Pane의 기존 loadURL→did-navigate→metadata accepted revision으로 연결했습니다. 원본 주소 검색어/로컬 문서 경로 routing/optimistic deferred staging은 이 명령의 지원 범위 밖이므로 전체 navigateToUrl은 gap을 유지합니다.",
+          "verification": "browser-client-navigation-owner actual Pane+bridge8; CLI index3/handler5; publisher11+existing5; actual authority store2; existing metadata RPC/IPC12; full86files826PASS1skip; native0",
+          "support": "gap",
+          "evidence": "partial",
+          "sources": [
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:2f9bc918d3ce41fc5846",
+              "fingerprint": "2f9bc918d3ce41fc58468def922058bba21973ade1d56afc08cecddbe4969fe0"
+            },
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:5cdc9d0a8a72e2275750",
+              "fingerprint": "5cdc9d0a8a72e2275750821215e659418ffb12c0a6dea57b70426303d0850cfc"
+            },
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:a408f404017caaf228d9",
+              "fingerprint": "a408f404017caaf228d9a6df7e01069212ddd544434269530420da9da2457909"
+            }
+          ],
+          "rule": "control",
+          "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+          "originalSources": [
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:2f9bc918d3ce41fc5846",
+              "fingerprint": "2f9bc918d3ce41fc58468def922058bba21973ade1d56afc08cecddbe4969fe0"
+            },
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:5cdc9d0a8a72e2275750",
+              "fingerprint": "5cdc9d0a8a72e2275750821215e659418ffb12c0a6dea57b70426303d0850cfc"
+            },
+            {
+              "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:a408f404017caaf228d9",
+              "fingerprint": "a408f404017caaf228d9a6df7e01069212ddd544434269530420da9da2457909"
+            }
+          ],
+          "leafMapping": {
+            "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.navigateToUrl",
+            "source": "src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx",
+            "effect": "ClientHostedBrowserPagePane: navigateToUrl에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+            "status": "source-traced-gap",
+            "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
+            "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
+            "effectGroup": "remote-client-host-lifecycle",
+            "ownerTrace": {
+              "traceStatus": "source-traced",
+              "traceDepth": "source-local-owner",
+              "group": "client-page-ui",
+              "ownerPath": "ClientHostedBrowserPagePane → local address state/native guest actions plus client host placement/lease boundary",
+              "parentEffect": "client-page-ui",
+              "sourceId": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:2f9bc918d3ce41fc5846",
+              "sourceFingerprint": "2f9bc918d3ce41fc58468def922058bba21973ade1d56afc08cecddbe4969fe0",
+              "sourceLine": 363,
+              "binding": "BrowserAddressBar onSubmit={() => navigateToUrl(addressBarValue)}",
+              "calls": ["navigateToUrl"],
+              "callOperations": ["navigateToUrl"],
+              "bindingContext": "360:             <BrowserAddressBar\n361:               value={addressBarValue}\n362:               onChange={setAddressBarValue}\n363:               onSubmit={() => navigateToUrl(addressBarValue)}\n364:               onNavigate={navigateToUrl}\n365:               onOpenWorkspaceDoc={(docLocation) =>\n366:                 convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n367:               }\n368:               inputRef={addressBarInputRef}",
+              "counterpartMatch": "none",
+              "counterpartCommands": [],
+              "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
+              "verified": false,
+              "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
+              "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
+              "parentActionIds": [],
+              "formalInternalBindingReady": false
+            },
+            "counterpartCommands": []
           },
-          "counterpartCommands": []
+          "domain": "browser",
+          "commands": ["browser client-navigate"],
+          "commandExamples": [],
+          "command": "browser client-navigate"
         },
-        "domain": "browser",
-        "commands": ["browser client-navigate"],
-        "commandExamples": [],
+        "domain": "browser-formal",
+        "commands": [
+          "browser client-navigate",
+          "browser client-submit",
+          "browser client-document",
+          "browser client-staged-document",
+          "browser client-defer",
+          "browser client-input-feedback"
+        ],
+        "commandExamples": ["browser client-navigate"],
         "command": "browser client-navigate"
       },
       "domain": "browser-formal",
-      "commands": ["browser client-navigate"],
-      "commandExamples": ["browser client-navigate"],
+      "commands": [
+        "browser client-navigate",
+        "browser client-submit",
+        "browser client-document",
+        "browser client-staged-document",
+        "browser client-defer",
+        "browser client-input-feedback"
+      ],
+      "commandExamples": [
+        "browser client-navigate",
+        "browser client-submit",
+        "browser client-document",
+        "browser client-staged-document",
+        "browser client-defer",
+        "browser client-input-feedback"
+      ],
       "command": "browser client-navigate"
     },
     {
@@ -81907,10 +81740,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:ClientHostedBrowserPagePane",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
+      "gap": "Exact current history suggestion supplied identity reaches original selection/convert callback and destination Store. Native engine/render/persistence not observed.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:42148f51df42380183a5",
@@ -81927,39 +81760,85 @@
       ],
       "leafMapping": {
         "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.convertBrowserPageToWorkspaceDoc",
-        "source": "src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx",
+        "phase": 7,
+        "bundle": "tools",
         "effect": "ClientHostedBrowserPagePane: convertBrowserPageToWorkspaceDoc에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-        "status": "source-traced-gap",
-        "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-        "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-        "effectGroup": "remote-client-host-lifecycle",
-        "ownerTrace": {
-          "traceStatus": "source-traced",
-          "traceDepth": "source-local-owner",
-          "group": "client-page-ui",
-          "ownerPath": "ClientHostedBrowserPagePane → local address state/native guest actions plus client host placement/lease boundary",
-          "parentEffect": "client-page-ui",
-          "sourceId": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:33c88b07e990a97725b1",
-          "sourceFingerprint": "33c88b07e990a97725b11acea276bb228db63161d7aa3e96e18fa59ea70b30b3",
-          "sourceLine": 365,
-          "binding": "BrowserAddressBar onOpenWorkspaceDoc={(docLocation) =>\n                convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n              }",
-          "calls": ["convertBrowserPageToWorkspaceDoc"],
-          "callOperations": ["convertBrowserPageToWorkspaceDoc"],
-          "bindingContext": "362:               onChange={setAddressBarValue}\n363:               onSubmit={() => navigateToUrl(addressBarValue)}\n364:               onNavigate={navigateToUrl}\n365:               onOpenWorkspaceDoc={(docLocation) =>\n366:                 convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n367:               }\n368:               inputRef={addressBarInputRef}\n369:               editSession={addressBarEditSession}\n370:               leadingIcon={",
-          "counterpartMatch": "none",
-          "counterpartCommands": [],
-          "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
-          "verified": false,
-          "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
-          "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-          "parentActionIds": [],
-          "formalInternalBindingReady": false
+        "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:ClientHostedBrowserPagePane",
+        "host": "explicit execution host or browser placement owner",
+        "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+        "gap": "Exact current history suggestion supplied identity reaches original selection/convert callback and destination Store. Native engine/render/persistence not observed.",
+        "verification": "history-document01 actual Bar/Pane15 +guard02 five +socket03 materialized/staged2; root76 focused history cases PASS; root77 integration gate pending",
+        "support": "implemented",
+        "evidence": "partial",
+        "sources": [
+          {
+            "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:42148f51df42380183a5",
+            "fingerprint": "42148f51df42380183a5cf731146b791864c248eb0669f3b6f146ba5a85d09a8"
+          }
+        ],
+        "rule": "control",
+        "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+        "originalSources": [
+          {
+            "id": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:33c88b07e990a97725b1",
+            "fingerprint": "33c88b07e990a97725b11acea276bb228db63161d7aa3e96e18fa59ea70b30b3"
+          }
+        ],
+        "leafMapping": {
+          "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.convertBrowserPageToWorkspaceDoc",
+          "source": "src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx",
+          "effect": "ClientHostedBrowserPagePane: convertBrowserPageToWorkspaceDoc에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+          "status": "source-traced-gap",
+          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
+          "next": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
+          "effectGroup": "remote-client-host-lifecycle",
+          "ownerTrace": {
+            "traceStatus": "source-traced",
+            "traceDepth": "source-local-owner",
+            "group": "client-page-ui",
+            "ownerPath": "ClientHostedBrowserPagePane → local address state/native guest actions plus client host placement/lease boundary",
+            "parentEffect": "client-page-ui",
+            "sourceId": "control:src/renderer/src/components/browser-pane/ClientHostedBrowserPagePane.tsx:33c88b07e990a97725b1",
+            "sourceFingerprint": "33c88b07e990a97725b11acea276bb228db63161d7aa3e96e18fa59ea70b30b3",
+            "sourceLine": 365,
+            "binding": "BrowserAddressBar onOpenWorkspaceDoc={(docLocation) =>\n                convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n              }",
+            "calls": ["convertBrowserPageToWorkspaceDoc"],
+            "callOperations": ["convertBrowserPageToWorkspaceDoc"],
+            "bindingContext": "362:               onChange={setAddressBarValue}\n363:               onSubmit={() => navigateToUrl(addressBarValue)}\n364:               onNavigate={navigateToUrl}\n365:               onOpenWorkspaceDoc={(docLocation) =>\n366:                 convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)\n367:               }\n368:               inputRef={addressBarInputRef}\n369:               editSession={addressBarEditSession}\n370:               leadingIcon={",
+            "counterpartMatch": "none",
+            "counterpartCommands": [],
+            "remainingEffect": "The source binding is inspected. No full CLI/UI equivalence or rendered/native acceptance is claimed.",
+            "verified": false,
+            "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
+            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
+            "parentActionIds": [],
+            "formalInternalBindingReady": false
+          },
+          "counterpartCommands": []
         },
-        "counterpartCommands": []
+        "domain": "browser",
+        "commands": [
+          "browser client-history-document",
+          "browser client-staged-history-document",
+          "browser client-document",
+          "browser client-staged-document"
+        ],
+        "commandExamples": []
       },
-      "domain": "browser",
-      "commands": [],
-      "commandExamples": []
+      "domain": "browser-formal",
+      "commands": [
+        "browser client-history-document",
+        "browser client-staged-history-document",
+        "browser client-document",
+        "browser client-staged-document"
+      ],
+      "commandExamples": [
+        "browser client-history-document",
+        "browser client-staged-history-document",
+        "browser client-document",
+        "browser client-staged-document"
+      ],
+      "command": "browser client-history-document"
     },
     {
       "id": "surface.tools.src-renderer-src-components-browser-pane-ClientHostedBrowserPagePane.ClientHostedBrowserPagePane.control.openBrowserFailureExternalUrl",
@@ -88311,7 +88190,7 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/workspace-doc/doc-preview-document-chip.tsx:DocPreviewDocumentChip",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Only production caller DocPreviewAddressEdit always supplies onBeginEdit, so the optional copyText fallback has no active caller. Existing path-copy menu effect is separate. Do not revive dormant callback.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "gap",
       "evidence": "partial",
@@ -88337,7 +88216,7 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/workspace-doc/doc-preview-document-chip.tsx:DocPreviewDocumentChip",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+        "gap": "Only production caller DocPreviewAddressEdit always supplies onBeginEdit, so the optional copyText fallback has no active caller. Existing path-copy menu effect is separate. Do not revive dormant callback.",
         "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
         "support": "gap",
         "evidence": "partial",
@@ -88597,7 +88476,7 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/workspace-doc/doc-preview-overflow-menu.tsx:DocPreviewOverflowMenu",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Forwards BrowserChromeToolbar overflow close policy; deferred share/popover owner is extensions-owned. No same share-owner receipt and no native focus execution; foreign bindings/support/evidence preserved.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "gap",
       "evidence": "partial",
@@ -88623,7 +88502,7 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/workspace-doc/doc-preview-overflow-menu.tsx:DocPreviewOverflowMenu",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+        "gap": "Forwards BrowserChromeToolbar overflow close policy; deferred share/popover owner is extensions-owned. No same share-owner receipt and no native focus execution; foreign bindings/support/evidence preserved.",
         "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
         "support": "gap",
         "evidence": "partial",
@@ -102462,7 +102341,7 @@
       "commandExamples": ["browser settings viewer"],
       "command": "browser settings viewer",
       "sourceSuccessor": {
-        "currentActionId": "surface.tools.src-renderer-src-components-settings-BrowserHomePageSetting.BrowserHomePageSetting.control.saveHomePage",
+        "currentActionId": "surface.tools.src-renderer-src-components-settings-BrowserHomePageSetting.BrowserHomePageSetting.control.value.trim",
         "reason": "기존 inline submit의 trim/normalize/onSave/toast 동작을 같은 컴포넌트의 saveHomePage 콜백으로 추출하고 UI submit 및 typed request가 함께 재사용합니다. 원본 source는 실제 제거되었고 원본 ID/fingerprint는 상태 원장에 보존합니다."
       }
     },
@@ -107517,9 +107396,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/settings/EphemeralVmsExperimentalSetting.tsx:EphemeralVmsExperimentalSetting",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "CLI dependency is not integrated at this worktree head.",
+      "gap": "Integrated settings writer and mounted VM toggle match in the isolated socket fixture; native VM provisioning, live accounts and platform runs remain outside this evidence.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -107528,7 +107407,7 @@
         }
       ],
       "rule": "control",
-      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "rationale": "The approved settings predecessor and mounted-owner socket test now run together in the integration checkout.",
       "originalSources": [
         {
           "id": "control:src/renderer/src/components/settings/EphemeralVmsExperimentalSetting.tsx:14af457aeff802484b3f",
@@ -107561,12 +107440,12 @@
         "evidenceDetails": [
           "tests/e2e/speech-vm-cli-effect.unit.test.ts: parser → RuntimeClient socket → RpcDispatcher → existing recipe script fake provider → create/suspend/resume/destroy marker and runtime JSON read-back",
           "src/main/ipc/ephemeral-vm*.test.ts: 기존 host/SSH/provisioned-root/cancel 경계",
-          "src/main/ephemeral-vm-operations.test.ts: duplicate provision ID 및 cancel settle까지 예약 유지"
+          "src/main/ephemeral-vm-operations.test.ts: duplicate provision ID 및 cancel settle까지 예약 유지",
+          "tests/e2e/predecessor/ephemeral-vm-settings-cli-effect.unit.test.ts: original mounted toggle compared to integrated settings writer over the socket"
         ],
         "remainingGate": [
           "실제 OS/계정/외부 provision 검증은 실행하지 않았으며 fixture partial입니다.",
-          "macOS/Linux/Windows 및 mixed-version native viewer 검증은 격리 CI가 필요합니다.",
-          "선행 settings 도메인 patch 통합과 해당 fixture 결과를 감독 ledger에서 결합해야 합니다."
+          "macOS/Linux/Windows 및 mixed-version native viewer 검증은 격리 CI가 필요합니다."
         ],
         "commands": ["settings desktop update"],
         "commandUsage": "orca settings desktop update --file <path|->",
@@ -107575,16 +107454,19 @@
             "src/renderer/src/components/settings/EphemeralVmsExperimentalSetting.tsx"
           ],
           "originalBindingsPreserved": true,
-          "fixtureKind": "existing settings/config writer socket readback; actual component action not exercised",
+          "fixtureKind": "actual mounted VM settings toggle and desktop writer through isolated socket readback",
           "missingEffects": [],
           "fullEffectEquivalence": false,
           "nativeEffectVerified": false
         }
       },
       "domain": "voice-vm",
-      "commands": [],
+      "commands": ["settings desktop update"],
       "commandExamples": ["settings desktop update"],
-      "dependencyCommand": ["settings desktop update"]
+      "dependencyCommand": ["settings desktop update"],
+      "implementationStatus": "implemented",
+      "command": "settings desktop update",
+      "evidencePaths": ["tests/e2e/predecessor/ephemeral-vm-settings-cli-effect.unit.test.ts"]
     },
     {
       "id": "surface.tools.src-renderer-src-components-settings-EphemeralVmsPane.EphemeralVmsPane.control.openWorkspaceComposerForRecipe",
@@ -107914,7 +107796,7 @@
       "commandExamples": ["browser settings viewer"],
       "command": "browser settings viewer",
       "sourceSuccessor": {
-        "currentActionId": "surface.agent-sessions.src-renderer-src-components-settings-KagiSessionLinkForm.KagiSessionLinkForm.control.clearSessionLink",
+        "currentActionId": "surface.tools.src-renderer-src-components-settings-KagiSessionLinkForm.KagiSessionLinkForm.control.setBrowserKagiSessionLink",
         "reason": "기존 clear 버튼 callback 본문을 같은 owner의 clearSessionLink로 추출하고 UI 및 typed request가 재사용합니다."
       }
     },
@@ -110004,11 +109886,7 @@
       "domain": "voice-vm",
       "commands": ["speech viewer"],
       "commandExamples": ["speech viewer"],
-      "command": "speech viewer",
-      "sourceSuccessor": {
-        "currentActionId": "surface.tools.src-renderer-src-components-settings-VoiceSpeechModelSection.VoiceSpeechModelSection.control.deleteModel-manifest.id-.catch",
-        "reason": "Existing deleteModel callback owns pending deletion and completion state."
-      }
+      "command": "speech viewer"
     },
     {
       "id": "surface.tools.src-renderer-src-components-settings-VoiceSpeechModelSection.VoiceSpeechModelSection.control.onUpdateVoiceSettings",
@@ -115416,9 +115294,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/TerminalTitlebarTabs.tsx:TerminalTitlebarTabs",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "기존 titlebar fixture는 presentation adapter를 통해 실제 BrowserTab/controller를 마운트합니다. 실제 TabBar/DndContext 전체와 paired void activation host ACK, SSH/native guest focus를 입증하지 않습니다. parent pointer DnD gap을 넘겨 internal 완료로 승격하지 않습니다.",
+      "gap": "호스트 authoritative mapping·정확 ACK·caller Store 투영은 실제 owner/소켓 fixture에서 확인했습니다. 실제 native window/focus는 실행하지 않았습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -115442,9 +115320,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/TerminalTitlebarTabs.tsx:TerminalTitlebarTabs",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "기존 titlebar fixture는 presentation adapter를 통해 실제 BrowserTab/controller를 마운트합니다. 실제 TabBar/DndContext 전체와 paired void activation host ACK, SSH/native guest focus를 입증하지 않습니다. parent pointer DnD gap을 넘겨 internal 완료로 승격하지 않습니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-        "support": "gap",
+        "gap": "호스트 authoritative mapping·정확 ACK·caller Store 투영은 실제 owner/소켓 fixture에서 확인했습니다. 실제 native window/focus는 실행하지 않았습니다.",
+        "verification": "Root75 focused11files72PASS includes actual Titlebar owner15 and two-socket activation1; missing host mapping RED2 then green. Native0.",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -115543,7 +115421,7 @@
         "domain": "browser-formal",
         "parent": "surface.tools.src-renderer-src-components-tab-bar-BrowserTab.tabRoot.control.onTabPointerDown",
         "parentSupport": "gap",
-        "commands": ["browser tab-ui"],
+        "commands": ["browser tab-ui", "browser titlebar-activate-paired"],
         "commandExamples": ["browser tab-ui --action activate"],
         "command": "browser tab-ui",
         "supportProposal": "gap",
@@ -115577,8 +115455,8 @@
       "domain": "browser-formal",
       "parent": "surface.tools.src-renderer-src-components-tab-bar-BrowserTab.tabRoot.control.onTabPointerDown",
       "parentSupport": "gap",
-      "commands": ["browser tab-ui"],
-      "commandExamples": ["browser tab-ui"],
+      "commands": ["browser tab-ui", "browser titlebar-activate-paired"],
+      "commandExamples": ["browser tab-ui", "browser titlebar-activate-paired"],
       "command": "browser tab-ui"
     },
     {
@@ -116099,9 +115977,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다.",
+      "gap": "실제 OS keyboard/native Chromium/helper/SSH host 실행0; navigation completion 주장0. 새 native action의 전체 CLI/socket adapter 실행은 root 정식통합 게이트입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -116110,7 +115988,7 @@
         }
       ],
       "rule": "shortcut",
-      "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
+      "rationale": "native는 conversion 없는 shortcut 전용 action으로 같은 guest 메서드를 호출하고, client는 client-history에서 같은 guest 메서드를 호출하며, remote는 기존 remote-pane navigation owner/RPC를 공유합니다. 문서 preview는 원본 shortcut consumer가 아닙니다. history 없는 경우는 명시 no-effect refusal이며 실제 native 키 전달/Chromium completion은 지원누락이 아닌 partial 증거 경계로 둡니다.",
       "originalSources": [
         {
           "id": "shortcut:'browser.back'",
@@ -116125,9 +116003,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-        "support": "gap",
+        "gap": "실제 OS keyboard/native Chromium/helper/SSH host 실행0; navigation completion 주장0. 새 native action의 전체 CLI/socket adapter 실행은 root 정식통합 게이트입니다.",
+        "verification": "native mounted exact owner8PASS + root74 parser/socket/actual Toolbar1PASS; conversion marker unchanged and old peer refuses without extra effect; client and remote existing owner fixtures remain partial.",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -116136,7 +116014,7 @@
           }
         ],
         "rule": "shortcut",
-        "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
+        "rationale": "native는 conversion 없는 shortcut 전용 action으로 같은 guest 메서드를 호출하고, client는 client-history에서 같은 guest 메서드를 호출하며, remote는 기존 remote-pane navigation owner/RPC를 공유합니다. 문서 preview는 원본 shortcut consumer가 아닙니다. history 없는 경우는 명시 no-effect refusal이며 실제 native 키 전달/Chromium completion은 지원누락이 아닌 partial 증거 경계로 둡니다.",
         "originalSources": [
           {
             "id": "shortcut:'browser.back'",
@@ -116145,52 +116023,21 @@
         ],
         "leafMapping": {
           "id": "shortcut.browser.back",
-          "phase": 7,
-          "bundle": "tools",
+          "source": "src/shared/keybindings/definitions-core-2.ts",
           "effect": "KEYBINDING_DEFINITION_CORE_2: browser.back에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
-          "host": "explicit execution host or browser placement owner",
-          "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-          "gap": "Actual renderer keydown, guest IPC and typed history receiver route to the same exact-page fake guest history methods (split target audit2files13PASS). Native keyboard delivery and the full document conversion fallback/rendered history effect remain gated.",
-          "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-          "support": "gap",
-          "evidence": "partial",
-          "sources": [
-            {
-              "id": "shortcut:'browser.back'",
-              "fingerprint": "04fee020c299b601f4d4a02d9e7b2ce0f2db7ad4b89a17e92d3a18e2f6804811"
-            }
-          ],
-          "rule": "shortcut",
-          "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
-          "originalSources": [
-            {
-              "id": "shortcut:'browser.back'",
-              "fingerprint": "04fee020c299b601f4d4a02d9e7b2ce0f2db7ad4b89a17e92d3a18e2f6804811"
-            }
-          ],
-          "leafMapping": {
-            "id": "shortcut.browser.back",
-            "source": "src/shared/keybindings/definitions-core-2.ts",
-            "effect": "KEYBINDING_DEFINITION_CORE_2: browser.back에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-            "status": "partial-existing-effect",
-            "command": "back|forward",
-            "service": "CLI runtime browserBack/browserForward → AgentBrowserBridge command; shortcut useBrowserPageWebviewShortcuts → exact webview goBack/goForward",
-            "evidence": "Actual handlers and shortcut listener read. CLI bridge and webview routes target same page but execution/response path differs.",
-            "next": "Fixture verify page-specific guest history and shortcut target routing; do not count keyboard dispatch or full rendered effect as covered.",
-            "effectGroup": "navigation-toolbar-context"
-          },
-          "domain": "browser",
-          "commands": [],
-          "commandExamples": ["back|forward"],
-          "evidenceDetail": [
-            "tools-shortcut-history-audit-67.log: 2 files 13 PASS before fixture typing correction; final focused/full will include exact final source",
-            "Actual useBrowserPageKeyboardShortcuts and useBrowserToolbarHistoryCommands mounted together; renderer Cmd+[ / Cmd+], guest IPC and typed request hit page-b3each, page-a0",
-            "Mac userAgent, IPC transport and guest methods are fake; no OS input/native guest/browser history rendered state"
-          ]
+          "status": "partial-existing-effect",
+          "command": "back|forward",
+          "service": "CLI runtime browserBack/browserForward → AgentBrowserBridge command; shortcut useBrowserPageWebviewShortcuts → exact webview goBack/goForward",
+          "evidence": "Actual handlers and shortcut listener read. CLI bridge and webview routes target same page but execution/response path differs.",
+          "next": "Fixture verify page-specific guest history and shortcut target routing; do not count keyboard dispatch or full rendered effect as covered.",
+          "effectGroup": "navigation-toolbar-context"
         },
         "domain": "browser",
-        "commands": ["browser toolbar-nav --viewer host --page <page> --action back"],
+        "commands": [
+          "orca browser toolbar-nav --viewer host --page <exact-native-page> --action back-shortcut",
+          "orca browser client-history --viewer host <exact target flags> --action back",
+          "orca browser remote-pane --viewer host <exact target flags> --action navigate --navigation back"
+        ],
         "commandExamples": ["back|forward"],
         "evidenceDetail": [
           "tools-shortcut-history-audit-67.log: 2 files 13 PASS before fixture typing correction; final focused/full will include exact final source",
@@ -116202,7 +116049,7 @@
         "additionalParents": [],
         "nativeVerified": 0,
         "sourceMigration": false,
-        "ownerTrace": "useBrowserPageKeyboardShortcuts → useBrowserPageWebviewShortcuts(renderer keydown / guest IPC) → native guest goBack/goForward; separate BrowserPageToolbar controls → useBrowserToolbarHistoryCommands → returnAcrossBrowserPageConversion/advanceAcrossBrowserPageConversion → convertBrowserPageToWorkspaceDoc or AppStore.convertBrowserPage",
+        "ownerTrace": "definition → native BrowserPagePane/useBrowserPageKeyboardShortcuts 또는 ClientHostedBrowserPagePane/useBrowserPageWebviewShortcuts → renderer capture 또는 ui.onBrowserHistoryNavigate → 해당 guest.goBack/goForward; remote RemoteBrowserPagePane/useRemoteBrowserPageChromeChords → useRemoteBrowserPageNavigation.runRemoteNavigation → exact environment+host page browser.back/forward RPC; CLI back/forward → getBrowserCommandTarget → RuntimeClient → RpcDispatcher(client-hosted routing first) → browserBack/Forward → AgentBrowserBridge.back/forward → per-page command queue/ensureSession → execAgentBrowser([back|forward]); client-hosted route → authority/epoch/host/page generation lease → client executor automation → exact registration → same local runtime RPC; AgentBrowserBridge helper는 매 호출 exact registered guest CDP proxy를 --session/--cdp와 함께 명시합니다. 별도 Chrome을 의도한 fallback은 없지만 실제 helper engine은 실행하지 않았습니다.",
         "relatedParents": [
           {
             "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goBack",
@@ -116213,17 +116060,42 @@
           }
         ],
         "newEvidence": [
-          "actual root68 BrowserPageToolbar mounted; ChromeToolbar presentation adapter only",
-          "typed back/forward → existing conversion owner → real page replacement/workspace mirror/provenance readback with no native guest",
-          "actual toolbar back button shares controls callback",
-          "existing document return owner → real AppStore replacement then fake grant provider revoke read-back",
-          "actual renderer shortcut + fake guest IPC with null native guest leave page unchanged; typed toolbar alone enters conversion fallback"
+          "현재 own source 집중3files25PASS: native split keyboard10 + remote mounted keyboard14 + remote CLI socket1",
+          "현재 own source 선택집중2files2PASS50skip: actual ClientHostedBrowserPagePane history listener→same fake retained guest; main setupGuestShortcutForwarding→fake renderer send exact page/direction",
+          "remote keyboard fixture는 runRemoteNavigation callback을 mock하므로 provider 효과로 세지 않습니다.",
+          "remote socket fixture는 actual parser/RuntimeClient own socket/RpcDispatcher/service/relay/mounted navigation owner와 fake runtime provider의 history index/url 및 actual store page.url/loading/loadError readback을 검증합니다.",
+          "native/client guest methods는 spy이며 actual Chromium history/render acceptance 증거가 아닙니다.",
+          "named69 actual HtmlDocPreview imports/callsite와 own graph caller set에 shortcut hook consumer가 없습니다. historyWithConversionCrossings는 DocPreviewToolbar에만 전달됩니다.",
+          "최신 후보71 immutable spec3의 SHA 전부 검증: back/forward public allowedFlags에 page 없음. 실제 spelling은 orca back/forward입니다."
         ],
-        "remaining": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다."
+        "remaining": "최신 후보71 정식 CLI back/forward는 top-level 명령이며 GLOBAL_FLAGS+worktree만 허용합니다. GLOBAL_FLAGS에는 page가 없으므로 selector 내부 page reader만으로 exact split/client guest target을 지원한다고 주장하지 않습니다. native exact toolbar-nav와 remote exact remote-pane navigate는 별도 counterpart입니다. 실제 helper/Chromium engine acceptance와 OS 키 전달은 evidence partial 경계로 남깁니다. 문서 conversion fallback/render는 원본 잔여가 아닙니다.",
+        "applied": false,
+        "correctedPredecessorClaim": "history01의 document conversion fallback/render를 원본 shortcut 누락효과로 둔 remaining/gap 문구를 제거합니다. 기존 conversion fixture 자체의 증거는 별도 toolbar 효과에만 유효합니다.",
+        "canonicalCliBasis": {
+          "basis": "root71 frozen candidate, full running",
+          "files": [
+            {
+              "path": "src/cli/specs/browser-basic.ts",
+              "sha256": "9f67b6c980453776357665bc8e8007037984dc2941e6f059aa17dd3dc031f9df"
+            },
+            {
+              "path": "src/cli/specs/browser-advanced.ts",
+              "sha256": "b755509f2d7aa1ab8d94a0690fb3c8f10a31af042585e72edb0a81e303a2e086"
+            },
+            {
+              "path": "src/shared/cli-argument-boundary.ts",
+              "sha256": "377b3d363f813b4c819388f79b75cc81994fca1ddf5355a42ede8e16450eb9e1"
+            }
+          ]
+        }
       },
       "domain": "browser-formal",
-      "commands": ["browser toolbar-nav"],
-      "commandExamples": ["browser toolbar-nav --viewer host --page <page> --action back"],
+      "commands": ["browser toolbar-nav", "browser client-history", "browser remote-pane"],
+      "commandExamples": [
+        "orca browser toolbar-nav --viewer host --page <exact-native-page> --action back-shortcut",
+        "orca browser client-history --viewer host <exact target flags> --action back",
+        "orca browser remote-pane --viewer host <exact target flags> --action navigate --navigation back"
+      ],
       "command": "browser toolbar-nav"
     },
     {
@@ -116373,9 +116245,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다.",
+      "gap": "실제 OS keyboard/native Chromium/helper/SSH host 실행0; navigation completion 주장0. 새 native action의 전체 CLI/socket adapter 실행은 root 정식통합 게이트입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -116384,7 +116256,7 @@
         }
       ],
       "rule": "shortcut",
-      "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
+      "rationale": "native는 conversion 없는 shortcut 전용 action으로 같은 guest 메서드를 호출하고, client는 client-history에서 같은 guest 메서드를 호출하며, remote는 기존 remote-pane navigation owner/RPC를 공유합니다. 문서 preview는 원본 shortcut consumer가 아닙니다. history 없는 경우는 명시 no-effect refusal이며 실제 native 키 전달/Chromium completion은 지원누락이 아닌 partial 증거 경계로 둡니다.",
       "originalSources": [
         {
           "id": "shortcut:'browser.forward'",
@@ -116399,9 +116271,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-        "support": "gap",
+        "gap": "실제 OS keyboard/native Chromium/helper/SSH host 실행0; navigation completion 주장0. 새 native action의 전체 CLI/socket adapter 실행은 root 정식통합 게이트입니다.",
+        "verification": "native mounted exact owner8PASS + root74 parser/socket/actual Toolbar1PASS; conversion marker unchanged and old peer refuses without extra effect; client and remote existing owner fixtures remain partial.",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -116410,7 +116282,7 @@
           }
         ],
         "rule": "shortcut",
-        "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
+        "rationale": "native는 conversion 없는 shortcut 전용 action으로 같은 guest 메서드를 호출하고, client는 client-history에서 같은 guest 메서드를 호출하며, remote는 기존 remote-pane navigation owner/RPC를 공유합니다. 문서 preview는 원본 shortcut consumer가 아닙니다. history 없는 경우는 명시 no-effect refusal이며 실제 native 키 전달/Chromium completion은 지원누락이 아닌 partial 증거 경계로 둡니다.",
         "originalSources": [
           {
             "id": "shortcut:'browser.forward'",
@@ -116419,52 +116291,21 @@
         ],
         "leafMapping": {
           "id": "shortcut.browser.forward",
-          "phase": 7,
-          "bundle": "tools",
+          "source": "src/shared/keybindings/definitions-core-2.ts",
           "effect": "KEYBINDING_DEFINITION_CORE_2: browser.forward에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-2.ts:KEYBINDING_DEFINITION_CORE_2",
-          "host": "explicit execution host or browser placement owner",
-          "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-          "gap": "Actual renderer keydown, guest IPC and typed history receiver route to the same exact-page fake guest history methods (split target audit2files13PASS). Native keyboard delivery and the full document conversion fallback/rendered history effect remain gated.",
-          "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-          "support": "gap",
-          "evidence": "partial",
-          "sources": [
-            {
-              "id": "shortcut:'browser.forward'",
-              "fingerprint": "e66d89d15a53449cd03cd6873055af9e449c0efb122410eeb2a391247c4b7530"
-            }
-          ],
-          "rule": "shortcut",
-          "rationale": "The existing actual keyboard hook and typed history owner share the page-specific guest history effect in the native-guest branch; whole shortcut support is not inferred.",
-          "originalSources": [
-            {
-              "id": "shortcut:'browser.forward'",
-              "fingerprint": "e66d89d15a53449cd03cd6873055af9e449c0efb122410eeb2a391247c4b7530"
-            }
-          ],
-          "leafMapping": {
-            "id": "shortcut.browser.forward",
-            "source": "src/shared/keybindings/definitions-core-2.ts",
-            "effect": "KEYBINDING_DEFINITION_CORE_2: browser.forward에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-            "status": "partial-existing-effect",
-            "command": "back|forward",
-            "service": "CLI runtime browserBack/browserForward → AgentBrowserBridge command; shortcut useBrowserPageWebviewShortcuts → exact webview goBack/goForward",
-            "evidence": "Actual handlers and shortcut listener read. CLI bridge and webview routes target same page but execution/response path differs.",
-            "next": "Fixture verify page-specific guest history and shortcut target routing; do not count keyboard dispatch or full rendered effect as covered.",
-            "effectGroup": "navigation-toolbar-context"
-          },
-          "domain": "browser",
-          "commands": [],
-          "commandExamples": ["back|forward"],
-          "evidenceDetail": [
-            "tools-shortcut-history-audit-67.log: 2 files 13 PASS before fixture typing correction; final focused/full will include exact final source",
-            "Actual useBrowserPageKeyboardShortcuts and useBrowserToolbarHistoryCommands mounted together; renderer Cmd+[ / Cmd+], guest IPC and typed request hit page-b3each, page-a0",
-            "Mac userAgent, IPC transport and guest methods are fake; no OS input/native guest/browser history rendered state"
-          ]
+          "status": "partial-existing-effect",
+          "command": "back|forward",
+          "service": "CLI runtime browserBack/browserForward → AgentBrowserBridge command; shortcut useBrowserPageWebviewShortcuts → exact webview goBack/goForward",
+          "evidence": "Actual handlers and shortcut listener read. CLI bridge and webview routes target same page but execution/response path differs.",
+          "next": "Fixture verify page-specific guest history and shortcut target routing; do not count keyboard dispatch or full rendered effect as covered.",
+          "effectGroup": "navigation-toolbar-context"
         },
         "domain": "browser",
-        "commands": ["browser toolbar-nav --viewer host --page <page> --action forward"],
+        "commands": [
+          "orca browser toolbar-nav --viewer host --page <exact-native-page> --action forward-shortcut",
+          "orca browser client-history --viewer host <exact target flags> --action forward",
+          "orca browser remote-pane --viewer host <exact target flags> --action navigate --navigation forward"
+        ],
         "commandExamples": ["back|forward"],
         "evidenceDetail": [
           "tools-shortcut-history-audit-67.log: 2 files 13 PASS before fixture typing correction; final focused/full will include exact final source",
@@ -116476,7 +116317,7 @@
         "additionalParents": [],
         "nativeVerified": 0,
         "sourceMigration": false,
-        "ownerTrace": "useBrowserPageKeyboardShortcuts → useBrowserPageWebviewShortcuts(renderer keydown / guest IPC) → native guest goBack/goForward; separate BrowserPageToolbar controls → useBrowserToolbarHistoryCommands → returnAcrossBrowserPageConversion/advanceAcrossBrowserPageConversion → convertBrowserPageToWorkspaceDoc or AppStore.convertBrowserPage",
+        "ownerTrace": "definition → native BrowserPagePane/useBrowserPageKeyboardShortcuts 또는 ClientHostedBrowserPagePane/useBrowserPageWebviewShortcuts → renderer capture 또는 ui.onBrowserHistoryNavigate → 해당 guest.goBack/goForward; remote RemoteBrowserPagePane/useRemoteBrowserPageChromeChords → useRemoteBrowserPageNavigation.runRemoteNavigation → exact environment+host page browser.back/forward RPC; CLI back/forward → getBrowserCommandTarget → RuntimeClient → RpcDispatcher(client-hosted routing first) → browserBack/Forward → AgentBrowserBridge.back/forward → per-page command queue/ensureSession → execAgentBrowser([back|forward]); client-hosted route → authority/epoch/host/page generation lease → client executor automation → exact registration → same local runtime RPC; AgentBrowserBridge helper는 매 호출 exact registered guest CDP proxy를 --session/--cdp와 함께 명시합니다. 별도 Chrome을 의도한 fallback은 없지만 실제 helper engine은 실행하지 않았습니다.",
         "relatedParents": [
           {
             "id": "surface.tools.src-renderer-src-components-browser-pane-assemble-chrome-browser-navigation-control-row.BrowserNavigationControlRow.control.controls.goForward",
@@ -116487,17 +116328,42 @@
           }
         ],
         "newEvidence": [
-          "actual root68 BrowserPageToolbar mounted; ChromeToolbar presentation adapter only",
-          "typed back/forward → existing conversion owner → real page replacement/workspace mirror/provenance readback with no native guest",
-          "actual toolbar back button shares controls callback",
-          "existing document return owner → real AppStore replacement then fake grant provider revoke read-back",
-          "actual renderer shortcut + fake guest IPC with null native guest leave page unchanged; typed toolbar alone enters conversion fallback"
+          "현재 own source 집중3files25PASS: native split keyboard10 + remote mounted keyboard14 + remote CLI socket1",
+          "현재 own source 선택집중2files2PASS50skip: actual ClientHostedBrowserPagePane history listener→same fake retained guest; main setupGuestShortcutForwarding→fake renderer send exact page/direction",
+          "remote keyboard fixture는 runRemoteNavigation callback을 mock하므로 provider 효과로 세지 않습니다.",
+          "remote socket fixture는 actual parser/RuntimeClient own socket/RpcDispatcher/service/relay/mounted navigation owner와 fake runtime provider의 history index/url 및 actual store page.url/loading/loadError readback을 검증합니다.",
+          "native/client guest methods는 spy이며 actual Chromium history/render acceptance 증거가 아닙니다.",
+          "named69 actual HtmlDocPreview imports/callsite와 own graph caller set에 shortcut hook consumer가 없습니다. historyWithConversionCrossings는 DocPreviewToolbar에만 전달됩니다.",
+          "최신 후보71 immutable spec3의 SHA 전부 검증: back/forward public allowedFlags에 page 없음. 실제 spelling은 orca back/forward입니다."
         ],
-        "remaining": "원래 shortcut에는 toolbar의 document conversion fallback이 없습니다. HtmlDocPreview의 historyWithConversionCrossings 전체 mounted document guest/renderer와 native 키/실제 SSH·paired host·engine/rendered acceptance는 검증하지 않았습니다. 원본 shortcut 의미를 변경하여 fallback을 추가하지 않았으며 전체 gap/partial을 유지합니다."
+        "remaining": "최신 후보71 정식 CLI back/forward는 top-level 명령이며 GLOBAL_FLAGS+worktree만 허용합니다. GLOBAL_FLAGS에는 page가 없으므로 selector 내부 page reader만으로 exact split/client guest target을 지원한다고 주장하지 않습니다. native exact toolbar-nav와 remote exact remote-pane navigate는 별도 counterpart입니다. 실제 helper/Chromium engine acceptance와 OS 키 전달은 evidence partial 경계로 남깁니다. 문서 conversion fallback/render는 원본 잔여가 아닙니다.",
+        "applied": false,
+        "correctedPredecessorClaim": "history01의 document conversion fallback/render를 원본 shortcut 누락효과로 둔 remaining/gap 문구를 제거합니다. 기존 conversion fixture 자체의 증거는 별도 toolbar 효과에만 유효합니다.",
+        "canonicalCliBasis": {
+          "basis": "root71 frozen candidate, full running",
+          "files": [
+            {
+              "path": "src/cli/specs/browser-basic.ts",
+              "sha256": "9f67b6c980453776357665bc8e8007037984dc2941e6f059aa17dd3dc031f9df"
+            },
+            {
+              "path": "src/cli/specs/browser-advanced.ts",
+              "sha256": "b755509f2d7aa1ab8d94a0690fb3c8f10a31af042585e72edb0a81e303a2e086"
+            },
+            {
+              "path": "src/shared/cli-argument-boundary.ts",
+              "sha256": "377b3d363f813b4c819388f79b75cc81994fca1ddf5355a42ede8e16450eb9e1"
+            }
+          ]
+        }
       },
       "domain": "browser-formal",
-      "commands": ["browser toolbar-nav"],
-      "commandExamples": ["browser toolbar-nav --viewer host --page <page> --action forward"],
+      "commands": ["browser toolbar-nav", "browser client-history", "browser remote-pane"],
+      "commandExamples": [
+        "orca browser toolbar-nav --viewer host --page <exact-native-page> --action forward-shortcut",
+        "orca browser client-history --viewer host <exact target flags> --action forward",
+        "orca browser remote-pane --viewer host <exact target flags> --action navigate --navigation forward"
+      ],
       "command": "browser toolbar-nav"
     },
     {
@@ -116508,9 +116374,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-3.ts:KEYBINDING_DEFINITION_CORE_3",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Native keyboard delivery and Cmd+C editable/selection/clipboard priority remain unverified.",
+      "gap": "실제 Electron guest 입력 전달·native focus·Chromium 일반 복사 완료는 실행하지 않았습니다. 이는 fixture 검증 경계이며 현재 확인된 CLI 기능 누락이 아닙니다.; 새 guest protocol/old peer의 priority 응답 부재는 명시적 unavailable로 거절합니다.; bare C/S의 grab action은 이 원본 chord toggle과 별개이며 이 행에서 전체 grab copy/screenshot 동등성을 주장하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -116519,7 +116385,7 @@
         }
       ],
       "rule": "shortcut",
-      "rationale": "Explicit intent toggle invokes actual startGrabIntent/useGrabMode owner and waits cancel acknowledgement; original keyboard priority is not inferred.",
+      "rationale": "원본 picker-toggle 효과와 copy 우선순위에 해당하는 기존 CLI/actual owner fixture가 있습니다. Chromium 정상 copy pass-through는 추가 Orca 사용자 효과가 아니며 native copy/readback 부재만으로 gap을 유지할 근거가 되지 않습니다. 원장은 감독 판단 전 변경하지 않았습니다.",
       "originalSources": [
         {
           "id": "shortcut:'browser.grabElement'",
@@ -116534,9 +116400,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/shared/keybindings/definitions-core-3.ts:KEYBINDING_DEFINITION_CORE_3",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "Native keyboard delivery and Cmd+C editable/selection/clipboard priority remain unverified.",
-        "verification": "browser-copy-shortcut-command.test.tsx actual keyboard owner6 + browser-grab-copy-priority-ipc.test.ts9 + original main shortcut44 fixtures; priority guard mutation RED",
-        "support": "gap",
+        "gap": "실제 Electron guest 입력 전달·native focus·Chromium 일반 복사 완료는 실행하지 않았습니다. 이는 fixture 검증 경계이며 현재 확인된 CLI 기능 누락이 아닙니다.; 새 guest protocol/old peer의 priority 응답 부재는 명시적 unavailable로 거절합니다.; bare C/S의 grab action은 이 원본 chord toggle과 별개이며 이 행에서 전체 grab copy/screenshot 동등성을 주장하지 않습니다.",
+        "verification": "Existing actual copy shortcut owner6 + IPC priority9 + main shortcut44 fixtures and priority mutation RED; no new native proof.",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -116545,59 +116411,19 @@
           }
         ],
         "rule": "shortcut",
-        "rationale": "Explicit intent toggle invokes actual startGrabIntent/useGrabMode owner and waits cancel acknowledgement; original keyboard priority is not inferred.",
+        "rationale": "원본 picker-toggle 효과와 copy 우선순위에 해당하는 기존 CLI/actual owner fixture가 있습니다. Chromium 정상 copy pass-through는 추가 Orca 사용자 효과가 아니며 native copy/readback 부재만으로 gap을 유지할 근거가 되지 않습니다. 원장은 감독 판단 전 변경하지 않았습니다.",
         "originalSources": [
           {
             "id": "shortcut:'browser.grabElement'",
             "fingerprint": "7a29f649b68c5e787174f400d3d54d5e2ad5baf5600ba873db39aadd933328b4"
           }
         ],
-        "leafMapping": {
-          "id": "shortcut.browser.grabElement",
-          "source": "src/shared/keybindings/definitions-core-3.ts",
-          "effect": "KEYBINDING_DEFINITION_CORE_3: browser.grabElement에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
-          "status": "source-traced-gap",
-          "evidence": "source binding/graph only; fixture or full effect verification is not inferred",
-          "next": "Shortcut/event dispatch is internal to its specific parent action. Address focus/new-tab/scroll viewer policy differs from a guest DOM focus or raw navigation command. Exact viewer dispatch and active-group behavior remain.",
-          "effectGroup": "annotation-grab-markup",
-          "ownerTrace": {
-            "traceStatus": "source-traced",
-            "traceDepth": "source-local-owner",
-            "group": "browser-shortcut",
-            "ownerPath": "Keybinding definition only → host-guest/use-browser-page-keyboard-shortcuts startGrabIntent/address focus routes",
-            "parentEffect": "browser-shortcut",
-            "sourceId": "shortcut:'browser.grabElement'",
-            "sourceFingerprint": "7a29f649b68c5e787174f400d3d54d5e2ad5baf5600ba873db39aadd933328b4",
-            "sourceLine": 29,
-            "binding": "{\n    id: 'browser.grabElement',\n    title: 'Grab Page Element',\n    group: 'Browser',\n    scope: 'browser',\n    searchKeywords: ['shortcut', 'browser', 'grab', 'copy', 'element'],\n    defaultBindings: platformBindings(['Mod+C'])\n  }",
-            "calls": ["platformBindings"],
-            "callOperations": ["platformBindings"],
-            "bindingContext": "26:     searchKeywords: ['shortcut', 'browser', 'address', 'url', 'location'],\n27:     defaultBindings: platformBindings(['Mod+L'])\n28:   },\n29:   {\n30:     id: 'browser.grabElement',\n31:     title: 'Grab Page Element',\n32:     group: 'Browser',\n33:     scope: 'browser',\n34:     searchKeywords: ['shortcut', 'browser', 'grab', 'copy', 'element'],",
-            "counterpartMatch": "none",
-            "counterpartCommands": [],
-            "remainingEffect": "Shortcut/event dispatch is internal to its specific parent action. Address focus/new-tab/scroll viewer policy differs from a guest DOM focus or raw navigation command. Exact viewer dispatch and active-group behavior remain.",
-            "verified": false,
-            "graphEvidence": "browser-owner-trace-graph10.json; browser-owner-trace-followups10.json",
-            "fallback": "Graph first; JSX prop/window.api dynamic routes and excluded type member bodies supplemented by exact own-worktree source bindings. A local binding is not a fully resolved downstream service.",
-            "parentActionIds": [],
-            "formalInternalBindingReady": false
-          },
-          "counterpartCommands": []
-        },
-        "domain": "browser",
+        "domain": "browser-shortcuts",
         "commands": ["browser grab shortcut-copy"],
-        "commandExamples": [],
-        "complete": false,
-        "nativeEffectVerified": false,
-        "evidencePaths": [
-          "browser-tests37-green.log",
-          "browser-copy-shortcut37-priority-mutation-red.log"
-        ],
-        "command": "browser grab shortcut-copy",
-        "checkpoint": 37,
-        "remaining": "기존 fixed guest probe와 actual keyboard owner를 재사용해 copy 우선순위 허용 시에만 picker toggle의 committed state/취소 ack를 확인합니다. 편집기·renderer selection·guest native selection은 효과 전 거부합니다. Chromium copy completion/readback과 실제 native keyboard effect가 없어 원본 전체는 gap입니다."
+        "commandExamples": ["browser grab shortcut-copy"],
+        "command": "browser grab shortcut-copy"
       },
-      "domain": "browser-shortcuts",
+      "domain": "browser-formal",
       "commands": ["browser grab shortcut-copy"],
       "commandExamples": ["browser grab shortcut-copy"],
       "command": "browser grab shortcut-copy"
@@ -117190,10 +117016,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onCertificateFailureChanged",
@@ -117217,10 +117043,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-state01-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onCertificateFailureChanged",
@@ -117321,10 +117147,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onContextMenuDismissed",
@@ -117348,10 +117174,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-notice02-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onContextMenuDismissed",
@@ -117980,10 +117806,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onGrabActionShortcut",
@@ -118007,10 +117833,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-grab03-manifest.json actual hook/grab action consumer and fake clipboard/store; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onGrabActionShortcut",
@@ -118110,10 +117936,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onGrabModeToggle",
@@ -118137,10 +117963,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-grab03-manifest.json actual hook/grab action consumer and fake clipboard/store; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onGrabModeToggle",
@@ -118241,10 +118067,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onGuestLoadFailed",
@@ -118268,10 +118094,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-state01-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onGuestLoadFailed",
@@ -118504,10 +118330,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onOpenLinkInOrcaTab",
@@ -118531,10 +118357,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-state01-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onOpenLinkInOrcaTab",
@@ -118635,10 +118461,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onPaneFocus",
@@ -118662,10 +118488,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-state01-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onPaneFocus",
@@ -118766,10 +118592,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onPermissionDenied",
@@ -118793,10 +118619,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-notice02-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onPermissionDenied",
@@ -118897,10 +118723,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "api:browser.onPopup",
@@ -118924,10 +118750,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/preload/api/browser-api.ts:browser-api",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "실제 main→Electron preload transport/native browser/SSH host·paired whole effect는 미검증입니다. parent gap·native0은 보존합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "voice-browser-ipc-notice02-manifest.json actual consumer effect; fake transport/provider; root72 focused13files100PASS",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "api:browser.onPopup",
@@ -123043,10 +122869,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:BrowserPageToolbar",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "기존 overflow DOM fixture는 직접 구성한 shareControl receiver이므로 실제 BrowserPageToolbar의 createRequest 전체 forwarding/permission/publish/secret 경계를 증명하지 않습니다. extensions publish parent gap/unverified 그대로 유지합니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control-spread:src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:8edc5e9c1568c72e2c00",
@@ -123070,10 +122896,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:BrowserPageToolbar",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "기존 overflow DOM fixture는 직접 구성한 shareControl receiver이므로 실제 BrowserPageToolbar의 createRequest 전체 forwarding/permission/publish/secret 경계를 증명하지 않습니다. extensions publish parent gap/unverified 그대로 유지합니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "실제 BrowserPageToolbar→BrowserChromeToolbar→ArtifactPublishButton/Radix; props createRequest를 가짜 publish boundary가 실행하고 가짜 fs stat/read 결과 exact request를 확인했습니다.",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "control-spread:src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:8edc5e9c1568c72e2c00",
@@ -123184,10 +123010,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:BrowserPageToolbar",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "단일 setOpen parent로 anchorRef DOM focus와 모든 open/close lifecycle을 완료로 추정하지 않습니다. extensions 상태·source binding 불변입니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control-spread:src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:bea180fc19b03088b39a",
@@ -123211,10 +123037,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:BrowserPageToolbar",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "단일 setOpen parent로 anchorRef DOM focus와 모든 open/close lifecycle을 완료로 추정하지 않습니다. extensions 상태·source binding 불변입니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "실제 page caller의 folded open/onOpenChange/anchorRef로 menu 닫힘, dialog 표시/DOM focus, Escape 뒤 dialog 닫힘과 trigger DOM focus를 확인했습니다.",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "control-spread:src/renderer/src/components/browser-pane/assemble-chrome/browser-page-toolbar.tsx:bea180fc19b03088b39a",
@@ -123914,10 +123740,10 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/BrowserTab.tsx:tabRoot",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "sensor callback key 집합·keyboard/pointer DnD·reorder/blur/guest focus lifecycle 전체 미검증입니다. 단일 onTabPointerDown parent를 전체 listener 동등성으로 세지 않습니다.",
+      "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "internal",
-      "evidence": "unverified",
+      "evidence": "partial",
       "sources": [
         {
           "id": "control-spread:src/renderer/src/components/tab-bar/BrowserTab.tsx:a02b07209f0b098a071d",
@@ -123941,10 +123767,10 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/BrowserTab.tsx:tabRoot",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "sensor callback key 집합·keyboard/pointer DnD·reorder/blur/guest focus lifecycle 전체 미검증입니다. 단일 onTabPointerDown parent를 전체 listener 동등성으로 세지 않습니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+        "gap": "실제 native/SSH/계정/전체 parent 효과는 fixture 범위 밖입니다.",
+        "verification": "기존 devices-tab-spread03의 actual Row→BrowserTab→useTabStripPointerActivation→가짜 sortable listener 1회와 pointerCancel 뒤 activation0 assertion을 재사용합니다.",
         "support": "internal",
-        "evidence": "unverified",
+        "evidence": "partial",
         "sources": [
           {
             "id": "control-spread:src/renderer/src/components/tab-bar/BrowserTab.tsx:a02b07209f0b098a071d",
@@ -124192,9 +124018,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/TabBarItemRow.tsx:TabBarItemRow",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "상위 실제 pin/close scope 스토어 변경·dirty approval·guest teardown·실행 host/runtime provider·SSH·paired·native를 증명하지 않았습니다. DnD provider와 최종 콜백은 fixture/fake입니다. 전체 spread의 단일 CLI 대응 또는 단일 parent를 주장하지 않습니다.",
+      "gap": "Spread callable scope is existing pin or close forwarding. Original pointer gesture belongs to separate BrowserTab pointer ID. Dirty close remains no-success-before-confirmation/effect_unknown, native/SSH completion not observed.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -124218,9 +124044,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/TabBarItemRow.tsx:TabBarItemRow",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "상위 실제 pin/close scope 스토어 변경·dirty approval·guest teardown·실행 host/runtime provider·SSH·paired·native를 증명하지 않았습니다. DnD provider와 최종 콜백은 fixture/fake입니다. 전체 spread의 단일 CLI 대응 또는 단일 parent를 주장하지 않습니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-        "support": "gap",
+        "gap": "Spread callable scope is existing pin or close forwarding. Original pointer gesture belongs to separate BrowserTab pointer ID. Dirty close remains no-success-before-confirmation/effect_unknown, native/SSH completion not observed.",
+        "verification": "voice-tab-spread-semantics-audit75 exact callbacks and existing Store01 actual DOM/typed7PASS; parent=null and foreign bindings unchanged",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -124294,7 +124120,7 @@
           }
         },
         "domain": "browser",
-        "commands": [],
+        "commands": ["browser tab-ui"],
         "commandExamples": [],
         "previousEvidence": "unverified",
         "binding": "BrowserTab {...shared}",
@@ -124331,8 +124157,9 @@
         "fixture": "browser-tab-row-spread.test.tsx + devices-tab-spread03-test-only.patch"
       },
       "domain": "browser-formal",
-      "commands": [],
-      "commandExamples": []
+      "commands": ["browser tab-ui"],
+      "commandExamples": ["browser tab-ui"],
+      "command": "browser tab-ui"
     },
     {
       "id": "surface.tools.src-renderer-src-components-tab-bar-TabBarItemRow.TabBarItemRow.control-spread.BrowserTab-...closeScope",
@@ -124342,9 +124169,9 @@
       "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/TabBarItemRow.tsx:TabBarItemRow",
       "host": "explicit execution host or browser placement owner",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "상위 실제 pin/close scope 스토어 변경·dirty approval·guest teardown·실행 host/runtime provider·SSH·paired·native를 증명하지 않았습니다. DnD provider와 최종 콜백은 fixture/fake입니다. 전체 spread의 단일 CLI 대응 또는 단일 parent를 주장하지 않습니다.",
+      "gap": "Spread callable scope is existing pin or close forwarding. Original pointer gesture belongs to separate BrowserTab pointer ID. Dirty close remains no-success-before-confirmation/effect_unknown, native/SSH completion not observed.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
+      "support": "implemented",
       "evidence": "partial",
       "sources": [
         {
@@ -124368,9 +124195,9 @@
         "owner": "browser placement / device / computer / speech / VM services; source boundary src/renderer/src/components/tab-bar/TabBarItemRow.tsx:TabBarItemRow",
         "host": "explicit execution host or browser placement owner",
         "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-        "gap": "상위 실제 pin/close scope 스토어 변경·dirty approval·guest teardown·실행 host/runtime provider·SSH·paired·native를 증명하지 않았습니다. DnD provider와 최종 콜백은 fixture/fake입니다. 전체 spread의 단일 CLI 대응 또는 단일 parent를 주장하지 않습니다.",
-        "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-        "support": "gap",
+        "gap": "Spread callable scope is existing pin or close forwarding. Original pointer gesture belongs to separate BrowserTab pointer ID. Dirty close remains no-success-before-confirmation/effect_unknown, native/SSH completion not observed.",
+        "verification": "voice-tab-spread-semantics-audit75 exact callbacks and existing Store01 actual DOM/typed7PASS; parent=null and foreign bindings unchanged",
+        "support": "implemented",
         "evidence": "partial",
         "sources": [
           {
@@ -124444,7 +124271,7 @@
           }
         },
         "domain": "browser",
-        "commands": [],
+        "commands": ["browser tab-ui"],
         "commandExamples": [],
         "previousEvidence": "unverified",
         "binding": "BrowserTab {...closeScope}",
@@ -124481,8 +124308,9 @@
         "fixture": "browser-tab-row-spread.test.tsx + devices-tab-spread03-test-only.patch"
       },
       "domain": "browser-formal",
-      "commands": [],
-      "commandExamples": []
+      "commands": ["browser tab-ui"],
+      "commandExamples": ["browser tab-ui"],
+      "command": "browser tab-ui"
     },
     {
       "id": "surface.tools.src-renderer-src-components-browser-pane-annotate-MarkupDrawButton.MarkupDrawButton.control.onOpenAutoFocus",
@@ -143108,6 +142936,257 @@
         "src/renderer/src/components/skills/SkillsPage.share-viewer.test.tsx",
         "src/cli/handlers/artifacts-viewer.test.ts"
       ]
+    },
+    {
+      "id": "command.browser-client-defer",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "실제 staged ClientPane 주소 제출의 기존 deferred queue 등록과 이후 attachment 소비 경로 재사용",
+      "owner": "actual ClientHostedBrowserPagePane → useClientHostedPageUrlSubmission → deferBrowserPageNavigation; adoption → useClientHostedPageAttachment → consume → original navigate",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "queue 등록만 관찰하며 queuedUntil 이후 만료 또는 덮어쓰기는 원래 계약입니다. host placement/adoption/load completion/native/OS focus는 receipt가 관찰하지 않습니다.",
+      "verification": "actual stage writer + mounted staged ClientPane owner RED1→GREEN; registration/adoption→existing attachment consume→guest load→metadata publisher; exactly1/duplicate/inactive/ABA/deadline/unmount/refusal/TTL cases16, strict handler3/actual index.main3/route group8/placement guard2/same-worktree12/cross-worktree7 =7files51PASS; scoped15+canonical6 regular/nativequality/casting/ReactDoctor/format0; native0.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-defer",
+          "fingerprint": "2f0a83eb389a587350cc3cf8a9d51377936d0bc4a981fb4ffb9bd899ac993154"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-defer",
+      "commands": ["browser client-defer"]
+    },
+    {
+      "id": "command.browser-client-document",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "exact client-hosted 주소 제출의 기존 문서 변환 또는 기존 문서 활성화와 실제 문서 Store 관찰",
+      "owner": "actual ClientHostedBrowserPagePane → useClientHostedPageUrlSubmission → routeWorkspaceDocAddressSubmission → convertBrowserPageToWorkspaceDoc → actual document Store",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "명시한 resolver-selected 소유 workspace의 converted/activated-existing/opened-in-owning-worktree Store 관찰입니다. deferred/filesystem reads/preview grant readiness/native/OS focus는 미완료입니다.",
+      "verification": "cross-worktree RED1→GREEN; actual source Pane intended deactivation cleanup deferred until readback; exact optional destination selector/default refusal/existing destination activation/foreign or origin workspace ABA after switch; actual Store conversion7 + same-worktree12 + navigation lifetime5/submission8 + handler4/index.main19/group8 =7files63PASS; scoped9 quality0/native0",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-document",
+          "fingerprint": "aa697c3481d110a524d00cacc7fe1822cb0dad797b50b0faefd050762c788e91"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-document",
+      "commands": ["browser client-document"]
+    },
+    {
+      "id": "command.browser-client-history",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_CLIENT_HISTORY_COMMAND_SPECS: browser client-history에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-client-history.ts:BROWSER_CLIENT_HISTORY_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Native engine and network navigation completion are not observed.",
+      "verification": "root74 parser/socket/dispatcher/service → actual mounted ClientPane/fake retained guest history and Store readback; public reader Kagi redaction and credential refusal; accepted only, completionObserved false",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-history",
+          "fingerprint": "630085539b16f74e7e7c7e59d54c783374403f094533ab64b6632ef3a1819b83"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-history",
+      "commands": ["browser client-history"]
+    },
+    {
+      "id": "command.browser-client-staged-document",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "실제 staged ClientPane 주소 제출의 기존 문서 route 변환/활성화와 authoritative document Store readback",
+      "owner": "actual staged ClientHostedBrowserPagePane → existing document event/owner → useClientHostedPageUrlSubmission → routeWorkspaceDocAddressSubmission → original conversion/activation writer → document Store",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "명시 staged target의 document Store 변환/활성화입니다. host placement/adoption, 실제 파일 읽기/preview grant/native/OS focus와 compound navigate 전체는 미완료입니다.",
+      "verification": "Actual stage producer/mounted ClientPane RED1 -> GREEN. staged12/materialized12/cross-worktree7/handler4/index.main3/group8/placement2 =7files48PASS. Scoped12+canonical6 regular/nativequality/casting/ReactDoctor/format0; reverse/apply-byte0; native0.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-staged-document",
+          "fingerprint": "29d31059e4f637fa3a2872727fea2c62b31f76e4622934222edfe45f07e6ae89"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-staged-document",
+      "commands": ["browser client-staged-document"]
+    },
+    {
+      "id": "command.browser-toolbar-external",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_TOOLBAR_EXTERNAL_COMMAND_SPECS: browser toolbar-external에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-toolbar-external.ts:BROWSER_TOOLBAR_EXTERNAL_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "actual OS external-window existence/native/SSH unverified; receipt explicitly externalWindowVerified:false",
+      "verification": "actual mounted toolbar DOM callback, handler parser/socket/dispatcher/existing viewer bridge/fake shell ACK and checked projection; root72 focused13files100PASS",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser toolbar-external",
+          "fingerprint": "f1b616045117634e02ec52ca9912dd5d017a5fca06c9bb927e8c86fae315a152"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser toolbar-external",
+      "commands": ["browser toolbar-external"]
+    },
+    {
+      "id": "command.browser-tab-drop",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_TAB_DROP_COMMAND_SPECS: browser tab-drop에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-tab-drop.ts:BROWSER_TAB_DROP_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Actual native pointer/window/focus not executed; fixture effects only.",
+      "verification": "root75 actual mounted owner/Store/socket/provider focused11files72PASS; explicit host mapping/ACK and lifetime refusal",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser tab-drop",
+          "fingerprint": "226fa32b89230344d27f6e12b5d9d64e6ae6dc415dbaf05debbe8a598c800263"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser tab-drop"
+    },
+    {
+      "id": "command.browser-titlebar-activate-paired",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_TITLEBAR_PAIRED_ACTIVATION_COMMAND_SPECS: browser titlebar-activate-paired에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-titlebar-paired-activation.ts:BROWSER_TITLEBAR_PAIRED_ACTIVATION_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Actual native pointer/window/focus not executed; fixture effects only.",
+      "verification": "root75 actual mounted owner/Store/socket/provider focused11files72PASS; explicit host mapping/ACK and lifetime refusal",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser titlebar-activate-paired",
+          "fingerprint": "de8965e9e42d53443834b4d12c5f63d9a292128df5d55f1c08f8bd9c862b2447"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser titlebar-activate-paired"
+    },
+    {
+      "id": "command.browser-client-history-document",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS: browser client-history-document에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-client-history-document.ts:BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Native engine/pointer/OS focus/render/persistence/real SSH not observed; fixture effects only.",
+      "verification": "Root76 history/cancel actual owner fixtures and socket03 PASS; root77 focused10files74PASS includes actual input owner/socket and host-viewer union/drop/cancel socket; strict current target/receipt/refusal retained.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-history-document",
+          "fingerprint": "b966bbb45524edf8a7acfe15cfeae75001bc339d87ca1570c144b7d918585f59"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-history-document",
+      "commands": ["browser client-history-document"]
+    },
+    {
+      "id": "command.browser-client-input-feedback",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_CLIENT_INPUT_FEEDBACK_COMMAND_SPECS: browser client-input-feedback에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-client-input-feedback.ts:BROWSER_CLIENT_INPUT_FEEDBACK_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Native engine/pointer/OS focus/render/persistence/real SSH not observed; fixture effects only.",
+      "verification": "Root76 history/cancel actual owner fixtures and socket03 PASS; root77 focused10files74PASS includes actual input owner/socket and host-viewer union/drop/cancel socket; strict current target/receipt/refusal retained.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-input-feedback",
+          "fingerprint": "0df82e2d173d7c0c93812fb4c22ed2ffd31a6a3f019e7729ee8a0f7d7826d274"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-input-feedback",
+      "commands": ["browser client-input-feedback"]
+    },
+    {
+      "id": "command.browser-client-staged-history-document",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS: browser client-staged-history-document에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-client-history-document.ts:BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Native engine/pointer/OS focus/render/persistence/real SSH not observed; fixture effects only.",
+      "verification": "Root76 history/cancel actual owner fixtures and socket03 PASS; root77 focused10files74PASS includes actual input owner/socket and host-viewer union/drop/cancel socket; strict current target/receipt/refusal retained.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser client-staged-history-document",
+          "fingerprint": "fe873827ed6993d377b741d793d135b3f10d4f3570f39225beab6eb2cfce40b9"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser client-staged-history-document",
+      "commands": ["browser client-staged-history-document"]
+    },
+    {
+      "id": "command.browser-tab-drag-cancel",
+      "phase": 7,
+      "bundle": "tools",
+      "effect": "BROWSER_TAB_DROP_COMMAND_SPECS: browser tab-drag cancel에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "browser placement / device / computer / speech / VM services; source boundary src/cli/specs/browser-tab-drop.ts:BROWSER_TAB_DROP_COMMAND_SPECS",
+      "host": "explicit execution host or browser placement owner",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Native engine/pointer/OS focus/render/persistence/real SSH not observed; fixture effects only.",
+      "verification": "Root76 history/cancel actual owner fixtures and socket03 PASS; root77 focused10files74PASS includes actual input owner/socket and host-viewer union/drop/cancel socket; strict current target/receipt/refusal retained.",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:browser tab-drag cancel",
+          "fingerprint": "d3f2f59b683db5ef8ca9a1902873762c9fedb095d69ef1a8defadf6192d386b5"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "browser tab-drag cancel",
+      "commands": ["browser tab-drag cancel"]
     }
   ]
 }

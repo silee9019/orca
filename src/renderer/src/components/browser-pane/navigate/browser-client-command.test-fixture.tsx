@@ -1,3 +1,6 @@
+import type * as BrowserFailureCommands from './use-browser-failure-commands'
+import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
+import type { RemoteBrowserPageHandle } from '@/store/slices/browser/browser-slice-contract'
 // @vitest-environment happy-dom
 import { tmpdir } from 'node:os'
 import { cleanup, render } from '@testing-library/react'
@@ -14,7 +17,8 @@ const fixture: { attach: Mock; publish: Mock } = vi.hoisted(() => ({
 vi.mock('../browser-client-page-renderer-installation', () => ({
   attachBrowserClientPageToViewport: fixture.attach
 }))
-vi.mock('./use-browser-failure-commands', () => ({
+vi.mock('./use-browser-failure-commands', async (importOriginal) => ({
+  ...(await importOriginal<typeof BrowserFailureCommands>()),
   createBrowserFailureOwner: () => undefined,
   openBrowserFailureExternalUrl: vi.fn()
 }))
@@ -128,13 +132,27 @@ afterEach(() => {
     Reflect.deleteProperty(window, 'api')
   }
 })
-export function mount(active = true, getWorktreeId: () => string = () => target.worktreeId) {
+export function mount(
+  active: boolean | ((activeWorktreeId: string | null) => boolean) = true,
+  getWorktreeId: () => string = () => target.worktreeId,
+  allowMissingPage = false,
+  getPlacement: (
+    handle: RemoteBrowserPageHandle | undefined
+  ) => RuntimeBrowserClientPlacement | null = () => placement
+) {
   function Owner() {
+    const currentHandle = useAppStore(
+      (state) => state.remoteBrowserPageHandlesByPageId[target.page]
+    )
+    const activeWorktreeId = useAppStore((state) => state.activeWorktreeId)
     const page = useAppStore((state) =>
       Object.values(state.browserPagesByWorkspace)
         .flat()
         .find((candidate) => candidate.id === target.page)
     )
+    if (!page && allowMissingPage) {
+      return null
+    }
     if (!page) {
       throw new Error('fixture page missing')
     }
@@ -146,8 +164,8 @@ export function mount(active = true, getWorktreeId: () => string = () => target.
           workspaceId={page.workspaceId}
           runtimeEnvironmentId={target.environmentId}
           worktreeId={getWorktreeId()}
-          placement={placement}
-          isActive={active}
+          placement={getPlacement(currentHandle)}
+          isActive={typeof active === 'function' ? active(activeWorktreeId) : active}
           chromeShortcutScope="focused"
           onUpdatePageState={state.updateBrowserPageState}
           onSetUrl={state.setBrowserPageUrl}

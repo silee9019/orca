@@ -1,3 +1,4 @@
+import { hasBrowserSessionActivationAcknowledgment } from './browser-session-activation-ack'
 import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import type {
   RuntimeMobileSessionTabCloseResult,
@@ -28,6 +29,9 @@ export async function activateWebRuntimeSessionTab(args: {
   worktreeId: string
   tabId: string
   environmentId?: string | null
+  requireAcknowledgedActivation?: boolean
+  expectedHostTabId?: string
+  assertCurrentActivation?: () => void
 }): Promise<boolean> {
   return (await callWebRuntimeSessionTabMethod('session.tabs.activate', args)) === 'applied'
 }
@@ -57,6 +61,9 @@ async function callWebRuntimeSessionTabMethod(
     worktreeId: string
     tabId: string
     environmentId?: string | null
+    requireAcknowledgedActivation?: boolean
+    expectedHostTabId?: string
+    assertCurrentActivation?: () => void
     reason?: RuntimeSessionTabCloseReason
     publicationEpoch?: string | null
     terminalHandle?: string | null
@@ -98,12 +105,18 @@ async function callWebRuntimeSessionTabMethod(
   try {
     const { resolveHostSessionTabIdForWebSessionTab } = await import('./web-session-tabs-sync')
     const state = useAppStore.getState()
-    const hostTabId =
-      resolveHostSessionTabIdForWebSessionTab(state, {
-        environmentId,
-        worktreeId: args.worktreeId,
-        tabId: args.tabId
-      }) ?? toHostSessionTabId(args.tabId)
+    const resolvedHostTabId = resolveHostSessionTabIdForWebSessionTab(state, {
+      environmentId,
+      worktreeId: args.worktreeId,
+      tabId: args.tabId
+    })
+    if (!isClose && args.requireAcknowledgedActivation && !resolvedHostTabId) {
+      throw new Error('browser_session_activation_target_unmapped')
+    }
+    const hostTabId = resolvedHostTabId ?? toHostSessionTabId(args.tabId)
+    if (!isClose && args.requireAcknowledgedActivation && hostTabId !== args.expectedHostTabId) {
+      throw new Error('browser_session_activation_target_changed')
+    }
     if (isClose) {
       // Why: suppress until the host confirms removal, else an in-flight pre-close snapshot flashes the tab back.
       closeIntentTabIds.add(hostTabId)
@@ -111,6 +124,9 @@ async function callWebRuntimeSessionTabMethod(
     } else {
       activationHostTabId = hostTabId
       recordWebSessionFocusIntent(intentOwner, args.worktreeId, hostTabId)
+    }
+    if (!isClose) {
+      args.assertCurrentActivation?.()
     }
     const response = await callEnvironment({
       // Why: old hosts cannot route this additive method, so a generation
@@ -156,6 +172,13 @@ async function callWebRuntimeSessionTabMethod(
       await refreshWebRuntimeSessionTabsSnapshot(environmentId, args.worktreeId, {
         expectedEnvironmentPairingRevision: intentOwner.pairingRevision
       })
+    }
+    if (
+      !isClose &&
+      args.requireAcknowledgedActivation &&
+      !hasBrowserSessionActivationAcknowledgment(result, args.worktreeId, hostTabId)
+    ) {
+      throw new Error('browser_session_activation_unacknowledged')
     }
     return 'applied'
   } catch (error) {

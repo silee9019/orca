@@ -24,6 +24,16 @@ import { MANAGED_SKILL_COMMAND_SPECS } from './skills-managed'
 import { PLUGIN_MANAGEMENT_COMMAND_SPECS } from './plugins-management'
 import { PLUGIN_COMMAND_SPECS } from './plugins'
 import { APP_LIFECYCLE_COMMAND_SPECS } from './app-lifecycle'
+import { BROWSER_CLIENT_INPUT_FEEDBACK_COMMAND_SPECS } from './browser-client-input-feedback'
+import { BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS } from './browser-client-history-document'
+import { BROWSER_TAB_DROP_COMMAND_SPECS } from './browser-tab-drop'
+import { BROWSER_CLIENT_STAGED_DOCUMENT_COMMAND_SPECS } from './browser-client-staged-document'
+import { BROWSER_CLIENT_HISTORY_COMMAND_SPECS } from './browser-client-history'
+import { BROWSER_CLIENT_DEFERRED_COMMAND_SPECS } from './browser-client-deferred'
+import { BROWSER_TOOLBAR_EXTERNAL_COMMAND_SPECS } from './browser-toolbar-external'
+import { BROWSER_CLIENT_DOCUMENT_COMMAND_SPECS } from './browser-client-document'
+import { BROWSER_CLIENT_SUBMISSION_COMMAND_SPECS } from './browser-client-submission'
+import { BROWSER_CLIENT_RELOAD_COMMAND_SPECS } from './browser-client-reload'
 import { SEARCH_CONSENT_COMMAND_SPECS } from './search-consent'
 import { SEARCH_SETTINGS_VIEWER_COMMAND_SPECS } from './search-settings-viewer'
 import { BROWSER_DOCUMENT_COMMAND_SPECS } from './browser-document'
@@ -52,8 +62,6 @@ import { ENVIRONMENT_CONNECTION_COMMAND_SPECS } from './environment-connections'
 import { MOBILE_CONNECTION_COMMAND_SPECS } from './mobile-connections'
 import { NETWORK_CONNECTION_COMMAND_SPECS } from './network-connections'
 import { MOBILE_NETWORK_HUMAN_COMMAND_SPECS } from './mobile-network-human-actions'
-import { BROWSER_CLIENT_SUBMISSION_COMMAND_SPECS } from './browser-client-submission'
-import { BROWSER_CLIENT_RELOAD_COMMAND_SPECS } from './browser-client-reload'
 import { BROWSER_EGRESS_COMMAND_SPECS } from './browser-egress'
 import { BROWSER_VIEWPORT_PAN_COMMAND_SPECS } from './browser-viewport-pan'
 import { BROWSER_MARKUP_HINT_COMMAND_SPECS } from './browser-markup-hint'
@@ -135,6 +143,13 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...PLUGIN_MANAGEMENT_COMMAND_SPECS,
   ...PLUGIN_COMMAND_SPECS,
   ...APP_LIFECYCLE_COMMAND_SPECS,
+  ...BROWSER_CLIENT_INPUT_FEEDBACK_COMMAND_SPECS,
+  ...BROWSER_CLIENT_HISTORY_DOCUMENT_COMMAND_SPECS,
+  ...BROWSER_TAB_DROP_COMMAND_SPECS,
+  ...BROWSER_CLIENT_STAGED_DOCUMENT_COMMAND_SPECS,
+  ...BROWSER_CLIENT_DEFERRED_COMMAND_SPECS,
+  ...BROWSER_CLIENT_HISTORY_COMMAND_SPECS,
+  ...BROWSER_TOOLBAR_EXTERNAL_COMMAND_SPECS,
   ...SEARCH_CONSENT_COMMAND_SPECS,
   ...SEARCH_SETTINGS_VIEWER_COMMAND_SPECS,
   ...BROWSER_DOCUMENT_COMMAND_SPECS,
@@ -192,6 +207,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...FILE_COMMAND_SPECS,
   ...AUTOMATION_COMMAND_SPECS,
   ...BROWSER_BASIC_COMMAND_SPECS,
+  ...BROWSER_CLIENT_DOCUMENT_COMMAND_SPECS,
   ...BROWSER_CLIENT_SUBMISSION_COMMAND_SPECS,
   ...BROWSER_CLIENT_RELOAD_COMMAND_SPECS,
   ...BROWSER_SESSION_COMMAND_SPECS,
