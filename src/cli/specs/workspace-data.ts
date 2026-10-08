@@ -1,3 +1,4 @@
+import { WORKSPACE_LOG_TAIL_COMMAND_SPECS } from './workspace-log-tail'
 import { WORKSPACE_NOTEBOOK_KERNEL_COMMAND_SPECS } from './workspace-notebook-kernel'
 import { WORKSPACE_LOCAL_CLONE_COMMAND_SPECS } from './workspace-local-clone'
 import { WORKSPACE_REMOTE_CLONE_COMMAND_SPECS } from './workspace-remote-clone'
@@ -64,6 +65,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_LOG_TAIL_COMMAND_SPECS,
   ...WORKSPACE_NOTEBOOK_KERNEL_COMMAND_SPECS,
   ...WORKSPACE_LOCAL_CLONE_COMMAND_SPECS,
   ...WORKSPACE_REMOTE_CLONE_COMMAND_SPECS,
