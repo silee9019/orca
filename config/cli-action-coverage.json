@@ -16,13 +16,8 @@
     {
       "id": "accounts-permissions",
       "phase": 4,
-      "dependsOn": [
-        "settings"
-      ],
-      "conflictFiles": [
-        "src/cli/specs/index.ts",
-        "src/cli/handler-group-manifest.ts"
-      ]
+      "dependsOn": ["settings"],
+      "conflictFiles": ["src/cli/specs/index.ts", "src/cli/handler-group-manifest.ts"]
     }
   ],
   "scopes": [
@@ -4262,7 +4257,7 @@
       ],
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
-      "command": "agent-permissions status"
+      "command": "agent-permissions set"
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-AntigravityAccountsSection.AntigravityAccountsSection.control.run-List",
@@ -7817,9 +7812,7 @@
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": [
-        "api:codexAccounts.onPendingLoginUrlChanged"
-      ],
+      "derivedFrom": ["api:codexAccounts.onPendingLoginUrlChanged"],
       "command": "accounts observe-codex-stream",
       "evidencePaths": [
         "/Users/silee/.local/state/oh-my-agents/repos/stablyai/orca/works/cli-accounts-permissions-20261007/evidence/permissions/observer-final-green.log",
@@ -7863,9 +7856,7 @@
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": [
-        "api:macosTccPrompts.onThreshold"
-      ],
+      "derivedFrom": ["api:macosTccPrompts.onThreshold"],
       "command": "permissions tcc observe",
       "evidencePaths": [
         "/Users/silee/.local/state/oh-my-agents/repos/stablyai/orca/works/cli-accounts-permissions-20261007/evidence/permissions/observer-final-green.log",
@@ -7909,9 +7900,7 @@
       "sources": [],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "derivedFrom": [
-        "api:rateLimits.onUpdate"
-      ],
+      "derivedFrom": ["api:rateLimits.onUpdate"],
       "command": "rate-limit observe-stream",
       "evidencePaths": [
         "tests/e2e/rate-limit-stream-socket.unit.test.ts",

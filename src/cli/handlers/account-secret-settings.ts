@@ -32,11 +32,18 @@ async function runSecretSetting(ctx: HandlerContext, action: 'set' | 'clear'): P
       )
     }
   }
-  const response = await ctx.client.call('accountSecretSettings.apply', {
-    action,
-    key: key.data,
-    ...(input === undefined ? {} : { input })
-  })
+  const response = await ctx.client
+    .call('accountSecretSettings.apply', {
+      action,
+      key: key.data,
+      ...(input === undefined ? {} : { input })
+    })
+    .catch(() => {
+      throw new RuntimeClientError(
+        'sensitive_setting_write_unconfirmed',
+        'Could not confirm the sensitive setting update through the canonical settings writer on the settings host.'
+      )
+    })
   printResult({ ...response, result: { key: key.data, updated: true } }, ctx.json, (status) =>
     JSON.stringify(status)
   )

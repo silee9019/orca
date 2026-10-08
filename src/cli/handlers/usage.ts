@@ -62,186 +62,103 @@ async function output(ctx: HandlerContext, method: string, params: unknown): Pro
   )
 }
 
+function viewerOutput(ctx: HandlerContext, action: () => unknown): Promise<void> {
+  return output(
+    ctx,
+    'usage.viewerAction',
+    parse(UsageViewerParams, {
+      viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
+      action: action()
+    })
+  )
+}
+
 export const USAGE_HANDLERS: Record<string, CommandHandler> = {
   'usage refresh-account-usage': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'refresh-account-usage', ...provider(ctx) }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'refresh-account-usage', ...provider(ctx) }))
   },
   'usage roster-signin': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'roster-signin', ...provider(ctx) }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'roster-signin', ...provider(ctx) }))
   },
   'usage inline-signin': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'inline-signin',
-          accountId: getRequiredStringFlag(ctx.flags, 'account-id'),
-          target: {
-            runtime: getRequiredStringFlag(ctx.flags, 'runtime'),
-            wslDistro: getOptionalStringFlag(ctx.flags, 'wsl-distro') ?? null
-          }
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'inline-signin',
+      accountId: getRequiredStringFlag(ctx.flags, 'account-id'),
+      target: {
+        runtime: getRequiredStringFlag(ctx.flags, 'runtime'),
+        wslDistro: getOptionalStringFlag(ctx.flags, 'wsl-distro') ?? null
+      }
+    }))
   },
   'usage inline-signin-status': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'inline-signin-status',
-          operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'inline-signin-status',
+      operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
+    }))
   },
   'usage inline-signin-cancel': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'inline-signin-cancel',
-          operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'inline-signin-cancel',
+      operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
+    }))
   },
   'usage feature-wall-signin': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'feature-wall-signin', ...provider(ctx) }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'feature-wall-signin', ...provider(ctx) }))
   },
   'usage feature-wall-signin-status': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'feature-wall-signin-status',
-          ...provider(ctx),
-          operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'feature-wall-signin-status',
+      ...provider(ctx),
+      operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
+    }))
   },
   'usage feature-wall-signin-cancel': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'feature-wall-signin-cancel',
-          ...provider(ctx),
-          operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'feature-wall-signin-cancel',
+      ...provider(ctx),
+      operationId: getRequiredStringFlag(ctx.flags, 'operation-id')
+    }))
   },
   'usage refresh-account-state': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'refresh-account-state' }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'refresh-account-state' }))
   },
   'usage percentage-settings': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'open-percentage-settings' }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'open-percentage-settings' }))
   },
   'usage viewer-set-enabled': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'set-enabled', ...provider(ctx), enabled: booleanFlag(ctx, 'enabled') }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'set-enabled',
+      ...provider(ctx),
+      enabled: booleanFlag(ctx, 'enabled')
+    }))
   },
   'usage viewer-refresh': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'refresh-provider', ...provider(ctx) }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'refresh-provider', ...provider(ctx) }))
   },
   'usage record-interaction': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'record-interaction' }
-      })
-    )
+    return viewerOutput(ctx, () => ({ action: 'record-interaction' }))
   },
   'usage skill-example': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'skill-example',
-          skillCommand: getRequiredStringFlag(ctx.flags, 'skill-command'),
-          exampleId: getRequiredStringFlag(ctx.flags, 'example-id'),
-          operation: getRequiredStringFlag(ctx.flags, 'operation')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'skill-example',
+      skillCommand: getRequiredStringFlag(ctx.flags, 'skill-command'),
+      exampleId: getRequiredStringFlag(ctx.flags, 'example-id'),
+      operation: getRequiredStringFlag(ctx.flags, 'operation')
+    }))
   },
   'usage set-context-open': (ctx) => {
     requireUsageExecutionHost(ctx)
@@ -253,97 +170,57 @@ export const USAGE_HANDLERS: Record<string, CommandHandler> = {
         'Specify exactly one --session-id or --pty-id'
       )
     }
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'set-context-open',
-          target: session ? { kind: 'session', id: session } : { kind: 'pty', id: pty },
-          open: booleanFlag(ctx, 'open')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'set-context-open',
+      target: session ? { kind: 'session', id: session } : { kind: 'pty', id: pty },
+      open: booleanFlag(ctx, 'open')
+    }))
   },
   'usage dismiss-notice': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'dismiss-notice', notice: getRequiredStringFlag(ctx.flags, 'notice') }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'dismiss-notice',
+      notice: getRequiredStringFlag(ctx.flags, 'notice')
+    }))
   },
   'usage set-menu-open': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'set-menu-open',
-          open: booleanFlag(ctx, 'open'),
-          focusPolicy: getOptionalStringFlag(ctx.flags, 'focus-policy')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'set-menu-open',
+      open: booleanFlag(ctx, 'open'),
+      focusPolicy: getOptionalStringFlag(ctx.flags, 'focus-policy')
+    }))
   },
   'usage share': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'share',
-          ...provider(ctx),
-          operation: getRequiredStringFlag(ctx.flags, 'operation')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'share',
+      ...provider(ctx),
+      operation: getRequiredStringFlag(ctx.flags, 'operation')
+    }))
   },
   'usage select-tab': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'select-tab', tab: getRequiredStringFlag(ctx.flags, 'tab-id') }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'select-tab',
+      tab: getRequiredStringFlag(ctx.flags, 'tab-id')
+    }))
   },
   'usage set-filters': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: {
-          action: 'set-filters',
-          ...provider(ctx),
-          scope: getOptionalStringFlag(ctx.flags, 'scope'),
-          range: getOptionalStringFlag(ctx.flags, 'range')
-        }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'set-filters',
+      ...provider(ctx),
+      scope: getOptionalStringFlag(ctx.flags, 'scope'),
+      range: getOptionalStringFlag(ctx.flags, 'range')
+    }))
   },
   'usage set-display-mode': (ctx) => {
     requireUsageExecutionHost(ctx)
-    return output(
-      ctx,
-      'usage.viewerAction',
-      parse(UsageViewerParams, {
-        viewer: getRequiredStringFlag(ctx.flags, 'viewer'),
-        action: { action: 'set-display-mode', mode: getRequiredStringFlag(ctx.flags, 'mode') }
-      })
-    )
+    return viewerOutput(ctx, () => ({
+      action: 'set-display-mode',
+      mode: getRequiredStringFlag(ctx.flags, 'mode')
+    }))
   },
   'usage scan-state': (ctx) => {
     requireUsageExecutionHost(ctx)
