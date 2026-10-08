@@ -1,3 +1,4 @@
+import { WORKSPACE_DESKTOP_CREATE_HANDLER_GROUPS } from './workspace-desktop-create-handler-groups'
 import { WORKSPACE_LINEAGE_HANDLER_GROUPS } from './workspace-lineage-handler-groups'
 import { WORKSPACE_SPACE_SCAN_HANDLER_GROUPS } from './workspace-space-scan-handler-groups'
 import { WORKSPACE_REPO_REGISTRATION_HANDLER_GROUPS } from './workspace-repo-registration-handler-groups'
@@ -9,6 +10,7 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...WORKSPACE_REPO_REGISTRATION_HANDLER_GROUPS,
+  ...WORKSPACE_DESKTOP_CREATE_HANDLER_GROUPS,
   ...WORKSPACE_LINEAGE_HANDLER_GROUPS,
   ...WORKSPACE_SPACE_SCAN_HANDLER_GROUPS,
   ...WORKSPACE_LOCALHOST_LABEL_HANDLER_GROUPS,

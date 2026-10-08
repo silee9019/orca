@@ -16,6 +16,7 @@ test('workspace command declarations keep workspace ownership without moving exi
     ['repo icon-picker-start', 'workspace-repo-icon-picker', 'workspace-data'],
     ['diagnostics open-retained-preview', 'workspace-diagnostic-preview', 'workspace-data'],
     ['notebook environments', 'workspace-notebook-environments', 'workspace-data'],
+    ['worktree create-desktop', 'workspace-desktop-create', 'workspace-data'],
     ['worktree update-desktop-lineage', 'workspace-lineage', 'workspace-data'],
     ['workspace-space scan-start', 'workspace-space-scan', 'workspace-data'],
     ['workspace-ports register-localhost-label', 'workspace-localhost-label', 'workspace-data'],
