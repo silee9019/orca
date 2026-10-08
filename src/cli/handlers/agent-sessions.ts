@@ -9,7 +9,12 @@ import {
   CreateAgentSessionParams,
   EnsureAgentSessionParams
 } from '../../shared/rpc-contract/agent-session-params'
-import { AgentStatusDismissParams } from '../../shared/rpc-contract/agent-status-cli-params'
+import {
+  AgentStatusDismissParams,
+  AgentStatusRetireTabParams,
+  AgentStatusQuestionAnsweredParams,
+  AgentStatusInterruptParams
+} from '../../shared/rpc-contract/agent-status-cli-params'
 import { RepoSelector } from '../../shared/rpc-contract/github-repo-target-params'
 import { RepoIssueCommandWrite } from '../../shared/rpc-contract/repo-params'
 import {
@@ -195,6 +200,12 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'terminal fit-overrides': async (ctx) => call(ctx, 'terminal.fitOverrides', {}),
   'terminal drivers': async (ctx) => call(ctx, 'terminal.drivers', {}),
   'agent awake status': async (ctx) => call(ctx, 'agentAwake.status', {}),
+  'agent status infer-interrupt': request('agentStatus.inferInterrupt', AgentStatusInterruptParams),
+  'agent status infer-question-answered': request(
+    'agentStatus.inferQuestionAnswered',
+    AgentStatusQuestionAnsweredParams
+  ),
+  'agent status retire-tab': request('agentStatus.retireTab', AgentStatusRetireTabParams),
   'agent status list': async (ctx) => call(ctx, 'agentStatus.list', {}),
   'agent status dismiss': request('agentStatus.dismiss', AgentStatusDismissParams),
   'agent status migration': async (ctx) => call(ctx, 'agentStatus.migration', {}),
