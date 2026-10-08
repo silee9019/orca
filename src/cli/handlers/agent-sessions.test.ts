@@ -351,3 +351,40 @@ it.each([
   const call = await run(command, new Map([['session', sessionId]]))
   expect(call).toHaveBeenCalledExactlyOnceWith(method, { sessionId })
 })
+
+it.each(['file', 'stdin'] as const)(
+  'refuses malformed UTF-8 in a request %s before RPC',
+  async (kind) => {
+    const prefix = Buffer.from(
+      JSON.stringify({
+        envelope,
+        body: { kind: 'message', role: 'user', blocks: [{ type: 'text', text: 'bad' }] }
+      }).replace('bad', '')
+    )
+    const position = prefix.indexOf('"text":"') + '"text":"'.length
+    const malformed = Buffer.concat([
+      prefix.subarray(0, position),
+      Buffer.from([0xc3, 0x28]),
+      prefix.subarray(position)
+    ])
+    const client = new RuntimeClient(directory)
+    const call = vi.spyOn(client, 'call')
+    if (kind === 'file') {
+      await writeFile(join(directory, 'request.json'), malformed)
+    } else {
+      vi.spyOn(process.stdin, Symbol.asyncIterator).mockImplementation(async function* () {
+        yield malformed
+        return undefined
+      })
+    }
+    await expect(
+      AGENT_SESSION_HANDLERS['agent session send']({
+        client,
+        flags: new Map([['request-file', kind === 'file' ? 'request.json' : '-']]),
+        cwd: directory,
+        json: true
+      })
+    ).rejects.toMatchObject({ code: 'invalid_argument' })
+    expect(call).not.toHaveBeenCalled()
+  }
+)

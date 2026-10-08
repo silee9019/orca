@@ -19,13 +19,14 @@ export async function readAgentSessionRequest<T>(
       if (process.stdin.isTTY) {
         throw new Error('stdin is a terminal')
       }
-      text = await readNodeReadableTextWithinLimit(process.stdin, MAX_REQUEST_BYTES)
+      text = await readNodeReadableTextWithinLimit(process.stdin, MAX_REQUEST_BYTES, {
+        fatalUtf8: true
+      })
     } else {
-      text = (
-        await readNodeFileWithinLimit(resolve(ctx.cwd, path), MAX_REQUEST_BYTES, {
-          regularFileOnly: true
-        })
-      ).buffer.toString('utf8')
+      const result = await readNodeFileWithinLimit(resolve(ctx.cwd, path), MAX_REQUEST_BYTES, {
+        regularFileOnly: true
+      })
+      text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(result.buffer)
     }
   } catch {
     throw new RuntimeClientError(

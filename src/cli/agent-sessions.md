@@ -6,7 +6,7 @@
 
 `orca agent session history --session <id> --direction tail --limit 40 --json`은 대화의 최근 기록을 읽습니다. 이전·이후 페이지는 `before`·`after`와 응답의 `epoch`·`sequence` 객체를 `--cursor`에 전달해 읽습니다. `options`·`commands`·`outline`·`handoff-status`도 `--session`으로 대상을 지정합니다. 조회는 공급자 프로세스를 시작하지 않습니다.
 
-동작 요청은 `--request-file <path>`로 로컬 UTF-8 JSON 파일을 읽거나 `--request-file -`로 piped stdin에서 받습니다. 입력 상한은 1 MiB입니다. 요청 안의 transcript·image 경로는 실행 호스트의 경로입니다. 비밀 본문은 argv 대신 파일이나 stdin으로 전달합니다. 입력 오류는 본문을 출력하지 않습니다.
+동작 요청은 `--request-file <path>`로 로컬 UTF-8 JSON 파일을 읽거나 `--request-file -`로 piped stdin에서 받습니다. 입력 상한은 1 MiB입니다. 요청 안의 transcript·image 경로는 실행 호스트의 경로입니다. 비밀 본문은 argv 대신 파일이나 stdin으로 전달합니다. 잘못된 UTF-8 입력은 호스트 호출 전에 거부하며 입력 오류는 본문을 출력하지 않습니다.
 
 | 명령                                                | 요청 필드                                                                                                                                                                |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

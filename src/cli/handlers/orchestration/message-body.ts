@@ -21,12 +21,12 @@ export async function readOrchestrationMessageBody(
       if (process.stdin.isTTY) {
         throw new Error('stdin is a terminal')
       }
-      return await readNodeReadableTextWithinLimit(process.stdin, 1024 * 1024)
+      return await readNodeReadableTextWithinLimit(process.stdin, 1024 * 1024, { fatalUtf8: true })
     }
     const result = await readNodeFileWithinLimit(resolve(cwd, file), 1024 * 1024, {
       regularFileOnly: true
     })
-    return new TextDecoder('utf-8', { fatal: true }).decode(result.buffer)
+    return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(result.buffer)
   } catch {
     throw new RuntimeClientError(
       'invalid_argument',

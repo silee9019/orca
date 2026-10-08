@@ -21,12 +21,14 @@ export async function readTerminalSendText(
       if (process.stdin.isTTY) {
         throw new Error('stdin is a terminal')
       }
-      return await readNodeReadableTextWithinLimit(process.stdin, TERMINAL_INPUT_MAX_BYTES)
+      return await readNodeReadableTextWithinLimit(process.stdin, TERMINAL_INPUT_MAX_BYTES, {
+        fatalUtf8: true
+      })
     }
     const result = await readNodeFileWithinLimit(resolve(cwd, file), TERMINAL_INPUT_MAX_BYTES, {
       regularFileOnly: true
     })
-    return new TextDecoder('utf-8', { fatal: true }).decode(result.buffer)
+    return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(result.buffer)
   } catch {
     throw new RuntimeClientError(
       'invalid_argument',

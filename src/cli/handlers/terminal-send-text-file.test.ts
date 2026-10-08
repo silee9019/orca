@@ -73,3 +73,12 @@ it.each(['missing', 'directory', 'invalid-utf8', 'oversized'] as const)(
     expect(call).not.toHaveBeenCalled()
   }
 )
+
+it('refuses malformed piped UTF-8 before contacting the host', async () => {
+  vi.spyOn(process.stdin, Symbol.asyncIterator).mockImplementation(async function* () {
+    yield Buffer.from([0xc3, 0x28])
+    return undefined
+  })
+  await expect(invoke([['text-file', '-']])).rejects.toMatchObject({ code: 'invalid_argument' })
+  expect(call).not.toHaveBeenCalled()
+})

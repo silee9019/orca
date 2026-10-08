@@ -87,3 +87,17 @@ it('rejects invalid UTF-8 files without echoing input', async () => {
   })
   expect(call).not.toHaveBeenCalled()
 })
+
+it.each(['send', 'reply'] as const)(
+  'refuses malformed piped UTF-8 for %s before RPC',
+  async (action) => {
+    vi.spyOn(process.stdin, Symbol.asyncIterator).mockImplementation(async function* () {
+      yield Buffer.from([0xc3, 0x28])
+      return undefined
+    })
+    await expect(invoke(action, [['body-file', '-']])).rejects.toMatchObject({
+      code: 'invalid_argument'
+    })
+    expect(call).not.toHaveBeenCalled()
+  }
+)
