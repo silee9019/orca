@@ -194,7 +194,7 @@ describe('ActivityThreadContextMenu', () => {
     openMenu(done)
 
     fireEvent.click(menuItem('Clear from List'))
-    expect(mocks.clearActivityThread).toHaveBeenCalledWith(done)
+    expect(mocks.clearActivityThread).toHaveBeenCalledExactlyOnceWith(done)
     cleanup()
 
     openMenu(makeThread())
@@ -239,7 +239,7 @@ describe('ActivityThreadContextMenu', () => {
     openBulkMenu([doneA, working, doneB])
 
     fireEvent.click(menuItem('Clear 2 Agents from List'))
-    expect(mocks.clearCompletedActivity).toHaveBeenCalledWith([doneA, doneB])
+    expect(mocks.clearCompletedActivity).toHaveBeenCalledExactlyOnceWith([doneA, doneB])
     expect(mocks.clearActivityThread).not.toHaveBeenCalled()
   })
 
