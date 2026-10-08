@@ -259,6 +259,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       ['../runtime/use-sidebar-viewer-bridge', 'useSidebarViewerBridge'],
       ['../runtime/use-card-viewer-bridge', 'useCardViewerBridge'],
       ['../runtime/use-status-bar-viewer-bridge', 'useStatusBarViewerBridge'],
+      ['../runtime/use-activity-viewer-bridge', 'useActivityViewerBridge'],
       ['../runtime/use-workspace-list-viewer-bridge', 'useWorkspaceListViewerBridge']
     ] as const
     const bridgeHooks = viewerBridges.map(([module, name]) => {

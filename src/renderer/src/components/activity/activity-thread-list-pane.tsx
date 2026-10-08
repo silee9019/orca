@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   defaultRangeExtractor,
   measureElement as measureVirtualElementSize,
@@ -7,6 +7,9 @@ import {
   type Range
 } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
+import type { ActivityViewerSurface } from '../../../../shared/rpc-contract/activity-viewer-params'
+import { useActivityViewerPublication } from '@/runtime/use-activity-viewer-publication'
+import { useActivityThreadDensity } from './use-activity-thread-density'
 import { translate } from '@/i18n/i18n'
 import { ActivityThreadListToolbar } from './activity-thread-list-toolbar'
 import {
@@ -23,7 +26,7 @@ import {
   getActivityHeaderItemIndexes,
   getActivityVirtualItemKey
 } from './activity-thread-virtual-items'
-import { ActivityThreadCollapseContext } from './activity-thread-collapse-context'
+import { useActivityThreadGroupCollapse } from './use-activity-thread-group-collapse'
 import { useActivityThreadSelection } from './use-activity-thread-selection'
 import type {
   ActivityGroupBy,
@@ -43,6 +46,8 @@ const observeActivityListRect: typeof observeElementRect = (instance, cb) =>
 const DEFERRED_SCROLL_RESTORE_WINDOW_MS = 3000
 
 export function ActivityThreadListPane({
+  viewerSurface,
+  querySettled = true,
   threadListRef,
   threadListWidth,
   activityFilterInputRef,
@@ -61,6 +66,7 @@ export function ActivityThreadListPane({
   hasCompletedThreads,
   onClearCompleted,
   visibleThreadGroups,
+  allThreads,
   visibleThreadCount,
   selectedPaneKey,
   onSelectThread,
@@ -81,6 +87,8 @@ export function ActivityThreadListPane({
   onToggleGroupCollapse,
   scrollTopRef
 }: {
+  viewerSurface?: ActivityViewerSurface
+  querySettled?: boolean
   threadListRef?: React.RefObject<HTMLDivElement | null>
   threadListWidth?: number
   activityFilterInputRef: React.RefObject<HTMLInputElement | null>
@@ -99,6 +107,7 @@ export function ActivityThreadListPane({
   hasCompletedThreads?: boolean
   onClearCompleted?: () => void
   visibleThreadGroups: ActivityThreadGroup[]
+  allThreads?: readonly AgentPaneThread[]
   visibleThreadCount: number
   selectedPaneKey: string | null
   onSelectThread: (thread: AgentPaneThread) => void
@@ -120,30 +129,10 @@ export function ActivityThreadListPane({
   /** Optional view-local scroll memory; updated without triggering React renders. */
   scrollTopRef?: React.MutableRefObject<number>
 }): React.JSX.Element {
-  const [internalCollapsedGroupKeys, setInternalCollapsedGroupKeys] = useState<Set<string>>(
-    () => new Set()
-  )
-  // Precedence: explicit props, then a caller-owned context (hosts that unmount
-  // the pane on body switches), then pane-local state.
-  const contextCollapse = useContext(ActivityThreadCollapseContext)
-  const isControlled = collapsedGroupKeys !== undefined && onToggleGroupCollapse !== undefined
-  const effectiveCollapsedGroupKeys = isControlled
-    ? collapsedGroupKeys
-    : (contextCollapse?.collapsedGroupKeys ?? internalCollapsedGroupKeys)
-  const handleToggleGroup = isControlled
-    ? onToggleGroupCollapse
-    : (contextCollapse?.onToggleGroupCollapse ??
-      ((groupKey: string) => {
-        setInternalCollapsedGroupKeys((prev) => {
-          const next = new Set(prev)
-          if (next.has(groupKey)) {
-            next.delete(groupKey)
-          } else {
-            next.add(groupKey)
-          }
-          return next
-        })
-      }))
+  const {
+    collapsedGroupKeys: effectiveCollapsedGroupKeys,
+    onToggleGroupCollapse: handleToggleGroup
+  } = useActivityThreadGroupCollapse({ collapsedGroupKeys, onToggleGroupCollapse })
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const hasRestoredScrollRef = useRef(false)
@@ -154,12 +143,10 @@ export function ActivityThreadListPane({
       }
       const scrollTop = event.currentTarget.scrollTop
       // A clamp-to-0 fired before the deferred restore must not wipe the saved offset.
-      if (!hasRestoredScrollRef.current) {
-        if (scrollTop === 0) {
-          return
-        }
-        hasRestoredScrollRef.current = true
+      if (!hasRestoredScrollRef.current && scrollTop === 0) {
+        return
       }
+      hasRestoredScrollRef.current = true
       scrollTopRef.current = scrollTop
     },
     [scrollTopRef]
@@ -186,6 +173,27 @@ export function ActivityThreadListPane({
     (thread: AgentPaneThread) => allowMarkUnreadWhenSelected || thread.paneKey !== selectedPaneKey,
     [allowMarkUnreadWhenSelected, selectedPaneKey]
   )
+  useActivityViewerPublication(viewerSurface, virtualItems, {
+    groupBy,
+    readFilter,
+    compact: compactMode,
+    showChildAgents: showChildAgents ?? false,
+    querySettled,
+    query,
+    selectedPaneKey,
+    markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads },
+    completed: { run: onClearCompleted, hasCompletedThreads, groups: visibleThreadGroups },
+    threadReads: allThreads
+      ? {
+          allThreads,
+          markRead: onMarkThreadRead,
+          markUnread: onMarkThreadUnread,
+          markManyRead: onMarkThreadsRead,
+          markManyUnread: onMarkThreadsUnread,
+          canMarkUnread: canMarkThreadUnread
+        }
+      : undefined
+  })
   const selectedItemIndex = useMemo(
     () => findActivityThreadItemIndex(virtualItems, selectedPaneKey),
     [virtualItems, selectedPaneKey]
@@ -246,15 +254,7 @@ export function ActivityThreadListPane({
     useFlushSync: false
   })
 
-  // Row heights differ between densities; drop stale measurements on toggle (not on mount).
-  const measuredCompactModeRef = useRef(compactMode)
-  useEffect(() => {
-    if (measuredCompactModeRef.current === compactMode) {
-      return
-    }
-    measuredCompactModeRef.current = compactMode
-    virtualizer.measure()
-  }, [virtualizer, compactMode])
+  useActivityThreadDensity(virtualizer, scrollContainerRef, compactMode)
 
   // Restore only once the (estimated) content can contain the saved offset, so a
   // pre-hydration mount doesn't clamp the restore to 0.
@@ -302,6 +302,7 @@ export function ActivityThreadListPane({
   return (
     <aside
       ref={threadListRef}
+      data-activity-viewer={viewerSurface}
       className={cn(
         'relative flex min-h-0 flex-col',
         resizable ? 'shrink-0 border-r border-border' : 'min-w-0 flex-1'
@@ -352,6 +353,9 @@ export function ActivityThreadListPane({
                   key={virtualRow.key}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
+                  data-activity-viewer-thread={
+                    item.type === 'thread' ? getActivityVirtualItemKey(item) : undefined
+                  }
                   data-activity-sticky-header={item.type === 'header' ? '' : undefined}
                   data-activity-sticky-header-active={isActiveSticky ? '' : undefined}
                   className={cn(

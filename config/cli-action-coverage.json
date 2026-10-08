@@ -43328,7 +43328,7 @@
       "sources": [
         {
           "id": "api:platform.get",
-          "fingerprint": "28d63a272e7f0907f5eed4fba82aa42b55b72ddb492a24585df4cf2397949e9b"
+          "fingerprint": "fab3fa0a8dd9dc5db7c83a5e796e757ae5a23b6a85da3778ab471b72def08fb3"
         }
       ],
       "rule": "api",

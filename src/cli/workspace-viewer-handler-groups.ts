@@ -2,6 +2,30 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const WORKSPACE_VIEWER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'activity-viewer',
+    keys: [
+      'ui activity get',
+      'ui activity mark-all-read',
+      'ui activity clear-completed',
+      'ui activity clear-thread',
+      'ui activity clear-threads',
+      'ui activity read-toggle',
+      'ui activity read-toggle-many',
+      'ui activity origin',
+      'ui activity scope-reset',
+      'ui activity host-toggle',
+      'ui activity hosts-toggle-all',
+      'ui activity group',
+      'ui activity read',
+      'ui activity compact',
+      'ui activity children',
+      'ui activity search',
+      'ui activity search-clear',
+      'ui activity search-visible'
+    ],
+    load: async () => (await import('./handlers/activity-viewer.js')).ACTIVITY_VIEWER_HANDLERS
+  },
+  {
     name: 'card-viewer',
     keys: ['ui card get', 'ui card mode', 'ui card activity'],
     load: async () => (await import('./handlers/card-viewer.js')).CARD_VIEWER_HANDLERS

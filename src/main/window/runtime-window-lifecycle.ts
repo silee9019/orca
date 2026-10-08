@@ -4,6 +4,7 @@ import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
 import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
 import { registerConnectionsViewerManagement } from '../ipc/connections-viewer-management'
 import { requestConnectionsViewerFromRenderer } from './connections-viewer-request-relay'
+import { requestActivityViewerFromRenderer } from './activity-viewer-request-relay'
 import { requestSettingsViewerFromRenderer } from './settings-viewer-request-relay'
 import { requestSidebarViewerFromRenderer } from './sidebar-viewer-request-relay'
 import { requestCardViewerFromRenderer } from './card-viewer-request-relay'
@@ -60,6 +61,7 @@ export function registerRuntimeWindowLifecycle(
     sidebarViewer: (command) => requestSidebarViewerFromRenderer(mainWindow, command),
     cardViewer: (command) => requestCardViewerFromRenderer(mainWindow, command),
     statusBarViewer: (command) => requestStatusBarViewerFromRenderer(mainWindow, command),
+    activityViewer: (command) => requestActivityViewerFromRenderer(mainWindow, command),
     workspaceListViewer: (command) => requestWorkspaceListViewerFromRenderer(mainWindow, command),
     workspaceFilter: (command) => requestWorkspaceFilterFromRenderer(mainWindow, command),
     worktreesChanged: (repoId, renamed) => {

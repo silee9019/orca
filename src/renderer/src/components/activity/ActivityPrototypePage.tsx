@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
+import { useActivitySearchControls } from '@/runtime/use-activity-search-controls'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import {
   setActivityTerminalPortals,
@@ -27,6 +28,7 @@ export * from './activity-prototype-page-exports'
 export default function ActivityPrototypePage(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const activityFilterInputRef = useRef<HTMLInputElement | null>(null)
+  useActivitySearchControls('activity-page', query, setQuery, activityFilterInputRef)
   // Why: bounds auto mark-read to one acknowledgement per selected thread turn.
   const autoAcknowledgedTurnRef = useRef<string | null>(null)
   // Why store-backed: persisted preferences shared with the sidebar agents list.
@@ -66,7 +68,8 @@ export default function ActivityPrototypePage(): React.JSX.Element {
     effectiveSelectedPaneKey,
     visibleThreads,
     markAllReadThreads,
-    visibleThreadGroups
+    visibleThreadGroups,
+    querySettled
   } = useAgentPaneThreads({ query, readFilter, groupBy, selectedPaneKey, showChildAgents })
   if (!selectedPaneKeyIsLive) {
     // Why: rows disappear when agent retention or tab state changes; clear stale selection before detail/portal rendering targets it.
@@ -315,6 +318,8 @@ export default function ActivityPrototypePage(): React.JSX.Element {
     <div ref={setActivityPageRef} className="flex h-full min-h-0 flex-col bg-background pb-3">
       <main className="flex min-h-0 flex-1 overflow-hidden">
         <ActivityThreadListPane
+          viewerSurface="activity-page"
+          querySettled={querySettled}
           threadListRef={threadListRef}
           threadListWidth={threadListWidth}
           activityFilterInputRef={activityFilterInputRef}
@@ -333,6 +338,7 @@ export default function ActivityPrototypePage(): React.JSX.Element {
           hasCompletedThreads={hasCompletedThreads}
           onClearCompleted={handleClearCompleted}
           visibleThreadGroups={visibleThreadGroups}
+          allThreads={allThreads}
           visibleThreadCount={visibleThreads.length}
           selectedPaneKey={selectedThread?.paneKey ?? null}
           onSelectThread={selectThread}

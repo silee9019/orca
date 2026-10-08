@@ -1,4 +1,5 @@
 import React from 'react'
+import { getActivityThreadReadTargets } from './activity-thread-read-targets'
 import { Bell, BellOff, Copy, ExternalLink, PanelRight, X } from 'lucide-react'
 import {
   ContextMenu,
@@ -205,29 +206,31 @@ function ActivityThreadBulkMenuItems({
   onMarkManyRead: (threads: readonly AgentPaneThread[]) => void
   onMarkManyUnread: (threads: readonly AgentPaneThread[]) => void
 }): React.JSX.Element {
-  const unread = targets.filter((target) => target.unread)
-  const read = targets.filter((target) => !target.unread && canMarkUnread(target))
+  const readAction = getActivityThreadReadTargets(targets, canMarkUnread)
   const clearable = targets.filter(isClearableActivityThread)
   return (
     <>
       {/* Why read wins when mixed: matches the single toggle, which offers Mark Read on any unread agent. */}
-      {unread.length > 0 ? (
-        <ContextMenuItem onSelect={() => onMarkManyRead(unread)}>
+      {readAction.operation === 'read' ? (
+        <ContextMenuItem onSelect={() => onMarkManyRead(readAction.targets)}>
           <BellOff className="size-3.5" />
           {translate(
             'auto.components.activity.ActivityThreadContextMenu.markManyRead',
             'Mark {{count}} Agents Read',
-            { count: unread.length }
+            { count: readAction.targets.length }
           )}
         </ContextMenuItem>
       ) : (
-        <ContextMenuItem disabled={read.length === 0} onSelect={() => onMarkManyUnread(read)}>
+        <ContextMenuItem
+          disabled={readAction.targets.length === 0}
+          onSelect={() => onMarkManyUnread(readAction.targets)}
+        >
           <Bell className="size-3.5" />
-          {read.length > 0
+          {readAction.targets.length > 0
             ? translate(
                 'auto.components.activity.ActivityThreadContextMenu.markManyUnread',
                 'Mark {{count}} Agents Unread',
-                { count: read.length }
+                { count: readAction.targets.length }
               )
             : translate(
                 'auto.components.activity.ActivityThreadContextMenu.markUnread',

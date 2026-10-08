@@ -12,6 +12,7 @@ import type {
 } from '../../../../shared/ui-chrome-types'
 import { getSidebarHostHealthLabel, type SidebarHostOption } from './sidebar-host-options'
 import { translate } from '@/i18n/i18n'
+import { getToggledAllHostIds, getToggledHostIds } from './sidebar-host-scope-toggle'
 
 type SidebarHostScopeMenuSectionProps = {
   hostVisibilityLabel: string
@@ -64,32 +65,21 @@ export function SidebarHostScopeMenuSection({
   const allVisible = !visibleWorkspaceHostIds
   const visibleHostIdSet = new Set(visibleWorkspaceHostIds ?? [])
 
+  const hostIds = hostOptions.map((host) => host.id)
   const toggleAllHosts = (): void => {
-    if (!allVisible) {
+    const next = getToggledAllHostIds(visibleWorkspaceHostIds, hostIds)
+    if (next === null) {
       setWorkspaceHostScope(ALL_EXECUTION_HOSTS_SCOPE)
-      return
-    }
-    const firstHost = hostOptions[0]
-    if (firstHost) {
-      setVisibleWorkspaceHostIds([firstHost.id])
+    } else if (next !== undefined) {
+      setVisibleWorkspaceHostIds(next)
     }
   }
 
   const toggleHost = (hostId: ExecutionHostId): void => {
-    if (allVisible) {
-      setVisibleWorkspaceHostIds([hostId])
-      return
+    const next = getToggledHostIds(visibleWorkspaceHostIds, hostIds, hostId)
+    if (next !== undefined) {
+      setVisibleWorkspaceHostIds(next)
     }
-    const next = new Set(visibleHostIdSet)
-    if (next.has(hostId)) {
-      if (next.size <= 1) {
-        return
-      }
-      next.delete(hostId)
-    } else {
-      next.add(hostId)
-    }
-    setVisibleWorkspaceHostIds(next.size === hostOptions.length ? null : [...next])
   }
 
   // Why: one Sort-by-style row (label left, value right) — nested panel holds

@@ -11,6 +11,8 @@ import type { SettingsViewerCommand } from '../../shared/rpc-contract/settings-v
 import type { SidebarViewerCommand } from '../../shared/rpc-contract/sidebar-viewer-params'
 import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
 import type { StatusBarViewerCommand } from '../../shared/rpc-contract/status-bar-viewer-params'
+import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
 import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
 import type { SettingsViewerResult } from '../../shared/settings-viewer-command'
 import type { SidebarViewerResult } from '../../shared/sidebar-viewer-command'
@@ -51,6 +53,7 @@ export type RuntimeNotifier = {
   sidebarViewer?(command: SidebarViewerCommand): Promise<SidebarViewerResult>
   cardViewer?(command: CardViewerCommand): Promise<CardViewerResult>
   statusBarViewer?(command: StatusBarViewerCommand): Promise<StatusBarViewerResult>
+  activityViewer?(command: ActivityViewerCommand): Promise<ActivityViewerResult>
   workspaceListViewer?(command: WorkspaceListViewerCommand): Promise<WorkspaceListViewerResult>
   workspaceFilter?(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult>
   automationsChanged?(payload: {

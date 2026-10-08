@@ -1,6 +1,7 @@
 import { uiVoiceViewerApi } from './ui-voice-viewer-api'
 import { uiSearchSettingsViewerApi } from './ui-search-settings-viewer-api'
 import { connectionsViewerUiApi } from './connections-viewer-bridge'
+import { activityViewerBridgeApi } from './activity-viewer-bridge'
 import { settingsViewerBridgeApi } from './settings-viewer-bridge'
 import { sidebarViewerBridgeApi } from './sidebar-viewer-bridge'
 import { cardViewerBridgeApi } from './card-viewer-bridge'
@@ -21,6 +22,7 @@ export const uiApi = {
   ...sidebarViewerBridgeApi,
   ...cardViewerBridgeApi,
   ...statusBarViewerBridgeApi,
+  ...activityViewerBridgeApi,
   ...workspaceListViewerBridgeApi,
   ...workspaceFilterBridgeApi,
   ...uiStateAndMenuCommandsApi,

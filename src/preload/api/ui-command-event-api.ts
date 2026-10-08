@@ -1,3 +1,5 @@
+import type { activityViewerBridgeApi } from './activity-viewer-bridge'
+import type { settingsViewerBridgeApi } from './settings-viewer-bridge'
 import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
 import type {
   BrowserViewerRequest,
@@ -16,10 +18,6 @@ import type {
   WorkspaceListViewerRequest,
   WorkspaceListViewerResponse
 } from '../../shared/workspace-list-viewer-command'
-import type {
-  SettingsViewerRequest,
-  SettingsViewerResponse
-} from '../../shared/settings-viewer-command'
 import type {
   SidebarViewerRequest,
   SidebarViewerResponse
@@ -77,7 +75,9 @@ import type {
 
 export type CloseActiveTabPayload = { sourceId: string }
 
-export type UiCommandEventApi = {
+export type UiCommandEventApi = Partial<
+  typeof activityViewerBridgeApi & typeof settingsViewerBridgeApi
+> & {
   onBrowserViewerRequest?: (callback: (request: BrowserViewerRequest) => void) => () => void
   respondBrowserViewer?: (response: BrowserViewerResponse) => void
   onVoiceViewerRequest?: (callback: (request: VoiceViewerRequest) => void) => () => void
@@ -86,14 +86,12 @@ export type UiCommandEventApi = {
   respondSearchSettingsViewer?: (response: SearchSettingsViewerResponse) => void
   onConnectionsViewerRequest?: (callback: (request: ConnectionsViewerRequest) => void) => () => void
   respondConnectionsViewer?: (response: ConnectionsViewerResponse) => void
-  onSettingsViewerRequest?: (callback: (request: SettingsViewerRequest) => void) => () => void
   onSidebarViewerRequest?: (callback: (request: SidebarViewerRequest) => void) => () => void
   onCardViewerRequest?: (callback: (request: CardViewerRequest) => void) => () => void
   onStatusBarViewerRequest?: (callback: (request: StatusBarViewerRequest) => void) => () => void
   onWorkspaceListViewerRequest?: (
     callback: (request: WorkspaceListViewerRequest) => void
   ) => () => void
-  respondSettingsViewer?: (response: SettingsViewerResponse) => void
   respondSidebarViewer?: (response: SidebarViewerResponse) => void
   respondCardViewer?: (response: CardViewerResponse) => void
   respondStatusBarViewer?: (response: StatusBarViewerResponse) => void

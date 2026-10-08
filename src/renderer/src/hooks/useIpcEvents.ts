@@ -1,3 +1,4 @@
+import { useActivityViewerBridge } from '../runtime/use-activity-viewer-bridge'
 import { useSettingsViewerBridge } from '../runtime/use-settings-viewer-bridge'
 import { useSidebarViewerBridge } from '../runtime/use-sidebar-viewer-bridge'
 import { useCardViewerBridge } from '../runtime/use-card-viewer-bridge'
@@ -12,6 +13,7 @@ export function useIpcEvents(): void {
   useSidebarViewerBridge()
   useCardViewerBridge()
   useStatusBarViewerBridge()
+  useActivityViewerBridge()
   useWorkspaceListViewerBridge()
   useEffect(() => installAppLifetimeIpcEvents(), [])
 }

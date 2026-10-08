@@ -84,6 +84,7 @@ export function ActivityThreadListToolbar({
               />
               {query ? (
                 <Button
+                  data-activity-search-clear
                   type="button"
                   variant="ghost"
                   size="icon-xs"

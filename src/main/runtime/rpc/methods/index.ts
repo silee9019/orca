@@ -56,6 +56,7 @@ import { WORKSPACE_GITLAB_INSPECTION_METHODS } from './workspace-gitlab-inspecti
 import { WORKSPACE_KEYBINDING_FILE_METHODS } from './workspace-keybinding-file'
 import { WORKSPACE_GIT_IGNORE_METHODS } from './workspace-git-ignore'
 import { WORKSPACE_BITBUCKET_METHODS } from './workspace-bitbucket'
+import { ACTIVITY_VIEWER_METHODS } from './activity-viewer'
 import { SETTINGS_VIEWER_METHODS } from './settings-viewer'
 import { SIDEBAR_VIEWER_METHODS } from './sidebar-viewer'
 import { CARD_VIEWER_METHODS } from './card-viewer'
@@ -177,6 +178,7 @@ export const ALL_RPC_METHODS = [
   ...SIDEBAR_VIEWER_METHODS,
   ...CARD_VIEWER_METHODS,
   ...STATUS_BAR_VIEWER_METHODS,
+  ...ACTIVITY_VIEWER_METHODS,
   ...WORKSPACE_LIST_VIEWER_METHODS,
   ...WORKSPACE_FILTER_METHODS,
   ...STATUS_METHODS,

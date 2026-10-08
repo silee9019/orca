@@ -66,6 +66,7 @@ import { BROWSER_SERVER_REOPEN_COMMAND_SPECS } from './browser-server-reopen'
 import { BROWSER_CLIENT_ADDRESS_COMMAND_SPECS } from './browser-client-address'
 import { BROWSER_PAIRED_NEW_TAB_COMMAND_SPECS } from './browser-paired-new-tab'
 import { BROWSER_CLIENT_FIND_COMMAND_SPECS } from './browser-client-find'
+import { ACTIVITY_VIEWER_COMMAND_SPECS } from './activity-viewer'
 import { SETTINGS_VIEWER_COMMAND_SPECS } from './settings-viewer'
 import { SIDEBAR_VIEWER_COMMAND_SPECS } from './sidebar-viewer'
 import { CARD_VIEWER_COMMAND_SPECS } from './card-viewer'
@@ -178,6 +179,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...SIDEBAR_VIEWER_COMMAND_SPECS,
   ...CARD_VIEWER_COMMAND_SPECS,
   ...STATUS_BAR_VIEWER_COMMAND_SPECS,
+  ...ACTIVITY_VIEWER_COMMAND_SPECS,
   ...WORKSPACE_LIST_VIEWER_COMMAND_SPECS,
   ...WORKSPACE_FILTER_COMMAND_SPECS,
   ...CORE_COMMAND_SPECS,

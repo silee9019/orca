@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { useAppStore } from '@/store'
+import { useActivitySearchControls } from '@/runtime/use-activity-search-controls'
 import { translate } from '@/i18n/i18n'
 import { hasActivityThreadWorkspace } from '@/components/activity/activity-thread-actions'
 import { useActivityThreadActionBindings } from '@/components/activity/use-activity-thread-action-bindings'
@@ -51,24 +52,35 @@ export default function SidebarAgentsList({
 
   const handleShowSearchChange = useCallback(
     (visible: boolean) => {
-      setShowSearch(visible)
+      const saving = setShowSearch(visible)
       if (!visible) {
         setQuery('')
-        return
+        return saving
       }
       // Wait for the newly visible input to mount before focusing it.
       requestAnimationFrame(() => activityFilterInputRef.current?.focus())
+      return saving
     },
     [setQuery, setShowSearch]
   )
 
+  useActivitySearchControls(
+    'sidebar-agents',
+    query,
+    setQuery,
+    activityFilterInputRef,
+    handleShowSearchChange
+  )
+
   const {
     storeData,
+    allThreads,
     selectedPaneKeyIsLive,
     effectiveSelectedPaneKey,
     visibleThreads,
     markAllReadThreads,
-    visibleThreadGroups
+    visibleThreadGroups,
+    querySettled
   } = useAgentPaneThreads({ query, readFilter, groupBy, selectedPaneKey, showChildAgents })
 
   useEffect(() => {
@@ -138,6 +150,8 @@ export default function SidebarAgentsList({
         </div>
       ) : null}
       <ActivityThreadListPane
+        viewerSurface="sidebar-agents"
+        querySettled={querySettled}
         activityFilterInputRef={activityFilterInputRef}
         query={query}
         onQueryChange={setQuery}
@@ -154,6 +168,7 @@ export default function SidebarAgentsList({
         hasCompletedThreads={hasCompletedThreads}
         onClearCompleted={handleClearCompleted}
         visibleThreadGroups={visibleThreadGroups}
+        allThreads={allThreads}
         visibleThreadCount={visibleThreads.length}
         selectedPaneKey={effectiveSelectedPaneKey}
         onSelectThread={selectThread}

@@ -65,6 +65,7 @@ import {
   SelectDataAccountParams
 } from './accounts-params'
 import { AccountsViewerParams } from './accounts-viewer-params'
+import { ActivityViewerParams } from './activity-viewer-params'
 import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
 import { AgentPermissionModeParams } from './agent-permission-mode-params'
@@ -1705,6 +1706,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.unsubscribe': TerminalUnsubscribe,
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
+  'ui.activityViewer': ActivityViewerParams,
   'ui.browserViewer': BrowserViewerCommand,
   'ui.cardViewer': CardViewerParams,
   'ui.get': null,

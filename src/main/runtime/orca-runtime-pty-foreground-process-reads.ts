@@ -8,6 +8,8 @@ import type {
   SearchSettingsViewerCommand,
   SearchSettingsViewerResult
 } from '../../shared/search-settings-viewer'
+import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
 import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
 import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
 import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
@@ -249,6 +251,12 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
       throw new Error('renderer_unavailable')
     }
     return await this.notifier.statusBarViewer(command)
+  }
+  async activityViewer(command: ActivityViewerCommand): Promise<ActivityViewerResult> {
+    if (!this.notifier?.activityViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.activityViewer(command)
   }
   async workspaceListViewer(
     command: WorkspaceListViewerCommand
