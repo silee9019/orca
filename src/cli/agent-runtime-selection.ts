@@ -1,3 +1,4 @@
+import { STRUCTURED_HELD_WATCH_COMMAND_SPECS } from './specs/structured-held-watch'
 import { REMOTE_WORKSPACE_WATCH_COMMAND_SPECS } from './specs/remote-workspace-watch'
 import { AGENT_AWAKE_WATCH_COMMAND_SPECS } from './specs/agent-awake-watch'
 import { AI_VAULT_LIST_CANCEL_COMMAND_SPECS } from './specs/ai-vault-list-cancel'
@@ -14,6 +15,7 @@ import { WORKSPACE_REVIEW_CACHE_WRITE_COMMAND_SPECS } from './specs/workspace-re
 import { NATIVE_CHAT_WATCH_COMMAND_SPECS } from './specs/native-chat-watch'
 
 const runtimeCommands = [
+  ...STRUCTURED_HELD_WATCH_COMMAND_SPECS,
   ...REMOTE_WORKSPACE_WATCH_COMMAND_SPECS,
   ...AGENT_AWAKE_WATCH_COMMAND_SPECS,
   ...AI_VAULT_LIST_CANCEL_COMMAND_SPECS,

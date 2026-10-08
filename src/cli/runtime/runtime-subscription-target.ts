@@ -1,3 +1,4 @@
+import type { StructuredHeldSubscriptionParams } from '../../shared/rpc-contract/structured-held-watch-params'
 import type { RemoteWorkspaceSubscriptionParams } from '../../shared/rpc-contract/remote-workspace-watch-params'
 import type { NativeChatSubscriptionCallbacks } from './native-chat-subscription'
 import type { NativeChatSubscriptionParams } from '../../shared/rpc-contract/native-chat-watch'
@@ -9,6 +10,7 @@ export type StreamArgs<Params> = [
   signal: AbortSignal
 ]
 export type SubscriptionParams =
+  | StructuredHeldSubscriptionParams
   | NativeChatSubscriptionParams
   | TerminalPresentationSubscriptionParams
   | AgentAwakeSubscriptionParams
@@ -42,16 +44,19 @@ export function createCliRuntimeSubscriptionOptions(
 }
 
 export function resolveRuntimeEventCapability(method: RuntimeEventMethod) {
-  return method === 'nativeChat.subscribe'
-    ? 'nativeChatStreaming'
-    : method === 'agentAwake.subscribe'
-      ? 'agentAwakeStreaming'
-      : method === 'remoteWorkspace.subscribe'
-        ? 'remoteWorkspaceStreaming'
-        : 'terminalPresentationStreaming'
+  return method === 'structuredHeld.subscribe'
+    ? 'structuredHeldStreaming'
+    : method === 'nativeChat.subscribe'
+      ? 'nativeChatStreaming'
+      : method === 'agentAwake.subscribe'
+        ? 'agentAwakeStreaming'
+        : method === 'remoteWorkspace.subscribe'
+          ? 'remoteWorkspaceStreaming'
+          : 'terminalPresentationStreaming'
 }
 
 export type RuntimeEventMethod =
+  | 'structuredHeld.subscribe'
   | 'nativeChat.subscribe'
   | 'terminal.presentation.subscribe'
   | 'agentAwake.subscribe'
