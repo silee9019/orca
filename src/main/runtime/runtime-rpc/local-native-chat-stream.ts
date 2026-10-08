@@ -33,7 +33,8 @@ export async function dispatchLocalNativeChatStream(
   context.startKeepalive()
   if (context.signal.aborted) {
     cleanup()
-    return
+    return undefined
   }
   await dispatcher.dispatchStreaming(request, send, { connectionId, signal: context.signal })
+  return undefined
 }
