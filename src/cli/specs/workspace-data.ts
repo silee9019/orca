@@ -1,3 +1,4 @@
+import { WORKSPACE_REPO_CREATE_REMOTE_COMMAND_SPECS } from './workspace-repo-create-remote'
 import { WORKSPACE_REPO_ADD_COMMAND_SPECS } from './workspace-repo-add'
 import { WORKSPACE_REPO_FOLDER_PICKER_COMMAND_SPECS } from './workspace-repo-folder-picker'
 import { WORKSPACE_WORKTREE_FORGET_COMMAND_SPECS } from './workspace-worktree-forget'
@@ -50,6 +51,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_REPO_CREATE_REMOTE_COMMAND_SPECS,
   ...WORKSPACE_REPO_ADD_COMMAND_SPECS,
   ...WORKSPACE_REPO_FOLDER_PICKER_COMMAND_SPECS,
   ...WORKSPACE_WORKTREE_FORGET_COMMAND_SPECS,

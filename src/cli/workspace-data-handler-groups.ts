@@ -9,6 +9,13 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['repo add-desktop-local', 'repo add-desktop-remote'],
     load: async () => (await import('./handlers/workspace-repo-add.js')).WORKSPACE_REPO_ADD_HANDLERS
   },
+  {
+    name: 'workspace-repo-create-remote',
+    keys: ['repo create-desktop-remote'],
+    load: async () =>
+      (await import('./handlers/workspace-repo-create-remote.js'))
+        .WORKSPACE_REPO_CREATE_REMOTE_HANDLERS
+  },
   ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
   ...WORKSPACE_REPO_PICKER_HANDLER_GROUPS,
   {
