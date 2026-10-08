@@ -4,6 +4,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...AGENT_SESSION_WATCH_HANDLER_GROUPS,
   {
+    name: 'terminal-host-resize',
+    keys: ['terminal resize-host'],
+    load: async () =>
+      (await import('./handlers/terminal-host-resize.js')).TERMINAL_HOST_RESIZE_HANDLERS
+  },
+  {
     name: 'terminal-render-evidence',
     keys: ['terminal write-render-evidence'],
     load: async () =>
