@@ -76,14 +76,19 @@ test('workspace list CLI acknowledges grouping and existing persisted sort', asy
   const collapse = list.locator('[data-repo-header-collapse-affordance]').first()
   await expect(collapse).toBeVisible()
   await collapse.click()
-  await expect
-    .poll(() => orcaPage.evaluate(() => window.__store?.getState().collapsedGroups.size))
-    .toBeGreaterThan(0)
+  await expect(list.locator('[data-repo-header-id][aria-expanded]').first()).toHaveAttribute(
+    'aria-expanded',
+    'false'
+  )
   expect(await call(['workspace-list', 'group', '--by', 'repo'])).toMatchObject({
     applied: true,
     persisted: true,
     collapsedGroups: []
   })
+  await expect(list.locator('[data-repo-header-id][aria-expanded]').first()).toHaveAttribute(
+    'aria-expanded',
+    'true'
+  )
   for (const by of ['none', 'workspace-status', 'pr-status', 'repo']) {
     const result = await call(['workspace-list', 'group', '--by', by])
     expect(result).toMatchObject({

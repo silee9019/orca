@@ -73,18 +73,14 @@ test('status bar CLI acknowledges parent effects and actual visibility', async (
   await expect(orcaPage.locator('[data-status-bar-viewer]')).toHaveCount(0)
   const shown = await call(['status-bar', 'toggle'])
   expect(shown).toMatchObject({ visible: true, applied: true, persisted: true })
-  const beforeCount = await orcaPage.evaluate(
-    () => window.__store?.getState().featureInteractions.ports?.interactionCount ?? 0
-  )
-  for (const enabled of ['false', 'false', 'true']) {
+  for (const [index, enabled] of ['false', 'false', 'true'].entries()) {
     const result = await call(['status-bar', 'item', '--item', 'ports', '--enabled', enabled])
     expect(result).toMatchObject({ applied: true, persisted: true })
     expect(result.items.includes('ports')).toBe(enabled === 'true')
+    expect(result.interactionRecorded).toBe(
+      index === 0 ? initial.items.includes('ports') : index === 2
+    )
   }
-  const afterCount = await orcaPage.evaluate(
-    () => window.__store?.getState().featureInteractions.ports?.interactionCount ?? 0
-  )
-  expect(afterCount - beforeCount).toBe(initial.items.includes('ports') ? 2 : 1)
   await orcaPage.evaluate(() => {
     const store = window.__store
     if (!store) {
