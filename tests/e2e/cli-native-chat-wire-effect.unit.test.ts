@@ -6,11 +6,11 @@ import { getEventListeners } from 'node:events'
 import { join } from 'node:path'
 import { z } from 'zod'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { createRuntimeTransportMetadata } from '../../main/runtime/runtime-rpc/runtime-rpc-socket-metadata'
-import type { RuntimeMetadata } from '../../shared/runtime-bootstrap'
-import { REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES } from '../../shared/remote-runtime-memory-limits'
-import type { NativeChatSubscription } from './native-chat-subscription'
-import { subscribeLocalNativeChat } from './local-native-chat-subscription'
+import { createRuntimeTransportMetadata } from '../../src/main/runtime/runtime-rpc/runtime-rpc-socket-metadata'
+import type { RuntimeMetadata } from '../../src/shared/runtime-bootstrap'
+import { REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES } from '../../src/shared/remote-runtime-memory-limits'
+import type { NativeChatSubscription } from '../../src/cli/runtime/native-chat-subscription'
+import { subscribeLocalNativeChat } from '../../src/cli/runtime/local-native-chat-subscription'
 
 let root: string
 let server: Server
