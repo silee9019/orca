@@ -35,7 +35,8 @@ vi.mock('../../src/main/providers/ssh-git-dispatch', () => ({
 }))
 vi.mock('../../src/main/ssh/ssh-target-registry', () => ({
   getActiveMultiplexer: () =>
-    fixture.connected ? { request: fixture.muxRequest, notify: fixture.muxNotify } : undefined
+    fixture.connected ? { request: fixture.muxRequest, notify: fixture.muxNotify } : undefined,
+  setSshActiveMultiplexerResolver: vi.fn()
 }))
 vi.mock('../../src/main/ipc/repos/repos-changed-notification', () => ({
   notifyReposChanged: fixture.notify
