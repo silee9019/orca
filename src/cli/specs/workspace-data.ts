@@ -1,3 +1,5 @@
+import { WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS } from './workspace-github-account'
+import { WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS } from './workspace-gitlab-inspection'
 import { WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS } from './workspace-keybinding-file'
 import { WORKSPACE_GIT_IGNORE_COMMAND_SPECS } from './workspace-git-ignore'
 import { WORKSPACE_GIT_GENERATION_COMMAND_SPECS } from './workspace-git-generation'
@@ -29,6 +31,8 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS,
+  ...WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS,
   ...WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS,
   ...WORKSPACE_GIT_IGNORE_COMMAND_SPECS,
   ...WORKSPACE_GIT_GENERATION_COMMAND_SPECS,

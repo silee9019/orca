@@ -3,6 +3,31 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-github-account',
+    keys: [
+      'github viewer',
+      'github diagnose-auth',
+      'github check-orca-starred',
+      'github star-orca'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-github-account.js')).WORKSPACE_GITHUB_ACCOUNT_HANDLERS
+  },
+  {
+    name: 'workspace-gitlab-inspection',
+    keys: [
+      'gitlab viewer',
+      'gitlab issue',
+      'gitlab mr',
+      'gitlab mr-for-branch',
+      'gitlab project-slug',
+      'gitlab list-assignable-users'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-gitlab-inspection.js'))
+        .WORKSPACE_GITLAB_INSPECTION_HANDLERS
+  },
+  {
     name: 'workspace-keybinding-file',
     keys: ['keybindings ensure-file', 'keybindings open-file', 'keybindings reveal-file'],
     load: async () =>
