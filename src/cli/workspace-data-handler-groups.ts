@@ -1,7 +1,9 @@
+import { WORKSPACE_CLEANUP_HANDLER_GROUPS } from './workspace-cleanup-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
   {
     name: 'workspace-repo-icon-picker',
     keys: [
@@ -98,13 +100,6 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['git await-environment'],
     load: async () =>
       (await import('./handlers/workspace-git-startup.js')).WORKSPACE_GIT_STARTUP_HANDLERS
-  },
-  {
-    name: 'workspace-cleanup-dismissals',
-    keys: ['workspace-cleanup dismiss', 'workspace-cleanup clear-dismissals'],
-    load: async () =>
-      (await import('./handlers/workspace-cleanup-dismissals.js'))
-        .WORKSPACE_CLEANUP_DISMISSAL_HANDLERS
   },
   {
     name: 'workspace-cached-scans',
