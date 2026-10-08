@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { openEnum } from './zod-salvage'
 import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from './constants'
 import {
   WorkspaceFiltersSchema,
@@ -55,18 +56,19 @@ export const WorkspaceFilterResultSchema = z
   .object({
     viewer: z.literal('host'),
     viewerId: z.number().int(),
-    filters: WorkspaceFiltersSchema,
+    filters: WorkspaceFiltersSchema.strip(),
     persisted: z.boolean().nullable(),
     applied: z.boolean(),
     visibleWorktreeIds: z.array(z.string()).nullable(),
     visibleFolderWorkspaceIds: z.array(z.string()).nullable(),
-    reason: z
-      .enum([
+    reason: openEnum(
+      [
         'persistence_superseded',
         'viewer_not_applied',
         'viewer_runtime_changed_persistence_unknown'
-      ])
-      .optional(),
+      ],
+      'viewer_not_applied'
+    ).optional(),
     control: z
       .object({
         open: z.boolean(),
@@ -75,10 +77,10 @@ export const WorkspaceFilterResultSchema = z
         resultRepoIds: z.array(z.string()),
         inputFocused: z.boolean()
       })
-      .strict()
+      .strip()
       .optional()
   })
-  .strict()
+  .strip()
 export type WorkspaceFilterResult = z.infer<typeof WorkspaceFilterResultSchema>
 export type WorkspaceFilterRequest = {
   id: string

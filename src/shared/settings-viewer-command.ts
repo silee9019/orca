@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { openEnum } from './zod-salvage'
 import type { SettingsViewerCommand } from './rpc-contract/settings-viewer-params'
 
 export const SettingsViewerResultSchema = z
@@ -13,11 +14,12 @@ export const SettingsViewerResultSchema = z
     visibleSectionIds: z.array(z.string()),
     renderedSectionIds: z.array(z.string()),
     sectionTargetPresent: z.boolean(),
-    reason: z
-      .enum(['viewer_not_applied', 'viewer_runtime_changed', 'settings_target_not_rendered'])
-      .optional()
+    reason: openEnum(
+      ['viewer_not_applied', 'viewer_runtime_changed', 'settings_target_not_rendered'],
+      'viewer_not_applied'
+    ).optional()
   })
-  .strict()
+  .strip()
 export type SettingsViewerResult = z.infer<typeof SettingsViewerResultSchema>
 export type SettingsViewerRequest = {
   id: string
