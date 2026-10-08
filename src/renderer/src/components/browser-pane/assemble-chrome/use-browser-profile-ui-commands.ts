@@ -1,3 +1,4 @@
+import { useBrowserToolbarImportCommands } from './use-browser-toolbar-import-commands'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   BROWSER_PROFILE_UI_COMMAND_EVENT,
@@ -10,6 +11,7 @@ type ProfileUiOwner = {
   getDetection: () => NonNullable<BrowserProfileUiState['detection']>
   cookieHost: string
   getImportState: () => BrowserSlice['browserSessionImportState']
+  cookieMenuForcedOpen?: boolean
   cookieBusy: boolean
   importBrowser: (family: string, profile?: string) => Promise<BrowserCookieImportExecutionResult>
   importFile: (filePath: string) => Promise<BrowserCookieImportExecutionResult>
@@ -26,6 +28,7 @@ type ProfileUiOwner = {
   create: () => Promise<void>
 }
 export function useBrowserProfileUiCommands(owner: ProfileUiOwner): void {
+  useBrowserToolbarImportCommands(owner)
   const current = useRef(owner)
   const pending = useRef<{
     request: BrowserProfileUiEvent
@@ -62,6 +65,9 @@ export function useBrowserProfileUiCommands(owner: ProfileUiOwner): void {
   useEffect(() => {
     const receive = (event: WindowEventMap['orca:browser-profile-ui-command']): void => {
       const request = event.detail
+      if (new Set(['import-file', 'import-browser', 'settings-open']).has(request.command.action)) {
+        return
+      }
       if (request.page !== owner.page || !request.claim()) {
         return
       }
@@ -124,59 +130,6 @@ export function useBrowserProfileUiCommands(owner: ProfileUiOwner): void {
               pending.current = null
             }
             request.finish(new Error('browser_profile_detect_failed_effect_unknown'))
-          }
-        )
-        return
-      }
-      if (command.action === 'import-browser' || command.action === 'import-file') {
-        if (before.cookieHost !== 'local' || before.cookieBusy) {
-          request.finish(new Error('browser_profile_import_host_unsupported_or_busy'))
-          return
-        }
-        const operation = { request, check: () => true, done: false }
-        pending.current = operation
-        const work =
-          command.action === 'import-browser'
-            ? before.importBrowser(command.family, command.browserProfile)
-            : before.importFile(command.filePath)
-        void work.then(
-          (result) => {
-            if (pending.current !== operation || request.isSettled()) {
-              return
-            }
-            pending.current = null
-            if (
-              Date.now() >= request.expiresAt ||
-              !current.current.active ||
-              current.current.snapshot.profile !== before.snapshot.profile ||
-              current.current.cookieHost !== 'local'
-            ) {
-              request.finish(new Error('browser_profile_import_owner_changed_effect_unknown'))
-            } else if (
-              !result.ok ||
-              result.executionHostId !== 'local' ||
-              result.executionMachine !== 'client'
-            ) {
-              request.finish(new Error('browser_profile_import_failed_effect_unknown'))
-            } else {
-              request.finish(undefined, {
-                ...current.current.snapshot,
-                cookieImport: {
-                  profile: result.profileId,
-                  imported: result.summary.importedCookies,
-                  skipped: result.summary.skippedCookies,
-                  total: result.summary.totalCookies,
-                  executionHost: 'local',
-                  executionMachine: 'client'
-                }
-              })
-            }
-          },
-          () => {
-            if (pending.current === operation) {
-              pending.current = null
-            }
-            request.finish(new Error('browser_profile_import_failed_effect_unknown'))
           }
         )
         return

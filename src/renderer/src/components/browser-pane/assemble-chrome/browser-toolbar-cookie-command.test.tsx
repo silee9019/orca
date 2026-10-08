@@ -5,6 +5,7 @@ import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { getDefaultSettings } from '../../../../../shared/constants'
 import type { AppState } from '@/store/types'
 import { createTestStore } from '@/store/slices/store-test-helpers'
 import { requestBrowserProfileUi } from '@/runtime/browser-profile-ui-request'
@@ -35,7 +36,10 @@ vi.mock('@/store', () => ({
   useAppStore: Object.assign(
     (selector: (state: AppState) => unknown) =>
       selector(useSyncExternalStore(fixture.getStore().subscribe, fixture.getStore().getState)),
-    { getState: () => fixture.getStore().getState() }
+    {
+      getState: () => fixture.getStore().getState(),
+      subscribe: (listener: () => void) => fixture.getStore().subscribe(listener)
+    }
   )
 }))
 vi.mock('@/runtime/runtime-rpc-client', () => ({
@@ -59,10 +63,34 @@ beforeEach(() => {
   fixture.setStore(createTestStore())
   fixture.getStore().setState({
     browserSessionHostIdOverride: 'local',
+    persistedUIReady: true,
+    settings: getDefaultSettings(tmpdir()),
+    activeWorktreeId: 'folder',
+    activeView: 'terminal',
+    activeModal: 'none',
+    browserPagesByWorkspace: {
+      workspace: [
+        {
+          id: 'page',
+          workspaceId: 'workspace',
+          worktreeId: 'folder',
+          url: '',
+          title: 'Browser',
+          loading: false,
+          faviconUrl: null,
+          canGoBack: false,
+          canGoForward: false,
+          loadError: null,
+          createdAt: 0,
+          browserRuntimeEnvironmentId: null
+        }
+      ]
+    },
     browserTabsByWorktree: {
       folder: [
         {
           id: 'workspace',
+          activePageId: 'page',
           worktreeId: 'folder',
           loading: false,
           faviconUrl: null,
@@ -96,7 +124,12 @@ beforeEach(() => {
         sessionImportFromBrowser: fixture.browserImport,
         sessionListProfiles: vi.fn().mockResolvedValue(fixture.profiles)
       },
-      ui: { set: vi.fn().mockResolvedValue(undefined) }
+      ui: {
+        set: vi.fn().mockResolvedValue(undefined),
+        get: vi.fn(async () => ({
+          featureInteractions: fixture.getStore().getState().featureInteractions
+        }))
+      }
     }
   })
 })
@@ -179,7 +212,9 @@ it('reuses the existing explicit-file RPC and never opens a file picker', async 
 it('retains provider failure state and refuses a success acknowledgment', async () => {
   fixture.browserImport.mockResolvedValue({ ok: false, reason: 'keychain unavailable' })
   render(<Owner />)
-  await expect(run({ action: 'import-browser', family: 'chrome' })).rejects.toThrow('import_failed')
+  await expect(run({ action: 'import-browser', family: 'chrome' })).rejects.toThrow(
+    'import_failed_effect_unknown'
+  )
   expect(toast.error).toHaveBeenCalledWith('keychain unavailable')
   expect(fixture.getStore().getState().browserSessionImportState).toMatchObject({
     status: 'error',
@@ -192,7 +227,7 @@ it.each(['runtime:remote', 'ssh:remote'] as const)(
     fixture.getStore().setState({ browserSessionHostIdOverride: host })
     render(<Owner />)
     await expect(run({ action: 'import-browser', family: 'chrome' })).rejects.toThrow(
-      'host_unsupported'
+      'browser_toolbar_import_unavailable'
     )
     expect(fixture.browserImport).not.toHaveBeenCalled()
   }
@@ -201,7 +236,7 @@ it('does not invoke an inactive toolbar owner', async () => {
   render(<Owner active={false} />)
   await expect(
     run({ action: 'import-file', filePath: join(tmpdir(), 'cookies.json') })
-  ).rejects.toThrow('inactive')
+  ).rejects.toThrow('browser_toolbar_import_unavailable')
   expect(fixture.fileImport).not.toHaveBeenCalled()
 })
 it('rejects concurrent imports and does not acknowledge an unmounted owner', async () => {
@@ -222,12 +257,14 @@ it('rejects concurrent imports and does not acknowledge an unmounted owner', asy
     )
     void pending.catch(() => {})
   })
-  await expect(run({ action: 'import-browser', family: 'firefox' })).rejects.toThrow('busy')
+  await expect(run({ action: 'import-browser', family: 'firefox' })).rejects.toThrow(
+    'browser_toolbar_import_unavailable'
+  )
   owner.unmount()
   if (!pending || !resolve) {
     throw new Error('missing operation')
   }
-  await expect(pending).rejects.toThrow('unavailable_effect_unknown')
+  await expect(pending).rejects.toThrow('browser_toolbar_import_owner_unmounted_effect_unknown')
   await act(async () => {
     resolve?.(success)
   })

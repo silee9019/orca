@@ -1,3 +1,4 @@
+import { BROWSER_SERVER_REOPEN_HANDLER_GROUPS } from './browser-server-reopen-handler-groups'
 import { BROWSER_GRAB_TOAST_HANDLER_GROUPS } from './browser-grab-toast-handler-groups'
 import { BROWSER_WEBAUTHN_FOCUS_HANDLER_GROUPS } from './browser-webauthn-focus-handler-groups'
 import { BROWSER_EGRESS_HANDLER_GROUPS } from './browser-egress-handler-groups'
@@ -12,6 +13,7 @@ import { BROWSER_TAKE_BACK_HANDLER_GROUPS } from './browser-take-back-handler-gr
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...BROWSER_SERVER_REOPEN_HANDLER_GROUPS,
   {
     name: 'browser-client-navigation',
     keys: ['browser client-navigate'],

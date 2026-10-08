@@ -298,6 +298,11 @@ export function ClientHostedBrowserPagePane({
         ) : null}
         {attachmentError || restoredPageUnrecovered ? (
           <ClientHostedBrowserUnavailableNotice
+            commandOwner={
+              placement
+                ? { page: browserTab.id, active: isActive, clientPlacement: placement }
+                : undefined
+            }
             runtimeEnvironmentId={runtimeEnvironmentId}
             worktreeId={worktreeId}
             lastCommittedUrl={browserTab.url}

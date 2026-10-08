@@ -1,3 +1,4 @@
+import { requestBrowserServerReopen } from './browser-server-reopen-request'
 import { applyBrowserClientNavigationRequest } from './browser-client-navigation-request'
 import { requestBrowserGrabToast } from './browser-grab-toast-request'
 import { requestBrowserWebAuthnFocus } from './browser-webauthn-focus-request'
@@ -32,6 +33,7 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'server-reopen'
         | 'browser-import-hint'
         | 'egress'
         | 'banner'
@@ -63,6 +65,10 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'server-reopen') {
+    const serverReopen = await requestBrowserServerReopen(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, serverReopen }
+  }
   if (command.operation === 'grab-toast') {
     const grabToast = await requestBrowserGrabToast(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, grabToast }

@@ -243,6 +243,7 @@ export async function browserImportHintOwnerSocketFixture() {
   }
   return {
     directory,
+    client,
     runtime,
     detect,
     writeUI,

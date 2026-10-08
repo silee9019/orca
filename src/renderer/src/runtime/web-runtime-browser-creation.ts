@@ -1,3 +1,4 @@
+import { notifyWebRuntimeBrowserCreation } from './web-runtime-browser-creation-receipt'
 import type { BrowserPageCreationPlacement } from '../../../shared/browser-client-host-placement'
 import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
 import type { BrowserTabCreateResult } from '../../../shared/runtime-types'
@@ -29,7 +30,10 @@ import {
   pauseAfterE2eWebRuntimeBrowserCreate,
   pauseDuringE2eWebRuntimeBrowserClientHostPreparation
 } from './web-runtime-browser-creation-e2e-fault'
-import { isWebRuntimeSessionActive } from './web-runtime-session-environment'
+import {
+  isWebRuntimeSessionActive,
+  matchesWebSessionIntentOwner
+} from './web-runtime-session-environment'
 import { refreshWebRuntimeSessionTabsSnapshot } from './web-runtime-session-snapshot'
 import { registerPairedBrowserTabCreator } from '../store/slices/browser/paired-browser-tab-creator'
 
@@ -203,7 +207,19 @@ export async function createWebRuntimeSessionBrowserTab(
     }
     // Why: materialization means the snapshot has taken ownership of these rows, so nothing
     // downstream may still unwind them as an optimistic stage.
-    return completeWebRuntimeBrowserCreation(context)
+    const completed = completeWebRuntimeBrowserCreation(context)
+    notifyWebRuntimeBrowserCreation(
+      args.onCreationReceipt,
+      matchesWebSessionIntentOwner(context.intentOwner)
+        ? {
+            phase: 'materialized',
+            environmentId,
+            worktreeId: args.worktreeId,
+            remotePageId: created.browserPageId
+          }
+        : { phase: 'invalidated' }
+    )
+    return completed
   } catch (error) {
     const failure = prepareWebRuntimeBrowserCreationFailure(context, error)
     if (failure.cleanupPageId) {

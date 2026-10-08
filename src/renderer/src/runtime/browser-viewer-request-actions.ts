@@ -53,6 +53,7 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'server-reopen' ||
     command.operation === 'browser-import-hint' ||
     command.operation === 'banner' ||
     command.operation === 'egress' ||

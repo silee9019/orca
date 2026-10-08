@@ -1,3 +1,4 @@
+import { BrowserServerReopenCommand } from './browser-server-reopen-params'
 import { BrowserClientNavigationViewerCommand } from './browser-client-navigation-params'
 import { BrowserGrabToastCommand } from './browser-grab-toast-params'
 import { BrowserWebAuthnFocusTarget } from './browser-webauthn-focus-params'
@@ -73,6 +74,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('server-reopen'), command: BrowserServerReopenCommand }),
   BrowserClientNavigationViewerCommand,
   z.object({ viewer, operation: z.literal('grab-toast'), command: BrowserGrabToastCommand }),
   z.object({

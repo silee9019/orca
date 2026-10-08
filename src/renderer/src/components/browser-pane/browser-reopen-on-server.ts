@@ -1,6 +1,7 @@
 import { normalizeBrowserNavigationUrl } from '../../../../shared/browser-url'
 import { ORCA_BROWSER_BLANK_URL } from '../../../../shared/constants'
 import { createWebRuntimeSessionBrowserTab } from '@/runtime/web-runtime-session'
+import type { WebRuntimeBrowserCreationObserver } from '@/runtime/web-runtime-browser-creation-receipt'
 
 /**
  * Last committed URL, reduced to what is safe to restore on another browser engine.
@@ -30,11 +31,13 @@ export function resolveBrowserReopenOnServerUrl(
  * client-hosted page is left alone — this never migrates or mutates it.
  */
 export async function reopenBrowserPageOnServer(args: {
+  onCreationReceipt?: WebRuntimeBrowserCreationObserver
   environmentId: string
   worktreeId: string
   lastCommittedUrl: string | null | undefined
 }): Promise<boolean> {
   return createWebRuntimeSessionBrowserTab({
+    ...(args.onCreationReceipt ? { onCreationReceipt: args.onCreationReceipt } : {}),
     worktreeId: args.worktreeId,
     environmentId: args.environmentId,
     url: resolveBrowserReopenOnServerUrl(args.lastCommittedUrl),

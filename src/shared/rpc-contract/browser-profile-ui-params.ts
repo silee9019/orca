@@ -2,14 +2,20 @@ import { z } from 'zod'
 export const BrowserProfileUiCommand = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('import-browser'),
+    profile: z.string().min(1).max(256).optional(),
     family: z.string().min(1).max(256),
     browserProfile: z.string().min(1).max(1024).optional()
   }),
-  z.object({ action: z.literal('import-file'), filePath: z.string().min(1).max(32768) }),
+  z.object({
+    action: z.literal('import-file'),
+    filePath: z.string().min(1).max(32768),
+    profile: z.string().min(1).max(256).optional()
+  }),
   z.object({ action: z.literal('select'), profile: z.string().min(1).max(256) }),
   z.object({ action: z.literal('new-name'), name: z.string().max(50) }),
   z.object({
     action: z.enum([
+      'settings-open',
       'detect-browsers',
       'menu-open',
       'menu-close',
@@ -24,6 +30,15 @@ export const BrowserProfileUiCommand = z.discriminatedUnion('action', [
 ])
 export type BrowserProfileUiCommand = z.infer<typeof BrowserProfileUiCommand>
 export const BrowserProfileUiState = z.object({
+  cookieImportTargetGuard: z.literal(1).optional(),
+  settings: z
+    .object({
+      activeView: z.literal('settings'),
+      pane: z.literal('browser'),
+      repoId: z.null(),
+      search: z.literal('')
+    })
+    .optional(),
   detection: z
     .object({
       loaded: z.boolean(),
