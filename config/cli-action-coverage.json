@@ -165315,6 +165315,1169 @@
       "command": "worktree branch-rename-failure",
       "evidencePaths": ["tests/e2e/workspace-data-cli-branch-rename-failure-effect.unit.test.ts"],
       "invocation": "command:worktree branch-rename-failure"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-floating-terminal-FloatingTerminalIconContextMenu.FloatingTerminalIconContextMenu.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "FloatingTerminalIconContextMenu: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/floating-terminal/FloatingTerminalIconContextMenu.tsx:FloatingTerminalIconContextMenu",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/floating-terminal/FloatingTerminalIconContextMenu.tsx:5a1b9ddc29880d9aea8b",
+          "fingerprint": "5a1b9ddc29880d9aea8b609bf8a19642cb2259743b2677dcf20e88de3f367e0d"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-floating-terminal-FloatingTerminalIconContextMenu.FloatingTerminalIconContextMenu.control.useAppStore.getState-.recordFeatureInteraction-floating-workspace-hidden",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "FloatingTerminalIconContextMenu: useAppStore.getState().recordFeatureInteraction:floating-workspace-hidden에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/floating-terminal/FloatingTerminalIconContextMenu.tsx:FloatingTerminalIconContextMenu",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기는 settings desktop update로 덮습니다. 같은 행의 다른 효과(api.ui.recordFeatureInteraction)는 이 배정 범위 밖이며 완료로 세지 않습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "gap",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/floating-terminal/FloatingTerminalIconContextMenu.tsx:685a1f0894dff03763ea",
+          "fingerprint": "685a1f0894dff03763ead3178e2d79cef84ca8785ea1d2341c108afba17a473a"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-NativeChatResumeOnRestartModal.NativeChatResumeOnRestartModal.control.snooze",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatResumeOnRestartModal: snooze에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/NativeChatResumeOnRestartModal.tsx:NativeChatResumeOnRestartModal",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/NativeChatResumeOnRestartModal.tsx:5913df053feeab8cb583",
+          "fingerprint": "5913df053feeab8cb5832ece00e00713a45144fc34ddcf64a637caba6a9779a9"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-onboarding-WindowsTerminalStep.PreferenceCard.control.onClick",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "PreferenceCard: onClick에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/onboarding/WindowsTerminalStep.tsx:PreferenceCard",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/onboarding/WindowsTerminalStep.tsx:25d25ef586f07ea5075d",
+          "fingerprint": "25d25ef586f07ea5075d962fde50c577512cee01cfb38bfaecf83a5979710b1e"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-terminal-quick-commands-TerminalQuickCommandDialog.TerminalQuickCommandDialog.control.saveDraft",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalQuickCommandDialog: saveDraft에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/terminal-quick-commands/TerminalQuickCommandDialog.tsx:TerminalQuickCommandDialog",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "로컬·원격 런타임 호스트의 quick command 저장을 settings quick-commands update로 덮습니다. 호스트 변경 RPC settings.updateTerminalQuickCommands를 재사용하므로 항목 단위 upsert/delete, 개수 상한 40 오류, 검증 규칙이 화면 저장과 같습니다. --host local|runtime:<id|name>로 대상을 명시하고 SSH 대상·미등록 서버·연결 끊김은 명시 오류입니다(연결 끊김은 쓰기 미확인으로 보고). 증거가 partial인 이유: 실제 pairing websocket 전송과 viewer 적용 확인은 실행하지 않았습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/terminal-quick-commands/TerminalQuickCommandDialog.tsx:38206cafb15e72aded44",
+          "fingerprint": "38206cafb15e72aded4439aee45ad4ad403290fe4a589e164af7f27c24301724"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["tests/e2e/settings-quick-commands-cli-effect.unit.test.ts"],
+      "commandUsage": "settings quick-commands update / settings quick-commands list",
+      "command": "settings quick-commands update",
+      "invocation": "command:settings quick-commands update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-native-chat-NativeChatQueuedMessageCard.NativeChatQueuedMessageCard.control.onTurnOffQueueing",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatQueuedMessageCard: onTurnOffQueueing에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/native-chat/NativeChatQueuedMessageCard.tsx:NativeChatQueuedMessageCard",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/native-chat/NativeChatQueuedMessageCard.tsx:cc9bdde3dff98c54ef68",
+          "fingerprint": "cc9bdde3dff98c54ef68b5e06d43e946c88f0a8773de5360007719ac5d2d998e"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-AgentCatalogRow.AgentCatalogRow.control.sessionSourceHome.onSave",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "AgentCatalogRow: sessionSourceHome.onSave에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/AgentCatalogRow.tsx:AgentCatalogRow",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/AgentCatalogRow.tsx:2230fdd89394d43a0397",
+          "fingerprint": "2230fdd89394d43a0397d010ce513dd004583d528a4697f3b52cd5ae0160ef30"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-AppearanceChatSection.AppearanceChatSection.control.writeNativeChatAppearance",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "AppearanceChatSection: writeNativeChatAppearance에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/AppearanceChatSection.tsx:AppearanceChatSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/AppearanceChatSection.tsx:1132a128b93098ccd70d",
+          "fingerprint": "1132a128b93098ccd70dac1735e4215e0e23cd5e2bbde9e42e5628384da133d7"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-CodexTerminalServerIsolationSetting.CodexTerminalServerIsolationSetting.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "CodexTerminalServerIsolationSetting: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/CodexTerminalServerIsolationSetting.tsx:CodexTerminalServerIsolationSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/CodexTerminalServerIsolationSetting.tsx:52ca4c342b05beba0b89",
+          "fingerprint": "52ca4c342b05beba0b8966b0300339efce77a5b7ca544fc1764f33523744c370"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/CodexTerminalServerIsolationSetting.tsx:eba4e6a33ea41073b66b",
+          "fingerprint": "eba4e6a33ea41073b66b928cae5b5ea06fde22a37b5305761505cccde6ccb7d9"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-NativeChatExperimentalSetting.NativeChatExperimentalSetting.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatExperimentalSetting: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/NativeChatExperimentalSetting.tsx:NativeChatExperimentalSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatExperimentalSetting.tsx:66f9136d85142459de9e",
+          "fingerprint": "66f9136d85142459de9ecaeeb6f3e6bf2198cef9535585ff5b111dccf5e6c395"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatExperimentalSetting.tsx:85fdca89c22568c13a60",
+          "fingerprint": "85fdca89c22568c13a605bf8a1d4ee664db5a180246048d3fc3b63b742543f65"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatExperimentalSetting.tsx:d5958cf9be319f3c8a6a",
+          "fingerprint": "d5958cf9be319f3c8a6a3f51f5ab9ce98548706c3c714db3c43f991846e8d71c"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatExperimentalSetting.tsx:f55081baa2e86d1d4876",
+          "fingerprint": "f55081baa2e86d1d48765a3741292f2009228a5fdfd20585e5442fc3c5cb17e5"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-NativeChatQueueFollowUpsSetting.NativeChatQueueFollowUpsSetting.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatQueueFollowUpsSetting: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/NativeChatQueueFollowUpsSetting.tsx:NativeChatQueueFollowUpsSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatQueueFollowUpsSetting.tsx:f2f868664cf3657af8a1",
+          "fingerprint": "f2f868664cf3657af8a1ead7923230f242accf0541db5cf0e683580baf09b94c"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-NativeChatShellEnvironmentSetting.ShellEnvironmentNamesField.control.add",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ShellEnvironmentNamesField: add에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx:ShellEnvironmentNamesField",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx:43b39e1395c9c5b9c51d",
+          "fingerprint": "43b39e1395c9c5b9c51d75cffc1e1afeeb2a89d456ac62ea07d93350d95a8ddd"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx:ea23929fcb89420ec9f2",
+          "fingerprint": "ea23929fcb89420ec9f2a2bc5a8a5bbeb7485ab0be685f125371a89d55d037fd"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-NativeChatShellEnvironmentSetting.ShellEnvironmentNamesField.control.remove",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ShellEnvironmentNamesField: remove에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx:ShellEnvironmentNamesField",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/NativeChatShellEnvironmentSetting.tsx:83a33342757e1ccc8505",
+          "fingerprint": "83a33342757e1ccc850528b36af1567d19b9455861339a50b391f018b73ccd93"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-OrchestrationPane.OrchestrationPane.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "OrchestrationPane: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/OrchestrationPane.tsx:OrchestrationPane",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "권한 울타리·확인 생략 키: 전용 승인 경로 없이는 CLI 쓰기 없음(감독 처분 2026-10-09). nestedWorkerMaxDepth는 에이전트 하위 worker 중첩 울타리 값입니다. 보류를 감독이 승인했고 기존 계약(일반 writer 제외, 거절 고정 테스트)을 유지합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/OrchestrationPane.tsx:3c6c0c1dc880e0dd0c96",
+          "fingerprint": "3c6c0c1dc880e0dd0c961a511bc5f26dcc4d8cd6ecf597bc2fe8a72f251c3296"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal."
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-ShortcutTerminalPolicyControl.ShortcutTerminalPolicyControl.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ShortcutTerminalPolicyControl: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/ShortcutTerminalPolicyControl.tsx:ShortcutTerminalPolicyControl",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/ShortcutTerminalPolicyControl.tsx:50ec4ed3135e049dcf2a",
+          "fingerprint": "50ec4ed3135e049dcf2a30eb0a7e12191bb701dd9eac07e0dc51a152b8f47dac"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAdvancedSection.TerminalAdvancedSection.control.setScrollbackMode-custom",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAdvancedSection: setScrollbackMode:custom에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAdvancedSection.tsx:TerminalAdvancedSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedSection.tsx:165986f2f3db16014f57",
+          "fingerprint": "165986f2f3db16014f5725c3184b1490a688a7acc879a3e9d062a9c524f0f11a"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAdvancedSection.TerminalAdvancedSection.control.commitScrollbackRowsDraft",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAdvancedSection: commitScrollbackRowsDraft에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAdvancedSection.tsx:TerminalAdvancedSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedSection.tsx:c24d8bbb408607ae12ec",
+          "fingerprint": "c24d8bbb408607ae12ecc6a8d0ab47067e814c802abf59bccb0475892b2ba42b"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedSection.tsx:c615fb13b54c1aba772a",
+          "fingerprint": "c615fb13b54c1aba772aa149eecf2c9581734d2ac9bb16f41ad0271c7643dcd4"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAdvancedSection.TerminalAdvancedSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAdvancedSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAdvancedSection.tsx:TerminalAdvancedSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedSection.tsx:ce09e9a1e3b7ee64bd94",
+          "fingerprint": "ce09e9a1e3b7ee64bd94620c1465bd2b8cbb8d4ae0583e7759049edfbff48be0"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedSection.tsx:f04bbb26bdda679148e6",
+          "fingerprint": "f04bbb26bdda679148e602a85572785cb1a3224c403f2d2d525b978c65e4744c"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAdvancedTypographyControls.TerminalAdvancedTypographyControls.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAdvancedTypographyControls: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAdvancedTypographyControls.tsx:TerminalAdvancedTypographyControls",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedTypographyControls.tsx:3b9e62b6393b0961853a",
+          "fingerprint": "3b9e62b6393b0961853a1f6b0e3ded0c356d80fa13b889abca6b491701e08ec5"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedTypographyControls.tsx:69fbe5718e6ce1a46d30",
+          "fingerprint": "69fbe5718e6ce1a46d30fca883713181fff0c4916442321843899c07942811fc"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedTypographyControls.tsx:82a3490fd9bc40e7bdaf",
+          "fingerprint": "82a3490fd9bc40e7bdafd9f2596ed5c740fced6b16e9a3c305dafc7288fc7e05"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAdvancedTypographyControls.tsx:a9ea0dec0b1f482f1bb5",
+          "fingerprint": "a9ea0dec0b1f482f1bb5f9376d3887f86ac55c47eb7b4763d42c57894419724c"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAppearanceSection.TerminalAppearanceSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAppearanceSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAppearanceSection.tsx:TerminalAppearanceSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAppearanceSection.tsx:8571f9c6893d49ecbfee",
+          "fingerprint": "8571f9c6893d49ecbfeedd0e10e4bb9537fc0149348f0b56b92b8809db9d5109"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalAppearanceSection.TerminalAppearanceSection.control.ghostty.handleApply",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalAppearanceSection: ghostty.handleApply에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalAppearanceSection.tsx:TerminalAppearanceSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalAppearanceSection.tsx:d4d736636a18025d84c9",
+          "fingerprint": "d4d736636a18025d84c97eaa6cc3712a02d512508b23d07eba6f5f94b687e834"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalContrastSetting.TerminalContrastSetting.control.selectMode",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalContrastSetting: selectMode에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalContrastSetting.tsx:TerminalContrastSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalContrastSetting.tsx:c07925f33ec077477cd5",
+          "fingerprint": "c07925f33ec077477cd519bc0a99f4dfeb7db99a406575102d50790a65fcc6da"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalContrastSetting.TerminalContrastSetting.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalContrastSetting: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalContrastSetting.tsx:TerminalContrastSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalContrastSetting.tsx:4b696afaca331190c47d",
+          "fingerprint": "4b696afaca331190c47d286f72f83da953f1fd6c40326ec87a2eef48bb75dfba"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalContrastSetting.tsx:deb130146b2465502b00",
+          "fingerprint": "deb130146b2465502b00e243843dbe24246dbb5389e766745b038306bd088864"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalCursorAppearanceSection.TerminalCursorAppearanceSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalCursorAppearanceSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalCursorAppearanceSection.tsx:TerminalCursorAppearanceSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalCursorAppearanceSection.tsx:193e7781aa4512e00364",
+          "fingerprint": "193e7781aa4512e003645c0d936ec0ae61985587f2849e9f9122e3ac0d486a68"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalCursorAppearanceSection.tsx:4f3263724a3a226d2114",
+          "fingerprint": "4f3263724a3a226d21143a195d9cb58b060bef89b2e8b354f435268e445d8c52"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalCursorAppearanceSection.tsx:db3abe6e41d9313676f8",
+          "fingerprint": "db3abe6e41d9313676f8ca59518a554f047ab6852ab854d5184d8ba8dcd02e54"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalFontSizeSetting.TerminalFontSizeSetting.control.Math.max",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalFontSizeSetting: Math.max에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:TerminalFontSizeSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:d60b4e4fa0a179caacf3",
+          "fingerprint": "d60b4e4fa0a179caacf3ef9454b29b98f917dd3e170f0d0770612a6926929a28"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalFontSizeSetting.TerminalFontSizeSetting.control.Number.parseInt",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalFontSizeSetting: Number.parseInt에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:TerminalFontSizeSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:95c493acfdc513b3a9e7",
+          "fingerprint": "95c493acfdc513b3a9e72d363fb503f85d0199d54a0856b22f8c6aa19fb37004"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalFontSizeSetting.TerminalFontSizeSetting.control.Math.min",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalFontSizeSetting: Math.min에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:TerminalFontSizeSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalFontSizeSetting.tsx:8ae0fa0f90d0a44ea168",
+          "fingerprint": "8ae0fa0f90d0a44ea168d9a5664cd46b5e6c09df66c12f3c535785845b07d9d4"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalInteractionSection.TerminalInteractionSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalInteractionSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalInteractionSection.tsx:TerminalInteractionSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:02e16c5599265483e37b",
+          "fingerprint": "02e16c5599265483e37b9800754e45e8c6d09968dadac26ded469786d01d4feb"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:5e0cd55589e5a28f7288",
+          "fingerprint": "5e0cd55589e5a28f7288413d98dd12a80d732b28f661e01bd2e01d1201d3728d"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:7ae826f15d3275a4cddf",
+          "fingerprint": "7ae826f15d3275a4cddfa070553860398faa5a11ba1c164eeed44c6678135f43"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:cdce8f5528de37cc3720",
+          "fingerprint": "cdce8f5528de37cc37209eb30be1b15d50ca16fa6cd66c163fbff3f57b4f52b9"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:cff2e65d95d0f4e4bc87",
+          "fingerprint": "cff2e65d95d0f4e4bc878153caffc69a924c25f1cde60636a87886e3f6d954fc"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:e0de697eea072d1d773c",
+          "fingerprint": "e0de697eea072d1d773cc2852d247f2df78cb3bbe11b714e0f5843af36d0fe2a"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:e25607ad24531a1c432f",
+          "fingerprint": "e25607ad24531a1c432f29d17daf3da97df2a2a82b77e8c03edccf1c73b02196"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:ed1be0f92aa1518962bb",
+          "fingerprint": "ed1be0f92aa1518962bb73bbf6e38092b2c3dd7565a810b4c9e4ecd7a2b4f360"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalInteractionSection.tsx:fb84b4ffa6b899b50997",
+          "fingerprint": "fb84b4ffa6b899b50997a5877891ba9661df34195cd3675322166e99356fd709"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalMacKeyboardSection.TerminalMacKeyboardSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalMacKeyboardSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalMacKeyboardSection.tsx:TerminalMacKeyboardSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalMacKeyboardSection.tsx:18949e40f7a0a42cbd32",
+          "fingerprint": "18949e40f7a0a42cbd32a796c82b633a458ffe07eb98c27e442dca26cf41d5f6"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalMacKeyboardSection.tsx:8e1c9bbb2b781a722923",
+          "fingerprint": "8e1c9bbb2b781a7229237ab86e6e5ca402d8bd2fd8bf0a3164a90746727c5d7e"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalPane.defaultShellSection.control.setShellValidationError",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "defaultShellSection: setShellValidationError에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalPane.tsx:defaultShellSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPane.tsx:7a305e5aa36bac3a286f",
+          "fingerprint": "7a305e5aa36bac3a286fea76ee78cd53d46f8b5b3337415556915ffff9d2fc1c"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPane.tsx:96f4d8c1a605a2f3e473",
+          "fingerprint": "96f4d8c1a605a2f3e473888dc56b7026605b4e238ab60df2580f6107910b1d7f"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalPane.defaultShellSection.control.setShellArgsMode",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "defaultShellSection: setShellArgsMode에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalPane.tsx:defaultShellSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPane.tsx:c7b98b1185d208ee8105",
+          "fingerprint": "c7b98b1185d208ee8105cfa61975fb442f24a644a48f88c8c3a43503143fbad8"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalPane.defaultShellSection.control.event.target.value-.split-n-.filter",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "defaultShellSection: event.target.value\n                            .split('\\n')\n                            .filter에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalPane.tsx:defaultShellSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPane.tsx:806001fd06b547e7477f",
+          "fingerprint": "806001fd06b547e7477f2e7d654716c5ef35bf22ccfa8a3ffc6e123526437455"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalPaneAppearanceSection.TerminalPaneAppearanceSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalPaneAppearanceSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalPaneAppearanceSection.tsx:TerminalPaneAppearanceSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPaneAppearanceSection.tsx:468cff13d0edc527f615",
+          "fingerprint": "468cff13d0edc527f615e99e132699f5abe8a99aae4803a6bfe1c15307c98ad4"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalPaneAppearanceSection.tsx:7c812043dad8955adab2",
+          "fingerprint": "7c812043dad8955adab2bf7155d65f4d0211c063ec582a70f680e34275bba2c9"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalRenderingSection.TerminalRenderingSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalRenderingSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalRenderingSection.tsx:TerminalRenderingSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalRenderingSection.tsx:3edf80112559885ad4f7",
+          "fingerprint": "3edf80112559885ad4f71c7cbdaec60d1b9caa980c1526cde77074c6c6a28936"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalRenderingSection.tsx:7f27d796d5ef99180387",
+          "fingerprint": "7f27d796d5ef9918038749eb4134834ecaa3f7ffa050de84496a9b893e623a1d"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalScrollSpeedSlider.ScrollSpeedSlider.control.onChange",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ScrollSpeedSlider: onChange에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalScrollSpeedSlider.tsx:ScrollSpeedSlider",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalScrollSpeedSlider.tsx:5d1a2c2e3946723c73f9",
+          "fingerprint": "5d1a2c2e3946723c73f948afac2b8816223f7976906d29b0458043dc476a2aa0"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalSetupScriptSection.TerminalSetupScriptSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalSetupScriptSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalSetupScriptSection.tsx:TerminalSetupScriptSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalSetupScriptSection.tsx:7bda48fdd67e3f487316",
+          "fingerprint": "7bda48fdd67e3f48731693b2c59a9337cfe52037a79aedcdf6c01d6a7aa25e70"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalThemeSections.TerminalThemeCatalogSection.control.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalThemeCatalogSection: updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalThemeSections.tsx:TerminalThemeCatalogSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalThemeSections.tsx:4fbb5dde009391f66904",
+          "fingerprint": "4fbb5dde009391f669048917d72aefaa8386565799861c7a59db866310420401"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalThemeSections.tsx:545d9fd799965179b733",
+          "fingerprint": "545d9fd799965179b733c07f7c9f647c8fbf4b577c223a053f0f64b0c40b65be"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-TerminalThemeSections.TerminalThemeCatalogSection.control.rememberTerminalThemeTarget",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalThemeCatalogSection: rememberTerminalThemeTarget에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/TerminalThemeSections.tsx:TerminalThemeCatalogSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/TerminalThemeSections.tsx:55783324680b803bc748",
+          "fingerprint": "55783324680b803bc7480fece907f53860118fe1d0519a7b7c6495be9885cebd"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-codex-session-source-home-control.AgentSessionSourceHomeInput.control.commit",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "AgentSessionSourceHomeInput: commit에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/codex-session-source-home-control.tsx:AgentSessionSourceHomeInput",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/codex-session-source-home-control.tsx:63536a81c3fc419685c8",
+          "fingerprint": "63536a81c3fc419685c899cf48afe705410eaafe202e80b32a70b8a940da1222"
+        },
+        {
+          "id": "control:src/renderer/src/components/settings/codex-session-source-home-control.tsx:76687d5c413b065e2efc",
+          "fingerprint": "76687d5c413b065e2efcededae357730c15973dd9908f62e0b92c40e3b86160f"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-codex-session-source-home-control.AgentSessionSourceHomeInput.control.onSave",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "AgentSessionSourceHomeInput: onSave:에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/codex-session-source-home-control.tsx:AgentSessionSourceHomeInput",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/codex-session-source-home-control.tsx:6829dac23baf3c6d5bc2",
+          "fingerprint": "6829dac23baf3c6d5bc2ecaa47ccde498bd5df7d9516831261d8a22751ec243e"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-terminal-pane-CodexSharedServerBanner.CodexSharedServerBanner.control.useAppStore.getState-.updateSettings",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "CodexSharedServerBanner: useAppStore.getState().updateSettings에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/terminal-pane/CodexSharedServerBanner.tsx:CodexSharedServerBanner",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/terminal-pane/CodexSharedServerBanner.tsx:1ab2707c8eff56787b68",
+          "fingerprint": "1ab2707c8eff56787b68caf65acbb58b43735cfc6c465f6b36d49669f5da5d56"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-terminal-pane-CodexSharedServerBanner.CodexSharedServerBannerFrame.control.onDontShowAgain",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "CodexSharedServerBannerFrame: onDontShowAgain에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/terminal-pane/CodexSharedServerBanner.tsx:CodexSharedServerBannerFrame",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기를 settings desktop update로 덮고 값 범위를 Settings 컨트롤과 맞췄습니다. renderer 적용 ACK(rendered:false)는 없어 증거는 partial입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/terminal-pane/CodexSharedServerBanner.tsx:9f2ea354fd7213e6e747",
+          "fingerprint": "9f2ea354fd7213e6e74753d5637bc31aeefe22e8be24557823c686d98246e659"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-terminal-pane-PinnedTabCloseDialog.PinnedTabCloseDialog.control.handleConfirm",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "PinnedTabCloseDialog: handleConfirm에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/terminal-pane/PinnedTabCloseDialog.tsx:PinnedTabCloseDialog",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "설정 키 쓰기는 settings desktop update로 덮습니다. 같은 행의 다른 효과(api.pty.kill, session-persisted:terminal-tabs)는 이 배정 범위 밖이며 완료로 세지 않습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "gap",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/terminal-pane/PinnedTabCloseDialog.tsx:ac7d641d74c3cd6ae12e",
+          "fingerprint": "ac7d641d74c3cd6ae12e52c96bfd901c1bb1b6c3019e083c2af1f013e09f59c7"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"],
+      "command": "settings desktop update",
+      "invocation": "command:settings desktop update"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-terminal-pane-TerminalPaneSurface.TerminalPaneSurface.control.saveQuickCommand",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "TerminalPaneSurface: saveQuickCommand에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/terminal-pane/TerminalPaneSurface.tsx:TerminalPaneSurface",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "로컬·원격 런타임 호스트의 quick command 저장을 settings quick-commands update로 덮습니다. 호스트 변경 RPC settings.updateTerminalQuickCommands를 재사용하므로 항목 단위 upsert/delete, 개수 상한 40 오류, 검증 규칙이 화면 저장과 같습니다. --host local|runtime:<id|name>로 대상을 명시하고 SSH 대상·미등록 서버·연결 끊김은 명시 오류입니다(연결 끊김은 쓰기 미확인으로 보고). 증거가 partial인 이유: 실제 pairing websocket 전송과 viewer 적용 확인은 실행하지 않았습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/terminal-pane/TerminalPaneSurface.tsx:1f5b93de3e182442568f",
+          "fingerprint": "1f5b93de3e182442568f69e28b04df239a44fae851e110d7e731fb5bd72db345"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "evidencePaths": ["tests/e2e/settings-quick-commands-cli-effect.unit.test.ts"],
+      "commandUsage": "settings quick-commands update / settings quick-commands list",
+      "command": "settings quick-commands update",
+      "invocation": "command:settings quick-commands update"
     }
   ]
 }

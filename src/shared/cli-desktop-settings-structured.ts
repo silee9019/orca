@@ -138,7 +138,15 @@ export const DesktopStructuredSettings = {
     .optional(),
   terminalQuickCommands: z
     .array(TerminalQuickCommandUpdateItem)
-    .transform(normalizeTerminalQuickCommands)
+    .transform((items, ctx) => {
+      const normalized = normalizeTerminalQuickCommands(items)
+      // Why: normalization truncates at the limit and drops unusable entries, so a full-list write must refuse the loss.
+      if (normalized.length !== items.length) {
+        ctx.addIssue({ code: 'custom', message: 'Quick command list would be truncated.' })
+        return z.NEVER
+      }
+      return normalized
+    })
     .optional(),
   localWindowsRuntimeDefault: z
     .union([

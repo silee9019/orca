@@ -53,6 +53,7 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
     notes: [
       'Targets the answering host desktop profile. Uses its Settings writer for normalization, proxy application, menus, app icon, language, awake assertions and change notifications.',
       'JSON comes only from a file or stdin (--file -), never a command-line value. Secret values and launch commands are not returned.',
+      'Numeric values and environment variable names are limited to what the Settings controls accept; out-of-range input is rejected rather than clamped.',
       'Authority grants, confirmation bypasses, account records, plugin consent, migration markers and active connection selection require their dedicated controls.',
       'Success is returned after the profile flush. rendered:false explicitly means no viewer application acknowledgement was collected. Settings changes are broadcast to that host desktop viewers.',
       'A runtime without desktop settings services returns settings_viewer_unavailable. Process-wide options may still require a separately approved restart.'
@@ -126,6 +127,29 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS],
     notes: [
       'Uses the existing cached noninteractive probe; unknown means the probe could not establish capability.'
+    ]
+  },
+  {
+    path: ['settings', 'quick-commands', 'list'],
+    summary: 'List quick command ids and labels stored on the selected runtime host',
+    usage: 'orca settings quick-commands list [--host local|runtime:<id|name>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'host'],
+    notes: [
+      'Command bodies are launch commands and are not printed. --host runtime:<id|name> reads that paired server; SSH targets do not own quick commands and are rejected.'
+    ]
+  },
+  {
+    path: ['settings', 'quick-commands', 'update'],
+    summary: 'Upsert or delete one quick command on the selected runtime host',
+    usage:
+      'orca settings quick-commands update --file <path|-> [--host local|runtime:<id|name>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'file', 'host'],
+    notes: [
+      'JSON is {"type":"upsert","command":{...}} or {"type":"delete","id":"..."} from a file or stdin, never a command-line value. It uses the same host mutation as the Settings window, so unrelated commands are kept and the 40-command limit is reported as an error.',
+      '--host names the host that is written; local cannot be combined with a paired runtime selection. If the host does not answer, the write is reported as not confirmed, not as a success or a no-op; run quick-commands list on that host before retrying.'
+    ],
+    examples: [
+      'orca settings quick-commands update --file ./command.json --host runtime:build-box --json'
     ]
   },
   {
