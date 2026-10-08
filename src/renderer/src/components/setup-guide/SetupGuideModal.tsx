@@ -51,6 +51,7 @@ function SetupGuideModalContent({
   const setSetupGuideSidebarDismissed = useAppStore((s) => s.setSetupGuideSidebarDismissed)
   const setupSteps = useMemo(() => getFeatureWallSetupSteps(), [])
   const [userSelectedStep, setUserSelectedStep] = useState(false)
+  const [selectionRevision, setSelectionRevision] = useState(0)
   const [orchestrationSkillInstalled, setOrchestrationSkillInstalled] = useState(false)
   const [browserUseSkillInstalled, setBrowserUseSkillInstalled] = useState(false)
   // Why: keep progress inputs live through the close-animation linger; dropping
@@ -118,6 +119,7 @@ function SetupGuideModalContent({
   }, [activeStep, open, progress.stepDone, requestedStepId, userSelectedStep])
 
   const handleSelectStep = (id: FeatureWallSetupStepId): void => {
+    setSelectionRevision((revision) => revision + 1)
     setUserSelectedStep(true)
     setActiveStepId(id)
   }
@@ -135,6 +137,11 @@ function SetupGuideModalContent({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        data-setup-guide-dialog="true"
+        data-setup-guide-open={open ? 'true' : 'false'}
+        data-setup-guide-source={telemetrySource}
+        data-setup-guide-step={activeStep?.id}
+        data-setup-guide-selection-revision={selectionRevision}
         className="grid h-[min(780px,calc(100vh-2rem))] w-[min(1080px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 p-0 sm:max-w-none"
         tabIndex={-1}
       >
@@ -145,6 +152,7 @@ function SetupGuideModalContent({
           variant="ghost"
           size="xs"
           onClick={handleHideFromSidebar}
+          data-setup-guide-hide-sidebar="true"
           className="absolute right-11 top-3.5 hidden sm:inline-flex"
         >
           {translate(

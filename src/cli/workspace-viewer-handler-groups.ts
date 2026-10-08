@@ -2,9 +2,38 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const WORKSPACE_VIEWER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'crash-report-viewer',
+    keys: ['ui crash-report open'],
+    load: async () => (await import('./handlers/crash-report-viewer.js')).CRASH_REPORT_HANDLERS
+  },
+  {
+    name: 'setup-guide-viewer',
+    keys: ['ui setup-guide open', 'ui setup-guide select-step', 'ui setup-guide hide-sidebar'],
+    load: async () => (await import('./handlers/setup-guide-viewer.js')).SETUP_GUIDE_HANDLERS
+  },
+  {
+    name: 'feature-tour-viewer',
+    keys: ['ui feature-tour open'],
+    load: async () => (await import('./handlers/feature-tour-viewer.js')).FEATURE_TOUR_HANDLERS
+  },
+  {
     name: 'activity-viewer',
     keys: [
       'ui activity get',
+      'ui activity copy',
+      'ui activity preview-copy-issue-link',
+      'ui activity preview-copy-path',
+      'ui activity preview',
+      'ui activity preview-edit',
+      'ui activity context-menu',
+      'ui activity preview-review-menu',
+      'ui activity preview-issue-menu',
+      'ui activity close',
+      'ui activity resize',
+      'ui activity scroll',
+      'ui activity jump',
+      'ui activity select',
+      'ui activity group-toggle',
       'ui activity mark-all-read',
       'ui activity clear-completed',
       'ui activity clear-thread',

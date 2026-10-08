@@ -68,6 +68,8 @@ function getNotesPlaceholder(report: CrashReportRecord | null): string {
 }
 
 type CrashReportDialogSurfaceProps = {
+  openEpoch?: number
+  openSource?: 'help_menu' | 'automatic'
   open: boolean
   report: CrashReportRecord | null
   loading: boolean
@@ -77,6 +79,8 @@ type CrashReportDialogSurfaceProps = {
 
 export function CrashReportDialogSurface({
   open,
+  openEpoch = 0,
+  openSource = 'automatic',
   report,
   loading,
   onOpenChange,
@@ -233,7 +237,14 @@ export function CrashReportDialogSurface({
         onOpenChange(true)
       }}
     >
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent
+        data-crash-report-dialog="true"
+        data-crash-report-open={open ? 'true' : 'false'}
+        data-crash-report-source={openSource}
+        data-crash-report-epoch={openEpoch}
+        data-crash-report-content-state={loading ? 'loading' : report ? 'report' : 'empty'}
+        className="sm:max-w-xl"
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm">
             <AlertTriangle className="size-4 text-destructive" />
@@ -280,6 +291,7 @@ export function CrashReportDialogSurface({
           )}
           <div className="space-y-1">
             <textarea
+              data-crash-report-notes="true"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               rows={4}
@@ -322,6 +334,7 @@ export function CrashReportDialogSurface({
 
         <DialogFooter className="gap-2">
           <Button
+            data-crash-report-action="copy"
             type="button"
             variant="outline"
             size="sm"
@@ -332,6 +345,7 @@ export function CrashReportDialogSurface({
             {translate('auto.components.crash.report.CrashReportDialog.50b00dc327', 'Copy Details')}
           </Button>
           <Button
+            data-crash-report-action="dismiss"
             type="button"
             variant="ghost"
             size="sm"
@@ -340,7 +354,13 @@ export function CrashReportDialogSurface({
           >
             {translate('auto.components.crash.report.CrashReportDialog.88fea8e84e', "Don't Send")}
           </Button>
-          <Button type="button" size="sm" onClick={handleSubmit} disabled={loading || submitting}>
+          <Button
+            data-crash-report-action="send"
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={loading || submitting}
+          >
             <Send className="size-3.5" />
             {translate('auto.components.crash.report.CrashReportDialog.b4951cd27c', 'Send Report')}
           </Button>

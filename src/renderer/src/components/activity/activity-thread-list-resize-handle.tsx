@@ -23,6 +23,8 @@ export function ActivityThreadListResizeHandle({
         'group absolute -right-1.5 top-0 z-20 flex h-full w-3 cursor-col-resize items-stretch justify-center',
         isResizing && 'bg-ring/10'
       )}
+      data-activity-list-resize
+      data-activity-list-resizing={isResizing ? 'true' : undefined}
       onMouseDown={onResizeStart}
       role="separator"
     >

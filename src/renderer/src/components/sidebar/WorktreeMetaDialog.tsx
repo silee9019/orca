@@ -1,3 +1,4 @@
+import { useWorktreeMetaViewerPublication } from '@/runtime/use-worktree-meta-viewer-publication'
 import { ImeTextarea } from '@/lib/ime-text-field'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
@@ -305,10 +306,21 @@ const WorktreeMetaDialog = React.memo(function WorktreeMetaDialog() {
     [handleSave]
   )
 
+  const viewerPublication = useWorktreeMetaViewerPublication(
+    worktree,
+    focusField,
+    displayNameInput === currentDisplayName &&
+      issueInput === currentIssue &&
+      issueProvider === currentProvider &&
+      reviewInput === currentReview &&
+      commentInput === currentComment
+  )
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         ref={setDialogElement}
+        {...viewerPublication}
         className="max-w-md"
         onOpenAutoFocus={(e) => {
           e.preventDefault()

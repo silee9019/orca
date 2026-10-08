@@ -1,6 +1,9 @@
 import { uiVoiceViewerApi } from './ui-voice-viewer-api'
 import { uiSearchSettingsViewerApi } from './ui-search-settings-viewer-api'
 import { connectionsViewerUiApi } from './connections-viewer-bridge'
+import { crashReportBridgeApi } from './crash-report-bridge'
+import { setupGuideBridgeApi } from './setup-guide-bridge'
+import { featureTourBridgeApi } from './feature-tour-bridge'
 import { activityViewerBridgeApi } from './activity-viewer-bridge'
 import { settingsViewerBridgeApi } from './settings-viewer-bridge'
 import { sidebarViewerBridgeApi } from './sidebar-viewer-bridge'
@@ -18,6 +21,9 @@ export const uiApi = {
   ...uiVoiceViewerApi,
   ...uiSearchSettingsViewerApi,
   ...connectionsViewerUiApi,
+  ...crashReportBridgeApi,
+  ...setupGuideBridgeApi,
+  ...featureTourBridgeApi,
   ...settingsViewerBridgeApi,
   ...sidebarViewerBridgeApi,
   ...cardViewerBridgeApi,

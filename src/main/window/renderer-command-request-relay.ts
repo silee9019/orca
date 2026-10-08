@@ -21,7 +21,10 @@ export function requestRendererCommand<T extends { viewerId: number }>(
     | 'cardViewer'
     | 'statusBarViewer'
     | 'workspaceListViewer'
-    | 'activityViewer',
+    | 'activityViewer'
+    | 'featureTourViewer'
+    | 'setupGuideViewer'
+    | 'crashReportViewer',
   command: unknown,
   resultSchema: z.ZodType<T>,
   timeoutError: 'renderer_timeout_persistence_unknown' | 'renderer_timeout_applied_unknown'

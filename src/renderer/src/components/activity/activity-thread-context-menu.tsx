@@ -1,3 +1,4 @@
+import { publishActivityContextMenuControl } from '@/runtime/activity-context-menu-controls'
 import React from 'react'
 import { getActivityThreadReadTargets } from './activity-thread-read-targets'
 import { Bell, BellOff, Copy, ExternalLink, PanelRight, X } from 'lucide-react'
@@ -16,32 +17,9 @@ import {
   clearCompletedActivity,
   isClearableActivityThread
 } from './activity-clear-completed'
-import { activityThreadRowCopy } from './activity-thread-presentation'
+import { getActivityThreadCopyTargets, writeActivityThreadCopyTarget } from './activity-thread-copy'
+export { getActivityThreadCopyTargets } from './activity-thread-copy'
 import type { AgentPaneThread } from './activity-thread-types'
-
-type CopyTarget = { key: string; label: string; value: string }
-
-export function getActivityThreadCopyTargets(
-  thread: AgentPaneThread,
-  hasWorkspace: boolean
-): CopyTarget[] {
-  const title: CopyTarget = {
-    key: 'title',
-    label: translate('auto.components.activity.ActivityThreadContextMenu.copyTitle', 'Copy Title'),
-    value: activityThreadRowCopy(thread).taskTitle
-  }
-  // Why gated: synthetic floating/standalone worktrees have no path.
-  if (!hasWorkspace || !thread.worktree.path) {
-    return [title]
-  }
-  const path: CopyTarget = {
-    key: 'path',
-    label: translate('auto.components.activity.ActivityThreadContextMenu.copyPath', 'Copy Path'),
-    value: thread.worktree.path
-  }
-  // Same order as the workspace menu: Copy Path, then the name.
-  return [path, title]
-}
 
 /** Right-click actions for an activity row; mirrors the row's own click and hover actions. */
 export function ActivityThreadContextMenu({
@@ -72,6 +50,15 @@ export function ActivityThreadContextMenu({
   children: (menuOpen: boolean) => React.ReactElement
 }): React.JSX.Element {
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const owner = React.useId()
+  const closeRef = React.useRef<() => void>(() => {})
+  const cleanup = React.useRef<(() => void) | null>(null)
+  const menuRef = React.useCallback((menu: HTMLDivElement | null): void => {
+    cleanup.current?.()
+    cleanup.current = menu
+      ? publishActivityContextMenuControl(menu, () => closeRef.current())
+      : null
+  }, [])
   // Why a snapshot: the pointerdown on a portaled item clears the list selection before onSelect.
   const [targets, setTargets] = React.useState<readonly AgentPaneThread[]>([thread])
 
@@ -92,11 +79,28 @@ export function ActivityThreadContextMenu({
     setMenuOpen(open)
   }
 
+  closeRef.current = () => handleOpenChange(false)
+
   return (
     <ContextMenu open={menuOpen} onOpenChange={handleOpenChange}>
-      <ContextMenuTrigger asChild>{children(menuOpen)}</ContextMenuTrigger>
+      <ContextMenuTrigger
+        asChild
+        data-activity-context-trigger={owner}
+        data-activity-context-pane={thread.paneKey}
+        data-activity-context-workspace={thread.worktree.id}
+      >
+        {children(menuOpen)}
+      </ContextMenuTrigger>
       {/* Why no focus restore: refocusing the row would reopen its hover preview and pin it open. */}
-      <ContextMenuContent className="w-52" onCloseAutoFocus={(event) => event.preventDefault()}>
+      <ContextMenuContent
+        ref={menuRef}
+        data-activity-context-owner={owner}
+        data-activity-context-pane={thread.paneKey}
+        data-activity-context-workspace={thread.worktree.id}
+        data-activity-context-targets={JSON.stringify(targets.map((target) => target.paneKey))}
+        className="w-52"
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      >
         <ContextMenuLabel>
           {translate('auto.components.activity.ActivityThreadContextMenu.agentSection', 'Agent')}
         </ContextMenuLabel>
@@ -159,7 +163,8 @@ function ActivityThreadSingleMenuItems({
       {getActivityThreadCopyTargets(thread, canJump).map((target) => (
         <ContextMenuItem
           key={target.key}
-          onSelect={() => void window.api.ui.writeClipboardText(target.value)}
+          data-activity-copy-kind={target.key}
+          onSelect={() => void writeActivityThreadCopyTarget(target)}
         >
           <Copy className="size-3.5" />
           {target.label}
@@ -167,6 +172,8 @@ function ActivityThreadSingleMenuItems({
       ))}
       <ContextMenuSeparator />
       <ContextMenuItem
+        data-activity-context-action="read-toggle"
+        data-activity-context-read-operation={thread.unread ? 'read' : 'unread'}
         disabled={!thread.unread && !canMarkUnread}
         onSelect={() => (thread.unread ? onMarkRead(thread) : onMarkUnread(thread))}
       >
@@ -212,7 +219,11 @@ function ActivityThreadBulkMenuItems({
     <>
       {/* Why read wins when mixed: matches the single toggle, which offers Mark Read on any unread agent. */}
       {readAction.operation === 'read' ? (
-        <ContextMenuItem onSelect={() => onMarkManyRead(readAction.targets)}>
+        <ContextMenuItem
+          data-activity-context-action="read-toggle"
+          data-activity-context-read-operation={readAction.operation}
+          onSelect={() => onMarkManyRead(readAction.targets)}
+        >
           <BellOff className="size-3.5" />
           {translate(
             'auto.components.activity.ActivityThreadContextMenu.markManyRead',
@@ -222,6 +233,8 @@ function ActivityThreadBulkMenuItems({
         </ContextMenuItem>
       ) : (
         <ContextMenuItem
+          data-activity-context-action="read-toggle"
+          data-activity-context-read-operation={readAction.operation}
           disabled={readAction.targets.length === 0}
           onSelect={() => onMarkManyUnread(readAction.targets)}
         >

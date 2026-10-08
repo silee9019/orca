@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
 import type { ActivityViewerSurface } from '../../../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityThreadSelectionOutcome } from './activity-thread-actions'
 import { useActivityViewerPublication } from '@/runtime/use-activity-viewer-publication'
 import { useActivityThreadDensity } from './use-activity-thread-density'
 import { translate } from '@/i18n/i18n'
@@ -110,7 +111,7 @@ export function ActivityThreadListPane({
   allThreads?: readonly AgentPaneThread[]
   visibleThreadCount: number
   selectedPaneKey: string | null
-  onSelectThread: (thread: AgentPaneThread) => void
+  onSelectThread: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
   onJumpToWorkspace: (thread: AgentPaneThread) => void
   onMarkThreadRead: (thread: AgentPaneThread) => void
   onMarkThreadUnread: (thread: AgentPaneThread) => void
@@ -129,10 +130,7 @@ export function ActivityThreadListPane({
   /** Optional view-local scroll memory; updated without triggering React renders. */
   scrollTopRef?: React.MutableRefObject<number>
 }): React.JSX.Element {
-  const {
-    collapsedGroupKeys: effectiveCollapsedGroupKeys,
-    onToggleGroupCollapse: handleToggleGroup
-  } = useActivityThreadGroupCollapse({ collapsedGroupKeys, onToggleGroupCollapse })
+  const collapse = useActivityThreadGroupCollapse({ collapsedGroupKeys, onToggleGroupCollapse })
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const hasRestoredScrollRef = useRef(false)
@@ -156,9 +154,9 @@ export function ActivityThreadListPane({
       buildActivityVirtualItems({
         groups: visibleThreadGroups,
         groupBy,
-        collapsedGroupKeys: effectiveCollapsedGroupKeys
+        collapsedGroupKeys: collapse.collapsedGroupKeys
       }),
-    [visibleThreadGroups, groupBy, effectiveCollapsedGroupKeys]
+    [visibleThreadGroups, groupBy, collapse.collapsedGroupKeys]
   )
   const headerItemIndexes = useMemo(
     () => getActivityHeaderItemIndexes(virtualItems),
@@ -181,7 +179,9 @@ export function ActivityThreadListPane({
     querySettled,
     query,
     selectedPaneKey,
+    collapse,
     markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads },
+    navigation: { jump: onJumpToWorkspace, select: onSelectThread, canJump: canJumpToWorkspace },
     completed: { run: onClearCompleted, hasCompletedThreads, groups: visibleThreadGroups },
     threadReads: allThreads
       ? {
@@ -303,6 +303,7 @@ export function ActivityThreadListPane({
     <aside
       ref={threadListRef}
       data-activity-viewer={viewerSurface}
+      data-activity-list-width={resizable ? threadListWidth : undefined}
       className={cn(
         'relative flex min-h-0 flex-col',
         resizable ? 'shrink-0 border-r border-border' : 'min-w-0 flex-1'
@@ -356,7 +357,7 @@ export function ActivityThreadListPane({
                   data-activity-viewer-thread={
                     item.type === 'thread' ? getActivityVirtualItemKey(item) : undefined
                   }
-                  data-activity-sticky-header={item.type === 'header' ? '' : undefined}
+                  data-activity-sticky-header={item.type === 'header' ? item.group.key : undefined}
                   data-activity-sticky-header-active={isActiveSticky ? '' : undefined}
                   className={cn(
                     'left-0 right-0 w-full',
@@ -374,9 +375,9 @@ export function ActivityThreadListPane({
                   <ActivityThreadVirtualRow
                     item={item}
                     collapsed={
-                      item.type === 'header' && effectiveCollapsedGroupKeys.has(item.group.key)
+                      item.type === 'header' && collapse.collapsedGroupKeys.has(item.group.key)
                     }
-                    onToggleGroup={handleToggleGroup}
+                    onToggleGroup={collapse.onToggleGroupCollapse}
                     selectedPaneKey={selectedPaneKey}
                     multiSelectedKeys={selectedKeys}
                     onSelectThread={handleSelectThread}

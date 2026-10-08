@@ -22,7 +22,13 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       }
     }
     const enabled =
-      operation === 'compact' || operation === 'children' || operation === 'search-visible'
+      operation === 'context-menu' ||
+      operation === 'preview-review-menu' ||
+      operation === 'preview-issue-menu' ||
+      operation === 'preview' ||
+      operation === 'compact' ||
+      operation === 'children' ||
+      operation === 'search-visible'
         ? getRequiredStringFlag(flags, 'enabled')
         : undefined
     if (enabled !== undefined && enabled !== 'true' && enabled !== 'false') {
@@ -43,11 +49,29 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'read-toggle' || operation === 'clear-thread'
+      ...(operation === 'context-menu' ||
+      operation === 'preview-copy-issue-link' ||
+      operation === 'preview-review-menu' ||
+      operation === 'preview-issue-menu' ||
+      operation === 'preview-edit' ||
+      operation === 'preview-copy-path' ||
+      operation === 'preview' ||
+      operation === 'copy' ||
+      operation === 'read-toggle' ||
+      operation === 'clear-thread' ||
+      operation === 'jump' ||
+      operation === 'select'
         ? { paneKey: getRequiredStringFlag(flags, 'pane') }
         : {}),
       ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
+      ...(operation === 'copy' ? { kind: getRequiredStringFlag(flags, 'kind') } : {}),
+      ...(operation === 'preview-edit' ? { field: getRequiredStringFlag(flags, 'field') } : {}),
+      ...(operation === 'scroll' ? { top: Number(getRequiredStringFlag(flags, 'top')) } : {}),
+      ...(operation === 'resize' ? { width: Number(getRequiredStringFlag(flags, 'width')) } : {}),
+      ...(operation === 'group-toggle'
+        ? { groupKey: getRequiredStringFlag(flags, 'group-key') }
+        : {}),
       ...(operation === 'origin'
         ? { kind: getRequiredStringFlag(flags, 'kind'), hidden: hidden === 'true' }
         : {}),
@@ -82,6 +106,20 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 }
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
+  'ui activity context-menu': handler('context-menu'),
+  'ui activity copy': handler('copy'),
+  'ui activity preview-copy-issue-link': handler('preview-copy-issue-link'),
+  'ui activity preview-copy-path': handler('preview-copy-path'),
+  'ui activity preview': handler('preview'),
+  'ui activity preview-edit': handler('preview-edit'),
+  'ui activity preview-review-menu': handler('preview-review-menu'),
+  'ui activity preview-issue-menu': handler('preview-issue-menu'),
+  'ui activity close': handler('close'),
+  'ui activity resize': handler('resize'),
+  'ui activity scroll': handler('scroll'),
+  'ui activity jump': handler('jump'),
+  'ui activity select': handler('select'),
+  'ui activity group-toggle': handler('group-toggle'),
   'ui activity mark-all-read': handler('mark-all-read'),
   'ui activity clear-completed': handler('clear-completed'),
   'ui activity clear-thread': handler('clear-thread'),

@@ -1,6 +1,10 @@
 import type { ActivityViewerSurface } from '../../../shared/rpc-contract/activity-viewer-params'
 import type { ActivityViewerSnapshot } from '../../../shared/activity-viewer-command'
-import type { AgentPaneThread } from '@/components/activity/activity-thread-types'
+import type { ActivityThreadSelectionOutcome } from '@/components/activity/activity-thread-actions'
+import type {
+  ActivityThreadGroup,
+  AgentPaneThread
+} from '@/components/activity/activity-thread-types'
 
 export type ActivityThreadReadCallbacks = {
   allThreads: readonly AgentPaneThread[]
@@ -12,6 +16,20 @@ export type ActivityThreadReadCallbacks = {
 }
 export type ActivityThreadReadControl = ActivityThreadReadCallbacks & {
   visibleThreads: readonly AgentPaneThread[]
+}
+
+export type ActivityNavigationControl = {
+  visibleThreads: readonly AgentPaneThread[]
+  select?: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
+  jump: (thread: AgentPaneThread) => boolean | void
+  canJump: (thread: AgentPaneThread) => boolean
+}
+
+export type ActivityGroupCollapseControl = {
+  queryRevision: number
+  groups: readonly ActivityThreadGroup[]
+  collapsedKeys: ReadonlySet<string>
+  toggle: (key: string) => void
 }
 
 export type ActivityCompletedControl = {
@@ -30,6 +48,8 @@ const committed: Partial<
         markAllRead?: () => void
         threadReads?: ActivityThreadReadControl
         completed?: ActivityCompletedControl
+        navigation?: ActivityNavigationControl
+        groupCollapse?: ActivityGroupCollapseControl
       }
     }
   >
@@ -41,6 +61,8 @@ export function publishActivityViewerView(
     markAllRead?: () => void
     threadReads?: ActivityThreadReadControl
     completed?: ActivityCompletedControl
+    navigation?: ActivityNavigationControl
+    groupCollapse?: ActivityGroupCollapseControl
   }
 ): void {
   if (view) {
@@ -103,4 +125,16 @@ export function readActivityCompletedControl(
   surface: ActivityViewerSurface
 ): ActivityCompletedControl | null {
   return committed[surface]?.controls?.completed ?? null
+}
+
+export function readActivityNavigationControl(
+  surface: ActivityViewerSurface
+): ActivityNavigationControl | null {
+  return committed[surface]?.controls?.navigation ?? null
+}
+
+export function readActivityGroupCollapseControl(
+  surface: ActivityViewerSurface
+): ActivityGroupCollapseControl | null {
+  return committed[surface]?.controls?.groupCollapse ?? null
 }

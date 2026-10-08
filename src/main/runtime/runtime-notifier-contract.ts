@@ -7,6 +7,12 @@ import type {
   SearchSettingsViewerCommand,
   SearchSettingsViewerResult
 } from '../../shared/search-settings-viewer'
+import type { CrashReportCommand } from '../../shared/rpc-contract/crash-report-params'
+import type { CrashReportResult } from '../../shared/crash-report-command'
+import type { SetupGuideCommand } from '../../shared/rpc-contract/setup-guide-params'
+import type { SetupGuideResult } from '../../shared/setup-guide-command'
+import type { FeatureTourCommand } from '../../shared/rpc-contract/feature-tour-params'
+import type { FeatureTourResult } from '../../shared/feature-tour-command'
 import type { SettingsViewerCommand } from '../../shared/rpc-contract/settings-viewer-params'
 import type { SidebarViewerCommand } from '../../shared/rpc-contract/sidebar-viewer-params'
 import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
@@ -49,6 +55,9 @@ export type RuntimeNotifier = {
   browserViewer?(command: BrowserViewerCommand): Promise<BrowserViewerResult>
   voiceViewer?(command: VoiceViewerOperation): Promise<VoiceViewerResult>
   searchSettingsViewer?(command: SearchSettingsViewerCommand): Promise<SearchSettingsViewerResult>
+  crashReportViewer?(command: CrashReportCommand): Promise<CrashReportResult>
+  setupGuideViewer?(command: SetupGuideCommand): Promise<SetupGuideResult>
+  featureTourViewer?(command: FeatureTourCommand): Promise<FeatureTourResult>
   settingsViewer?(command: SettingsViewerCommand): Promise<SettingsViewerResult>
   sidebarViewer?(command: SidebarViewerCommand): Promise<SidebarViewerResult>
   cardViewer?(command: CardViewerCommand): Promise<CardViewerResult>

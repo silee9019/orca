@@ -20,6 +20,17 @@ export const ActivityViewerSnapshotSchema = z
     densityMeasured: z.boolean(),
     selectedPaneKey: z.string().nullable(),
     hasUnreadThreads: z.boolean().optional(),
+    groups: z
+      .array(
+        z
+          .object({
+            key: z.string(),
+            collapsed: z.boolean(),
+            threadCount: z.number().int().nonnegative()
+          })
+          .strip()
+      )
+      .optional(),
     logicalRows: z.array(
       z
         .object({
@@ -45,6 +56,105 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    contextMenuAction: z
+      .object({
+        paneKey: z.string(),
+        enabled: z.boolean(),
+        visible: z.boolean().nullable(),
+        targetPaneKeys: z.array(z.string())
+      })
+      .strip()
+      .optional(),
+    reviewMenuAction: z
+      .object({ paneKey: z.string(), enabled: z.boolean(), visible: z.boolean().nullable() })
+      .strip()
+      .optional(),
+    issueMenuAction: z
+      .object({ paneKey: z.string(), enabled: z.boolean(), visible: z.boolean().nullable() })
+      .strip()
+      .optional(),
+    editAction: z
+      .object({
+        paneKey: z.string(),
+        field: openEnum(['issue', 'comment', 'unknown'], 'unknown'),
+        opened: z.boolean(),
+        focus: openEnum(['focused', 'disabled', 'unverified', 'unknown'], 'unknown')
+      })
+      .strip()
+      .optional(),
+    previewAction: z
+      .object({ paneKey: z.string(), enabled: z.boolean(), visible: z.boolean().nullable() })
+      .strip()
+      .optional(),
+    copyAction: z
+      .object({
+        paneKey: z.string(),
+        kind: openEnum(['title', 'path', 'issue-link', 'unknown'], 'unknown'),
+        writeAcknowledged: z.boolean(),
+        verified: z.boolean()
+      })
+      .strip()
+      .optional(),
+    scrollAction: z
+      .object({
+        requestedTop: z.number(),
+        targetTop: z.number(),
+        scrollTop: z.number().nullable(),
+        clientHeight: z.number().nullable(),
+        scrollHeight: z.number().nullable(),
+        visibleRowKeys: z.array(z.string())
+      })
+      .strip()
+      .optional(),
+    resizeAction: z
+      .object({
+        requestedWidth: z.number(),
+        targetWidth: z.number(),
+        renderedWidth: z.number().nullable()
+      })
+      .strip()
+      .optional(),
+    pageAction: z
+      .object({ requestedView: z.string(), reachedView: z.string().nullable() })
+      .strip()
+      .optional(),
+    groupAction: z
+      .object({
+        key: z.string(),
+        requestedCollapsed: z.boolean(),
+        currentCollapsed: z.boolean().nullable()
+      })
+      .strip()
+      .optional(),
+    navigationAction: z
+      .object({
+        operation: openEnum(['jump', 'select', 'unknown'], 'unknown'),
+        paneKey: z.string(),
+        workspaceId: z.string(),
+        executionHostId: z.string(),
+        requestAccepted: z.boolean().nullable(),
+        requestOutcome: openEnum(
+          [
+            'workspace-unavailable',
+            'workspace-only',
+            'structured-requested',
+            'terminal-focus-requested',
+            'unknown'
+          ],
+          'unknown'
+        ).optional(),
+        contentState: openEnum(
+          ['ready', 'empty', 'loading', 'error', 'unknown'],
+          'unknown'
+        ).optional(),
+        reached: openEnum(
+          ['none', 'workspace', 'terminal-pane', 'structured-tab', 'unknown'],
+          'unknown'
+        ),
+        remoteAck: openEnum(['unknown', 'accepted', 'rejected'], 'unknown')
+      })
+      .strip()
+      .optional(),
     completedAction: z
       .object({ paneKeys: z.array(z.string()), remainingPaneKeys: z.array(z.string()) })
       .strip()

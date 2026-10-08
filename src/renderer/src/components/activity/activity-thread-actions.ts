@@ -47,6 +47,12 @@ export function hasActivityThreadWorkspace(
   )
 }
 
+export type ActivityThreadSelectionOutcome =
+  | 'workspace-unavailable'
+  | 'workspace-only'
+  | 'structured-requested'
+  | 'terminal-focus-requested'
+
 export function createActivityThreadActions({
   getMarkAllReadThreads,
   acknowledgeAgents,
@@ -66,8 +72,8 @@ export function createActivityThreadActions({
   markThreadUnread: (thread: AgentPaneThread) => void
   markThreadsRead: (threads: readonly AgentPaneThread[]) => void
   markThreadsUnread: (threads: readonly AgentPaneThread[]) => void
-  selectThread: (thread: AgentPaneThread) => void
-  jumpToWorkspace: (thread: AgentPaneThread) => void
+  selectThread: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome
+  jumpToWorkspace: (thread: AgentPaneThread) => boolean
   markAllThreadsRead: () => void
 } {
   const markThreadsRead = (threads: readonly AgentPaneThread[]): void => {
@@ -82,7 +88,7 @@ export function createActivityThreadActions({
 
   const markThreadUnread = (thread: AgentPaneThread): void => markThreadsUnread([thread])
 
-  const activateThreadTarget = (thread: AgentPaneThread): void => {
+  const activateThreadTarget = (thread: AgentPaneThread): ActivityThreadSelectionOutcome => {
     const isFloatingTerminal = thread.worktree.id === FLOATING_TERMINAL_WORKTREE_ID
     const executionHostId = getActivityThreadExecutionHostId(
       thread,
@@ -100,12 +106,12 @@ export function createActivityThreadActions({
         clearSidebarFilters: false
       }) === false
     ) {
-      return
+      return 'workspace-unavailable'
     }
     if (
       activateStructuredAgentSessionTab({ worktreeId: thread.worktree.id, tabId: thread.tab.id })
     ) {
-      return
+      return 'structured-requested'
     }
     // Read post-activation: the tab this thread points at may have only just been revived.
     const activated = useAppStore.getState()
@@ -113,7 +119,7 @@ export function createActivityThreadActions({
     if (!liveTabs.some((tab) => tab.id === thread.tab.id)) {
       // Retained threads outlive their tab; the workspace is still activated, but there is
       // no pane to focus and focusing a sibling would be worse than focusing nothing.
-      return
+      return 'workspace-only'
     }
     // Floating tabs have no catalog workspace; reveal their panel without changing the main workspace.
     if (isFloatingTerminal) {
@@ -126,20 +132,21 @@ export function createActivityThreadActions({
       parsed && parsed.tabId === thread.tab.id ? parsed.leafId : null,
       { flashFocusedPane: true, scrollToBottomIfOutputSinceLastView: true }
     )
+    return 'terminal-focus-requested'
   }
 
-  const selectThread = (thread: AgentPaneThread): void => {
+  const selectThread = (thread: AgentPaneThread): ActivityThreadSelectionOutcome => {
     setSelectedPaneKey(thread.paneKey)
-    activateThreadTarget(thread)
+    return activateThreadTarget(thread)
   }
 
-  const jumpToWorkspace = (thread: AgentPaneThread): void => {
+  const jumpToWorkspace = (thread: AgentPaneThread): boolean => {
     const catalog = readActivityThreadWorkspaceCatalog()
     if (!hasActivityThreadWorkspace(thread, catalog)) {
-      return
+      return false
     }
     markThreadRead(thread)
-    jumpToWorktreeFromSidebar(thread.worktree.id, {
+    return jumpToWorktreeFromSidebar(thread.worktree.id, {
       executionHostId: getActivityThreadExecutionHostId(thread, catalog.defaultHostId)
     })
   }

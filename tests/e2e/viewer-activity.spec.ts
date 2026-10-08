@@ -1,9 +1,23 @@
+import { assertActivityContextMenuNavigation } from './helpers/activity-context-menu-navigation-assertions'
+import { assertActivityContextMenuClear } from './helpers/activity-context-menu-clear-assertions'
+import { assertActivityContextMenuRead } from './helpers/activity-context-menu-read-assertions'
+import { assertActivityContextMenu } from './helpers/activity-context-menu-assertions'
+import { assertActivityReviewMenu } from './helpers/activity-review-menu-assertions'
+import { assertActivityPreviewIssueCopy } from './helpers/activity-preview-issue-copy-assertions'
+import { assertActivityIssueMenu } from './helpers/activity-issue-menu-assertions'
+import { assertActivityPreviewEdit } from './helpers/activity-preview-edit-assertions'
+import { assertActivityPreview } from './helpers/activity-preview-assertions'
+import { assertActivityCopy } from './helpers/activity-copy-assertions'
+import { assertActivityScroll } from './helpers/activity-scroll-assertions'
+import { SidebarViewerResultSchema } from '../../src/shared/sidebar-viewer-command'
+import { assertActivityResize } from './helpers/activity-resize-assertions'
+import { assertActivityPageClose } from './helpers/activity-page-close-assertions'
 import type { Repo } from '../../src/shared/repo-types'
 import type { Worktree } from '../../src/shared/worktree/types'
 import type { TerminalTab } from '../../src/shared/terminal-tab-types'
 import type { RetainedAgentEntry } from '../../src/renderer/src/store/slices/agent-status-contract'
 import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
 import { retryTransientMainEvaluate } from './helpers/electron-main-evaluate-retry'
@@ -13,10 +27,14 @@ import { assertActivityMarkAllRead } from './helpers/activity-mark-all-read-asse
 import { assertActivityReadToggle } from './helpers/activity-read-toggle-assertions'
 import { assertActivityCompleted } from './helpers/activity-completed-assertions'
 import { assertActivityThreadClear } from './helpers/activity-thread-clear-assertions'
+import { assertActivityGroupCollapse } from './helpers/activity-group-collapse-assertions'
+import { assertActivitySelect } from './helpers/activity-select-assertions'
+import { assertActivityJump } from './helpers/activity-jump-assertions'
 
 test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
 }, testInfo) => {
+  test.setTimeout(180_000)
   const orcaPage = await electronApp.firstWindow()
   await orcaPage.waitForFunction(
     () =>
@@ -54,8 +72,11 @@ test('Activity CLI applies list preferences and local search controls', async ({
     })
     writeFileSync(testInfo.outputPath('process-isolation.txt'), `${processState}\n${listeners}`)
   }
+  for (const id of ['a', 'b']) {
+    mkdirSync(path.join(userData, 'activity-fixture', id, 'worktree'), { recursive: true })
+  }
   const results: unknown[] = []
-  const call = async (args: string[], surface = 'activity-page') => {
+  const callViewer = async (args: string[], surface?: string) => {
     const env = Object.fromEntries(
       Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
     )
@@ -65,8 +86,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
         path.join(process.cwd(), 'out/cli/index.js'),
         'ui',
         ...args,
-        '--surface',
-        surface,
+        ...(surface ? ['--surface', surface] : []),
         '--viewer',
         'host',
         '--json'
@@ -86,8 +106,14 @@ test('Activity CLI applies list preferences and local search controls', async ({
     results.push(envelope)
     writeFileSync(testInfo.outputPath('cli-results.json'), JSON.stringify(results, null, 2))
     expect(envelope._meta.runtimeId).toBeTruthy()
-    return ActivityViewerResultSchema.parse(envelope.result)
+    return envelope
   }
+  const call = async (args: string[], surface = 'activity-page') =>
+    ActivityViewerResultSchema.parse((await callViewer(args, surface)).result)
+  const toggleSidebar = async () =>
+    SidebarViewerResultSchema.parse(
+      (await callViewer(['sidebar', 'toggle', '--side', 'left'])).result
+    )
   await assertHidden()
   await orcaPage.evaluate(() => {
     window.__store?.setState({
@@ -437,5 +463,21 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityReadToggle(orcaPage, call, testInfo)
   await assertActivityCompleted(orcaPage, call, testInfo)
   await assertActivityThreadClear(orcaPage, call, testInfo)
+  await assertActivityGroupCollapse(orcaPage, call, testInfo)
+  await assertActivityJump(orcaPage, call, testInfo)
+  await assertActivitySelect(orcaPage, call, testInfo)
+  await assertActivityCopy(electronApp, orcaPage, call, testInfo)
+  await assertActivityPreview(orcaPage, call, testInfo)
+  await assertActivityPreviewEdit(electronApp, orcaPage, call, testInfo)
+  await assertActivityIssueMenu(orcaPage, call, testInfo)
+  await assertActivityPreviewIssueCopy(orcaPage, call, testInfo)
+  await assertActivityReviewMenu(orcaPage, call, testInfo)
+  await assertActivityContextMenu(orcaPage, call, testInfo)
+  await assertActivityContextMenuRead(orcaPage, call, testInfo)
+  await assertActivityContextMenuClear(orcaPage, call, testInfo)
+  await assertActivityContextMenuNavigation(orcaPage, call, testInfo)
+  await assertActivityResize(orcaPage, call, testInfo)
+  await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
+  await assertActivityPageClose(orcaPage, call, testInfo)
   await assertHidden()
 })

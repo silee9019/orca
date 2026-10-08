@@ -8,6 +8,12 @@ import type {
   SearchSettingsViewerCommand,
   SearchSettingsViewerResult
 } from '../../shared/search-settings-viewer'
+import type { CrashReportCommand } from '../../shared/rpc-contract/crash-report-params'
+import type { CrashReportResult } from '../../shared/crash-report-command'
+import type { SetupGuideCommand } from '../../shared/rpc-contract/setup-guide-params'
+import type { SetupGuideResult } from '../../shared/setup-guide-command'
+import type { FeatureTourCommand } from '../../shared/rpc-contract/feature-tour-params'
+import type { FeatureTourResult } from '../../shared/feature-tour-command'
 import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-viewer-params'
 import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
 import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
@@ -226,6 +232,27 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
       throw new Error('renderer_unavailable')
     }
     return await this.notifier.voiceViewer(command)
+  }
+
+  async crashReportViewer(command: CrashReportCommand): Promise<CrashReportResult> {
+    if (!this.notifier?.crashReportViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.crashReportViewer(command)
+  }
+
+  async setupGuideViewer(command: SetupGuideCommand): Promise<SetupGuideResult> {
+    if (!this.notifier?.setupGuideViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.setupGuideViewer(command)
+  }
+
+  async featureTourViewer(command: FeatureTourCommand): Promise<FeatureTourResult> {
+    if (!this.notifier?.featureTourViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.featureTourViewer(command)
   }
 
   async settingsViewer(command: SettingsViewerCommand): Promise<SettingsViewerResult> {

@@ -1,4 +1,5 @@
 import { Suspense, useRef } from 'react'
+import { useRenderedActivePage } from '../runtime/use-rendered-active-page'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
 import { translate } from '@/i18n/i18n'
 import Sidebar from '../components/Sidebar'
@@ -64,7 +65,14 @@ function WorktreeSidebar({
   )
 }
 
-function ActivePage({ layout }: { layout: AppChromeLayout }): React.JSX.Element {
+function ActivePage({
+  layout,
+  contentRef
+}: {
+  layout: AppChromeLayout
+  contentRef: React.RefObject<HTMLDivElement | null>
+}): React.JSX.Element {
+  useRenderedActivePage(contentRef, layout.activeView)
   const { activeView, activeWorktreeId, activePendingCreationId, creationLayoutActive } = layout
   return (
     <>
@@ -93,6 +101,7 @@ export function AppWorkspaceShell(props: {
   floatingWorkspace: FloatingWorkspacePanelState
 }): React.JSX.Element {
   const { layout, floatingWorkspace } = props
+  const activePageRef = useRef<HTMLDivElement | null>(null)
   const titlebarLeftControls = <TitlebarLeftControls layout={layout} />
   const titlebarMainStrip = <TitlebarMainStrip layout={layout} />
   // Why: keep virtualized scroll memory above the sidebar's workspace/landing remount so the left list doesn't restart at scrollTop 0.
@@ -177,7 +186,7 @@ export function AppWorkspaceShell(props: {
                     {layout.showRightSidebarControls ? <RightSidebarToggle /> : null}
                   </div>
                 )}
-                <div className="flex flex-1 min-w-0 min-h-0 flex-col">
+                <div ref={activePageRef} className="flex flex-1 min-w-0 min-h-0 flex-col">
                   {layout.shouldMountTerminalWorkbench ? (
                     <TerminalWorkbenchContainer isVisible={layout.terminalWorkbenchVisible}>
                       <Suspense fallback={null}>
@@ -210,7 +219,7 @@ export function AppWorkspaceShell(props: {
                         'Retry the page or navigate to another Orca surface.'
                       )}
                     >
-                      <ActivePage layout={layout} />
+                      <ActivePage layout={layout} contentRef={activePageRef} />
                     </RecoverableRenderErrorBoundary>
                   </Suspense>
                 </div>

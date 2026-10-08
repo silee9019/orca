@@ -1,5 +1,4 @@
-import type { activityViewerBridgeApi } from './activity-viewer-bridge'
-import type { settingsViewerBridgeApi } from './settings-viewer-bridge'
+import type { ViewerBridgeEventApi } from './viewer-bridge-event-api'
 import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
 import type {
   BrowserViewerRequest,
@@ -75,9 +74,7 @@ import type {
 
 export type CloseActiveTabPayload = { sourceId: string }
 
-export type UiCommandEventApi = Partial<
-  typeof activityViewerBridgeApi & typeof settingsViewerBridgeApi
-> & {
+export type UiCommandEventApi = ViewerBridgeEventApi & {
   onBrowserViewerRequest?: (callback: (request: BrowserViewerRequest) => void) => () => void
   respondBrowserViewer?: (response: BrowserViewerResponse) => void
   onVoiceViewerRequest?: (callback: (request: VoiceViewerRequest) => void) => () => void

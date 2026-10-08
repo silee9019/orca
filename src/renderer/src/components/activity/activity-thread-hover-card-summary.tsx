@@ -1,6 +1,6 @@
+import { copyActivityThreadPreviewPath } from './activity-thread-copy'
 import React, { useCallback, useMemo } from 'react'
 import { Cloud, Copy, FolderGit2, GitBranch, Laptop, LocateFixed, Server } from 'lucide-react'
-import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { RepoBadgeMark } from '@/components/repo/RepoBadgeLabel'
 import { AgentIcon } from '@/lib/agent-catalog'
@@ -93,25 +93,7 @@ export function ActivityThreadHoverCardSummary({
   )
 
   const handleCopyPath = useCallback(async () => {
-    if (!worktree.path) {
-      return
-    }
-    try {
-      await window.api.ui.writeClipboardText(worktree.path)
-      toast.success(
-        translate(
-          'auto.components.activity.ActivityThreadHoverCard.pathCopied',
-          'Path copied to clipboard'
-        )
-      )
-    } catch {
-      toast.error(
-        translate(
-          'auto.components.activity.ActivityThreadHoverCard.copyPathFailed',
-          'Failed to copy path'
-        )
-      )
-    }
+    await copyActivityThreadPreviewPath(worktree.path)
   }, [worktree.path])
 
   return (
@@ -214,7 +196,10 @@ export function ActivityThreadHoverCardSummary({
           </div>
 
           {worktree.path ? (
-            <div className="flex items-center justify-between gap-1.5 rounded border border-border/30 bg-accent/40 px-2 py-1 font-mono text-[10.5px] text-muted-foreground">
+            <div
+              data-activity-preview-copy-path
+              className="flex items-center justify-between gap-1.5 rounded border border-border/30 bg-accent/40 px-2 py-1 font-mono text-[10.5px] text-muted-foreground"
+            >
               <span className="truncate" title={worktree.path}>
                 {worktree.path}
               </span>

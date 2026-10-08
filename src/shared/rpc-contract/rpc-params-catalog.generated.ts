@@ -231,6 +231,7 @@ import {
   TypeText
 } from './computer-schemas-params'
 import { ConnectionsViewerParams } from './connections-viewer-params'
+import { CrashReportParams } from './crash-report-params'
 import {
   DaemonManagementListParams,
   DaemonManagementStopManyParams,
@@ -276,6 +277,7 @@ import {
   VmStopCleanup,
   VmWorkspace
 } from './ephemeral-vm-params'
+import { FeatureTourParams } from './feature-tour-params'
 import {
   FileCommitUpload,
   FileCopy,
@@ -632,6 +634,7 @@ import {
 } from './session-tabs-schemas-params'
 import { SettingsKeybindingUpdate, SettingsWarpImportSource } from './settings-control-params'
 import { SettingsViewerParams } from './settings-viewer-params'
+import { SetupGuideParams } from './setup-guide-params'
 import { SidebarViewerParams } from './sidebar-viewer-params'
 import {
   SkillAuthorizedBundlePackageInstallParams,
@@ -1957,11 +1960,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'ui.activityViewer': ActivityViewerParams,
   'ui.browserViewer': BrowserViewerCommand,
   'ui.cardViewer': CardViewerParams,
+  'ui.crashReportViewer': CrashReportParams,
+  'ui.featureTourViewer': FeatureTourParams,
   'ui.get': null,
   'ui.projectFilter': ProjectFilterParams,
   'ui.recordFeatureInteraction': FeatureInteractionIdParam,
   'ui.set': UiUpdate,
   'ui.settingsViewer': SettingsViewerParams,
+  'ui.setupGuideViewer': SetupGuideParams,
   'ui.sidebarViewer': SidebarViewerParams,
   'ui.statusBarViewer': StatusBarViewerParams,
   'ui.workspaceFilter': WorkspaceFilterParams,

@@ -24,7 +24,6 @@ import { LocalGitToolchainScanBanner } from './LocalGitToolchainScanBanner'
 // previews, thread derivation); users on the workspace view should not load or render any of it.
 const SidebarAgentsList = lazyWithRetry(() => import('./SidebarAgentsList'))
 
-const WorktreeMetaDialog = lazyWithRetry(() => import('./WorktreeMetaDialog'))
 const RemoveFolderDialog = lazyWithRetry(() => import('./RemoveFolderDialog'))
 const WorktreeVisibilityDialog = lazyWithRetry(() => import('./WorktreeVisibilityDialog'))
 const OrcaYamlTrustDialog = lazyWithRetry(() => import('./OrcaYamlTrustDialog'))
@@ -249,7 +248,6 @@ function Sidebar({
       {/* Dialogs render outside sidebar to avoid clipping. Lazy-load them only
       for the modal that needs their flow-specific hooks and UI. */}
       <React.Suspense fallback={null}>
-        {activeModal === 'edit-meta' ? <WorktreeMetaDialog /> : null}
         {activeModal === 'confirm-remove-folder' ? <RemoveFolderDialog /> : null}
         {activeModal === 'worktree-visibility' ? <WorktreeVisibilityDialog /> : null}
         {activeModal === 'confirm-orca-yaml-hooks' ? <OrcaYamlTrustDialog /> : null}

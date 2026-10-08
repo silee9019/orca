@@ -1,3 +1,6 @@
+import { applyActivityViewerDirectRequest } from './activity-viewer-direct-command'
+import { readActivityViewerCommandContext } from './activity-viewer-command-context'
+import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
 import {
   readActivityViewerPersistence,
   readActivityPersistenceWriteOutcome
@@ -23,7 +26,6 @@ import { useAppStore } from '@/store'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { withTimeout } from '../../../shared/promise-timeout-fallback'
 import type { PersistedUIState } from '../../../shared/persisted-ui-state-types'
-import { ActivityViewerParams } from '../../../shared/rpc-contract/activity-viewer-params'
 import type {
   ActivityViewerRequest,
   ActivityViewerResult
@@ -45,24 +47,12 @@ import { captureActivitySearchControl } from './activity-search-controls'
 export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
-  const command = ActivityViewerParams.parse(request.command)
-  if (Date.now() >= request.expiresAt) {
-    throw new Error('request_expired')
+  const { command, initial, localSearch, markAllRead, threadRead, completed } =
+    readActivityViewerCommandContext(request)
+  const direct = applyActivityViewerDirectRequest(request, command)
+  if (direct) {
+    return direct
   }
-  const initial = useAppStore.getState()
-  if (!initial.persistedUIReady || !initial.settings) {
-    throw new Error('viewer_not_ready')
-  }
-  if (initial.settings.activeRuntimeEnvironmentId) {
-    throw new Error('viewer_runtime_mismatch')
-  }
-  const localSearch = command.operation === 'search' || command.operation === 'search-clear'
-  const markAllRead = command.operation === 'mark-all-read'
-  const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
-  const completed =
-    command.operation === 'clear-completed' ||
-    command.operation === 'clear-thread' ||
-    command.operation === 'clear-threads'
   const localOnly = localSearch || markAllRead || threadRead || completed
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
@@ -82,7 +72,9 @@ export async function applyActivityViewerRequest(
   }
   const readQuery = threadRead ? readActivityViewerView(command.surface)?.query : undefined
   const readAction =
-    threadRead && readControl ? applyActivityThreadReadCommand(command, readControl) : null
+    (command.operation === 'read-toggle' || command.operation === 'read-toggle-many') && readControl
+      ? applyActivityThreadReadCommand(command, readControl)
+      : null
   const markAllControl = markAllRead ? readActivityMarkAllReadControl(command.surface) : null
   if (markAllRead && !markAllControl) {
     throw new Error('activity_read_control_unavailable')
@@ -122,21 +114,14 @@ export async function applyActivityViewerRequest(
     }
     button.click()
   }
-  let saving = scopeCommand ? applyActivityScopeCommand(command, initial) : undefined
+  let saving = scopeCommand
+    ? applyActivityScopeCommand(command, initial)
+    : applyActivityListPreferenceCommand(command, initial)
   if (command.operation === 'search-visible') {
     if (!searchControl?.setShowSearch) {
       throw new Error('activity_search_unavailable')
     }
     saving = searchControl.setShowSearch(command.enabled)
-  }
-  if (command.operation === 'group') {
-    saving = initial.setAgentsGroupBy(command.by)
-  } else if (command.operation === 'read') {
-    saving = initial.setAgentsReadFilter(command.filter)
-  } else if (command.operation === 'compact') {
-    saving = initial.setAgentsCompactMode(command.enabled)
-  } else if (command.operation === 'children') {
-    saving = initial.setAgentsShowChildAgents(command.enabled)
   }
   const expected = useAppStore.getState()
   const expectedScope =

@@ -1,4 +1,7 @@
 import { useAppShellControl } from './use-app-shell-control'
+import { useCrashReportBridge } from '../runtime/use-crash-report-bridge'
+import { useSetupGuideBridge } from '../runtime/use-setup-guide-bridge'
+import { useFeatureTourBridge } from '../runtime/use-feature-tour-bridge'
 import { NotificationCardStack } from '../components/NotificationCardStack'
 import { Suspense } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
@@ -39,6 +42,7 @@ const SetupGuideModal = lazy(() => import('../components/setup-guide/SetupGuideM
 const FeatureWallModal = lazy(() => import('../components/feature-wall/FeatureWallModal'))
 const FeatureTipsModal = lazy(() => import('../components/feature-tips/FeatureTipsModal'))
 const AddRepoDialog = lazy(() => import('../components/sidebar/AddRepoDialog'))
+const WorktreeMetaDialog = lazy(() => import('../components/sidebar/WorktreeMetaDialog'))
 const NonGitFolderDialog = lazy(() => import('../components/sidebar/NonGitFolderDialog'))
 const AddProjectFromFolderDialog = lazy(
   () => import('../components/sidebar/AddProjectFromFolderDialog')
@@ -148,6 +152,16 @@ export function AppRootSurfaces(props: {
   const updateStatus = useAppStore((s) => s.updateStatus)
   const activeContextualTourId = useAppStore((s) => s.activeContextualTourId)
   const hasSshCredentialRequest = useAppStore((s) => s.sshCredentialQueue.length > 0)
+  const helpModalAvailable =
+    persistedUIReady &&
+    onboardingGate.onboarding !== null &&
+    !onboardingGate.shouldRender &&
+    !hasSshCredentialRequest &&
+    activeContextualTourId === null &&
+    !floatingWorkspace.open
+  useFeatureTourBridge(helpModalAvailable)
+  useSetupGuideBridge(helpModalAvailable)
+  useCrashReportBridge(helpModalAvailable)
 
   const shouldMountSetupGuideTelemetryObserver = persistedUIReady
   const shouldMountUpdateCard = shouldMountUpdateCardForStatus(updateStatus)
@@ -201,6 +215,11 @@ export function AppRootSurfaces(props: {
         </ModalBoundary>
       ) : null}
       <Suspense fallback={null}>
+        {activeModal === 'edit-meta' ? (
+          <ModalBoundary boundaryId="modal.edit-meta" resetKey>
+            <WorktreeMetaDialog />
+          </ModalBoundary>
+        ) : null}
         {shouldMountAddRepoDialog ? (
           <ModalBoundary boundaryId="modal.add-repo" resetKey={activeModal === 'add-repo'}>
             <AddRepoDialog />

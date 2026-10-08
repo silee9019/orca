@@ -17,6 +17,9 @@ import { TERMINAL_SIGNAL_METHODS } from './terminal-signal'
 import { TERMINAL_HOST_DETAILS_METHODS } from './terminal-host-details'
 import { DAEMON_MANAGEMENT_METHODS } from './daemon-management'
 import { AI_VAULT_SESSION_ACTION_METHODS } from './ai-vault-session-actions'
+import { CRASH_REPORT_METHODS } from './crash-report-viewer'
+import { SETUP_GUIDE_METHODS } from './setup-guide-viewer'
+import { FEATURE_TOUR_METHODS } from './feature-tour-viewer'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
 import { REPO_METHODS } from './repo'
@@ -90,6 +93,9 @@ const CORE_RPC_METHODS = [
   ...TERMINAL_HOST_DETAILS_METHODS,
   ...TERMINAL_SIGNAL_METHODS,
   ...DAEMON_MANAGEMENT_METHODS,
+  ...CRASH_REPORT_METHODS,
+  ...SETUP_GUIDE_METHODS,
+  ...FEATURE_TOUR_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
   ...AI_VAULT_SESSION_ACTION_METHODS,

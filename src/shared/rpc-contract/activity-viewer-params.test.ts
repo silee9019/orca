@@ -59,3 +59,79 @@ it('keeps Activity scope origins and targets explicit and closed', () => {
     expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(false)
   }
 })
+
+it('accepts an explicit Activity workspace jump and rejects empty targets', () => {
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: 'tab:leaf'
+    }).success
+  ).toBe(true)
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: ''
+    }).success
+  ).toBe(false)
+})
+
+it('requires an explicit target for select and rejects unsupported modifiers', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'select',
+    paneKey: 'tab:leaf'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, paneKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, ctrlKey: true }).success).toBe(false)
+})
+
+it('requires an explicit group key for a surface-local group toggle', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'group-toggle',
+    groupKey: 'status:done'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, groupKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, collapsed: true }).success).toBe(false)
+})
+
+it('accepts page-only close and rejects sidebar or extra destination fields', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'close' }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, destination: 'terminal' }).success).toBe(
+    false
+  )
+})
+
+it('accepts finite positive page resize and rejects extra or foreign targets', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'resize', width: 1000 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const width of [0, -1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, width }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+})
+
+it('accepts nonnegative finite offsets and rejects viewport selectors or delta fields', () => {
+  const command = { viewer: 'host', surface: 'sidebar-agents', operation: 'scroll', top: 0 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const top of [-1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, top }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...command, delta: 5 }).success).toBe(false)
+})

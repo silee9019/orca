@@ -56,6 +56,7 @@ function SetupStepRow(props: {
       type="button"
       onClick={onSelect}
       aria-current={active ? 'step' : undefined}
+      data-setup-guide-step-id={step.id}
       className={cn(
         'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -318,6 +319,7 @@ export function FeatureWallSetupChecklist(
       </div>
 
       <section
+        data-setup-guide-content-step={activeStep?.id}
         className={cn(
           'scrollbar-sleek min-h-0 overflow-y-auto',
           isEmbedded
@@ -333,7 +335,10 @@ export function FeatureWallSetupChecklist(
               </h3>
               {/* Why: a "not done" pill on every open step is noise; only completion is news. */}
               {activeDone ? (
-                <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <span
+                  data-setup-guide-completed="true"
+                  className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                >
                   <Check className="size-3.5" />
                   {translate(
                     'auto.components.feature.wall.FeatureWallSetupChecklist.13294d3405',
@@ -351,6 +356,7 @@ export function FeatureWallSetupChecklist(
             >
               <div className="min-w-0">
                 <p
+                  data-setup-guide-description="true"
                   className={cn(
                     'text-sm leading-relaxed text-muted-foreground',
                     hasStepVisual && !isEmbedded ? 'pr-4 sm:pr-6' : null
@@ -360,7 +366,10 @@ export function FeatureWallSetupChecklist(
                 </p>
                 {/* Action lives under the caption, not after the grid, so it sits just
                     below the copy instead of being pushed down by the taller visual. */}
-                <div className={cn('min-w-0', isEmbedded ? 'mt-7' : 'mt-6')}>
+                <div
+                  data-setup-guide-action="true"
+                  className={cn('min-w-0', isEmbedded ? 'mt-7' : 'mt-6')}
+                >
                   <SelectedStepAction {...props} />
                 </div>
               </div>

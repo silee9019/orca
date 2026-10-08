@@ -4,6 +4,9 @@ import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
 import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
 import { registerConnectionsViewerManagement } from '../ipc/connections-viewer-management'
 import { requestConnectionsViewerFromRenderer } from './connections-viewer-request-relay'
+import { requestCrashReportFromRenderer } from './crash-report-request-relay'
+import { requestSetupGuideFromRenderer } from './setup-guide-request-relay'
+import { requestFeatureTourFromRenderer } from './feature-tour-request-relay'
 import { requestActivityViewerFromRenderer } from './activity-viewer-request-relay'
 import { requestSettingsViewerFromRenderer } from './settings-viewer-request-relay'
 import { requestSidebarViewerFromRenderer } from './sidebar-viewer-request-relay'
@@ -57,6 +60,9 @@ export function registerRuntimeWindowLifecycle(
     browserViewer: (command) => requestBrowserViewerFromRenderer(mainWindow, command),
     voiceViewer: (command) => requestVoiceViewerFromRenderer(mainWindow, command),
     searchSettingsViewer: (command) => requestSearchSettingsViewerFromRenderer(mainWindow, command),
+    crashReportViewer: (command) => requestCrashReportFromRenderer(mainWindow, command),
+    setupGuideViewer: (command) => requestSetupGuideFromRenderer(mainWindow, command),
+    featureTourViewer: (command) => requestFeatureTourFromRenderer(mainWindow, command),
     settingsViewer: (command) => requestSettingsViewerFromRenderer(mainWindow, command),
     sidebarViewer: (command) => requestSidebarViewerFromRenderer(mainWindow, command),
     cardViewer: (command) => requestCardViewerFromRenderer(mainWindow, command),

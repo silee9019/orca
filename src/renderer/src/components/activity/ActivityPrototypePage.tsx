@@ -1,3 +1,8 @@
+import {
+  ACTIVITY_THREAD_LIST_INITIAL_WIDTH,
+  ACTIVITY_THREAD_LIST_MIN_WIDTH,
+  ACTIVITY_THREAD_LIST_MAX_WIDTH
+} from '../../../../shared/activity-thread-list-layout'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { useActivitySearchControls } from '@/runtime/use-activity-search-controls'
@@ -47,7 +52,7 @@ export default function ActivityPrototypePage(): React.JSX.Element {
   const [primaryPortalTargetEl, setPrimaryPortalTargetEl] = useState<HTMLElement | null>(null)
   const [secondaryPortalTargetEl, setSecondaryPortalTargetEl] = useState<HTMLElement | null>(null)
   // Why (default width): thread cards are the primary surface; 480px lets prompts fill line-clamp-3 and keeps the per-card actions readable.
-  const [threadListWidth, setThreadListWidth] = useState(480)
+  const [threadListWidth, setThreadListWidth] = useState(ACTIVITY_THREAD_LIST_INITIAL_WIDTH)
   const {
     containerRef: threadListRef,
     isResizing: isThreadListResizing,
@@ -55,8 +60,8 @@ export default function ActivityPrototypePage(): React.JSX.Element {
   } = useSidebarResize<HTMLDivElement>({
     isOpen: true,
     width: threadListWidth,
-    minWidth: 320,
-    maxWidth: 720,
+    minWidth: ACTIVITY_THREAD_LIST_MIN_WIDTH,
+    maxWidth: ACTIVITY_THREAD_LIST_MAX_WIDTH,
     deltaSign: 1,
     setWidth: setThreadListWidth
   })
