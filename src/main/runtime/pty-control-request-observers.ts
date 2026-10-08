@@ -1,9 +1,11 @@
+import type { TerminalPreviewDataSignal } from '../../shared/rpc-contract/terminal-preview-data-watch-params'
 import type { TerminalRendererReplaySignal } from '../../shared/rpc-contract/terminal-renderer-replay-watch-params'
 import type { TerminalRendererDataSignal } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RendererDeliveryResyncSignal } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
 import type { TerminalControlRequestSignal } from '../../shared/rpc-contract/terminal-control-watch-params'
 
 export type PtyControlRequest =
+  | TerminalPreviewDataSignal
   | TerminalControlRequestSignal
   | RendererDeliveryResyncSignal
   | TerminalRendererDataSignal
@@ -36,11 +38,13 @@ export function publishPtyControlRequest(
   for (const observer of observers.get(owner) ?? []) {
     try {
       observer.changed(
-        request.kind === 'renderer-data' || request.kind === 'renderer-replay'
+        request.kind === 'preview-data'
           ? { ...request, payload: { ...request.payload } }
-          : request.kind === 'serialize-buffer'
-            ? { ...request, ...(request.opts ? { opts: { ...request.opts } } : {}) }
-            : { ...request }
+          : request.kind === 'renderer-data' || request.kind === 'renderer-replay'
+            ? { ...request, payload: { ...request.payload } }
+            : request.kind === 'serialize-buffer'
+              ? { ...request, ...(request.opts ? { opts: { ...request.opts } } : {}) }
+              : { ...request }
       )
     } catch {
       observers.get(owner)?.delete(observer)

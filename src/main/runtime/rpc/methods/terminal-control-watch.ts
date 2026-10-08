@@ -1,3 +1,4 @@
+import { TerminalPreviewDataSignal } from '../../../../shared/rpc-contract/terminal-preview-data-watch-params'
 import { TerminalRendererReplaySignal } from '../../../../shared/rpc-contract/terminal-renderer-replay-watch-params'
 import { TerminalRendererDataSignal } from '../../../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RpcContext } from '../core'
@@ -14,7 +15,7 @@ export async function watchTerminalRendererRequests(
   params: TerminalControlSubscriptionParams,
   context: RpcContext,
   emit: (event: unknown) => void,
-  mode: 'control' | 'model' | 'data' | 'replay'
+  mode: 'control' | 'model' | 'data' | 'replay' | 'preview'
 ): Promise<void> {
   const { runtime, signal } = context,
     identity = runtime.getTerminalProcessIncarnation(params.terminal)
@@ -58,26 +59,30 @@ export async function watchTerminalRendererRequests(
         (request) => {
           if (
             !('ptyId' in request) ||
-            !(mode === 'model'
-              ? request.kind === 'model-restore-needed'
-              : mode === 'replay'
-                ? request.kind === 'renderer-replay'
-                : mode === 'data'
-                  ? request.kind === 'renderer-data'
-                  : ['clear-buffer', 'reset-input-modes', 'serialize-buffer'].includes(
-                      request.kind
-                    )) ||
+            !(mode === 'preview'
+              ? request.kind === 'preview-data'
+              : mode === 'model'
+                ? request.kind === 'model-restore-needed'
+                : mode === 'replay'
+                  ? request.kind === 'renderer-replay'
+                  : mode === 'data'
+                    ? request.kind === 'renderer-data'
+                    : ['clear-buffer', 'reset-input-modes', 'serialize-buffer'].includes(
+                        request.kind
+                      )) ||
             request.ptyId !== params.expectedPtyId ||
             request.rendererId !== params.expectedRendererId
           ) {
             return
           }
           const parsed = (
-            mode === 'replay'
-              ? TerminalRendererReplaySignal
-              : mode === 'data'
-                ? TerminalRendererDataSignal
-                : TerminalControlRequestSignal
+            mode === 'preview'
+              ? TerminalPreviewDataSignal
+              : mode === 'replay'
+                ? TerminalRendererReplaySignal
+                : mode === 'data'
+                  ? TerminalRendererDataSignal
+                  : TerminalControlRequestSignal
           ).safeParse(request)
           if (!parsed.success) {
             fail()

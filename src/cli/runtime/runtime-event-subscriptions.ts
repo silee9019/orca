@@ -1,3 +1,4 @@
+import type { TerminalPreviewDataSubscriptionParams } from '../../shared/rpc-contract/terminal-preview-data-watch-params'
 import type { TerminalRendererReplaySubscriptionParams } from '../../shared/rpc-contract/terminal-renderer-replay-watch-params'
 import type { TerminalRendererDataSubscriptionParams } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RendererResyncSubscriptionParams } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
@@ -26,6 +27,9 @@ export abstract class RuntimeEventSubscriptions {
     typeof createCliRuntimeSubscriptionOptions
   >
 
+  subscribeTerminalPreviewData(...args: StreamArgs<TerminalPreviewDataSubscriptionParams>) {
+    return this.subscribeEvents('terminal.previewData.subscribe', ...args)
+  }
   subscribeTerminalRendererReplay(...args: StreamArgs<TerminalRendererReplaySubscriptionParams>) {
     return this.subscribeEvents('terminal.rendererReplay.subscribe', ...args)
   }
