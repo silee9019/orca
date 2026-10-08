@@ -65,3 +65,28 @@ it('refuses missing native guests, unavailable history and expired actions', () 
   expect(() => requestBrowserToolbar('p1', 'back', Date.now() - 1)).toThrow('request_expired')
   expect(controls.goBack).not.toHaveBeenCalled()
 })
+
+it('does not use conversion fallback for shortcut-only actions', () => {
+  const conversion = vi.fn()
+  renderHook(() =>
+    useBrowserToolbarHistoryCommands({
+      page: 'p1',
+      controls: {
+        canGoBack: true,
+        canGoForward: true,
+        loading: false,
+        goBack: conversion,
+        goForward: conversion,
+        reload: vi.fn(),
+        navigate: vi.fn()
+      },
+      nativeBack: false,
+      nativeForward: false,
+      guestAvailable: () => false
+    })
+  )
+  expect(() => requestBrowserToolbar('p1', 'back-shortcut', Date.now() + 9000)).toThrow(
+    'browser_guest_unavailable'
+  )
+  expect(conversion).not.toHaveBeenCalled()
+})

@@ -1,4 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import {
+  performBrowserNativeShortcutHistory,
+  type BrowserNativeHistoryOwner
+} from './browser-native-shortcut-history'
 import { BROWSER_TOOLBAR_COMMAND_EVENT } from '@/runtime/browser-toolbar-request'
 import type { BrowserNavigationControls } from './browser-navigation-control-row'
 
@@ -7,26 +11,47 @@ export function useBrowserToolbarHistoryCommands({
   controls,
   guestAvailable,
   nativeBack,
-  nativeForward
+  nativeForward,
+  shortcutOwner
 }: {
   page: string
   controls: BrowserNavigationControls
   guestAvailable: () => boolean
   nativeBack: boolean
   nativeForward: boolean
+  shortcutOwner?: BrowserNativeHistoryOwner
 }): void {
+  const busy = useRef(false)
   useEffect(() => {
+    let mounted = true
     const receive = (event: WindowEventMap['orca:browser-toolbar-command']): void => {
       const request = event.detail
       if (
         request.page !== page ||
-        (request.action !== 'back' && request.action !== 'forward') ||
+        !['back', 'forward', 'back-shortcut', 'forward-shortcut'].includes(request.action) ||
         !request.claim()
       ) {
         return
       }
       if (Date.now() >= request.expiresAt) {
         request.finish(new Error('request_expired'))
+        return
+      }
+      if (request.action === 'back-shortcut' || request.action === 'forward-shortcut') {
+        if (busy.current) {
+          request.finish(new Error('browser_shortcut_history_busy'))
+          return
+        }
+        busy.current = true
+        try {
+          performBrowserNativeShortcutHistory(request, shortcutOwner, () => mounted)
+        } catch (error) {
+          request.finish(
+            error instanceof Error ? error : new Error('browser_shortcut_history_failed')
+          )
+        } finally {
+          busy.current = false
+        }
         return
       }
       const back = request.action === 'back'
@@ -50,6 +75,9 @@ export function useBrowserToolbarHistoryCommands({
       }
     }
     window.addEventListener(BROWSER_TOOLBAR_COMMAND_EVENT, receive)
-    return () => window.removeEventListener(BROWSER_TOOLBAR_COMMAND_EVENT, receive)
-  }, [page, controls, guestAvailable, nativeBack, nativeForward])
+    return () => {
+      mounted = false
+      window.removeEventListener(BROWSER_TOOLBAR_COMMAND_EVENT, receive)
+    }
+  }, [page, controls, guestAvailable, nativeBack, nativeForward, shortcutOwner])
 }

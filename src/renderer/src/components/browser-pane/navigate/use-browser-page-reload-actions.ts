@@ -124,6 +124,8 @@ export function useBrowserPageReloadActions({
         request.page !== browserTab.id ||
         request.action === 'back' ||
         request.action === 'forward' ||
+        request.action === 'back-shortcut' ||
+        request.action === 'forward-shortcut' ||
         !request.claim()
       ) {
         return

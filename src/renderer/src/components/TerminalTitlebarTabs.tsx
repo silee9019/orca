@@ -1,3 +1,4 @@
+import { useBrowserTitlebarPairedActivationCommands } from './use-browser-titlebar-paired-activation-commands'
 import { createPortal } from 'react-dom'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import { useAppStore } from '../store'
@@ -97,6 +98,11 @@ export function TerminalTitlebarTabs({
     worktreeClientHostedBrowserRows,
     worktreeFiles
   } = controller
+  useBrowserTitlebarPairedActivationCommands({
+    worktreeId: renderedActiveWorktreeId,
+    visible: Boolean(renderedActiveWorktreeId && !effectiveActiveLayout && titlebarTabsTarget),
+    activate: handleActivateBrowserTab
+  })
   if (!renderedActiveWorktreeId || effectiveActiveLayout || !titlebarTabsTarget) {
     return null
   }

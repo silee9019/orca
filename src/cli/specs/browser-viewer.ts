@@ -1,3 +1,4 @@
+import { BROWSER_TITLEBAR_PAIRED_ACTIVATION_COMMAND_SPECS } from './browser-titlebar-paired-activation'
 import { BROWSER_VIEWER_CONTROL_COMMAND_SPECS } from './browser-viewer-controls'
 import { BROWSER_ANNOTATION_TRAY_COMMAND_SPECS } from './browser-annotation-tray'
 import { BROWSER_ANNOTATION_ROW_COMMAND_SPECS } from './browser-annotation-row'
@@ -7,6 +8,7 @@ import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 
 export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
+  ...BROWSER_TITLEBAR_PAIRED_ACTIVATION_COMMAND_SPECS,
   ...BROWSER_VIEWER_CONTROL_COMMAND_SPECS,
   ...BROWSER_ANNOTATION_TRAY_COMMAND_SPECS,
   ...BROWSER_ANNOTATION_ROW_COMMAND_SPECS,
@@ -157,7 +159,7 @@ export const BROWSER_VIEWER_COMMAND_SPECS: CommandSpec[] = [
     path: ['browser', 'toolbar-nav'],
     summary: 'Use the host viewer toolbar history or state-aware reload action',
     usage:
-      'orca browser toolbar-nav --viewer host --page <id> --action <back|forward|reload-button|reload|hard-reload> [--json]',
+      'orca browser toolbar-nav --viewer host --page <id> --action <back|forward|back-shortcut|forward-shortcut|reload-button|reload|hard-reload> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'page', 'action']
   },
   {

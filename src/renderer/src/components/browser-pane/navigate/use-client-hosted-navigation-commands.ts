@@ -1,3 +1,8 @@
+import { useClientHostedInputFeedbackCommands } from './use-client-hosted-input-feedback-commands'
+import { useClientHostedHistoryCommands } from './use-client-hosted-history-commands'
+import { useClientHostedDeferredCommands } from './use-client-hosted-deferred-commands'
+import { useClientHostedDocumentCommands } from './use-client-hosted-document-commands'
+import type { WorkspaceDocAddressOutcome } from './workspace-doc-address-submission'
 import { useAppStore } from '@/store'
 import { useEffectEvent, useLayoutEffect, useRef, type RefObject } from 'react'
 import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
@@ -16,8 +21,17 @@ export function useClientHostedNavigationCommands(params: {
   webviewRef: RefObject<Electron.WebviewTag | null>
   navigationVersionRef: RefObject<number>
   publishCurrentRef: RefObject<(() => Promise<BrowserClientNavigationPublication>) | null>
-  navigate: (url: string, onSubmitted?: (pending: Promise<void>) => void) => void
+  navigate: (
+    url: string,
+    onSubmitted?: (pending: Promise<void>) => void,
+    onWorkspaceDocOutcome?: (outcome: WorkspaceDocAddressOutcome) => void,
+    onDeferred?: (url: string) => void
+  ) => void
 }): void {
+  useClientHostedInputFeedbackCommands(params)
+  useClientHostedDocumentCommands(params)
+  useClientHostedHistoryCommands(params)
+  useClientHostedDeferredCommands(params)
   const pendingRef = useRef<BrowserClientNavigationEvent | null>(null)
   const offeredTarget = useRef<BrowserClientNavigationEvent['target'] | null>(null)
   const epoch = useRef(0)

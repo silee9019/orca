@@ -45,7 +45,12 @@ export function useTerminalActivationActions(
   )
 
   const handleActivateBrowserTab = useCallback(
-    (tabId: string) => {
+    (
+      tabId: string,
+      onSubmitted?: (pending: Promise<boolean>) => void,
+      expectedHostTabId?: string,
+      assertCurrentActivation?: () => void
+    ) => {
       const state = useAppStore.getState()
       const runtimeEnvironmentId = getActiveWorktreeRuntimeEnvironmentId(activeWorktreeId)
       if (
@@ -53,11 +58,15 @@ export function useTerminalActivationActions(
         isWebRuntimeSessionActive(runtimeEnvironmentId) &&
         browserWorkspaceHasRemoteOwner(state, tabId, runtimeEnvironmentId)
       ) {
-        void activateWebRuntimeSessionTab({
+        const pending = activateWebRuntimeSessionTab({
           worktreeId: activeWorktreeId,
           tabId,
-          environmentId: runtimeEnvironmentId
+          environmentId: runtimeEnvironmentId,
+          ...(onSubmitted
+            ? { requireAcknowledgedActivation: true, expectedHostTabId, assertCurrentActivation }
+            : {})
         })
+        onSubmitted?.(pending)
       }
       setActiveBrowserTab(tabId)
       setActiveTabType('browser', activeWorktreeId)

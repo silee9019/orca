@@ -1,6 +1,12 @@
 import type { BrowserViewerCommand } from '../../../shared/rpc-contract/browser-viewer-params'
 
 const BROWSER_PLACEMENT_VIEWER_OPERATIONS = [
+  'tab-drop',
+  'tab-drag-cancel',
+  'client-history-document',
+  'client-input-feedback',
+  'titlebar-activate-paired',
+  'toolbar-external',
   'server-reopen',
   'browser-import-hint',
   'banner',
@@ -9,8 +15,12 @@ const BROWSER_PLACEMENT_VIEWER_OPERATIONS = [
   'client-hosted-row',
   'client-address',
   'client-find',
+  'client-history',
   'client-reload',
   'client-submission',
+  'client-document',
+  'client-staged-document',
+  'client-deferred',
   'new-tab-paired',
   'new-tab',
   'client-navigation',

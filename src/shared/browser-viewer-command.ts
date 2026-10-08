@@ -1,3 +1,15 @@
+import { BrowserClientInputFeedbackState } from './rpc-contract/browser-client-input-feedback-params'
+import { BrowserClientHistoryDocumentReceipt } from './rpc-contract/browser-client-history-document-params'
+import { BrowserTitlebarPairedActivationState } from './rpc-contract/browser-titlebar-paired-activation-params'
+import {
+  BrowserTabDropReceipt,
+  BrowserTabDragCancelReceipt
+} from './rpc-contract/browser-tab-drop-params'
+import { BrowserClientStagedDocumentReceipt } from './rpc-contract/browser-client-staged-document-params'
+import { BrowserClientHistoryReceipt } from './rpc-contract/browser-client-history-params'
+import { BrowserClientDeferredReceipt } from './rpc-contract/browser-client-deferred-params'
+import { BrowserToolbarExternalState } from './rpc-contract/browser-toolbar-external-params'
+import { BrowserClientDocumentReceipt } from './rpc-contract/browser-client-document-params'
 import { BrowserClientSubmissionReceipt } from './rpc-contract/browser-client-submission-params'
 import { BrowserClientReloadReceipt } from './rpc-contract/browser-client-reload-params'
 import { BrowserClientFindReceipt } from './rpc-contract/browser-client-find-params'
@@ -52,6 +64,15 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  clientInputFeedback: BrowserClientInputFeedbackState.optional(),
+  tabDragCancel: BrowserTabDragCancelReceipt.optional(),
+  clientHistoryDocument: BrowserClientHistoryDocumentReceipt.optional(),
+  tabDrop: BrowserTabDropReceipt.optional(),
+  titlebarPairedActivation: BrowserTitlebarPairedActivationState.optional(),
+  clientStagedDocument: BrowserClientStagedDocumentReceipt.optional(),
+  clientDeferred: BrowserClientDeferredReceipt.optional(),
+  clientHistory: BrowserClientHistoryReceipt.optional(),
+  clientDocument: BrowserClientDocumentReceipt.optional(),
   clientSubmission: BrowserClientSubmissionReceipt.optional(),
   clientReload: BrowserClientReloadReceipt.optional(),
   clientFind: BrowserClientFindReceipt.optional(),
@@ -77,6 +98,7 @@ export const BrowserViewerResultSchema = z.object({
   linkedBrowser: LinkedBrowserState.optional(),
   remotePicker: RemoteFilePickerState.optional(),
   applied: z.boolean(),
+  toolbarExternal: BrowserToolbarExternalState.optional(),
   overlayFocus: BrowserOverlayFocusState.optional(),
   persisted: z.literal(false),
   rendered: z.literal(false),

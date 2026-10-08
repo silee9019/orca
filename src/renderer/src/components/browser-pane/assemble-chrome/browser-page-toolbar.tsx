@@ -1,3 +1,5 @@
+import { useBrowserToolbarExternalCommands } from './use-browser-toolbar-external-commands'
+import { openBrowserTabExternallyVerified } from '../../tab-bar/browser-tab-external-open'
 import { useBrowserReloadMenuCommands } from './use-browser-reload-menu-commands'
 import { useBrowserToolbarHistoryCommands } from './use-browser-toolbar-history-commands'
 import type { BrowserNavigationControls } from './browser-navigation-control-row'
@@ -107,6 +109,22 @@ export function BrowserPageToolbar({
   currentBrowserUrl: string
   externalUrl: string | null
 }): React.JSX.Element {
+  const openExternal = (verified = false): Promise<void> => {
+    if (!externalUrl) {
+      return Promise.reject(new Error('browser_toolbar_external_url_unavailable'))
+    }
+    return verified
+      ? openBrowserTabExternallyVerified(window.api.shell, externalUrl)
+      : window.api.shell.openUrl(externalUrl)
+  }
+  useBrowserToolbarExternalCommands({
+    page: browserPageId,
+    workspaceId,
+    worktreeId,
+    active: isActive,
+    url: externalUrl,
+    open: () => openExternal(true)
+  })
   const annotateElementShortcut = useShortcutLabel('browser.annotateElement')
   const browserTourStep = useAppStore((state) =>
     state.activeContextualTourId === 'browser' ? state.activeContextualTourStepIndex : null
@@ -151,6 +169,7 @@ export function BrowserPageToolbar({
     page: browserPageId,
     controls,
     guestAvailable: () => webviewRef.current !== null,
+    shortcutOwner: { workspaceId, worktreeId, isActive, webviewRef },
     nativeBack: canGoBack,
     nativeForward: canGoForward
   })
@@ -234,7 +253,7 @@ export function BrowserPageToolbar({
           if (!externalUrl) {
             return
           }
-          void window.api.shell.openUrl(externalUrl)
+          void openExternal()
         },
         label: translate(
           'auto.components.browser.pane.BrowserPane.0f41bf80c7',
