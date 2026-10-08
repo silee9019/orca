@@ -172,6 +172,8 @@ function ActivityThreadSingleMenuItems({
       ))}
       <ContextMenuSeparator />
       <ContextMenuItem
+        data-activity-context-action="read-toggle"
+        data-activity-context-read-operation={thread.unread ? 'read' : 'unread'}
         disabled={!thread.unread && !canMarkUnread}
         onSelect={() => (thread.unread ? onMarkRead(thread) : onMarkUnread(thread))}
       >
@@ -217,7 +219,11 @@ function ActivityThreadBulkMenuItems({
     <>
       {/* Why read wins when mixed: matches the single toggle, which offers Mark Read on any unread agent. */}
       {readAction.operation === 'read' ? (
-        <ContextMenuItem onSelect={() => onMarkManyRead(readAction.targets)}>
+        <ContextMenuItem
+          data-activity-context-action="read-toggle"
+          data-activity-context-read-operation={readAction.operation}
+          onSelect={() => onMarkManyRead(readAction.targets)}
+        >
           <BellOff className="size-3.5" />
           {translate(
             'auto.components.activity.ActivityThreadContextMenu.markManyRead',
@@ -227,6 +233,8 @@ function ActivityThreadBulkMenuItems({
         </ContextMenuItem>
       ) : (
         <ContextMenuItem
+          data-activity-context-action="read-toggle"
+          data-activity-context-read-operation={readAction.operation}
           disabled={readAction.targets.length === 0}
           onSelect={() => onMarkManyUnread(readAction.targets)}
         >

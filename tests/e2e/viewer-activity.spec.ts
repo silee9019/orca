@@ -1,3 +1,4 @@
+import { assertActivityContextMenuRead } from './helpers/activity-context-menu-read-assertions'
 import { assertActivityContextMenu } from './helpers/activity-context-menu-assertions'
 import { assertActivityReviewMenu } from './helpers/activity-review-menu-assertions'
 import { assertActivityPreviewIssueCopy } from './helpers/activity-preview-issue-copy-assertions'
@@ -31,6 +32,7 @@ import { assertActivityJump } from './helpers/activity-jump-assertions'
 test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
 }, testInfo) => {
+  test.setTimeout(180_000)
   const orcaPage = await electronApp.firstWindow()
   await orcaPage.waitForFunction(
     () =>
@@ -469,6 +471,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityPreviewIssueCopy(orcaPage, call, testInfo)
   await assertActivityReviewMenu(orcaPage, call, testInfo)
   await assertActivityContextMenu(orcaPage, call, testInfo)
+  await assertActivityContextMenuRead(orcaPage, call, testInfo)
   await assertActivityResize(orcaPage, call, testInfo)
   await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
   await assertActivityPageClose(orcaPage, call, testInfo)

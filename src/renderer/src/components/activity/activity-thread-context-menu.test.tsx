@@ -131,8 +131,9 @@ describe('ActivityThreadContextMenu', () => {
     openMenu(thread)
 
     expect(screen.queryByRole('menuitem', { name: 'Mark Unread' })).toBeNull()
+    expect(menuItem('Mark Read').getAttribute('data-activity-context-action')).toBe('read-toggle')
     fireEvent.click(menuItem('Mark Read'))
-    expect(handlers.onMarkRead).toHaveBeenCalledWith(thread)
+    expect(handlers.onMarkRead).toHaveBeenCalledExactlyOnceWith(thread)
   })
 
   it('shows one read toggle that marks a read thread unread', () => {
@@ -140,8 +141,9 @@ describe('ActivityThreadContextMenu', () => {
     openMenu(thread)
 
     expect(screen.queryByRole('menuitem', { name: 'Mark Read' })).toBeNull()
+    expect(menuItem('Mark Unread').getAttribute('data-activity-context-action')).toBe('read-toggle')
     fireEvent.click(menuItem('Mark Unread'))
-    expect(handlers.onMarkUnread).toHaveBeenCalledWith(thread)
+    expect(handlers.onMarkUnread).toHaveBeenCalledExactlyOnceWith(thread)
   })
 
   it('disables Mark Unread for the open thread', () => {
@@ -149,6 +151,9 @@ describe('ActivityThreadContextMenu', () => {
     fireEvent.contextMenu(screen.getByTestId('row'))
 
     expect(menuItem('Mark Unread').hasAttribute('data-disabled')).toBe(true)
+    fireEvent.click(menuItem('Mark Unread'))
+    expect(handlers.onMarkUnread).not.toHaveBeenCalled()
+    expect(handlers.onMarkManyUnread).not.toHaveBeenCalled()
   })
 
   it('lists copy actions flat instead of in a submenu', () => {
@@ -208,8 +213,11 @@ describe('ActivityThreadContextMenu', () => {
     expect(screen.getByText('Agent')).toBeTruthy()
 
     expect(screen.queryByRole('menuitem', { name: /Unread/ })).toBeNull()
+    expect(menuItem('Mark 1 Agent Read').getAttribute('data-activity-context-action')).toBe(
+      'read-toggle'
+    )
     fireEvent.click(menuItem('Mark 1 Agent Read'))
-    expect(handlers.onMarkManyRead).toHaveBeenCalledWith([unreadA])
+    expect(handlers.onMarkManyRead).toHaveBeenCalledExactlyOnceWith([unreadA])
   })
 
   it('marks unread only the read targets that may be marked unread', () => {
@@ -217,8 +225,11 @@ describe('ActivityThreadContextMenu', () => {
     const readB = makeThread({ paneKey: 'b', unread: false })
     openBulkMenu([openRow, readB], (thread) => thread.paneKey !== 'open')
 
+    expect(menuItem('Mark 1 Agent Unread').getAttribute('data-activity-context-action')).toBe(
+      'read-toggle'
+    )
     fireEvent.click(menuItem('Mark 1 Agent Unread'))
-    expect(handlers.onMarkManyUnread).toHaveBeenCalledWith([readB])
+    expect(handlers.onMarkManyUnread).toHaveBeenCalledExactlyOnceWith([readB])
   })
 
   it('clears only the clearable targets through the undoable bulk clear', () => {
@@ -239,6 +250,9 @@ describe('ActivityThreadContextMenu', () => {
     )
 
     expect(menuItem('Mark Unread').hasAttribute('data-disabled')).toBe(true)
+    fireEvent.click(menuItem('Mark Unread'))
+    expect(handlers.onMarkUnread).not.toHaveBeenCalled()
+    expect(handlers.onMarkManyUnread).not.toHaveBeenCalled()
     expect(menuItem('Clear from List').hasAttribute('data-disabled')).toBe(true)
   })
 
