@@ -1,3 +1,4 @@
+import { applyActivityThreadListResizeRequest } from './activity-thread-list-resize-command'
 import { applyActivityPageCloseRequest } from './activity-page-close-command'
 import { readActivityViewerCommandContext } from './activity-viewer-command-context'
 import { applyActivityGroupCollapseRequest } from './activity-group-collapse-command'
@@ -50,6 +51,9 @@ export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const { command, initial } = readActivityViewerCommandContext(request)
+  if (command.operation === 'resize') {
+    return applyActivityThreadListResizeRequest(request, command)
+  }
   if (command.operation === 'close') {
     return applyActivityPageCloseRequest(request)
   }

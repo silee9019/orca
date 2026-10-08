@@ -113,3 +113,15 @@ it('accepts page-only close and rejects sidebar or extra destination fields', ()
     false
   )
 })
+
+it('accepts finite positive page resize and rejects extra or foreign targets', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'resize', width: 1000 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const width of [0, -1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, width }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+})

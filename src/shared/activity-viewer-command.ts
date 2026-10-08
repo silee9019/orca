@@ -56,6 +56,14 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    resizeAction: z
+      .object({
+        requestedWidth: z.number(),
+        targetWidth: z.number(),
+        renderedWidth: z.number().nullable()
+      })
+      .strip()
+      .optional(),
     pageAction: z
       .object({ requestedView: z.string(), reachedView: z.string().nullable() })
       .strip()

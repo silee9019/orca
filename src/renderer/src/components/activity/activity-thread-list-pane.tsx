@@ -303,6 +303,7 @@ export function ActivityThreadListPane({
     <aside
       ref={threadListRef}
       data-activity-viewer={viewerSurface}
+      data-activity-list-width={resizable ? threadListWidth : undefined}
       className={cn(
         'relative flex min-h-0 flex-col',
         resizable ? 'shrink-0 border-r border-border' : 'min-w-0 flex-1'

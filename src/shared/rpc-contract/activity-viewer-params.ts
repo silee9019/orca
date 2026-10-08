@@ -8,6 +8,14 @@ const target = { viewer: z.literal('host'), surface: ActivityViewerSurfaceSchema
 export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
   z
+    .object({
+      ...target,
+      surface: z.literal('activity-page'),
+      operation: z.literal('resize'),
+      width: z.number().finite().positive()
+    })
+    .strict(),
+  z
     .object({ ...target, surface: z.literal('activity-page'), operation: z.literal('close') })
     .strict(),
   z.object({ ...target, operation: z.literal('jump'), paneKey: z.string().min(1) }).strict(),

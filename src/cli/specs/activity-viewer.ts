@@ -10,6 +10,8 @@ function options(operation: string): { flags: string[]; usage: string } {
     case 'read-toggle-many':
     case 'clear-threads':
       return { flags: ['panes'], usage: ' --panes <json-pane-key-array>' }
+    case 'resize':
+      return { flags: ['width'], usage: ' --width <pixels>' }
     case 'group-toggle':
       return { flags: ['group-key'], usage: ' --group-key <group-key>' }
     case 'group':
@@ -36,6 +38,7 @@ function options(operation: string): { flags: string[]; usage: string } {
 export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
   'close',
+  'resize',
   'jump',
   'select',
   'group-toggle',
@@ -59,9 +62,10 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
 ].map((operation) => ({
   path: ['ui', 'activity', operation],
   summary: 'Read or apply an existing Activity list control',
-  usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
+  usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Resize uses the original page list drag and its 320–720 pixel clamp. Applied requires its actual visible width and drag cleanup; local width is not durable persistence.',
     'Close clicks the original page back button once and restores its saved previous view. Applied confirms the local page entry commit and, for a resident terminal workspace, its visible workspace and resolved host. Creation panels remain unverified; no content readiness or remote acknowledgement is implied.',
     'Group-toggle uses the requested surface original collapse control. Applied requires its visible group header and matching logical rows; the local collapse state does not claim durable persistence.',
     'Select invokes the original open action once. Closed retained tabs report workspace-only with applied=false. Terminal arrival requires the exact visible leaf and its input focus; structured arrival reports local content state, never a remote activation acknowledgement.',
