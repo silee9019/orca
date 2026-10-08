@@ -3,6 +3,7 @@ import { AgentStatusReconcileParams } from '../../../../shared/rpc-contract/agen
 import { agentHookServer } from '../../../agent-hooks/server'
 import { clearMigrationUnsupportedPtysForPaneKey } from '../../../agent-hooks/migration-unsupported-pty-state'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
+import { parseExecutionHostId } from '../../../../shared/execution-host'
 import { isShellProcess } from '../../../../shared/shell-process-detection'
 import { resolveLiveTerminalDetailsTarget } from './terminal-host-details'
 
@@ -19,6 +20,11 @@ export const AGENT_STATUS_RECONCILE_METHODS = [
       if (makePaneKey(target.tabId, target.leafId) !== params.paneKey) {
         throw new Error('agent_status_pane_mismatch')
       }
+      const host = parseExecutionHostId(target.executionHostId)
+      if (!host || host.kind === 'runtime') {
+        throw new Error('agent_status_execution_host_unverifiable')
+      }
+      const connectionId = host.kind === 'ssh' ? host.targetId : null
       const assertObservedRow = () => {
         const row = agentHookServer
           .getStatusSnapshot()
@@ -28,6 +34,7 @@ export const AGENT_STATUS_RECONCILE_METHODS = [
           row.providerSessionOnly ||
           row.structuredHost ||
           row.worktreeId !== target.worktreeId ||
+          row.connectionId !== connectionId ||
           row.receivedAt !== params.receivedAt ||
           row.stateStartedAt !== params.stateStartedAt ||
           row.observation?.authorityId !== params.expectedObservation.authorityId ||
@@ -49,7 +56,8 @@ export const AGENT_STATUS_RECONCILE_METHODS = [
         current.incarnationId !== target.incarnationId ||
         current.tabId !== target.tabId ||
         current.leafId !== target.leafId ||
-        current.worktreeId !== target.worktreeId
+        current.worktreeId !== target.worktreeId ||
+        current.executionHostId !== target.executionHostId
       ) {
         throw new Error('terminal_gone')
       }

@@ -12,7 +12,7 @@ export const AGENT_STATUS_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: REQUEST_FLAGS,
     destructive: true,
     notes: [
-      'Requires {terminal,expectedIncarnationId,paneKey,receivedAt,stateStartedAt,expectedObservation:{authorityId,incarnation,revision},confirm:true}. Use metadata from agent status list and the terminal identity. The host rechecks both identities after a fresh provider foreground query; unknown, nonshell, missing observation or changed status is refused.',
+      'Requires {terminal,expectedIncarnationId,paneKey,receivedAt,stateStartedAt,expectedObservation:{authorityId,incarnation,revision},confirm:true}. Use metadata from agent status list and the terminal identity. The host rechecks both identities after a fresh provider foreground query; unknown, nonshell, missing observation or changed status is refused. The terminal execution host must be known and match the status row’s SSH connection owner; nested paired hosts are refused.',
       'Uses canonical ended-process cleanup, preserving resume identity for the surviving shell. Does not stop the PTY or establish that background processes exited. Structured-session rows are refused.'
     ]
   },

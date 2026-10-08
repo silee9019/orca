@@ -7,6 +7,7 @@ import { agentHookServer, _internals } from '../../src/main/agent-hooks/server'
 import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
 import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
 import { RuntimeRpcFailureError } from '../../src/cli/runtime/types'
+import type { ExecutionHostId } from '../../src/shared/execution-host'
 import { main } from '../../src/cli/index'
 
 const mocks = vi.hoisted(() => ({ call: vi.fn() }))
@@ -27,6 +28,7 @@ let root: string
 let foreground: string | null
 let onForeground: (() => void) | undefined
 let incarnationId: string
+let executionHostId: ExecutionHostId | undefined
 function seed(prompt = 'private reconcile canary') {
   agentHookServer.ingestRemote(
     {
@@ -38,6 +40,9 @@ function seed(prompt = 'private reconcile canary') {
     },
     'fixture-ssh'
   )
+  return observedRequest()
+}
+function observedRequest() {
   const row = agentHookServer.getStatusSnapshot().find((item) => item.paneKey === paneKey)
   if (!row?.observation) {
     throw new Error('Missing canonical observation fixture')
@@ -62,6 +67,7 @@ beforeEach(async () => {
   foreground = 'bash'
   onForeground = undefined
   incarnationId = 'fixture-incarnation'
+  executionHostId = 'ssh:fixture-ssh'
   const runtime = new OrcaRuntimeService()
   vi.spyOn(runtime, 'showTerminal').mockImplementation(async () => ({
     handle: 'fixture-terminal',
@@ -79,7 +85,7 @@ beforeEach(async () => {
     preview: '',
     paneRuntimeId: 1,
     rendererGraphEpoch: 1,
-    executionHostId: 'ssh:fixture-ssh'
+    executionHostId
   }))
   vi.spyOn(runtime, 'getConfirmedTerminalForegroundProcess').mockImplementation(async () => {
     onForeground?.()
@@ -200,4 +206,34 @@ it('exposes only observation metadata needed to build the guarded request in the
   expect(JSON.parse(output).result[0].observation).toEqual(baseline.expectedObservation)
   expect(output).not.toContain('private reconcile canary')
   expect(output).not.toContain('private-resume-session')
+})
+
+it.each(['local', 'ssh:other', 'runtime:peer', undefined] as const)(
+  'refuses status cleanup when terminal host %s does not identify the row owner',
+  async (hostId) => {
+    const baseline = seed()
+    executionHostId = hostId
+    expect(await command(baseline)).toMatchObject({ ok: false })
+    expect(agentHookServer.getStatusSnapshot()[0].providerSessionOnly).not.toBe(true)
+  }
+)
+it('refuses a host rebind during foreground confirmation even if the PTY ID and incarnation match', async () => {
+  const baseline = seed()
+  onForeground = () => {
+    executionHostId = 'ssh:other'
+  }
+  expect(await command(baseline)).toMatchObject({ ok: false })
+  expect(agentHookServer.getStatusSnapshot()[0].providerSessionOnly).not.toBe(true)
+})
+
+it('reconciles a local canonical row only against a known local terminal', async () => {
+  executionHostId = 'local'
+  agentHookServer.ingestTerminalStatus({
+    paneKey,
+    tabId: 'reconcile-tab',
+    worktreeId,
+    payload: { state: 'working', agentType: 'claude', prompt: 'private reconcile canary' }
+  })
+  expect(await command(observedRequest())).toMatchObject({ ok: true, result: { reconciled: true } })
+  expect(agentHookServer.getStatusSnapshot()).toHaveLength(0)
 })

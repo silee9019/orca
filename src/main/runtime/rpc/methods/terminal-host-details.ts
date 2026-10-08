@@ -25,7 +25,8 @@ export async function resolveLiveTerminalDetailsTarget(
     incarnationId: target.incarnationId,
     tabId: target.tabId,
     leafId: target.leafId,
-    worktreeId: target.worktreeId
+    worktreeId: target.worktreeId,
+    executionHostId: target.executionHostId
   }
 }
 
