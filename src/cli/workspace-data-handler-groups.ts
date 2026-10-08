@@ -3,6 +3,17 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-repo-icon-picker',
+    keys: [
+      'repo icon-picker-start',
+      'repo icon-picker-status',
+      'repo icon-picker-cancel',
+      'repo icon-picker-result'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-repo-icon-picker.js')).WORKSPACE_REPO_ICON_PICKER_HANDLERS
+  },
+  {
     name: 'workspace-diagnostic-preview',
     keys: ['diagnostics open-retained-preview'],
     load: async () =>
