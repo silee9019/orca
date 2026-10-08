@@ -3,6 +3,18 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-crash-reports',
+    keys: [
+      'crash-report latest-pending',
+      'crash-report latest',
+      'crash-report dismiss',
+      'crash-report copy-diagnostics',
+      'crash-report submit'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-crash-reports.js')).WORKSPACE_CRASH_REPORT_HANDLERS
+  },
+  {
     name: 'workspace-git-startup',
     keys: ['git await-environment'],
     load: async () =>
