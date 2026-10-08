@@ -55,6 +55,7 @@ async function watchRequests(
         runtime,
         (request) => {
           if (
+            !('ptyId' in request) ||
             (request.kind === 'model-restore-needed') !== modelRestoreOnly ||
             request.ptyId !== params.expectedPtyId ||
             request.rendererId !== params.expectedRendererId

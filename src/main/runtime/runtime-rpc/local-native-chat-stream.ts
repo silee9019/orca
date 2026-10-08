@@ -12,7 +12,8 @@ export async function dispatchLocalNativeChatStream(
 ): Promise<RpcResponse | undefined> {
   const meta = { runtimeId: runtime.getRuntimeId() }
   if (
-    (request.method !== 'terminal.modelRestore.subscribe' &&
+    (request.method !== 'renderer.deliveryResync.subscribe' &&
+      request.method !== 'terminal.modelRestore.subscribe' &&
       request.method !== 'terminal.controlRequests.subscribe' &&
       request.method !== 'terminal.spawn.subscribe' &&
       request.method !== 'terminal.exit.subscribe' &&

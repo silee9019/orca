@@ -1,6 +1,8 @@
+import type { RendererDeliveryResyncSignal } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
 import type { TerminalControlRequestSignal } from '../../shared/rpc-contract/terminal-control-watch-params'
 
-type Observer = { changed: (request: TerminalControlRequestSignal) => void; failed: () => void }
+export type PtyControlRequest = TerminalControlRequestSignal | RendererDeliveryResyncSignal
+type Observer = { changed: (request: PtyControlRequest) => void; failed: () => void }
 const observers = new WeakMap<object, Set<Observer>>()
 export function subscribePtyControlRequests(
   owner: object,
@@ -20,7 +22,7 @@ export function getPtyControlRequestObserverCount(owner: object): number {
 }
 export function publishPtyControlRequest(
   owner: object | undefined,
-  request: TerminalControlRequestSignal
+  request: PtyControlRequest
 ): void {
   if (!owner) {
     return

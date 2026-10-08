@@ -4,12 +4,14 @@ import {
   publishPtyControlRequest,
   subscribePtyControlRequests
 } from '../../src/main/runtime/pty-control-request-observers'
-import type { TerminalControlRequestSignal } from '../../src/shared/rpc-contract/terminal-control-watch-params'
+import type { PtyControlRequest } from '../../src/main/runtime/pty-control-request-observers'
 it('isolates runtimes, nested options and failing readers without changing the producer', () => {
   const owner = {},
     other = {},
-    first = vi.fn((event: TerminalControlRequestSignal) => {
-      event.ptyId = 'mutated'
+    first = vi.fn((event: PtyControlRequest) => {
+      if ('ptyId' in event) {
+        event.ptyId = 'mutated'
+      }
       if (event.kind === 'serialize-buffer' && event.opts) {
         event.opts.scrollbackRows = 999
       }
