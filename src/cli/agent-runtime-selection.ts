@@ -1,3 +1,4 @@
+import { AGENT_WORKER_RECOVERY_WATCH_COMMAND_SPECS } from './specs/agent-worker-recovery-watch'
 import { AGENT_MIGRATION_WATCH_COMMAND_SPECS } from './specs/agent-migration-watch'
 import { AGENT_STATUS_WATCH_COMMAND_SPECS } from './specs/agent-status-watch'
 import { STRUCTURED_HELD_WATCH_COMMAND_SPECS } from './specs/structured-held-watch'
@@ -17,6 +18,7 @@ import { WORKSPACE_REVIEW_CACHE_WRITE_COMMAND_SPECS } from './specs/workspace-re
 import { NATIVE_CHAT_WATCH_COMMAND_SPECS } from './specs/native-chat-watch'
 
 const runtimeCommands = [
+  ...AGENT_WORKER_RECOVERY_WATCH_COMMAND_SPECS,
   ...AGENT_MIGRATION_WATCH_COMMAND_SPECS,
   ...AGENT_STATUS_WATCH_COMMAND_SPECS,
   ...STRUCTURED_HELD_WATCH_COMMAND_SPECS,

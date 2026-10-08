@@ -11,6 +11,7 @@ export function getActiveRuntimeJsonEventStreamCount(
     | 'structuredHeld'
     | 'agentStatus'
     | 'agentStatusMigration'
+    | 'agentWorkerRecovery'
 ): number {
   return [...(active.get(runtime) ?? [])].filter((key) => key.startsWith(`${namespace}:`)).length
 }
@@ -22,7 +23,8 @@ export function createRuntimeJsonEventSubscription(
     | 'remoteWorkspace'
     | 'structuredHeld'
     | 'agentStatus'
-    | 'agentStatusMigration',
+    | 'agentStatusMigration'
+    | 'agentWorkerRecovery',
   subscriptionId: string,
   emit: (event: unknown) => void,
   assertOwner: () => void
@@ -82,7 +84,9 @@ export function createRuntimeJsonEventSubscription(
                   ? 'agent_status_unavailable'
                   : namespace === 'agentStatusMigration'
                     ? 'agent_migration_unavailable'
-                    : 'remote_workspace_unavailable'
+                    : namespace === 'agentWorkerRecovery'
+                      ? 'agent_worker_recovery_unavailable'
+                      : 'remote_workspace_unavailable'
       })
       aborted()
       return
