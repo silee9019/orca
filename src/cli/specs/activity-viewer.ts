@@ -25,6 +25,7 @@ function options(operation: string): { flags: string[]; usage: string } {
 }
 export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
+  'mark-all-read',
   'group',
   'read',
   'compact',
@@ -44,6 +45,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   notes: [
     'Search-clear clicks the visible page clear button and focuses its input. Search changes only the requested surface local query and requires its visible input. Search-visible is sidebar-only; showing focuses the input and hiding clears its query.',
     'Origin uses the existing other-client availability gate. Host toggles use the current host catalog and preserve the last selected host. Scope-reset clears host and project scope together, preserving origin/read/search preferences.',
-    'The requested surface must already be visible for applied=true. Compact requires measured thread rows. Persistence acknowledges the current host preference, not a disk flush. No thread is selected or marked read.'
+    'Mark-all-read uses the existing badge-coherent unread set, including threads hidden by search or scope. A disabled control is a no-op. Its renderer acknowledgement does not claim durable persistence.',
+    'The requested surface must already be visible for applied=true. Compact requires measured thread rows. Preference persistence acknowledges the current host preference, not a disk flush.'
   ]
 }))

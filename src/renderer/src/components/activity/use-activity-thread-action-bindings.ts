@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import { clearCompletedActivity, isClearableActivityThread } from './activity-clear-completed'
 import { createActivityThreadActions } from './activity-thread-actions'
 import type { AgentPaneThread } from './activity-thread-types'
@@ -41,7 +41,7 @@ export function useActivityThreadActionBindings({
   // thread array identity changes (every status ping) would re-render every mounted row.
   const visibleThreadsRef = useRef(visibleThreads)
   const markAllReadThreadsRef = useRef(markAllReadThreads)
-  useEffect(() => {
+  useLayoutEffect(() => {
     visibleThreadsRef.current = visibleThreads
     markAllReadThreadsRef.current = markAllReadThreads
   }, [visibleThreads, markAllReadThreads])

@@ -19,6 +19,7 @@ export const ActivityViewerSnapshotSchema = z
     scope: ActivityViewerScopeSchema.optional(),
     densityMeasured: z.boolean(),
     selectedPaneKey: z.string().nullable(),
+    hasUnreadThreads: z.boolean().optional(),
     logicalRows: z.array(
       z
         .object({

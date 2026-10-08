@@ -27,7 +27,7 @@ export function useActivityViewerPublication(
     | 'querySettled'
     | 'query'
     | 'selectedPaneKey'
-  >
+  > & { markAllRead?: { run?: () => void; hasUnreadThreads: boolean } }
 ): void {
   const context = useAppStore(
     useShallow((state) => ({
@@ -42,37 +42,44 @@ export function useActivityViewerPublication(
   )
   const { groupBy, readFilter, compact, showChildAgents, querySettled, query, selectedPaneKey } =
     preferences
+  const markAllRead = preferences.markAllRead?.run
+  const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
   useLayoutEffect(() => {
     if (!surface) {
       return
     }
-    publishActivityViewerView(surface, {
+    publishActivityViewerView(
       surface,
-      runtimeContextKey: context.runtimeContextKey,
-      groupBy,
-      readFilter,
-      compact,
-      showChildAgents,
-      querySettled,
-      query,
-      scope: readActivityScope(context),
-      selectedPaneKey,
-      densityMeasured: false,
-      renderedRows: [],
-      logicalRows: rows.map((row) => ({
-        key: getActivityVirtualItemKey(row),
-        kind: row.type,
-        workspaceId: row.type === 'thread' ? row.thread.worktree.id : null,
-        hostId:
-          row.type === 'thread'
-            ? getWorktreeExecutionHostId(
-                row.thread.worktree,
-                row.thread.repo ?? undefined,
-                context.defaultHostId
-              )
-            : null
-      }))
-    })
+      {
+        surface,
+        runtimeContextKey: context.runtimeContextKey,
+        groupBy,
+        readFilter,
+        compact,
+        showChildAgents,
+        querySettled,
+        query,
+        scope: readActivityScope(context),
+        selectedPaneKey,
+        hasUnreadThreads,
+        densityMeasured: false,
+        renderedRows: [],
+        logicalRows: rows.map((row) => ({
+          key: getActivityVirtualItemKey(row),
+          kind: row.type,
+          workspaceId: row.type === 'thread' ? row.thread.worktree.id : null,
+          hostId:
+            row.type === 'thread'
+              ? getWorktreeExecutionHostId(
+                  row.thread.worktree,
+                  row.thread.repo ?? undefined,
+                  context.defaultHostId
+                )
+              : null
+        }))
+      },
+      markAllRead
+    )
     return () => publishActivityViewerView(surface, null)
   }, [
     surface,
@@ -84,6 +91,8 @@ export function useActivityViewerPublication(
     showChildAgents,
     querySettled,
     query,
-    selectedPaneKey
+    selectedPaneKey,
+    hasUnreadThreads,
+    markAllRead
   ])
 }

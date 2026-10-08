@@ -4,6 +4,7 @@ it('requires an explicit host and activity surface with existing preference doma
   for (const surface of ['sidebar-agents', 'activity-page']) {
     for (const command of [
       { operation: 'get' },
+      { operation: 'mark-all-read' },
       { operation: 'group', by: 'project' },
       { operation: 'read', filter: 'unread' },
       { operation: 'compact', enabled: false },

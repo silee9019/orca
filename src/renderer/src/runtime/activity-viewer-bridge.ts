@@ -15,7 +15,7 @@ import type {
   ActivityViewerResult,
   ActivityViewerResponse
 } from '../../../shared/activity-viewer-command'
-import { readActivityViewerView } from './activity-viewer-view'
+import { readActivityMarkAllReadControl, readActivityViewerView } from './activity-viewer-view'
 import { captureActivitySearchControl } from './activity-search-controls'
 
 export async function applyActivityViewerRequest(
@@ -33,16 +33,26 @@ export async function applyActivityViewerRequest(
     throw new Error('viewer_runtime_mismatch')
   }
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
-  if (command.operation !== 'get' && !localSearch && !window.api.ui.setWithAck) {
+  const markAllRead = command.operation === 'mark-all-read'
+  const localOnly = localSearch || markAllRead
+  if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
   }
   const runtime = getProviderRuntimeContextKey(initial.settings)
   const scopeCommand = isActivityScopeCommand(command)
-  if (scopeCommand) {
+  if (scopeCommand || markAllRead) {
     const view = readActivityViewerView(command.surface)
     if (!view || view.surface !== command.surface || view.runtimeContextKey !== runtime) {
       throw new Error('activity_surface_unavailable')
     }
+  }
+  const markAllControl = markAllRead ? readActivityMarkAllReadControl(command.surface) : null
+  if (markAllRead && !markAllControl) {
+    throw new Error('activity_read_control_unavailable')
+  }
+  const markAllDispatched = markAllControl?.hasUnreadThreads === true
+  if (markAllDispatched) {
+    markAllControl.markAllRead()
   }
   const sameRuntime = (): boolean => {
     const settings = useAppStore.getState().settings
@@ -109,6 +119,9 @@ export async function applyActivityViewerRequest(
     const state = useAppStore.getState()
     return (
       sameRuntime() &&
+      (markAllControl === null ||
+        readActivityMarkAllReadControl(command.surface)?.markAllRead ===
+          markAllControl.markAllRead) &&
       (expectedScope === undefined || sameActivityScope(readActivityScope(state), expectedScope)) &&
       state.agentsGroupBy === groupBy &&
       state.agentsReadFilter === readFilter &&
@@ -128,7 +141,7 @@ export async function applyActivityViewerRequest(
       )
     : 'not_requested'
   const ui =
-    sameRuntime() && !localSearch
+    sameRuntime() && !localOnly
       ? await withTimeout<PersistedUIState | null>(
           window.api.ui.get(),
           Math.max(0, request.expiresAt - Date.now() - 50),
@@ -163,6 +176,7 @@ export async function applyActivityViewerRequest(
       view !== null &&
       view.surface === command.surface &&
       view.runtimeContextKey === runtime &&
+      (!markAllRead || view.hasUnreadThreads === false) &&
       (expectedScope === undefined || sameActivityScope(view.scope, expectedScope)) &&
       view.groupBy === groupBy &&
       view.readFilter === readFilter &&
@@ -200,7 +214,7 @@ export async function applyActivityViewerRequest(
       ? ('viewer_surface_superseded' as const)
       : writeOutcome === 'rejected'
         ? ('persistence_failed' as const)
-        : persisted === null && !localSearch
+        : persisted === null && !localOnly
           ? ('persistence_unverifiable' as const)
           : persisted === false
             ? ('persistence_superseded' as const)
@@ -214,7 +228,7 @@ export async function applyActivityViewerRequest(
   return {
     viewer: 'host',
     surface: command.surface,
-    dispatched: saving !== undefined || localSearch,
+    dispatched: saving !== undefined || localSearch || markAllDispatched,
     applied,
     persisted,
     ...(scopeCommand ? { persistedScope } : {}),

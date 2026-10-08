@@ -185,7 +185,8 @@ export function ActivityThreadListPane({
     showChildAgents: showChildAgents ?? false,
     querySettled,
     query,
-    selectedPaneKey
+    selectedPaneKey,
+    markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads }
   })
   const headerItemIndexes = useMemo(
     () => getActivityHeaderItemIndexes(virtualItems),

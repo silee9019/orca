@@ -9,7 +9,7 @@ const call = vi.spyOn(client, 'call')
 vi.spyOn(console, 'log').mockImplementation(() => {})
 afterEach(() => call.mockReset())
 
-it('routes local query and sidebar search visibility to the explicit surface', async () => {
+it('routes local query, unread acknowledgement and sidebar search visibility to the explicit surface', async () => {
   call.mockResolvedValue({
     id: 'r',
     ok: true,
@@ -30,6 +30,7 @@ it('routes local query and sidebar search visibility to the explicit surface', a
     }
   })
   for (const args of [
+    ['mark-all-read'],
     ['search', '--query', 'Activity task a'],
     ['search', '--query', ''],
     ['search-visible', '--enabled', 'true']
