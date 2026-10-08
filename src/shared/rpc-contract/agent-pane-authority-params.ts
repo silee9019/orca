@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { parseExecutionHostId } from '../execution-host'
 import { AgentStatusReconcileParams } from './agent-status-reconcile-params'
+import { AgentStatusDismissParams } from './agent-status-cli-params'
 
 const host = z.string().refine((value) => {
   const parsed = parseExecutionHostId(value)
@@ -18,3 +19,10 @@ export const AgentPaneRestoreParams = AgentPaneRetireParams.pick({
 })
   .extend({ retirementId: z.string().uuid() })
   .strict()
+export const AgentPaneTransferParams = AgentPaneRetireParams.omit({ paneKey: true })
+  .extend({
+    fromPaneKey: AgentStatusDismissParams.shape.paneKey,
+    toPaneKey: AgentStatusDismissParams.shape.paneKey
+  })
+  .strict()
+  .refine((value) => value.fromPaneKey !== value.toPaneKey, 'Source and destination must differ')

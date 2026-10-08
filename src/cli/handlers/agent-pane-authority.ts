@@ -3,7 +3,8 @@ import { printResult } from '../format'
 import { readAgentSessionRequest } from './agent-session-request'
 import {
   AgentPaneRetireParams,
-  AgentPaneRestoreParams
+  AgentPaneRestoreParams,
+  AgentPaneTransferParams
 } from '../../shared/rpc-contract/agent-pane-authority-params'
 
 export const AGENT_PANE_AUTHORITY_HANDLERS: Record<string, CommandHandler> = {
@@ -19,6 +20,14 @@ export const AGENT_PANE_AUTHORITY_HANDLERS: Record<string, CommandHandler> = {
     const params = await readAgentSessionRequest(ctx, AgentPaneRestoreParams)
     printResult(
       await ctx.client.call('agentStatus.restorePaneAuthority', params),
+      ctx.json,
+      (value) => JSON.stringify(value)
+    )
+  },
+  'agent status transfer-pane': async (ctx) => {
+    const params = await readAgentSessionRequest(ctx, AgentPaneTransferParams)
+    printResult(
+      await ctx.client.call('agentStatus.transferPaneAuthority', params),
       ctx.json,
       (value) => JSON.stringify(value)
     )

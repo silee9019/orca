@@ -92,7 +92,7 @@ export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'agent-pane-authority',
-    keys: ['agent status retire-pane', 'agent status restore-pane'],
+    keys: ['agent status retire-pane', 'agent status restore-pane', 'agent status transfer-pane'],
     load: async () =>
       (await import('./handlers/agent-pane-authority.js')).AGENT_PANE_AUTHORITY_HANDLERS
   },

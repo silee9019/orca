@@ -22,5 +22,16 @@ export const AGENT_PANE_AUTHORITY_COMMAND_SPECS: CommandSpec[] = [
       'Requires terminal, paneKey, expectedIncarnationId, expectedExecutionHostId, retirementId from retire-pane and confirm:true. A replaced retirement, terminal incarnation, changed host or closed tab is refused. Anonymous retirements cannot be restored by this command.',
       'Restores canonical hook authority only. It does not reattach a terminal or replay a status row; later authoritative hooks may publish status again.'
     ]
+  },
+  {
+    path: ['agent', 'status', 'transfer-pane'],
+    summary: 'Move one observed status row to the pane its live terminal is now bound to',
+    usage: 'orca agent status transfer-pane --request-file <path|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'request-file'],
+    destructive: true,
+    notes: [
+      'Requires terminal, fromPaneKey, toPaneKey, expectedIncarnationId, expectedExecutionHostId, receivedAt, stateStartedAt, expectedObservation and confirm:true. Uses agent status list and terminal identity metadata. The terminal must already be bound to toPaneKey, the PTY must still be owned by the source pane, and the destination must have no status row; anything else is refused and nothing moves.',
+      'Moves canonical hook authority only and later hooks posted to the source key follow it. A retirement of the destination pane is lifted, as the UI transfer does. It does not move a pane or a terminal. rendererApplied:false: sidebar, unread and launch-config state held by a connected viewer is not moved by this command.'
+    ]
   }
 ]
