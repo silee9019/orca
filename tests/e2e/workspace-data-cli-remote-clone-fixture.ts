@@ -50,7 +50,13 @@ vi.mock('../../src/main/providers/ssh-git-dispatch', () => ({
 }))
 vi.mock('../../src/main/providers/ssh-filesystem-dispatch', () => ({
   getSshFilesystemProvider: (id: string) =>
-    id === 'clone-fixture' && connected ? fsProvider : undefined
+    id === 'clone-fixture' && connected ? fsProvider : undefined,
+  requireSshFilesystemProvider: (id: string) => {
+    if (id !== 'clone-fixture' || !connected) {
+      throw new Error('SSH filesystem provider unavailable')
+    }
+    return fsProvider
+  }
 }))
 import * as appEnvironment from '../../src/shared/app-environment'
 import { Store } from '../../src/main/persistence'
@@ -87,7 +93,7 @@ export const gitProvider: Pick<SshGitProvider, 'clone' | 'getHostPlatform' | 'is
     getRemoteHostPlatform(process.platform === 'win32' ? 'win32-x64' : 'linux-x64'),
   isGitRepoAsync: (path) => probe(path)
 }
-const fsProvider: Pick<IFilesystemProvider, 'createDir'> = {
+export const fsProvider: Pick<IFilesystemProvider, 'createDir' | 'downloadFolder'> = {
   createDir: async (path) => {
     await mkdir(path, { recursive: true })
   }
@@ -172,6 +178,7 @@ beforeEach(async () => {
   url = pathToFileURL(source).href
   spawnOverride = null
   connected = true
+  fsProvider.downloadFolder = undefined
   vi.mocked(gitProvider.clone).mockClear()
   cloneOperation = async (args, cwd, options) => {
     options?.onProgress?.({ phase: 'private progress phase', percent: 42 })

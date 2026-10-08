@@ -22,6 +22,17 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-remote-folder-download',
+    keys: [
+      'file remote-folder-download-start',
+      'file remote-folder-download-status',
+      'file remote-folder-download-cancel'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-remote-folder-download.js'))
+        .WORKSPACE_REMOTE_FOLDER_DOWNLOAD_HANDLERS
+  },
+  {
     name: 'workspace-work-item-notify',
     keys: ['github notify-work-item-mutated'],
     load: async () =>
