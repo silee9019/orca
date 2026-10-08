@@ -1,3 +1,5 @@
+import { WORKSPACE_BRANCH_RENAME_FAILURE_METHODS } from './workspace-branch-rename-failure'
+import { WORKSPACE_EXTERNAL_PATH_IMPORT_METHODS } from './workspace-external-path-import'
 import { TERMINAL_PRIVATE_SPAWN_METHODS } from './terminal-private-spawn'
 import { TERMINAL_LISTENER_COUNT_METHODS } from './terminal-listener-count'
 import { TERMINAL_HOST_VIEWPORT_METHODS } from './terminal-host-viewport'
@@ -249,5 +251,7 @@ export const DESKTOP_CONTROL_RPC_METHODS = [
   ...TERMINAL_PREVIEW_INPUT_METHODS,
   ...TERMINAL_PTY_STOP_METHODS,
   ...WORKSPACE_SESSION_WRITE_METHODS,
-  ...AGENT_PANE_AUTHORITY_METHODS
+  ...AGENT_PANE_AUTHORITY_METHODS,
+  ...WORKSPACE_BRANCH_RENAME_FAILURE_METHODS,
+  ...WORKSPACE_EXTERNAL_PATH_IMPORT_METHODS
 ]

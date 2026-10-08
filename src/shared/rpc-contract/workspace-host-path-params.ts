@@ -3,7 +3,7 @@ import { isWindowsAbsolutePathLike } from '../cross-platform-path'
 import { z } from 'zod'
 import { ExecutionHostId } from './automation-params'
 
-const DesktopMutationHostId = ExecutionHostId.transform((value, ctx) => {
+export const DesktopMutationHostId = ExecutionHostId.transform((value, ctx) => {
   const host = parseExecutionHostId(value)
   if (!host || host.kind === 'runtime') {
     ctx.addIssue({ code: 'custom', message: 'Choose local or the SSH execution host.' })
@@ -12,7 +12,7 @@ const DesktopMutationHostId = ExecutionHostId.transform((value, ctx) => {
   return host.id
 })
 
-const DesktopAbsolutePath = z
+export const DesktopAbsolutePath = z
   .string()
   .min(1)
   .refine(
@@ -20,7 +20,7 @@ const DesktopAbsolutePath = z
     'Use an absolute host path.'
   )
 
-const DesktopLocalFileAccess = z.discriminatedUnion('kind', [
+export const DesktopLocalFileAccess = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('user-file') }).strict(),
   z.object({ kind: z.literal('document-resource'), documentPath: DesktopAbsolutePath }).strict(),
   z.object({ kind: z.literal('chat-image') }).strict(),

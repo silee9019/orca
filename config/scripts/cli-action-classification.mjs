@@ -146,7 +146,7 @@ function describeSource(source) {
   let domain = ACTION_DOMAINS.find((item) => item.pattern.test(domainText))
   if (
     kind === 'command' &&
-    /^src\/cli\/specs\/workspace-(?:folder|ports|repo-data|cached-scans|cleanup-dismissals|git-startup|crash-reports|host-path|visible-worktrees|desktop-meta|repo-username|repo-update|import-previews|shell-actions|notebook-environments|diagnostic-preview|repo-icon-picker|cleanup-scan|worktree-forget|repo-folder-picker|repo-add|repo-create-remote|github-refresh|localhost-label|space-scan|lineage|file-list|nested-scan|file-search|remote-clone|local-clone|notebook-kernel|log-tail|git-status|download-session|remote-folder-download|remote-file-download)\.ts$/.test(
+    /^src\/cli\/specs\/workspace-(?:folder|ports|repo-data|cached-scans|cleanup-dismissals|git-startup|crash-reports|host-path|visible-worktrees|desktop-meta|repo-username|repo-update|import-previews|shell-actions|notebook-environments|diagnostic-preview|repo-icon-picker|cleanup-scan|worktree-forget|repo-folder-picker|repo-add|repo-create-remote|github-refresh|localhost-label|space-scan|lineage|file-list|nested-scan|file-search|remote-clone|local-clone|notebook-kernel|log-tail|git-status|download-session|remote-folder-download|remote-file-download|external-path-import|branch-rename-failure)\.ts$/.test(
       source.file
     )
   ) {

@@ -806,6 +806,7 @@ import {
   UsageViewerParams
 } from './usage-params'
 import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
+import { BranchRenameFailureRead } from './workspace-branch-rename-failure-params'
 import { WorkspaceCleanupDismiss } from './workspace-cleanup-dismissal-params'
 import { DesktopCleanupScanRequest, DesktopCleanupScanStart } from './workspace-cleanup-scan-params'
 import {
@@ -827,6 +828,10 @@ import {
   DesktopDownloadSessionStart,
   DesktopSaveDownloadedFile
 } from './workspace-download-session-params'
+import {
+  DesktopDroppedPathsResolve,
+  DesktopExternalPathImport
+} from './workspace-external-path-import-params'
 import {
   DesktopFileListRequest,
   DesktopFileListResult,
@@ -1356,6 +1361,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.desktopSearchResult': DesktopFileSearchResult,
   'files.desktopSearchStart': DesktopFileSearchStart,
   'files.desktopSearchStatus': DesktopFileSearchRequest,
+  'files.importDesktopExternalPaths': DesktopExternalPathImport,
   'files.list': WorktreeSelector,
   'files.listAll': FileListAll,
   'files.listMarkdownDocuments': WorktreeSelector,
@@ -1376,6 +1382,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.remoteFolderDownloadStart': RemoteFolderDownloadStart,
   'files.remoteFolderDownloadStatus': RemoteFolderDownloadRequest,
   'files.rename': FileRename,
+  'files.resolveDesktopDroppedPaths': DesktopDroppedPathsResolve,
   'files.resolveTerminalPath': ResolveTerminalPath,
   'files.search': FileSearch,
   'files.searchPaths': FilePathSearch,
@@ -2124,7 +2131,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'worktree.sleep': WorktreeSelectorOfWorktreeParams,
   'worktree.teardownMissingTerminals': WorktreeTeardownMissingTerminalsParams,
   'worktree.updateDesktopLineage': DesktopWorktreeLineageUpdate,
-  'worktree.updateDesktopMetadata': DesktopWorktreeMetaUpdate
+  'worktree.updateDesktopMetadata': DesktopWorktreeMetaUpdate,
+  'worktrees.branchRenameFailureOutput': BranchRenameFailureRead
 } as const
 
 // Why: these methods bind a schema the shared contract cannot hold because its value

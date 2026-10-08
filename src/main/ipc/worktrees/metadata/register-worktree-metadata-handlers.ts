@@ -12,6 +12,7 @@ import {
   updateDesktopWorktreeMetadata,
   type DesktopWorktreeMetadataArgs
 } from '../../../desktop-worktree-metadata'
+import { setBranchRenameFailureReaderForRpc } from '../../../runtime/rpc/methods/workspace-branch-rename-failure'
 import { setDesktopWorktreeMetadataForRpc } from '../../../runtime/rpc/methods/workspace-desktop-meta'
 import { getRepoForExecutionHost } from '../../../repo-execution-host-selection'
 import type { WorktreeIpcContext } from '../worktree-ipc-context'
@@ -46,6 +47,7 @@ export function registerWorktreeMetadataHandlers(
       throw new Error('Desktop workspace metadata update failed.')
     }
   })
+  setBranchRenameFailureReaderForRpc(readBranchRenameFailureOutputForDisplay)
 
   ipcMain.handle('worktrees:listLineage', async () => {
     await runtime.hydrateInferredWorktreeLineage()

@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
 import type { CommandHandler, HandlerContext } from '../dispatch'
-import { getRequiredStringFlag } from '../flags'
 import { RuntimeClientError } from '../runtime-client'
 import {
   WorkspaceCrashReportDismiss,
@@ -11,6 +8,7 @@ import {
 } from '../../shared/rpc-contract/workspace-crash-report-params'
 import { readWorkspaceCommandInput, confirmWorkspaceCommand } from '../workspace-command-input'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
+import { resolveClientOutputPath, writeNewClientOutputFile } from '../workspace-client-output-file'
 
 const CrashReportMetadata = z.object({
   id: z.string(),
@@ -29,21 +27,14 @@ async function exportCrashReport(
   ctx: HandlerContext,
   method: 'crashReports.getLatestPending' | 'crashReports.getLatestReport'
 ): Promise<void> {
-  const output = getRequiredStringFlag(ctx.flags, 'output-file')
-  if (output === '-') {
-    throw new RuntimeClientError('invalid_argument', '--output-file must name a new file.')
-  }
-  const outputPath = resolve(ctx.cwd, output)
+  const outputPath = resolveClientOutputPath(ctx)
   const response = await ctx.client.call(method)
   const metadata = reportMetadata(response.result)
-  try {
-    await writeFile(outputPath, `${JSON.stringify(response.result, null, 2)}\n`, {
-      flag: 'wx',
-      mode: 0o600
-    })
-  } catch {
-    throw new RuntimeClientError('output_write_failed', 'Could not create the report output file.')
-  }
+  await writeNewClientOutputFile(
+    outputPath,
+    `${JSON.stringify(response.result, null, 2)}\n`,
+    'report'
+  )
   const result = {
     outputPath,
     reportId: metadata?.id ?? null,
