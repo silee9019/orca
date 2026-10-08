@@ -15,3 +15,7 @@ export const SavedTerminalScrollbackParams = z
     ref: z.string().regex(/^v1-[0-9a-f]{32}$/)
   })
   .strict()
+
+export const TerminalMainBufferParams = TerminalHostDetailsParams.extend({
+  scrollbackRows: z.number().finite().optional()
+}).strict()

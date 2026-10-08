@@ -1,6 +1,7 @@
 import { defineMethod } from '../core'
 import type { OrcaRuntimeService } from '../../orca-runtime'
 import {
+  TerminalMainBufferParams,
   FloatingTerminalCwdParams,
   SavedTerminalScrollbackParams,
   TerminalHostDetailsParams
@@ -23,6 +24,29 @@ async function resolveLiveTerminalDetailsTarget(
 }
 
 export const TERMINAL_HOST_DETAILS_METHODS = [
+  defineMethod({
+    name: 'terminal.mainBufferSnapshot',
+    params: TerminalMainBufferParams,
+    handler: async (params, { runtime }) => {
+      const target = await resolveLiveTerminalDetailsTarget(
+        runtime,
+        params.terminal,
+        params.expectedIncarnationId
+      )
+      const snapshot = await runtime.getMainTerminalBufferSnapshot(target.ptyId, {
+        scrollbackRows: params.scrollbackRows
+      })
+      const current = await resolveLiveTerminalDetailsTarget(
+        runtime,
+        params.terminal,
+        params.expectedIncarnationId
+      )
+      if (current.ptyId !== target.ptyId || current.incarnationId !== target.incarnationId) {
+        throw new Error('terminal_gone')
+      }
+      return { snapshot }
+    }
+  }),
   defineMethod({
     name: 'session.readTerminalScrollback',
     params: SavedTerminalScrollbackParams,

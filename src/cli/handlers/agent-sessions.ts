@@ -1,5 +1,6 @@
 import { TerminalSignalParams } from '../../shared/rpc-contract/terminal-signal-params'
 import {
+  TerminalMainBufferParams,
   FloatingTerminalCwdParams,
   SavedTerminalScrollbackParams,
   TerminalHostDetailsParams
@@ -183,6 +184,7 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent terminal ensure': request('terminal.ensureAgentSession', EnsureAgentSessionParams),
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
+  'terminal main-buffer': request('terminal.mainBufferSnapshot', TerminalMainBufferParams),
   'terminal signal': request('terminal.signal', TerminalSignalParams),
   'terminal confirm-foreground': request(
     'terminal.confirmForegroundProcess',

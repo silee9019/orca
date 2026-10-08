@@ -5,6 +5,15 @@ const REQUEST_FLAGS = [...GLOBAL_FLAGS, 'request-file']
 
 export const TERMINAL_HOST_DETAILS_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['terminal', 'main-buffer'],
+    summary: 'Read the execution host’s full terminal snapshot and pending delivery bound',
+    usage: 'orca terminal main-buffer --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires {terminal, expectedIncarnationId?, scrollbackRows?}. Returns private terminal text or null when authoritative recovery is unavailable. Exited targets fail.'
+    ]
+  },
+  {
     path: ['terminal', 'saved-scrollback'],
     summary: 'Read a saved terminal snapshot from the execution host profile',
     usage: 'orca terminal saved-scrollback --request-file <path|-> [--json]',
