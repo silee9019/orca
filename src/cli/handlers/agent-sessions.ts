@@ -175,6 +175,10 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
   'terminal signal': request('terminal.signal', TerminalSignalParams),
+  'terminal confirm-foreground': request(
+    'terminal.confirmForegroundProcess',
+    TerminalHostDetailsParams
+  ),
   'terminal presence': request('terminal.presence', TerminalHostDetailsParams),
   'terminal size': request('terminal.size', TerminalHostDetailsParams),
   'terminal cwd': request('terminal.cwd', TerminalHostDetailsParams),

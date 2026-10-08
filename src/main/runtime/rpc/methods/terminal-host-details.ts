@@ -20,6 +20,27 @@ async function resolveLiveTerminalDetailsTarget(
 
 export const TERMINAL_HOST_DETAILS_METHODS = [
   defineMethod({
+    name: 'terminal.confirmForegroundProcess',
+    params: TerminalHostDetailsParams,
+    handler: async (params, { runtime }) => {
+      const target = await resolveLiveTerminalDetailsTarget(
+        runtime,
+        params.terminal,
+        params.expectedIncarnationId
+      )
+      const foregroundProcess = await runtime.getConfirmedTerminalForegroundProcess(target.ptyId)
+      const current = await resolveLiveTerminalDetailsTarget(
+        runtime,
+        params.terminal,
+        params.expectedIncarnationId
+      )
+      if (current.ptyId !== target.ptyId || current.incarnationId !== target.incarnationId) {
+        throw new Error('terminal_gone')
+      }
+      return { foregroundProcess }
+    }
+  }),
+  defineMethod({
     name: 'terminal.presence',
     params: TerminalHostDetailsParams,
     handler: async (params, { runtime }) => {

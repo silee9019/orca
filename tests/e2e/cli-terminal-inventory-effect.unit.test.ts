@@ -124,7 +124,7 @@ it('fails against an older host without changing fit or control state', async ()
     expect(state.call).toHaveBeenCalledTimes(1)
   }
   await writeFile(join(root, 'old-host.json'), JSON.stringify({ terminal: 'fixture' }))
-  for (const name of ['side-effects', 'size', 'cwd', 'presence']) {
+  for (const name of ['side-effects', 'size', 'cwd', 'presence', 'confirm-foreground']) {
     state.call.mockClear()
     vi.mocked(console.log).mockClear()
     await main(['terminal', name, '--request-file', join(root, 'old-host.json'), '--json'], root)
@@ -250,7 +250,8 @@ it('rejects mismatched incarnations before reading provider metadata', async () 
   const sizeGetter = vi.spyOn(runtime, 'getAppliedTerminalSize')
   const cwdGetter = vi.spyOn(runtime, 'getTerminalCwd')
   const presenceGetter = vi.spyOn(runtime, 'getTerminalPresence')
-  for (const name of ['size', 'cwd', 'presence']) {
+  const confirmedGetter = vi.spyOn(runtime, 'getConfirmedTerminalForegroundProcess')
+  for (const name of ['size', 'cwd', 'presence', 'confirm-foreground']) {
     await main(['terminal', name, '--request-file', path, '--json'], root)
     expect(process.exitCode).toBe(1)
     expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
@@ -261,6 +262,7 @@ it('rejects mismatched incarnations before reading provider metadata', async () 
   expect(sizeGetter).not.toHaveBeenCalled()
   expect(cwdGetter).not.toHaveBeenCalled()
   expect(presenceGetter).not.toHaveBeenCalled()
+  expect(confirmedGetter).not.toHaveBeenCalled()
 })
 
 it('reports missing provider dimensions and CWD as unknown without using client values', async () => {
@@ -275,6 +277,9 @@ it('reports missing provider dimensions and CWD as unknown without using client 
   expect(await command('size', '--request-file', path)).toEqual({ size: null })
   expect(await command('cwd', '--request-file', path)).toEqual({ cwd: null })
   expect(await command('presence', '--request-file', path)).toEqual({ presence: null })
+  expect(await command('confirm-foreground', '--request-file', path)).toEqual({
+    foregroundProcess: null
+  })
 })
 
 it('prefers provider-applied dimensions and preserves a provider-owned unknown', async () => {
@@ -334,4 +339,50 @@ it('reads three-valued host PTY presence and preserves unknown contact', async (
   present = true
   expect(await command('presence', '--request-file', path)).toEqual({ presence: false })
   expect(hasPty).not.toHaveBeenCalled()
+})
+
+it('confirms fresh foreground evidence without substituting the cached process name', async () => {
+  const confirm = vi.fn(async (): Promise<string | null> => 'fresh-fixture-agent')
+  runtime.setPtyController({
+    write: () => true,
+    kill: () => {
+      throw new Error('Unexpected kill')
+    },
+    getForegroundProcess: async () => 'cached-fixture-agent',
+    confirmForegroundProcess: confirm,
+    getSize: () => null
+  })
+  const handle = (await runtime.listTerminals()).terminals[0].handle
+  const path = join(root, 'confirmed-foreground.json')
+  await writeFile(path, JSON.stringify({ terminal: handle }))
+  expect(await command('confirm-foreground', '--request-file', path)).toEqual({
+    foregroundProcess: 'fresh-fixture-agent'
+  })
+  expect(confirm).toHaveBeenCalledWith('pty-1')
+  confirm.mockResolvedValueOnce(null)
+  expect(await command('confirm-foreground', '--request-file', path)).toEqual({
+    foregroundProcess: null
+  })
+  let finish: (value: string) => void = () => {}
+  confirm.mockClear().mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve
+      })
+  )
+  vi.mocked(console.log).mockClear()
+  const pending = main(['terminal', 'confirm-foreground', '--request-file', path, '--json'], root)
+  await vi.waitFor(() => expect(confirm).toHaveBeenCalledWith('pty-1'))
+  await runtime.onPtyExit('pty-1', 0)
+  finish('retired foreground canary')
+  await pending
+  expect(process.exitCode).toBe(1)
+  expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain(
+    'retired foreground canary'
+  )
+  confirm.mockClear()
+  process.exitCode = undefined
+  await main(['terminal', 'confirm-foreground', '--request-file', path, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(confirm).not.toHaveBeenCalled()
 })
