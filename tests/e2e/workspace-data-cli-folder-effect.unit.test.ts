@@ -16,6 +16,7 @@ import {
   ProjectGroupSelector,
   ProjectGroupUpdate
 } from '../../src/shared/rpc-contract/repo-params'
+import * as appEnvironment from '../../src/shared/app-environment'
 import { Store } from '../../src/main/persistence'
 import { ProfileStateSqliteAuthority } from '../../src/main/persistence/profile-state/profile-state-sqlite-authority'
 import { readProfileStateDomain } from '../../src/main/persistence/profile-state/profile-state-domain-reader'
@@ -47,6 +48,16 @@ afterEach(async () => {
 
 it('persists plain-folder workspace and group changes through the existing controller and isolated SQLite profile', async () => {
   directory = await mkdtemp(join(tmpdir(), 'orca-cli-folder-effect-'))
+  const fixturePath = directory
+  vi.spyOn(appEnvironment, 'getAppEnvironment').mockReturnValue({
+    getPath: () => fixturePath,
+    getAppPath: () => fixturePath,
+    getVersion: () => 'fixture',
+    isPackaged: () => false,
+    onWillQuit: () => {},
+    exit: () => {},
+    getAppMetrics: () => []
+  })
   const folder = join(directory, 'plain-folder')
   await mkdir(folder)
   const databasePath = join(directory, 'profile-state.db')

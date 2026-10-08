@@ -41,6 +41,8 @@ beforeEach(async () => {
       case 'projectHostSetup.create':
       case 'projectHostSetup.update':
       case 'projectHostSetup.clone':
+      case 'projectHostSetup.setupExistingFolder':
+      case 'projectHostSetup.delete':
         await writeFile(join(directory, 'effect.json'), JSON.stringify(params))
         result = { result: {} }
         break
@@ -112,4 +114,65 @@ it('refuses a path update when the setup is absent or the peer cannot identify i
   })
   expect(call).toHaveBeenCalledTimes(2)
   await expect(readFile(join(directory, 'effect.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+})
+
+it('forwards a selected project identity and import method through existing-folder and clone commands', async () => {
+  ctx.flags.set('project-owner', 'acme')
+  ctx.flags.set('project-repo', 'repository')
+  ctx.flags.set('project-provider-host', 'ghe.example.invalid')
+  ctx.flags.set('method', 'cloned')
+  ctx.flags.set('path', '/srv/repository')
+  await PROJECT_HANDLERS['project setup-existing-folder'](ctx)
+  expect(JSON.parse(await readFile(join(directory, 'effect.json'), 'utf8'))).toMatchObject({
+    projectProviderIdentity: {
+      provider: 'github',
+      owner: 'acme',
+      repo: 'repository',
+      host: 'ghe.example.invalid'
+    },
+    setupMethod: 'cloned'
+  })
+  ctx.flags.set('host', 'local')
+  ctx.flags.set('url', 'https://example.invalid/acme/repository.git')
+  ctx.flags.set('destination', './clone')
+  await PROJECT_HANDLERS['project setup-clone'](ctx)
+  expect(JSON.parse(await readFile(join(directory, 'effect.json'), 'utf8'))).toMatchObject({
+    projectProviderIdentity: {
+      provider: 'github',
+      owner: 'acme',
+      repo: 'repository',
+      host: 'ghe.example.invalid'
+    }
+  })
+})
+
+it('rejects incomplete project identity and unsupported import methods before registering a folder', async () => {
+  ctx.flags.set('path', '/srv/repository')
+  ctx.flags.set('project-owner', 'acme')
+  await expect(PROJECT_HANDLERS['project setup-existing-folder'](ctx)).rejects.toMatchObject({
+    code: 'invalid_argument'
+  })
+  ctx.flags.delete('project-owner')
+  ctx.flags.set('method', 'provisioned')
+  await expect(PROJECT_HANDLERS['project setup-existing-folder'](ctx)).rejects.toMatchObject({
+    code: 'invalid_argument'
+  })
+  await expect(readFile(join(directory, 'effect.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+})
+
+it('requires the exact setup ID before removing metadata or a repo-backed registration', async () => {
+  for (const confirm of [undefined, 'another-setup']) {
+    if (confirm) {
+      ctx.flags.set('confirm', confirm)
+    }
+    await expect(PROJECT_HANDLERS['project setup-delete'](ctx)).rejects.toMatchObject({
+      code: 'invalid_argument'
+    })
+  }
+  expect(ctx.client.call).not.toHaveBeenCalled()
+  ctx.flags.set('confirm', 'setup')
+  await PROJECT_HANDLERS['project setup-delete'](ctx)
+  expect(JSON.parse(await readFile(join(directory, 'effect.json'), 'utf8'))).toEqual({
+    setupId: 'setup'
+  })
 })
