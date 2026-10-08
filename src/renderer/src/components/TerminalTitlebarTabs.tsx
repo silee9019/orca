@@ -15,10 +15,49 @@ function LiveTerminalTabBar(
   return <TabBar {...props} tabs={tabs} />
 }
 
+export type TerminalTitlebarController = Pick<
+  TerminalController,
+  | 'activeBrowserTabId'
+  | 'activeFileId'
+  | 'activeTabId'
+  | 'activeTabType'
+  | 'effectiveActiveLayout'
+  | 'expandedPaneByTabId'
+  | 'handleActivateBrowserTab'
+  | 'handleActivateTab'
+  | 'handleCloseAllFiles'
+  | 'handleCloseBrowserTab'
+  | 'handleCloseFile'
+  | 'handleCloseOthers'
+  | 'handleCloseTab'
+  | 'handleCloseTabsToLeft'
+  | 'handleCloseTabsToRight'
+  | 'handleDuplicateBrowserTab'
+  | 'handleNewBrowserTab'
+  | 'handleNewFile'
+  | 'handleNewSimulatorTab'
+  | 'handleNewTab'
+  | 'handleOpenEntry'
+  | 'handleTogglePaneExpand'
+  | 'makePreviewFilePermanent'
+  | 'mobileEmulatorEnabled'
+  | 'pinFile'
+  | 'renderedActiveWorktreeId'
+  | 'setActiveFile'
+  | 'setActiveTab'
+  | 'setActiveTabType'
+  | 'setTabColor'
+  | 'setTabCustomTitle'
+  | 'tabBarOrder'
+  | 'titlebarTabsTarget'
+  | 'worktreeBrowserTabs'
+  | 'worktreeClientHostedBrowserRows'
+  | 'worktreeFiles'
+>
 export function TerminalTitlebarTabs({
   controller
 }: {
-  controller: TerminalController
+  controller: TerminalTitlebarController
 }): React.JSX.Element | null {
   const {
     activeBrowserTabId,

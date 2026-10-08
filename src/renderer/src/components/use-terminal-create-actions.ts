@@ -21,7 +21,19 @@ import { translate } from '@/i18n/i18n'
 import { getActiveWorktreeRuntimeEnvironmentId } from './terminal-workspace-model'
 import type { TerminalColdActivationController } from './terminal-cold-activation'
 
-export function useTerminalCreateActions(controller: TerminalColdActivationController) {
+export function useTerminalCreateActions(
+  controller: Pick<
+    TerminalColdActivationController,
+    | 'activeWorktreeId'
+    | 'createBrowserTab'
+    | 'createTab'
+    | 'openNewBrowserTabInActiveWorkspace'
+    | 'openNewMarkdownInActiveWorkspace'
+    | 'openNewTerminalTabInActiveWorkspace'
+    | 'setActiveTabType'
+    | 'setTabBarOrder'
+  >
+) {
   const {
     activeWorktreeId,
     createBrowserTab,
