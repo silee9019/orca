@@ -3359,7 +3359,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed canonical writer injection validates target through existing host WSL validator callback. Fixture file patch readback passed; real canonical startup binding missing.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3375,7 +3375,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "account preference set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-accounts-pane-minimax-credentials.MiniMaxCredentials.control.setMiniMaxCookieDraft",
@@ -3530,7 +3533,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Strict narrow preference canonical writer callback source and fixture file readback exist; actual settings:set startup binding missing. UI analytics callback is not claimed by persistence alone.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3542,7 +3545,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "account preference set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-accounts-pane-opencode-credentials.OpenCodeGoCredentials.control.updateCredential",
@@ -3656,7 +3662,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Strict narrow preference canonical writer callback source and fixture file readback exist; actual settings:set startup binding missing. UI analytics callback is not claimed by persistence alone.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3668,7 +3674,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "account preference set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-accounts-pane-provider-setting-sections.renderGeminiAccountsSection.control.recordFeatureInteraction-usage-tracking",
@@ -3702,7 +3711,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3714,7 +3723,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-accounts-pane-removal-dialogs.renderAccountsRemovalDialogs.control.setRemoveCodexTarget",
@@ -3793,7 +3805,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3805,7 +3817,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-AgentLaunchDefaultsEditor.AgentDefaultEnvInput.control.commitEnv",
@@ -3816,7 +3831,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3832,7 +3847,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-AgentLaunchDefaultsEditor.AgentDefaultEnvInput.control.setEnvDraft",
@@ -3869,7 +3887,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Existing applyAgentPermissionMode and summary used with injected canonical reader/writer. Fixture file readback and private override protection passed. Actual binding missing. Onboarding draft itself remains mounted-viewer gap and this final preference command does not advance checklist/default agent.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -3881,7 +3899,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "agent-permissions status",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/agent-permission-mode-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-AntigravityAccountsSection.AntigravityAccountsSection.control.run-List",
@@ -4789,7 +4810,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Strict narrow preference canonical writer callback source and fixture file readback exist; actual settings:set startup binding missing. UI analytics callback is not claimed by persistence alone.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -4801,7 +4822,10 @@
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
       "command": "account preference set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.src-renderer-src-components-settings-ZcodePlanAccountsSection.ZcodePlanAccountsSection.control.setApiKeyDraft",
@@ -6997,7 +7021,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7009,7 +7033,10 @@
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "setting.httpProxyBypassRules",
@@ -7020,7 +7047,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7032,7 +7059,10 @@
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "setting.httpProxyUrl",
@@ -7043,7 +7073,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7055,7 +7085,10 @@
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "setting.opencodeSessionCookie",
@@ -7066,7 +7099,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Typed setAccountSecretSettingsWriter callback receives validated GlobalSettings patch only; no callback yields unavailable/no write. Fixture callback file write/readback, clear, normalization, redaction and invalid input passed. Actual settings:set canonical writer/startup binding remains missing; no production support claimed.",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7078,7 +7111,10 @@
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "surface.accounts-permissions.codexAccounts.observe.effect",
@@ -7593,7 +7629,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7605,7 +7641,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "account preference set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.account-preference-status",
@@ -7616,7 +7655,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7628,7 +7667,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "account preference status",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-preference-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.account-inspect-codex-forget-panes",
@@ -7984,7 +8026,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -7996,7 +8038,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent-permissions set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/agent-permission-mode-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.agent-permissions-status",
@@ -8007,7 +8052,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -8019,7 +8064,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent-permissions status",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/agent-permission-mode-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.computer-permission-status",
@@ -8928,7 +8976,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -8940,7 +8988,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "secrets clear",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.secrets-set",
@@ -8951,7 +9002,7 @@
       "host": "selected provider execution host and OS permission authority",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
       "gap": "정본 desktop settings writer와 durable flush에 startup binding을 연결하고 composition fixture를 확인했습니다. 실제 Electron·WSL·SSH·paired 운영 실증은 남아 있습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "verification": "The integrated startup binds the existing desktop settings writer and waits for durable flush. The named fixture verifies the public command and read-back; real OAuth, OS approval and operational platforms remain outside this evidence.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -8963,7 +9014,10 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "secrets set",
-      "evidencePaths": []
+      "evidencePaths": [
+        "src/main/startup/main-process-account-settings.test.ts",
+        "config/scripts/account-secret-settings-cli-effects.test.ts"
+      ]
     },
     {
       "id": "command.usage-breakdown",

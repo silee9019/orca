@@ -77,11 +77,7 @@ describe('UsageAccountsCard account-list failures', () => {
     await renderCard(undefined, 2)
     expect(() => startFeatureWallUsageSignIn('claude')).toThrow('ambiguous')
     await act(async () => {
-      root.render(
-        <>
-          <UsageAccountsCard key={0} />
-        </>
-      )
+      root.render([<UsageAccountsCard key={0} />])
     })
     Object.assign(window.api.claudeAccounts, { add: vi.fn(async () => EMPTY_ACCOUNTS) })
     let operationId = ''

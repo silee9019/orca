@@ -79,10 +79,17 @@ async function runCredentialCommand(
       )
     }
   }
-  const result = await ctx.client.call(`accountCredentials.${action}`, {
-    provider: provider.data,
-    ...(secret === undefined ? {} : { secret })
-  })
+  const result = await ctx.client
+    .call(`accountCredentials.${action}`, {
+      provider: provider.data,
+      ...(secret === undefined ? {} : { secret })
+    })
+    .catch(() => {
+      throw new RuntimeClientError(
+        'credential_operation_unconfirmed',
+        'Could not confirm the credential operation on the account host. Check the account host and saved credential status before retrying.'
+      )
+    })
   printResult(result, ctx.json, (status) => JSON.stringify(status, null, 2))
 }
 
