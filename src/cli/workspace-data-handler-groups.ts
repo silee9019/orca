@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-host-path',
+    keys: ['file mkdir-host-path', 'file host-path-exists'],
+    load: async () =>
+      (await import('./handlers/workspace-host-path.js')).WORKSPACE_HOST_PATH_HANDLERS
+  },
+  {
     name: 'workspace-crash-reports',
     keys: [
       'crash-report latest-pending',

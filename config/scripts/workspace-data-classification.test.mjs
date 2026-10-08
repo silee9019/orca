@@ -9,6 +9,7 @@ test('workspace command declarations keep workspace ownership without moving exi
     ['repo sparse-presets', 'workspace-repo-data', 'workspace-data'],
     ['workspace-space cached-analysis', 'workspace-cached-scans', 'workspace-data'],
     ['workspace-cleanup dismiss', 'workspace-cleanup-dismissals', 'workspace-data'],
+    ['file host-path-exists', 'workspace-host-path', 'workspace-data'],
     ['crash-report latest', 'workspace-crash-reports', 'workspace-data'],
     ['git await-environment', 'workspace-git-startup', 'workspace-data'],
     ['repo sparse-presets', 'repo', 'extensions'],

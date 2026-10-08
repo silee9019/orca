@@ -1,3 +1,4 @@
+import { WORKSPACE_HOST_PATH_COMMAND_SPECS } from './workspace-host-path'
 import { WORKSPACE_CRASH_REPORT_COMMAND_SPECS } from './workspace-crash-reports'
 import { WORKSPACE_GIT_STARTUP_COMMAND_SPECS } from './workspace-git-startup'
 import { WORKSPACE_CLEANUP_DISMISSAL_COMMAND_SPECS } from './workspace-cleanup-dismissals'
@@ -36,6 +37,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_HOST_PATH_COMMAND_SPECS,
   ...WORKSPACE_CRASH_REPORT_COMMAND_SPECS,
   ...WORKSPACE_GIT_STARTUP_COMMAND_SPECS,
   ...WORKSPACE_LINEAR_ISSUE_COMMAND_SPECS,
