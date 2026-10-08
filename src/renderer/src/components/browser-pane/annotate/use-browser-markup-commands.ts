@@ -8,7 +8,7 @@ import {
 import type { MarkupModeController } from './useMarkupMode'
 
 export type BrowserMarkupAdmission = {
-  target: BrowserClientMarkupTarget
+  target?: BrowserClientMarkupTarget
   isCurrent: () => boolean
 }
 export function useBrowserMarkupCommands(
@@ -18,13 +18,17 @@ export function useBrowserMarkupCommands(
   admission?: BrowserMarkupAdmission
 ): void {
   const current = useRef<BrowserMarkupState>({ state: mode.state, hasImage: !!mode.baseImage })
-  const pending = useRef<{ request: BrowserMarkupEvent; done: boolean } | null>(null)
+  const pending = useRef<{
+    request: BrowserMarkupEvent
+    done: boolean
+    isCurrent?: () => boolean
+  } | null>(null)
   const [, update] = useState(0)
   useLayoutEffect(() => {
     current.current = {
       state: mode.state,
       hasImage: !!mode.baseImage,
-      ...(admission ? { clientTarget: admission.target } : {})
+      ...(admission?.target ? { clientTarget: admission.target } : {})
     }
   })
   useEffect(() => {
@@ -35,12 +39,15 @@ export function useBrowserMarkupCommands(
     if (operation.request.isSettled()) {
       pending.current = null
     } else if (
-      admission &&
-      (!admission.isCurrent() ||
-        !operation.request.clientTarget ||
-        Object.entries(operation.request.clientTarget).some(
-          ([key, value]) => Reflect.get(admission.target, key) !== value
-        ))
+      operation.isCurrent?.() === false ||
+      (admission &&
+        (!admission.isCurrent() ||
+          Boolean(operation.request.clientTarget) !== Boolean(admission.target) ||
+          (operation.request.clientTarget &&
+            admission.target &&
+            Object.entries(operation.request.clientTarget).some(
+              ([key, value]) => Reflect.get(admission.target ?? {}, key) !== value
+            ))))
     ) {
       operation.request.finish(new Error('browser_markup_owner_changed_effect_unknown'))
       pending.current = null
@@ -69,11 +76,11 @@ export function useBrowserMarkupCommands(
       const request = event.detail
       if (
         request.page !== page ||
-        Boolean(request.clientTarget) !== Boolean(admission) ||
+        Boolean(request.clientTarget) !== Boolean(admission?.target) ||
         (request.clientTarget &&
-          admission &&
+          admission?.target &&
           Object.entries(request.clientTarget).some(
-            ([key, value]) => Reflect.get(admission.target, key) !== value
+            ([key, value]) => Reflect.get(admission.target ?? {}, key) !== value
           ))
       ) {
         return
@@ -93,7 +100,7 @@ export function useBrowserMarkupCommands(
               request.finish(new Error('browser_markup_busy'))
               return
             }
-            pending.current = { request, done: true }
+            pending.current = { request, done: true, isCurrent: admission?.isCurrent }
             update((value) => value + 1)
             return
           }
@@ -105,7 +112,7 @@ export function useBrowserMarkupCommands(
         }
         if (request.action === 'cancel') {
           pending.current?.request.finish(new Error('browser_markup_cancelled'))
-          pending.current = { request, done: true }
+          pending.current = { request, done: true, isCurrent: admission?.isCurrent }
           mode.cancel()
           update((value) => value + 1)
           return
@@ -114,7 +121,7 @@ export function useBrowserMarkupCommands(
           request.finish(new Error('browser_markup_already_active'))
           return
         }
-        const operation = { request, done: false }
+        const operation = { request, done: false, isCurrent: admission?.isCurrent }
         pending.current = operation
         void mode.start().then(
           () => {

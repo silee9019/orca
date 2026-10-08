@@ -61,6 +61,7 @@ export function useBrowserMarkupEditorCommands(
   const pending = useRef<{
     request: BrowserMarkupEditorEvent
     check: (value: Editor) => boolean
+    isCurrent?: () => boolean
   } | null>(null)
   const [, update] = useState(0)
   useLayoutEffect(() => {
@@ -74,6 +75,7 @@ export function useBrowserMarkupEditorCommands(
     if (!operation.request.isSettled()) {
       const accepted =
         !!owner?.active &&
+        operation.isCurrent?.() !== false &&
         owner.isCurrent?.() !== false &&
         matchesOwner(owner, operation.request) &&
         !busy &&
@@ -123,6 +125,7 @@ export function useBrowserMarkupEditorCommands(
           const stillCurrent = () =>
             mounted.current &&
             active.current &&
+            owner.isCurrent?.() !== false &&
             matchesOwner(currentOwner.current, request) &&
             currentOwner.current?.isCurrent?.() !== false &&
             !request.isSettled() &&
@@ -239,7 +242,7 @@ export function useBrowserMarkupEditorCommands(
           }
           check = (value) => value.shapes !== before.shapes
         }
-        pending.current = { request, check }
+        pending.current = { request, check, isCurrent: owner.isCurrent }
         update((value) => value + 1)
       })
     }

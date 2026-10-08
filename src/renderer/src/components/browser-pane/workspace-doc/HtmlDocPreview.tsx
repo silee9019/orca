@@ -136,7 +136,8 @@ export function HtmlDocPreview({
       grantId,
       webviewRef,
       containerRef,
-      toolsReady: state === 'ready' && !isUnavailable
+      toolsReady: state === 'ready' && !isUnavailable,
+      isActive
     })
   // Not `document`: shadowing the global inside a component is how a stray DOM call silently
   // starts reading a plain object.

@@ -50,6 +50,19 @@ describe('HtmlDocPreview browser chrome', () => {
     container.remove()
   })
 
+  it('keeps a ready retained document inactive for typed markup requests', async () => {
+    const { requestBrowserMarkup } = await import('@/runtime/browser-markup-request')
+    await renderPreview(container, root, { isActive: false })
+    await expect(requestBrowserMarkup('preview-1', 'status', Date.now() + 1000)).rejects.toThrow(
+      'browser_markup_viewer_inactive'
+    )
+    await renderPreview(container, root, { isActive: true })
+    await expect(requestBrowserMarkup('preview-1', 'status', Date.now() + 1000)).resolves.toEqual({
+      state: 'idle',
+      hasImage: false
+    })
+  })
+
   it('counts document guests in the workspace budget and restores only on activation', async () => {
     const { hasLiveBrowserGuest, webviewRegistry } = await import('../host-guest/webview-registry')
     const { worktreeHoldsLiveBrowserGuests, selectBrowserGuestEvictionWorktreeIds } =
