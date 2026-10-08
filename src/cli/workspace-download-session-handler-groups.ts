@@ -3,6 +3,7 @@ export const WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] 
   {
     name: 'workspace-download-session',
     keys: [
+      'file save-downloaded',
       'file download-session-start',
       'file download-session-status',
       'file download-session-append',

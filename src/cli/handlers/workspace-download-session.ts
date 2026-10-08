@@ -1,5 +1,8 @@
+import { RuntimeClientError } from '../runtime-client'
 import type { CommandHandler } from '../dispatch'
 import {
+  DesktopSaveDownloadedFile,
+  DesktopSaveDownloadedResult,
   DesktopDownloadSessionStart,
   DesktopDownloadSessionRequest,
   DesktopDownloadSessionAppend
@@ -7,6 +10,19 @@ import {
 import { readWorkspaceCommandInput, confirmWorkspaceCommand } from '../workspace-command-input'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
 export const WORKSPACE_DOWNLOAD_SESSION_HANDLERS: Record<string, CommandHandler> = {
+  'file save-downloaded': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, DesktopSaveDownloadedFile)
+    confirmWorkspaceCommand(ctx, params.destinationPath)
+    const response = await ctx.client.call('files.desktopSaveDownloadedFile', params)
+    const result = DesktopSaveDownloadedResult.parse(response.result)
+    if (result.state !== 'finished') {
+      throw new RuntimeClientError('operation_failed', 'Owned download save did not complete.', {
+        ...result,
+        recoveryCommands: ['file download-session-status', 'file download-session-cancel']
+      })
+    }
+    printWorkspaceCommandResult(response, ctx.json, JSON.stringify)
+  },
   'file download-session-start': async (ctx) => {
     const params = await readWorkspaceCommandInput(ctx, DesktopDownloadSessionStart)
     confirmWorkspaceCommand(ctx, params.destinationPath)

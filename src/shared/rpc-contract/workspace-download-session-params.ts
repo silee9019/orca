@@ -30,3 +30,31 @@ export const DesktopDownloadSessionAppend = DesktopDownloadSessionRequest.extend
       return (value.length / 4) * 3 - padding <= 1024 * 1024
     })
 }).strict()
+
+export const DesktopSaveDownloadedFile = DesktopDownloadSessionStart.extend({
+  content: z.string().max(1024 * 1024),
+  encoding: z.enum(['utf8', 'base64']).default('utf8')
+})
+  .strict()
+  .refine(
+    (value) =>
+      value.encoding !== 'base64' ||
+      /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.content),
+    'Invalid base64 content'
+  )
+export const DesktopSaveDownloadedResult = z
+  .object({
+    requestId: z.string().uuid(),
+    state: z.enum([
+      'pending',
+      'open',
+      'finishing',
+      'cancel_requested',
+      'finished',
+      'cancelled',
+      'failed'
+    ]),
+    byteOffset: z.number().int().nonnegative(),
+    cleanupPending: z.boolean()
+  })
+  .strict()

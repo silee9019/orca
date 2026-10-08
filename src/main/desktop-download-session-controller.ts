@@ -64,6 +64,57 @@ export class DesktopDownloadSessionController {
     this.arm(request)
     return this.status(request.id)
   }
+  async save(
+    authorize: () => Promise<string>,
+    overwrite: boolean,
+    content: string,
+    encoding: 'utf8' | 'base64',
+    signal?: AbortSignal
+  ) {
+    signal?.throwIfAborted()
+    const bytes = decodeDownloadedFileContent(content, encoding)
+    if (bytes.length > 4 * 1024 * 1024) {
+      throw new Error('download_size_limit')
+    }
+    const { requestId } = this.start(authorize, overwrite)
+    const request = this.get(requestId)
+    const abort = (): void => {
+      void this.cancel(requestId).catch(() => {})
+    }
+    signal?.addEventListener('abort', abort, { once: true })
+    if (signal?.aborted) {
+      abort()
+    }
+    let failed = false
+    try {
+      await request.operation
+      if (request.state !== 'open') {
+        throw new Error('Owned download did not open.')
+      }
+      for (let offset = 0; offset < bytes.length; offset += 1024 * 1024) {
+        signal?.throwIfAborted()
+        await this.append(
+          requestId,
+          offset,
+          bytes.subarray(offset, offset + 1024 * 1024).toString('base64')
+        )
+      }
+      signal?.throwIfAborted()
+      await this.finish(requestId)
+      failed = !this.isFinished(request)
+    } catch {
+      failed = true
+    } finally {
+      signal?.removeEventListener('abort', abort)
+      if (!this.isFinished(request)) {
+        await this.cancel(requestId)
+        if (failed && !signal?.aborted) {
+          request.state = 'failed'
+        }
+      }
+    }
+    return this.status(requestId)
+  }
   status(id: string) {
     const r = this.get(id)
     return {

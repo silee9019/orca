@@ -2,6 +2,18 @@ import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 export const WORKSPACE_DOWNLOAD_SESSION_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['file', 'save-downloaded'],
+    summary: 'Save downloaded content to a confirmed native destination',
+    usage: 'orca file save-downloaded --params-file <file|-> --confirm <destinationPath> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
+    notes: [
+      'Input: expectedExecutionHostId (local), expectedWriteHostId (local), destinationPath, content, encoding (utf8 or base64, default utf8), overwrite (default false).',
+      'The existing authorized download session owns exclusive staging, destination identity, promotion and cleanup. Active sessions stay busy; symbolic destinations and implicit overwrite are rejected.',
+      'Content is accepted only through a JSON file or stdin and is never printed. The single request permits up to 1,048,576 string code units; larger data uses download-session chunks.',
+      'Failures include the owned UUID for status/cancel cleanup retries. Cancellation does not remove a finished destination. Old peers fail without fallback.'
+    ]
+  },
+  {
     path: ['file', 'download-session-start'],
     summary: 'Start an owned native file save session',
     usage:

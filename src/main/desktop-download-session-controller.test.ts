@@ -180,3 +180,63 @@ it('disposes an open owned file before allowing its controller to admit another 
   await wait(next.requestId, 'open')
   await controller.cancel(next.requestId)
 })
+it('keeps an existing active session when a single save is rejected as busy', async () => {
+  const existing = controller.start(async () => path, false)
+  await wait(existing.requestId, 'open')
+  await expect(controller.save(async () => path, true, 'foreign', 'utf8')).rejects.toThrow(
+    'desktop_download_session_busy'
+  )
+  expect(controller.status(existing.requestId).state).toBe('open')
+  await controller.cancel(existing.requestId)
+  expect(await readdir(directory)).toHaveLength(0)
+})
+it('waits for pending authorization and discards an aborted single save without writing a destination', async () => {
+  let authorize: ((path: string) => void) | undefined
+  const abort = new AbortController()
+  const save = controller.save(
+    () =>
+      new Promise<string>((resolve) => {
+        authorize = resolve
+      }),
+    false,
+    'private',
+    'utf8',
+    abort.signal
+  )
+  await vi.waitFor(() => expect(authorize).toBeDefined())
+  abort.abort()
+  authorize?.(path)
+  expect(await save).toMatchObject({ state: 'cancelled', cleanupPending: false })
+  expect(await readdir(directory)).toHaveLength(0)
+})
+it('does not clean a cancelled append until the owned write settles', async () => {
+  let finish: (() => void) | undefined
+  vi.spyOn(stagingModule.NativeDownloadStagingFile.prototype, 'append').mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+  )
+  const abort = new AbortController()
+  const save = controller.save(async () => path, false, 'private', 'utf8', abort.signal)
+  await vi.waitFor(() => expect(finish).toBeDefined())
+  abort.abort()
+  expect(await readdir(directory)).toHaveLength(1)
+  finish?.()
+  expect(await save).toMatchObject({ state: 'cancelled', cleanupPending: false })
+  expect(await readdir(directory)).toHaveLength(0)
+})
+it('preserves a committed destination when cancellation arrives just after promotion', async () => {
+  const abort = new AbortController()
+  const promote = stagingModule.NativeDownloadStagingFile.prototype.promote
+  vi.spyOn(stagingModule.NativeDownloadStagingFile.prototype, 'promote').mockImplementation(
+    async function (this: stagingModule.NativeDownloadStagingFile, signal) {
+      await promote.call(this, signal)
+      abort.abort()
+    }
+  )
+  expect(
+    await controller.save(async () => path, false, 'committed', 'utf8', abort.signal)
+  ).toMatchObject({ state: 'finished', cleanupPending: false })
+  expect(await readFile(path, 'utf8')).toBe('committed')
+})

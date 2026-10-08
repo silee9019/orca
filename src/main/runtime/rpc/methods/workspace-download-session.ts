@@ -1,4 +1,5 @@
 import {
+  DesktopSaveDownloadedFile,
   DesktopDownloadSessionStart,
   DesktopDownloadSessionRequest,
   DesktopDownloadSessionAppend
@@ -19,6 +20,11 @@ function requireService() {
   return service
 }
 export const WORKSPACE_DOWNLOAD_SESSION_METHODS = [
+  defineMethod({
+    name: 'files.desktopSaveDownloadedFile',
+    params: DesktopSaveDownloadedFile,
+    handler: (params, { signal }) => requireService().save(params, signal)
+  }),
   defineMethod({
     name: 'files.desktopDownloadSessionStart',
     params: DesktopDownloadSessionStart,
