@@ -5,8 +5,17 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import {
   createRuntime,
+  createFolderWorkspaceRuntimeStore,
+  makeFolderProjectGroup,
+  makeFolderWorkspace,
+  makeRuntimeStoreWithWorkspaceSession,
+  TEST_FOLDER_WORKSPACE_KEY,
   syncSinglePty
 } from '../../src/main/runtime/orca-runtime-test-fixtures.spec'
+import { applyPtyBinding } from '../../src/main/persistence/loading-store/pty-binding-session-update'
+import type { RuntimePtyController } from '../../src/main/runtime/runtime-pty-controller-contract'
+import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
+import { getDefaultWorkspaceSession } from '../../src/shared/constants'
 import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
 import { TERMINAL_METHODS } from '../../src/main/runtime/rpc/methods/terminal'
 import { RuntimeRpcFailureError } from '../../src/cli/runtime/types'
@@ -40,6 +49,12 @@ beforeEach(async () => {
     getSize: () => ({ cols: 80, rows: 24 })
   })
   syncSinglePty(runtime)
+  bindRuntimeRpc()
+  process.exitCode = undefined
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+function bindRuntimeRpc(): void {
   const rpc = new RpcDispatcher({ runtime, methods: TERMINAL_METHODS })
   state.call.mockImplementation(async (method: string, params: unknown) => {
     const response = await rpc.dispatch({ id: 'fixture', authToken: 'fixture', method, params })
@@ -48,10 +63,7 @@ beforeEach(async () => {
     }
     return response
   })
-  process.exitCode = undefined
-  vi.spyOn(console, 'log').mockImplementation(() => {})
-  vi.spyOn(console, 'error').mockImplementation(() => {})
-})
+}
 afterEach(async () => {
   vi.restoreAllMocks()
   process.exitCode = undefined
@@ -81,4 +93,89 @@ it('reads host output and writes a client file through public CLI and real host 
   expect(receipt.result.send.accepted).toBe(true)
   expect(written.join('')).toBe(input)
   expect(JSON.stringify(receipt)).not.toContain('private 터미널 input')
+})
+
+it('persists folder terminal creation, rename, split and close through public CLI', async () => {
+  const persisted = makeRuntimeStoreWithWorkspaceSession(getDefaultWorkspaceSession())
+  runtime = new OrcaRuntimeService({
+    ...createFolderWorkspaceRuntimeStore(
+      makeFolderWorkspace({ folderPath: root }),
+      makeFolderProjectGroup({ parentPath: root })
+    ),
+    ...persisted.runtimeStore
+  })
+  let spawned = 0
+  const spawn = vi.fn(async (args: Parameters<NonNullable<RuntimePtyController['spawn']>>[0]) => {
+    const id = spawned++ === 0 ? 'fixture-created' : 'fixture-split'
+    const incarnationId = `${id}-incarnation`
+    if (args.persistHostSessionBinding) {
+      if (!args.worktreeId || !args.tabId || !args.leafId) {
+        throw new Error('Missing host binding identity')
+      }
+      applyPtyBinding(
+        {
+          worktreeId: args.worktreeId,
+          tabId: args.tabId,
+          leafId: args.leafId,
+          ptyId: id,
+          incarnationId,
+          hostAdmittedMembership: true,
+          ...(args.expectedSourceBinding
+            ? { expectedSourceBinding: args.expectedSourceBinding }
+            : {})
+        },
+        persisted.getSession(),
+        args.worktreeId,
+        `${args.tabId}:${args.leafId}`
+      )
+    }
+    return { id, incarnationId }
+  })
+  const stop = vi.fn(async (ptyId: string) => {
+    await runtime.onPtyExit(ptyId, 0)
+    return true
+  })
+  runtime.setPtyController({
+    spawn,
+    write: () => true,
+    kill: () => {
+      throw new Error('Unexpected unconfirmed kill')
+    },
+    stopAndWait: stop,
+    getForegroundProcess: async () => null,
+    getSize: () => ({ cols: 80, rows: 24 })
+  })
+  bindRuntimeRpc()
+  const created = await command(
+    'create',
+    '--worktree',
+    `id:${TEST_FOLDER_WORKSPACE_KEY}`,
+    '--title',
+    'folder worker'
+  )
+  const terminal = created.result.terminal
+  expect(terminal.surface).toBe('background')
+  expect(spawn).toHaveBeenCalledWith(
+    expect.objectContaining({ cwd: root, worktreeId: TEST_FOLDER_WORKSPACE_KEY })
+  )
+  expect(persisted.getSession().tabsByWorktree[TEST_FOLDER_WORKSPACE_KEY]).toEqual([
+    expect.objectContaining({ id: terminal.tabId, ptyId: 'fixture-created' })
+  ])
+  await command('rename', '--terminal', terminal.handle, '--title', 'renamed worker')
+  expect(persisted.getSession().tabsByWorktree[TEST_FOLDER_WORKSPACE_KEY][0].customTitle).toBe(
+    'renamed worker'
+  )
+  const split = await command('split', '--terminal', terminal.handle, '--direction', 'vertical')
+  const layout = persisted.getSession().terminalLayoutsByTabId[terminal.tabId]
+  expect(layout.root.type).toBe('split')
+  expect(Object.values(layout.ptyIdsByLeafId ?? {})).toEqual(
+    expect.arrayContaining(['fixture-created', 'fixture-split'])
+  )
+  const closedSplit = await command('close', '--terminal', split.result.split.handle)
+  expect(closedSplit.result.close.ptyKilled).toBe(true)
+  expect(persisted.getSession().tabsByWorktree[TEST_FOLDER_WORKSPACE_KEY]).toHaveLength(1)
+  const closed = await command('close', '--terminal', terminal.handle)
+  expect(closed.result.close.ptyKilled).toBe(true)
+  expect(persisted.getSession().tabsByWorktree[TEST_FOLDER_WORKSPACE_KEY] ?? []).toHaveLength(0)
+  expect(stop.mock.calls.map(([ptyId]) => ptyId)).toEqual(['fixture-split', 'fixture-created'])
 })
