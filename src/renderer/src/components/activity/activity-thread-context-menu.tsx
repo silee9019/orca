@@ -1,3 +1,4 @@
+import { publishActivityContextMenuControl } from '@/runtime/activity-context-menu-controls'
 import React from 'react'
 import { getActivityThreadReadTargets } from './activity-thread-read-targets'
 import { Bell, BellOff, Copy, ExternalLink, PanelRight, X } from 'lucide-react'
@@ -49,6 +50,15 @@ export function ActivityThreadContextMenu({
   children: (menuOpen: boolean) => React.ReactElement
 }): React.JSX.Element {
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const owner = React.useId()
+  const closeRef = React.useRef<() => void>(() => {})
+  const cleanup = React.useRef<(() => void) | null>(null)
+  const menuRef = React.useCallback((menu: HTMLDivElement | null): void => {
+    cleanup.current?.()
+    cleanup.current = menu
+      ? publishActivityContextMenuControl(menu, () => closeRef.current())
+      : null
+  }, [])
   // Why a snapshot: the pointerdown on a portaled item clears the list selection before onSelect.
   const [targets, setTargets] = React.useState<readonly AgentPaneThread[]>([thread])
 
@@ -69,11 +79,28 @@ export function ActivityThreadContextMenu({
     setMenuOpen(open)
   }
 
+  closeRef.current = () => handleOpenChange(false)
+
   return (
     <ContextMenu open={menuOpen} onOpenChange={handleOpenChange}>
-      <ContextMenuTrigger asChild>{children(menuOpen)}</ContextMenuTrigger>
+      <ContextMenuTrigger
+        asChild
+        data-activity-context-trigger={owner}
+        data-activity-context-pane={thread.paneKey}
+        data-activity-context-workspace={thread.worktree.id}
+      >
+        {children(menuOpen)}
+      </ContextMenuTrigger>
       {/* Why no focus restore: refocusing the row would reopen its hover preview and pin it open. */}
-      <ContextMenuContent className="w-52" onCloseAutoFocus={(event) => event.preventDefault()}>
+      <ContextMenuContent
+        ref={menuRef}
+        data-activity-context-owner={owner}
+        data-activity-context-pane={thread.paneKey}
+        data-activity-context-workspace={thread.worktree.id}
+        data-activity-context-targets={JSON.stringify(targets.map((target) => target.paneKey))}
+        className="w-52"
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      >
         <ContextMenuLabel>
           {translate('auto.components.activity.ActivityThreadContextMenu.agentSection', 'Agent')}
         </ContextMenuLabel>

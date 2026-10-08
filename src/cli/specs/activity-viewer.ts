@@ -4,6 +4,7 @@ function options(operation: string): { flags: string[]; usage: string } {
   switch (operation) {
     case 'preview-edit':
       return { flags: ['pane', 'field'], usage: ' --pane <pane-key> --field <issue|comment>' }
+    case 'context-menu':
     case 'preview-review-menu':
     case 'preview-issue-menu':
     case 'preview':
@@ -54,6 +55,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'preview-copy-path',
   'preview',
   'preview-edit',
+  'context-menu',
   'preview-review-menu',
   'preview-issue-menu',
   'close',

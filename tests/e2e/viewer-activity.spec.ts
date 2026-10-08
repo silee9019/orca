@@ -1,3 +1,4 @@
+import { assertActivityContextMenu } from './helpers/activity-context-menu-assertions'
 import { assertActivityReviewMenu } from './helpers/activity-review-menu-assertions'
 import { assertActivityPreviewIssueCopy } from './helpers/activity-preview-issue-copy-assertions'
 import { assertActivityIssueMenu } from './helpers/activity-issue-menu-assertions'
@@ -467,6 +468,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityIssueMenu(orcaPage, call, testInfo)
   await assertActivityPreviewIssueCopy(orcaPage, call, testInfo)
   await assertActivityReviewMenu(orcaPage, call, testInfo)
+  await assertActivityContextMenu(orcaPage, call, testInfo)
   await assertActivityResize(orcaPage, call, testInfo)
   await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
   await assertActivityPageClose(orcaPage, call, testInfo)

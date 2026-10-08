@@ -1,3 +1,4 @@
+import { applyActivityThreadContextMenuRequest } from './activity-thread-context-menu-command'
 import { applyActivityThreadDetailsMenuRequest } from './activity-thread-details-menu-command'
 import { applyActivityThreadPreviewEditRequest } from './activity-thread-preview-edit-command'
 import { applyActivityThreadPreviewRequest } from './activity-thread-preview-command'
@@ -17,6 +18,9 @@ export function applyActivityViewerDirectRequest(
   request: ActivityViewerRequest,
   command: ActivityViewerCommand
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> | null {
+  if (command.operation === 'context-menu') {
+    return applyActivityThreadContextMenuRequest(request, command)
+  }
   if (command.operation === 'preview-issue-menu' || command.operation === 'preview-review-menu') {
     return applyActivityThreadDetailsMenuRequest(request, command)
   }
