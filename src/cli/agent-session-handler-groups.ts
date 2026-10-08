@@ -2,6 +2,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'terminal-exit-watch',
+    keys: ['terminal watch-exit'],
+    load: async () =>
+      (await import('./handlers/terminal-exit-watch.js')).TERMINAL_EXIT_WATCH_HANDLERS
+  },
+  {
     name: 'daemon-restart',
     keys: ['terminal daemon restart-plan', 'terminal daemon restart'],
     load: async () => (await import('./handlers/daemon-restart.js')).DAEMON_RESTART_HANDLERS
