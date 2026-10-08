@@ -152,6 +152,7 @@ export const APP_LIFECYCLE_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['app', 'cli', 'remove'],
+    aliases: [['app', 'cli', 'rm']],
     summary: 'Remove the CLI for the confirmed app',
     usage: 'orca app cli remove [--confirm-target <value>] [--distro <value>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'confirm-target', 'distro'],

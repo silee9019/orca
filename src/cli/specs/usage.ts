@@ -209,6 +209,7 @@ export const RATE_LIMIT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['rate-limit', 'get'],
+    aliases: [['rate-limit', 'show']],
     summary: 'Read provider rate limits on the selected Orca host',
     usage: 'orca rate-limit get [--json]',
     allowedFlags: [...GLOBAL_FLAGS]

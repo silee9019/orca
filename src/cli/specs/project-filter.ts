@@ -12,6 +12,7 @@ const notes = [
 export const PROJECT_FILTER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'project-filter', 'get'],
+    aliases: [['ui', 'project-filter', 'show']],
     summary: 'Read the project filter and rendered list of the selected host viewer',
     usage: 'orca ui project-filter get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer'],

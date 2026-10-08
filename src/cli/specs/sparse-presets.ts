@@ -27,6 +27,7 @@ export const SPARSE_PRESET_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['sparse-presets', 'remove'],
+    aliases: [['sparse-presets', 'rm']],
     summary: 'Remove an exact sparse preset from its owning repository',
     usage: 'orca sparse-presets remove --repo <selector> --preset <id> [--json]',
     destructive: true,

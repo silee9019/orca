@@ -4,6 +4,7 @@ import { GLOBAL_FLAGS } from '../args'
 export const APP_SUPPORT_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['app', 'onboarding', 'get'],
+    aliases: [['app', 'onboarding', 'show']],
     summary: 'Read onboarding progress',
     usage: 'orca app onboarding get [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
@@ -104,6 +105,7 @@ export const APP_SUPPORT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['app', 'diagnostics', 'delete'],
+    aliases: [['app', 'diagnostics', 'rm']],
     summary: 'Delete the exact explicitly confirmed uploaded ticket',
     usage: 'orca app diagnostics delete [--ticket <value>] [--confirm-ticket <value>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'ticket', 'confirm-ticket'],

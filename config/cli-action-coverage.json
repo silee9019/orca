@@ -71,7 +71,7 @@
         },
         {
           "id": "command:ui project-filter get",
-          "fingerprint": "7e91c0a677d4640b13fa65b2ce583ac4dcf09790da51bea1bf4b8f679c9063e9"
+          "fingerprint": "c02707882ae02d0f4b8cc230569e6f860344ad7ebe9fad3223729a135305053f"
         }
       ],
       "command": "ui project-filter get",
@@ -8801,7 +8801,7 @@
       "sources": [
         {
           "id": "command:rate-limit get",
-          "fingerprint": "b88131c03d3561279fd2bca22622656b7e943e2eebee6a8e8885f5b32eb2c903"
+          "fingerprint": "5320bc7170c8492dedb57e1f4a0286a29fd33ebe84feb2113246a705ec607235"
         }
       ],
       "rule": "command",
@@ -42410,7 +42410,7 @@
       "sources": [
         {
           "id": "command:plugins marketplace remove",
-          "fingerprint": "209aadffe20ca1e3f53cb5e5e1f5563fb7762dc0621d7a06df4aaf39e4423ef7"
+          "fingerprint": "58f68617528e4309f3938ae272617e340798e0308b1192c16a63b01c1c37fd08"
         }
       ],
       "rule": "command",
@@ -42545,7 +42545,7 @@
       "sources": [
         {
           "id": "command:plugins remove",
-          "fingerprint": "ef9de555dec2708bdb5b640b03e4398b50ebb6ce7a71d76571632e44b765d5f6"
+          "fingerprint": "68b4258cf68adb29ef769068e26670cc3400569e8fd6e2a5596d6dc446e2cee3"
         }
       ],
       "rule": "command",
@@ -43031,7 +43031,7 @@
       "sources": [
         {
           "id": "command:skills delete",
-          "fingerprint": "8db5af8ba4b07311e4a5a21961fc2049c0cb7dea37e69bae8f0ebb5c233a8670"
+          "fingerprint": "954d2f15b1b74bdcd2758dca5220ccde914525644a379bd38d3fd9c7f211b0bc"
         }
       ],
       "rule": "command",
@@ -43868,7 +43868,7 @@
       "sources": [
         {
           "id": "command:sparse-presets remove",
-          "fingerprint": "88bd1952ebdbe24e593e9f4ffed0d2fff9635f45da40021ec6a4c95b8e1bc692"
+          "fingerprint": "0514f5c262c9aff810b44e2c545570238dace08db3ddb0379a62b8826d1fce36"
         }
       ],
       "rule": "command",
@@ -50750,7 +50750,7 @@
       "sources": [
         {
           "id": "command:plugins preferences get",
-          "fingerprint": "cdef6d49673fdf7caebce6683468a08fbf9aaec7342e13701e559fe40358046f"
+          "fingerprint": "8cc0ced605c9ba10acb93338c4cb03e0d342f2995b36bc8a1e966711b21d6ba2"
         }
       ],
       "rule": "command",

@@ -13,6 +13,7 @@ export const PLUGIN_MANAGEMENT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['plugins', 'preferences', 'get'],
+    aliases: [['plugins', 'preferences', 'show']],
     summary: 'Read plugin system enablement and development paths on the selected runtime',
     usage: 'orca plugins preferences get [--json]',
     allowedFlags: [...GLOBAL_FLAGS]
@@ -48,6 +49,7 @@ export const PLUGIN_MANAGEMENT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['plugins', 'marketplace', 'remove'],
+    aliases: [['plugins', 'marketplace', 'rm']],
     summary: 'Remove an exact marketplace source',
     usage: 'orca plugins marketplace remove --input-file <request.json> | --input-stdin [--json]',
     notes: [
@@ -89,6 +91,7 @@ export const PLUGIN_MANAGEMENT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['plugins', 'remove'],
+    aliases: [['plugins', 'rm']],
     summary: 'remove for an exact plugin',
     usage: 'orca plugins remove --plugin <publisher.id> [--json]',
     notes: [

@@ -82,6 +82,7 @@ export const MANAGED_SKILL_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['skills', 'delete'],
+    aliases: [['skills', 'rm']],
     summary: 'Delete exact skills through the existing delete plan checks',
     usage: 'orca skills delete --input-file <request.json> | --input-stdin [--json]',
     notes: [

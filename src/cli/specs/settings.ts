@@ -36,6 +36,7 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['settings', 'desktop', 'get'],
+    aliases: [['settings', 'desktop', 'show']],
     summary: 'Read safe settings owned by the answering desktop runtime',
     usage: 'orca settings desktop get [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
@@ -66,6 +67,7 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['settings', 'keybindings', 'get'],
+    aliases: [['settings', 'keybindings', 'show']],
     summary: 'Read the answering desktop runtime shortcut file and diagnostics',
     usage: 'orca settings keybindings get [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
@@ -128,6 +130,7 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['settings', 'get'],
+    aliases: [['settings', 'show']],
     summary: 'Read safe preferences from the selected Orca runtime',
     usage: 'orca settings get [--json]',
     allowedFlags: [...GLOBAL_FLAGS],
