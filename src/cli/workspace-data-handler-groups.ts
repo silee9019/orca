@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-repo-username',
+    keys: ['repo git-username-for-host'],
+    load: async () =>
+      (await import('./handlers/workspace-repo-username.js')).WORKSPACE_REPO_USERNAME_HANDLERS
+  },
+  {
     name: 'workspace-desktop-meta',
     keys: ['worktree update-desktop-meta'],
     load: async () =>
