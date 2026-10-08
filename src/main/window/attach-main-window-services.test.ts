@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setAppControlReloadPolicy } from './app-lifecycle-control'
 import type { Store } from '../persistence'
 import type { registerSshHandlers } from '../ipc/ssh'
 import type { registerRemoteWorkspaceHandlers } from '../ipc/remote-workspace'
@@ -74,6 +75,8 @@ const {
   dismissTccPromptNoticeMock: vi.fn(),
   releasePendingTccPromptNoticeMock: vi.fn()
 }))
+
+vi.mock('./app-lifecycle-control', () => ({ setAppControlReloadPolicy: vi.fn() }))
 
 vi.mock('electron', () => ({
   app: {},
@@ -263,7 +266,9 @@ describe('attachMainWindowServices', () => {
       webContentsId: 1,
       ignoreCache: false
     })
-    expect(mainWindow.webContents.reload).toHaveBeenCalledTimes(1)
+    expect(setAppControlReloadPolicy).toHaveBeenCalledWith(mainWindow, expect.any(Function))
+    vi.mocked(setAppControlReloadPolicy).mock.calls.at(-1)?.[1]()
+    expect(mainWindow.webContents.reload).toHaveBeenCalledTimes(2)
   })
 
   it('hydrates once after the local PTY provider barrier resolves', async () => {

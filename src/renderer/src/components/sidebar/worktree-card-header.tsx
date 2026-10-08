@@ -105,6 +105,7 @@ export function WorktreeCardHeader({
 
         {repo?.connectionId && (
           <WorktreeCardSshHostControl
+            workspaceId={worktree.id}
             targetId={repo.connectionId}
             targetLabel={sshTargetLabel || repo.displayName}
             status={sshStatus}

@@ -1,5 +1,6 @@
 import { AlertTriangle, Check, Loader2 } from 'lucide-react'
 import type { PluginMarketplaceHostInstallPreview } from '../../../../preload/api-types'
+import { usePluginMarketplacePreviewViewerController } from '@/runtime/plugin-marketplace-preview-viewer-controller'
 import { translate } from '@/i18n/i18n'
 import { PluginCatalogAvatar } from '../plugin-catalog/PluginCatalogAvatar'
 import { PluginConsentProvenance, type PluginConsentSource } from './PluginConsentProvenance'
@@ -24,7 +25,7 @@ type PluginMarketplacePreviewDialogProps = {
   currentVersion: boolean
   error: string | null
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => Promise<boolean>
 }
 
 function contributionSummary(
@@ -137,6 +138,15 @@ export function PluginMarketplacePreviewDialog({
   onClose,
   onConfirm
 }: PluginMarketplacePreviewDialogProps): React.JSX.Element {
+  usePluginMarketplacePreviewViewerController({
+    preview,
+    mode,
+    busy,
+    currentVersion,
+    error,
+    close: onClose,
+    confirm: onConfirm
+  })
   const contributions = preview ? contributionSummary(preview) : []
   const blocked = preview?.blockedByKillList
   const provenanceSource: PluginConsentSource | undefined = preview

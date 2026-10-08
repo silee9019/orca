@@ -1,3 +1,4 @@
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import React from 'react'
 import { LoaderCircle } from 'lucide-react'
 
@@ -75,6 +76,14 @@ export function WorktreeCardSurface({ card }: { card: WorktreeCardController }):
         isRuntimeDisconnected && !isDeleting && 'opacity-60'
       )}
       data-worktree-card-surface="true"
+      data-worktree-card-viewer-id={worktree.id}
+      data-worktree-card-viewer-repo={worktree.repoId}
+      data-worktree-card-viewer-host={worktree.hostId ?? ''}
+      data-worktree-card-compact={String(card.compactCards)}
+      data-worktree-card-new-style={String(newCardStyle)}
+      data-worktree-card-properties={card.cardProps.join(',')}
+      data-worktree-card-activity={card.agentActivityDisplayMode}
+      data-worktree-card-runtime={getProviderRuntimeContextKey(card.settings)}
       data-worktree-card-active={
         isActiveSurface && !isLineageDropTarget ? activeSurfaceVariant : undefined
       }

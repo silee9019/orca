@@ -1,3 +1,4 @@
+import { usePairingSetupConnectionsViewerController } from '@/hooks/usePairingSetupConnectionsViewerController'
 import { useState, type ReactNode } from 'react'
 import { ChevronDown, Loader2, QrCode, RefreshCw } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -55,6 +56,14 @@ export function MobilePairingSetupSection({
   // A search hit or a custom address pins the picker open: render it outright
   // rather than behind a trigger that could not collapse it anyway.
   const addressDisclosurePinned = addressDisclosureForcedOpen || selectedAddressIsCustom
+  usePairingSetupConnectionsViewerController({
+    read: () => ({
+      open: !usingRelay || addressDisclosurePinned || addressDisclosureOpen,
+      pinned: addressDisclosurePinned,
+      usingRelay
+    }),
+    setOpen: setAddressDisclosureOpen
+  })
   // Relay offers still carry a LAN endpoint for the direct fast path, but main
   // substitutes its own default when the renderer has not resolved one yet.
   // LAN has no such fallback, so it needs an explicit reachable host.

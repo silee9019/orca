@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePluginInstallViewerController } from '@/runtime/plugin-install-viewer-controller'
 import { Loader2 } from 'lucide-react'
 import type { PluginHostInstallSource } from '../../../../preload/api-types'
 import { translate } from '@/i18n/i18n'
@@ -59,23 +60,41 @@ export function PluginInstallDialog({
   const [error, setError] = useState<string | null>(null)
   const [installing, setInstalling] = useState(false)
 
-  const submit = async (): Promise<void> => {
+  const submit = async (): Promise<boolean> => {
     const parsed = parsePluginInstallSource(kind, kind === 'git' ? gitUrl : localPath)
     if (!parsed.ok) {
       setError(installValidationMessage(parsed.reason))
-      return
+      return false
     }
     setError(null)
     setInstalling(true)
     try {
       await onInstall(parsed.source)
+      return true
     } catch (cause) {
-      console.warn('[plugins] installation failed:', cause)
-      setError(pluginInstallErrorMessage(cause))
+      const message = pluginInstallErrorMessage(cause)
+      console.warn('[plugins] installation failed:', message)
+      setError(message)
+      return false
     } finally {
       setInstalling(false)
     }
   }
+
+  usePluginInstallViewerController({
+    open,
+    sourceKind: kind,
+    localPath,
+    gitUrl,
+    error,
+    installing,
+    setKind,
+    setLocalPath,
+    setGitUrl,
+    clearError: () => setError(null),
+    submit,
+    close: () => onOpenChange(false)
+  })
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !installing && onOpenChange(nextOpen)}>

@@ -10,7 +10,11 @@ export type RemoteDesktopTerminalFloorDependencies = {
   isMobileDriven: (ptyId: string) => boolean
   getTerminalSize: (ptyId: string) => Viewport | null
   resolveHostTarget: (ptyId: string) => Viewport
-  applyLayout: (ptyId: string, target: LayoutTarget) => Promise<{ ok: boolean }>
+  applyLayout: (
+    ptyId: string,
+    target: LayoutTarget,
+    ownerMatches?: () => boolean
+  ) => Promise<{ ok: boolean }>
 }
 
 export class RemoteDesktopTerminalFloor {
@@ -85,7 +89,10 @@ export class RemoteDesktopTerminalFloor {
     this.viewerRevisions.delete(ptyId)
   }
 
-  async applyLayout(ptyId: string): Promise<boolean> {
+  async applyLayout(ptyId: string, ownerMatches?: () => boolean): Promise<boolean> {
+    if (ownerMatches && !ownerMatches()) {
+      return false
+    }
     if (this.dependencies.isMobileDriven(ptyId)) {
       return true
     }
@@ -101,9 +108,12 @@ export class RemoteDesktopTerminalFloor {
           ownerSubscriptionKey: owner!
         }
       : { kind: 'desktop', ...this.resolveHostReclaimTarget(ptyId) }
-    const result = await this.dependencies.applyLayout(ptyId, layoutTarget)
+    const result = await (ownerMatches
+      ? this.dependencies.applyLayout(ptyId, layoutTarget, ownerMatches)
+      : this.dependencies.applyLayout(ptyId, layoutTarget))
     // Why: failed or superseded reclaim must retain true host geometry for the next attempt.
     if (
+      (!ownerMatches || ownerMatches()) &&
       reclaimingHost &&
       result.ok &&
       !this.owners.has(ptyId) &&
@@ -111,7 +121,7 @@ export class RemoteDesktopTerminalFloor {
     ) {
       this.hostReclaimTargets.delete(ptyId)
     }
-    return result.ok
+    return (!ownerMatches || ownerMatches()) && result.ok
   }
 
   async updateViewer(
@@ -173,15 +183,25 @@ export class RemoteDesktopTerminalFloor {
     return this.applyLayout(ptyId)
   }
 
-  claimHost(ptyId: string, cols: number, rows: number): Promise<boolean> {
+  claimHost(
+    ptyId: string,
+    cols: number,
+    rows: number,
+    ownerMatches?: () => boolean
+  ): Promise<boolean> {
+    if (ownerMatches && !ownerMatches()) {
+      return Promise.resolve(false)
+    }
     if (!this.owners.has(ptyId)) {
       // Why: host input during an in-flight reclaim must join it, not pass it.
-      return this.hostReclaimTargets.has(ptyId) ? this.applyLayout(ptyId) : Promise.resolve(true)
+      return this.hostReclaimTargets.has(ptyId)
+        ? this.applyLayout(ptyId, ownerMatches)
+        : Promise.resolve(true)
     }
     this.hostReclaimTargets.set(ptyId, clampTerminalViewport(cols, rows))
     this.owners.delete(ptyId)
     this.bumpRevision(ptyId)
-    return this.applyLayout(ptyId)
+    return this.applyLayout(ptyId, ownerMatches)
   }
 
   unregisterViewers(ptyId: string, subscriptionKeys: Iterable<string>): Promise<boolean> {

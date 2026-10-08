@@ -11,7 +11,7 @@ export function TerminalSurface({
 }: {
   controller: TerminalController
 }): React.JSX.Element {
-  const { renderedActiveWorktreeId } = controller
+  const { renderedActiveWorktreeId, activeWorktreeDeferralHostId } = controller
   const retainBrowserGuestPaint = useAnyBrowserGuestNeedsPaint(!renderedActiveWorktreeId)
   return (
     <div
@@ -25,6 +25,7 @@ export function TerminalSurface({
             : ' hidden'
       }`}
       data-rendered-active-worktree-id={renderedActiveWorktreeId ?? undefined}
+      data-rendered-active-execution-host-id={activeWorktreeDeferralHostId ?? undefined}
     >
       <EditorAutosaveController />
       <TerminalTitlebarTabs controller={controller} />

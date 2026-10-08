@@ -1,3 +1,4 @@
+import { useBrowserProfileSettingsRequest } from './use-browser-profile-settings-request'
 import { Import, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { emitBrowserCookieImportToast } from '@/lib/browser-cookie-import-toast'
@@ -27,7 +28,7 @@ type BrowserUseCookieImportStepProps = {
   isImportingDefault: boolean
   disabled: boolean
   sourceLabel: string | null
-  onConfigureMoreBrowsers?: () => void
+  onConfigureMoreBrowsers?: () => void | Promise<boolean>
 }
 
 export function BrowserUseCookieImportStep({
@@ -43,7 +44,7 @@ export function BrowserUseCookieImportStep({
   const handleImportFromBrowser = async (
     browserFamily: string,
     browserProfile?: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const profileId = 'default'
     const result = await useAppStore
       .getState()
@@ -66,10 +67,10 @@ export function BrowserUseCookieImportStep({
     } else {
       toast.error(result.reason)
     }
+    return result.ok
   }
-
-  const handleImportFromFile = async (): Promise<void> => {
-    const result = await useAppStore.getState().importCookiesToProfile('default')
+  const handleImportFromFile = async (filePath?: string): Promise<boolean> => {
+    const result = await useAppStore.getState().importCookiesToProfile('default', filePath)
     if (result.ok) {
       emitBrowserCookieImportToast(
         result.summary,
@@ -83,7 +84,16 @@ export function BrowserUseCookieImportStep({
     } else if (result.reason !== 'canceled') {
       toast.error(result.reason)
     }
+    return result.ok
   }
+  useBrowserProfileSettingsRequest({
+    surface: 'browser-use',
+    profileId: 'default',
+    busy: isImportingDefault,
+    importFromBrowser: handleImportFromBrowser,
+    importFromFile: handleImportFromFile,
+    configure: onConfigureMoreBrowsers
+  })
 
   return (
     <SearchableSetting

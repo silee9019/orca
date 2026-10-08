@@ -5,6 +5,8 @@
 // server-side handler can cancel long-poll dispatches when the client goes
 // away. See design doc §3.1.
 import { createServer, type Server, type Socket } from 'node:net'
+import { randomUUID } from 'node:crypto'
+import { REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES } from '../../../shared/remote-runtime-memory-limits'
 import { chmodSync, existsSync, rmSync } from 'node:fs'
 import type { RpcMessageContext, RpcTransport } from './transport'
 
@@ -114,6 +116,7 @@ export class UnixSocketTransport implements RpcTransport {
     // on the same socket — future-proofing for a persistent CLI socket that
     // multiplexes sequential requests.
     const inflight = new Set<() => void>()
+    const streamOwner = { connectionId: `local:${randomUUID()}`, started: false }
 
     socket.setEncoding('utf8')
     socket.setNoDelay(true)
@@ -156,7 +159,7 @@ export class UnixSocketTransport implements RpcTransport {
         const rawMessage = buffer.slice(0, newlineIndex).trim()
         buffer = buffer.slice(newlineIndex + 1)
         if (rawMessage) {
-          this.dispatchMessage(socket, rawMessage, inflight)
+          this.dispatchMessage(socket, rawMessage, inflight, streamOwner)
         }
         newlineIndex = buffer.indexOf('\n')
       }
@@ -167,7 +170,12 @@ export class UnixSocketTransport implements RpcTransport {
   // Why: the keepalive timer is opt-in per request via `startKeepalive()`.
   // Short RPCs never call it and pay no timer overhead; only long-poll
   // handlers (e.g. orchestration.check --wait) arm it. See §3.1.
-  private dispatchMessage(socket: Socket, rawMessage: string, inflight: Set<() => void>): void {
+  private dispatchMessage(
+    socket: Socket,
+    rawMessage: string,
+    inflight: Set<() => void>,
+    streamOwner: { connectionId: string; started: boolean }
+  ): void {
     let replied = false
     let keepaliveTimer: NodeJS.Timeout | null = null
     // Why: each dispatch needs its own abort signal and keepalive timer
@@ -222,7 +230,44 @@ export class UnixSocketTransport implements RpcTransport {
 
     this.messageHandler?.(rawMessage, reply, {
       signal: abortController.signal,
-      startKeepalive
+      startKeepalive,
+      streamReply: (response) => {
+        if (!replied && !socket.destroyed && socket.writable) {
+          socket.write(`${response}\n`)
+        }
+      },
+      clientEventStream: {
+        emit: (response) => {
+          if (!replied && !cleanedUp && !socket.destroyed && socket.writable) {
+            socket.write(`${response}\n`)
+          }
+        },
+        finish: () => {
+          replied = true
+          cleanupDispatch(false)
+        }
+      },
+      stream: {
+        connectionId: streamOwner.connectionId,
+        begin: () => {
+          if (streamOwner.started || abortController.signal.aborted) {
+            return false
+          }
+          streamOwner.started = true
+          return true
+        },
+        send: (response) => {
+          if (socket.destroyed || !socket.writable || abortController.signal.aborted) {
+            return
+          }
+          const bytes = Buffer.byteLength(response, 'utf8') + 1
+          if (bytes + socket.writableLength > REMOTE_RUNTIME_MAX_OUTBOUND_JSON_BYTES) {
+            socket.destroy()
+            return
+          }
+          socket.write(`${response}\n`)
+        }
+      }
     })
   }
 }

@@ -9,21 +9,31 @@ export function useMobileInstallActions(
   platform: Platform,
   iosChannel: IosChannel
 ): {
-  copyInstallUrl: () => Promise<void>
-  openAndroidInstallGuide: () => void
-  openInstallUrl: () => void
+  copyInstallUrl: () => Promise<boolean>
+  openAndroidInstallGuide: () => Promise<boolean>
+  openInstallUrl: () => Promise<boolean>
 } {
   const mountedRef = useMountedRef()
 
-  const openInstallUrl = useCallback((): void => {
-    void window.api.shell.openUrl(getInstallCopy(platform, iosChannel).url)
+  const openInstallUrl = useCallback(async (): Promise<boolean> => {
+    try {
+      await window.api.shell.openUrl(getInstallCopy(platform, iosChannel).url)
+      return true
+    } catch {
+      return false
+    }
   }, [iosChannel, platform])
 
-  const openAndroidInstallGuide = useCallback((): void => {
-    void window.api.shell.openUrl(ANDROID_INSTALL_GUIDE_URL)
+  const openAndroidInstallGuide = useCallback(async (): Promise<boolean> => {
+    try {
+      await window.api.shell.openUrl(ANDROID_INSTALL_GUIDE_URL)
+      return true
+    } catch {
+      return false
+    }
   }, [])
 
-  const copyInstallUrl = useCallback(async (): Promise<void> => {
+  const copyInstallUrl = useCallback(async (): Promise<boolean> => {
     try {
       await window.api.ui.writeClipboardText(getInstallCopy(platform, iosChannel).url)
       if (mountedRef.current) {
@@ -31,13 +41,15 @@ export function useMobileInstallActions(
           translate('auto.components.mobile.MobilePage.fad833de8d', 'Install link copied')
         )
       }
-    } catch (error) {
-      console.error('writeClipboardText failed', error)
+      return true
+    } catch {
+      console.error('writeClipboardText failed')
       if (mountedRef.current) {
         toast.error(
           translate('auto.components.mobile.MobilePage.baea63c445', 'Failed to copy link')
         )
       }
+      return false
     }
   }, [iosChannel, mountedRef, platform])
 

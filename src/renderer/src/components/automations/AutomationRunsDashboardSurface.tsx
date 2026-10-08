@@ -15,6 +15,7 @@ export function AutomationRunsDashboardSurface({
   loading,
   hasMore,
   onLoadMore,
+  request,
   now,
   onRefresh,
   setPageView,
@@ -29,6 +30,7 @@ export function AutomationRunsDashboardSurface({
   loading: boolean
   hasMore: boolean
   onLoadMore: () => void
+  request?: { ownerKey: string; settledRevision: number }
   now: number
   onRefresh: () => void
   setPageView: (view: AutomationsPageView) => void
@@ -49,6 +51,7 @@ export function AutomationRunsDashboardSurface({
       loading={loading}
       hasMore={hasMore}
       onLoadMore={onLoadMore}
+      request={request}
       now={now}
       onRefresh={onRefresh}
       onOpenRun={(entry) => {

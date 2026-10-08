@@ -1,6 +1,7 @@
 /* oxlint-disable max-lines */
 // Why: single authority for all relay lifecycle state per SSH target (previously scattered across module Maps/Sets with duplicated paths).
 
+import { publishPtyControlRequest } from '../runtime/pty-control-request-observers'
 import { randomUUID } from 'node:crypto'
 import type { BrowserWindow } from 'electron'
 import { deployAndLaunchRelay } from './ssh-relay-deploy'
@@ -1996,6 +1997,13 @@ export class SshRelaySession {
       const win = this.getMainWindow()
       if (win && !win.isDestroyed()) {
         win.webContents.send('pty:replay', payload)
+        publishPtyControlRequest(this.runtime, {
+          kind: 'renderer-replay',
+          ptyId: payload.id,
+          rendererId: win.webContents.id,
+          origin: 'provider-replay',
+          payload: { ...payload }
+        })
       }
     })
     ptyProvider.onExit((payload) => {
@@ -2477,6 +2485,13 @@ export class SshRelaySession {
     const win = this.getMainWindow()
     if (win && !win.isDestroyed()) {
       win.webContents.send('pty:replay', { id: appPtyId, data })
+      publishPtyControlRequest(this.runtime, {
+        kind: 'renderer-replay',
+        ptyId: appPtyId,
+        rendererId: win.webContents.id,
+        origin: 'reattach-replay',
+        payload: { id: appPtyId, data }
+      })
     }
   }
 

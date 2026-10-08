@@ -52,6 +52,72 @@ export function useMarkupPointerHandlers(params: MarkupPointerParams) {
     [canvasRef]
   )
 
+  const beginAt = useCallback(
+    (pointerId: number, point: MarkupPoint) => {
+      if (tool === 'text') {
+        return (state: MarkupEditorState) => state
+      }
+      if (tool === 'eraser') {
+        return (state: MarkupEditorState) =>
+          beginEraseGesture(state, pointerId, point, measureTextInkBox)
+      }
+      const id = createBrowserUuid()
+      const shape =
+        tool === 'pen' || tool === 'highlight'
+          ? { id, kind: tool, color, width, points: [point] }
+          : { id, kind: tool, color, width, from: point, to: point }
+      return (state: MarkupEditorState) => beginDrawGesture(state, pointerId, shape)
+    },
+    [tool, color, width, measureTextInkBox]
+  )
+  const runNormalizedGesture = useCallback(
+    (points: readonly MarkupPoint[], cancel: boolean): boolean => {
+      const first = points[0]
+      const canvas = canvasRef.current
+      if (
+        busy ||
+        pendingText ||
+        !first ||
+        !canvas ||
+        (tool === 'text' && (cancel || points.length !== 1))
+      ) {
+        return false
+      }
+      const rect = canvas.getBoundingClientRect()
+      if (
+        !Number.isFinite(rect.width) ||
+        !Number.isFinite(rect.height) ||
+        rect.width <= 0 ||
+        rect.height <= 0
+      ) {
+        return false
+      }
+      const local = points.map((point) => ({ x: point.x * rect.width, y: point.y * rect.height }))
+      const origin = local[0]
+      if (!origin) {
+        return false
+      }
+      if (tool === 'text') {
+        setPendingText({ ...origin, initial: '' })
+        return true
+      }
+      const pointerId = -1
+      const begin = beginAt(pointerId, origin)
+      setState((state) => {
+        if (state.gesture) {
+          return state
+        }
+        let next = begin(state)
+        for (const point of local.slice(1)) {
+          next = moveGesture(next, pointerId, point, measureTextInkBox)
+        }
+        return cancel ? cancelGesture(next, pointerId) : endGesture(next, pointerId)
+      })
+      return true
+    },
+    [busy, pendingText, canvasRef, tool, beginAt, measureTextInkBox, setPendingText, setState]
+  )
+
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
       if (busy || event.button !== 0) {
@@ -71,28 +137,9 @@ export function useMarkupPointerHandlers(params: MarkupPointerParams) {
       }
       event.currentTarget.setPointerCapture(event.pointerId)
       const { pointerId } = event
-      if (tool === 'eraser') {
-        setState((state) => beginEraseGesture(state, pointerId, point, measureTextInkBox))
-        return
-      }
-      const id = createBrowserUuid()
-      const shape =
-        tool === 'pen' || tool === 'highlight'
-          ? { id, kind: tool, color, width, points: [point] }
-          : { id, kind: tool, color, width, from: point, to: point }
-      setState((state) => beginDrawGesture(state, pointerId, shape))
+      setState(beginAt(pointerId, point))
     },
-    [
-      busy,
-      color,
-      measureTextInkBox,
-      pendingText,
-      pointFromEvent,
-      setPendingText,
-      setState,
-      tool,
-      width
-    ]
+    [busy, beginAt, pendingText, pointFromEvent, setPendingText, setState, tool]
   )
 
   const onPointerMove = useCallback(
@@ -120,5 +167,5 @@ export function useMarkupPointerHandlers(params: MarkupPointerParams) {
     [setState]
   )
 
-  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel }
+  return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel, runNormalizedGesture }
 }

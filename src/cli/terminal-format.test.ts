@@ -23,12 +23,15 @@ describe('formatTerminalFocus', () => {
           navigated: false
         }
       })
-    ).toBe(
-      'Focus request for terminal term_stale was superseded or host navigation was skipped (tab tab-stale).'
-    )
+    ).toBe('Host navigation for terminal term_stale was not confirmed (tab tab-stale).')
     expect(
       formatTerminalFocus({
-        focus: { handle: 'term_winner', tabId: 'tab-winner', worktreeId: 'worktree-1' }
+        focus: {
+          handle: 'term_winner',
+          tabId: 'tab-winner',
+          worktreeId: 'worktree-1',
+          navigated: true
+        }
       })
     ).toBe('Focused terminal term_winner (tab tab-winner).')
   })

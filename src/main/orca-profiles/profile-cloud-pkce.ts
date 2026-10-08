@@ -42,8 +42,12 @@ function closeServer(server: Server): void {
 
 export function beginOrcaCloudPkceFlow(
   config: OrcaCloudAuthConfig,
-  localProfileId: string
+  localProfileId: string,
+  options: { signal?: AbortSignal; authorize?: (url: string) => Promise<void> } = {}
 ): Promise<OrcaCloudAuthorizationCode> {
+  if (options.signal?.aborted) {
+    return Promise.reject(new Error('orca_cloud_auth_denied'))
+  }
   const codeVerifier = createCodeVerifier()
   const nonce = base64Url(randomBytes(32))
   const state = base64Url(randomBytes(32))
@@ -58,6 +62,7 @@ export function beginOrcaCloudPkceFlow(
       }
       settled = true
       reject(error)
+      options.signal?.removeEventListener('abort', cancel)
       closeServer(server)
     }
 
@@ -73,6 +78,7 @@ export function beginOrcaCloudPkceFlow(
         redirectUri,
         state
       })
+      options.signal?.removeEventListener('abort', cancel)
       closeServer(server)
     }
 
@@ -121,12 +127,24 @@ export function beginOrcaCloudPkceFlow(
       }
     })
 
+    const cancel = (): void => rejectFlow(new Error('orca_cloud_auth_denied'))
+    options.signal?.addEventListener('abort', cancel, { once: true })
+    if (options.signal?.aborted) {
+      cancel()
+      return
+    }
     const timeout = setTimeout(() => {
       rejectFlow(new Error('orca_cloud_auth_timeout'))
     }, AUTH_TIMEOUT_MS)
-    server.once('close', () => clearTimeout(timeout))
+    server.once('close', () => {
+      clearTimeout(timeout)
+    })
     server.once('error', rejectFlow)
     server.listen(0, '127.0.0.1', () => {
+      if (settled) {
+        closeServer(server)
+        return
+      }
       const address = server.address()
       if (!address || typeof address === 'string') {
         rejectFlow(new Error('orca_cloud_auth_loopback_unavailable'))
@@ -143,11 +161,13 @@ export function beginOrcaCloudPkceFlow(
       authorizeUrl.searchParams.set('code_challenge', createCodeChallenge(codeVerifier))
       authorizeUrl.searchParams.set('code_challenge_method', 'S256')
       authorizeUrl.searchParams.set('local_profile_id', localProfileId)
-      void shell.openExternal(authorizeUrl.toString()).catch((error) => {
-        rejectFlow(
-          error instanceof Error ? error : new Error('orca_cloud_auth_browser_open_failed')
-        )
-      })
+      void (options.authorize ?? ((url) => shell.openExternal(url)))(authorizeUrl.toString()).catch(
+        (error) => {
+          rejectFlow(
+            error instanceof Error ? error : new Error('orca_cloud_auth_browser_open_failed')
+          )
+        }
+      )
     })
   })
 }

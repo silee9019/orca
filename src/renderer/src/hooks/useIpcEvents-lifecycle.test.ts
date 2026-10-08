@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Mock } from 'vitest'
 import { createHarnessStoreState } from './ipc-events-test-harness'
 const EXPECTED_DIRECT_CALLBACK_METHODS = [
+  'accountViewer.onRequest',
   'agentStatus.onClear',
   'agentStatus.onLegacyWorkerTerminalRecovery',
   'agentStatus.onMigrationUnsupported',
@@ -17,6 +18,8 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'browser.onOpenLinkInOrcaTab',
   'browser.onPaneFocus',
   'emulator.onAutoAttach',
+  'emulator.onFocusRequest',
+  'emulator.onFrameRequest',
   'emulator.onPaneFocus',
   'gh.onPRRefreshEvent',
   'keybindings.onChanged',
@@ -39,10 +42,12 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ssh.onPortForwardsChanged',
   'ssh.onStateChanged',
   'ui.onActivateWorktree',
+  'ui.onBrowserViewerRequest',
   'ui.onCloseActiveTab',
   'ui.onCloseFloatingItem',
   'ui.onCloseSessionTab',
   'ui.onCloseTerminal',
+  'ui.onConnectionsViewerRequest',
   'ui.onCreateTerminal',
   'ui.onDeleteCurrentWorkspace',
   'ui.onFocusEditorTab',
@@ -66,6 +71,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onOpenSkillShare',
   'ui.onOpenTasks',
   'ui.onOpenWorkspaceBoard',
+  'ui.onProjectFilterRequest',
   'ui.onRenameTerminal',
   'ui.onRequestTabClose',
   'ui.onRequestTabCreate',
@@ -73,6 +79,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onRequestTerminalCreate',
   'ui.onRequestTerminalTabMount',
   'ui.onResumeSleepingAgents',
+  'ui.onSearchSettingsViewerRequest',
   'ui.onSelectFloatingIndex',
   'ui.onSessionTabCloseRequest',
   'ui.onSleepWorktree',
@@ -93,6 +100,8 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onToggleRightSidebar',
   'ui.onToggleStatusBar',
   'ui.onToggleWorktreePalette',
+  'ui.onVoiceViewerRequest',
+  'ui.onWorkspaceFilterRequest',
   'ui.onWorktreeHistoryNavigate',
   'updater.onClearDismissal',
   'updater.onStatus',
@@ -105,7 +114,13 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
 ] as const
 
 const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
+  'ui.onSearchSettingsViewerRequest',
+  'ui.onConnectionsViewerRequest',
   'ui.onMobileMarkdownRequest',
+  'ui.onProjectFilterRequest',
+  'ui.onBrowserViewerRequest',
+  'ui.onVoiceViewerRequest',
+  'ui.onWorkspaceFilterRequest',
   'automations.onChanged',
   'runtimeEnvironments.onStatusChanged',
   'repos.onChanged',
@@ -150,6 +165,7 @@ const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
   'ui.onRenameTerminal',
   'ui.onFocusTerminal',
   'ui.onFocusEditorTab',
+  'accountViewer.onRequest',
   'ui.onCloseSessionTab',
   'ui.onSessionTabCloseRequest',
   'ui.onMoveSessionTab',
@@ -169,6 +185,8 @@ const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
   'browser.onCapturePaintHold',
   'browser.onPaneFocus',
   'browser.onOpenLinkInOrcaTab',
+  'emulator.onFocusRequest',
+  'emulator.onFrameRequest',
   'ui.onNewBrowserTab',
   'ui.onNewMarkdownTab',
   'ui.onNewSimulatorTab',
@@ -236,10 +254,27 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       installAppLifetimeIpcEvents: vi.fn(() => vi.fn())
     }))
 
+    const viewerBridges = [
+      ['../runtime/use-settings-viewer-bridge', 'useSettingsViewerBridge'],
+      ['../runtime/use-sidebar-viewer-bridge', 'useSidebarViewerBridge'],
+      ['../runtime/use-card-viewer-bridge', 'useCardViewerBridge'],
+      ['../runtime/use-status-bar-viewer-bridge', 'useStatusBarViewerBridge'],
+      ['../runtime/use-activity-viewer-bridge', 'useActivityViewerBridge'],
+      ['../runtime/use-workspace-list-viewer-bridge', 'useWorkspaceListViewerBridge']
+    ] as const
+    const bridgeHooks = viewerBridges.map(([module, name]) => {
+      const hook = vi.fn()
+      vi.doMock(module, () => ({ [name]: hook }))
+      return hook
+    })
+
     const { useIpcEvents } = await import('./useIpcEvents')
     useIpcEvents()
 
     expect(dependencies).toEqual([])
+    for (const hook of bridgeHooks) {
+      expect(hook).toHaveBeenCalledOnce()
+    }
   })
 
   it('leaves exactly one listener per channel across a StrictMode cleanup-remount cycle', async () => {
@@ -248,6 +283,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     const listeners = new Map<string, ListenerRecord[]>()
     const storeSubscriptions: { active: boolean; cleanup: Mock }[] = []
     const setUpdateStatus = vi.fn()
+    const browserResponses = vi.fn()
     const storeState = new Proxy(
       createHarnessStoreState({
         tabsByWorktree: { 'wt-1': [] },
@@ -290,6 +326,9 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
                   unsubscribe: () => cleanupOrder.push('runtimeEnvironment.unsubscribe')
                 }
               }
+            }
+            if (name === 'ui' && property === 'respondBrowserViewer') {
+              return browserResponses
             }
             if (property.startsWith('on')) {
               return (callback: (...args: unknown[]) => void) => {
@@ -350,6 +389,8 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       { get: (_target, property: string) => namespace(property) }
     ) as unknown
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       api,
       dispatchEvent: vi.fn(),
       setTimeout,
@@ -382,11 +423,17 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
           )
       )
     ).toEqual([
+      'ui.onSearchSettingsViewerRequest',
+      'ui.onConnectionsViewerRequest',
       'ui.onMobileMarkdownRequest',
+      'ui.onProjectFilterRequest',
+      'ui.onBrowserViewerRequest',
+      'ui.onVoiceViewerRequest',
+      'ui.onWorkspaceFilterRequest',
       'automations.onChanged',
       'runtimeEnvironments.onStatusChanged',
       'runtimeEnvironments.subscribe',
-      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(3)
+      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(9)
     ])
     const groupOrder = (names: readonly string[]): string[] =>
       registrationOrder.filter((entry) => names.includes(entry))
@@ -465,9 +512,36 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
+    const browserCallback = listeners.get('ui.onBrowserViewerRequest')?.[0]?.callback
+    if (!browserCallback) {
+      throw new Error('missing browser viewer callback')
+    }
+    browserCallback({
+      id: 'browser-before-cleanup',
+      expiresAt: 0,
+      command: { viewer: 'host', operation: 'history-list' }
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(browserResponses).toHaveBeenCalledWith({
+      id: 'browser-before-cleanup',
+      ok: false,
+      error: 'request_expired'
+    })
+    expect(browserResponses).toHaveBeenCalledTimes(1)
     firstCleanup()
+    browserCallback({
+      id: 'browser-after-cleanup',
+      expiresAt: 0,
+      command: { viewer: 'host', operation: 'history-list' }
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(browserResponses).toHaveBeenCalledTimes(1)
     const ipcCleanupOrder = cleanupOrder
       .filter((entry) => entry.startsWith('ipc.') && entry !== 'ipc.dispose')
       .map((entry) => entry.slice('ipc.'.length))
@@ -477,11 +551,13 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       'mobile.disposeHydration',
       'store.unsubscribe.0',
       'runtimeStore.unsubscribe',
-      'store.unsubscribe.2',
+      'store.unsubscribe.3',
       'agentStore.unsubscribe'
     ])
     // The background-removal bridge's row subscription, released with the rest of `unsubs`.
     expect(cleanupOrder).toContain('store.unsubscribe.1')
+    // The paired creation owner releases its independent lifetime fence.
+    expect(cleanupOrder).toContain('store.unsubscribe.2')
     expect(cleanupOrder.indexOf('runtimeEnvironment.unsubscribe')).toBeGreaterThan(
       cleanupOrder.indexOf('ipc.ui.onMobileMarkdownRequest')
     )
@@ -496,6 +572,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)
@@ -514,13 +591,14 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
     secondCleanup()
     expect([...listeners.values()].every((records) => records.every((item) => !item.active))).toBe(
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)

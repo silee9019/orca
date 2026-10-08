@@ -71,6 +71,7 @@ function renderControl(
 describe('WorktreeCardSshHostControl', () => {
   beforeEach(() => {
     useAppStore.setState(useAppStore.getInitialState(), true)
+    useAppStore.getState().setSshTargetsMetadata([{ id: 'ssh-target-1', label: 'devbox' }])
     resetSshConnectInFlightForTests()
     toastMocks.error.mockReset()
     environmentSshMocks.connectRuntimeEnvironmentSshTarget.mockReset()
@@ -242,6 +243,27 @@ describe('WorktreeCardSshHostControl', () => {
   })
 
   it('routes connect to the owning Orca server for a remote-owned target', async () => {
+    useAppStore.getState().setRuntimeEnvironmentStatus('env-1', {
+      status: {
+        runtimeId: 'runtime-a',
+        rendererGraphEpoch: 1,
+        graphStatus: 'ready',
+        authoritativeWindowId: 7,
+        liveTabCount: 0,
+        liveLeafCount: 0
+      },
+      checkedAt: Date.now()
+    })
+    useAppStore
+      .getState()
+      .setEnvironmentSshTargetsMetadata('env-1', [{ id: 'ssh-target-1', label: 'devbox' }])
+    useAppStore.getState().setEnvironmentSshConnectionState('env-1', 'ssh-target-1', {
+      targetId: 'ssh-target-1',
+      status: 'disconnected',
+      error: null,
+      reconnectAttempt: 0
+    })
+
     const connect = vi.fn().mockResolvedValue(undefined)
     installSshApi(connect)
     environmentSshMocks.connectRuntimeEnvironmentSshTarget.mockResolvedValue(null)

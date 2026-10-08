@@ -3,7 +3,7 @@ import { usePairedMobileDevices } from '../mobile/paired-mobile-devices'
 
 const DISMISS_KEY = 'orca.mobile.sidebar-onboarding-dismissed'
 
-function readDismissed(): boolean {
+export function isMobileSidebarOnboardingDismissed(): boolean {
   try {
     return window.localStorage.getItem(DISMISS_KEY) === '1'
   } catch {
@@ -26,7 +26,7 @@ export function useMobileSidebarOnboardingBadge(enabled = true): {
   hasPairedDevice: boolean
   dismiss: () => void
 } {
-  const [dismissed, setDismissed] = useState<boolean>(() => readDismissed())
+  const [dismissed, setDismissed] = useState<boolean>(() => isMobileSidebarOnboardingDismissed())
   const mobileDevices = usePairedMobileDevices({ enabled })
 
   const dismiss = useCallback(() => {

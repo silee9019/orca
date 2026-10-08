@@ -35,6 +35,7 @@ export const WORKSPACE_PROJECT_GROUP_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['project-group', 'delete'],
+    aliases: [['project-group', 'rm']],
     summary: 'Project group delete on the selected Orca runtime',
     usage: 'orca project-group delete --params-file <file|-> --confirm <target> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],

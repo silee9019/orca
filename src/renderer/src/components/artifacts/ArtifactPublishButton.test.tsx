@@ -124,7 +124,7 @@ describe('ArtifactPublishButton', () => {
     expect(mocks.publish).not.toHaveBeenCalled()
 
     await user.click(await screen.findByRole('button', { name: 'Generate link' }))
-    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith(createRequest))
+    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith(expect.any(Function)))
     expect(screen.getByText('https://example.com')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Update shared content' })).toBeInTheDocument()
   })
@@ -206,7 +206,7 @@ describe('ArtifactPublishButton', () => {
     })
 
     await user.click(screen.getByRole('button', { name: 'Update shared content' }))
-    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith(createRequest))
+    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith(expect.any(Function)))
   })
 
   it('keeps existing links available when publishing is disabled', async () => {

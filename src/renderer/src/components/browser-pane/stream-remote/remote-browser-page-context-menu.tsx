@@ -2,10 +2,16 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import { translate } from '@/i18n/i18n'
+import { redactKagiSessionToken } from '../../../../../shared/browser-url'
 import {
-  normalizeExternalBrowserUrl,
-  redactKagiSessionToken
-} from '../../../../../shared/browser-url'
+  createRemoteBrowserContextMenuActions,
+  type RemoteBrowserContextMenuActions
+} from './remote-browser-context-menu-actions'
+import { useRemoteBrowserContextMenuCommands } from './use-remote-browser-context-menu-commands'
+import type {
+  BrowserRemotePaneCommand,
+  BrowserRemoteMenuState
+} from '../../../../../shared/rpc-contract/browser-remote-pane-params'
 import { isRemoteBrowserPageMissingError } from './remote-browser-stream-errors'
 import type { RemoteBrowserStreamLifecycle } from './remote-browser-stream-lifecycle'
 import type { RemoteBrowserOperationToken } from './remote-browser-stream-tokens'
@@ -30,8 +36,19 @@ export function useRemoteBrowserPageContextMenu({
   isCurrentRemoteOperationToken,
   closeMissingRemotePage,
   mountedRef,
-  setPaneNotice
+  setPaneNotice,
+  commandOwner,
+  onNavigate,
+  onOpenLink
 }: {
+  commandOwner?: {
+    page: string
+    active: boolean
+    environmentId: string
+    remotePageId: string | null
+  }
+  onNavigate?: (method: 'browser.back' | 'browser.forward' | 'browser.reload') => Promise<void>
+  onOpenLink?: (url: string) => Promise<void>
   busy: boolean
   browserTabUrl: string
   imageRef: React.RefObject<HTMLImageElement | null>
@@ -49,6 +66,12 @@ export function useRemoteBrowserPageContextMenu({
   mountedRef: React.RefObject<boolean>
   setPaneNotice: (notice: RemoteBrowserPaneNotice | null) => void
 }): {
+  actions: RemoteBrowserContextMenuActions
+  performMenu: (
+    command: Extract<BrowserRemotePaneCommand, { action: 'menu' }>,
+    isCurrent: () => boolean,
+    expiresAt: number
+  ) => Promise<{ menu: BrowserRemoteMenuState }>
   contextMenu: RemoteBrowserContextMenu | null
   setContextMenu: React.Dispatch<React.SetStateAction<RemoteBrowserContextMenu | null>>
   handleRemoteContextMenu: (event: React.MouseEvent<HTMLImageElement>) => void
@@ -69,17 +92,19 @@ export function useRemoteBrowserPageContextMenu({
     return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [contextMenu])
 
-  const handleRemoteContextMenu = (event: React.MouseEvent<HTMLImageElement>): void => {
-    if (busy) {
-      return
+  const openRemoteContextMenuAt = async (
+    event: { clientX: number; clientY: number },
+    isCurrent = () => true
+  ): Promise<boolean> => {
+    if (busy || !isCurrent()) {
+      throw new Error('remote_browser_context_menu_unavailable')
     }
     const target = runtimeTarget()
     const pageId = lifecycle.tokens.remotePage
     const point = getRemoteImagePoint(event)
     if (!target || !pageId || !point) {
-      return
+      throw new Error('remote_browser_context_menu_unavailable')
     }
-    event.preventDefault()
     imageRef.current?.focus()
     setPaneNotice(null)
     setContextMenu({
@@ -90,9 +115,10 @@ export function useRemoteBrowserPageContextMenu({
       // Why: filled in below once the async eval reads the guest selection.
       selectionText: ''
     })
-    enqueueRemoteInput(async () => {
+    let inspected = false
+    await enqueueRemoteInput(async () => {
       const operationToken = createRemoteOperationToken(pageId)
-      if (!operationToken || !isCurrentRemoteOperationToken(operationToken)) {
+      if (!operationToken || !isCurrentRemoteOperationToken(operationToken) || !isCurrent()) {
         return
       }
       try {
@@ -107,7 +133,13 @@ export function useRemoteBrowserPageContextMenu({
           { timeoutMs: 15_000, suppressFeatureInteraction: true }
         )
         const parsed = readRemoteContextMenuResult(result)
-        if (parsed && mountedRef.current && isCurrentRemoteOperationToken(operationToken)) {
+        if (
+          parsed &&
+          mountedRef.current &&
+          isCurrentRemoteOperationToken(operationToken) &&
+          isCurrent()
+        ) {
+          inspected = true
           setContextMenu((current) =>
             current
               ? {
@@ -129,22 +161,83 @@ export function useRemoteBrowserPageContextMenu({
         // Keep the basic menu open even if element inspection is unavailable.
       }
     })
+    return inspected
   }
-
-  return { contextMenu, setContextMenu, handleRemoteContextMenu }
+  const handleRemoteContextMenu = (event: React.MouseEvent<HTMLImageElement>): void => {
+    if (busy) {
+      return
+    }
+    const target = runtimeTarget()
+    if (!target || !lifecycle.tokens.remotePage || !getRemoteImagePoint(event)) {
+      return
+    }
+    event.preventDefault()
+    void openRemoteContextMenuAt(event).catch(() => {})
+  }
+  const actions = createRemoteBrowserContextMenuActions(
+    contextMenu,
+    () => setContextMenu(null),
+    (method) =>
+      onNavigate
+        ? onNavigate(method)
+        : Promise.reject(new Error('remote_browser_navigation_owner_unavailable')),
+    (url) =>
+      onOpenLink
+        ? onOpenLink(url)
+        : Promise.reject(new Error('remote_browser_open_owner_unavailable'))
+  )
+  const performMenu = useRemoteBrowserContextMenuCommands(
+    commandOwner,
+    contextMenu,
+    actions,
+    async (x, y, isCurrent) => {
+      const rect = imageRef.current?.getBoundingClientRect()
+      if (!rect || x >= rect.width || y >= rect.height) {
+        throw new Error('remote_browser_context_menu_coordinates_outside_viewport')
+      }
+      return openRemoteContextMenuAt({ clientX: rect.left + x, clientY: rect.top + y }, isCurrent)
+    }
+  )
+  return { contextMenu, setContextMenu, handleRemoteContextMenu, actions, performMenu }
 }
 
 export function RemoteBrowserPageContextMenu({
   contextMenu,
   onDismiss,
   onOpenLinkInOrcaBrowser,
-  onNavigate
+  onNavigate,
+  actions
 }: {
   contextMenu: RemoteBrowserContextMenu
-  onDismiss: () => void
-  onOpenLinkInOrcaBrowser: () => void
-  onNavigate: (method: 'browser.back' | 'browser.forward' | 'browser.reload') => void
+  actions?: RemoteBrowserContextMenuActions
+  onDismiss?: () => void
+  onOpenLinkInOrcaBrowser?: () => void
+  onNavigate?: (method: 'browser.back' | 'browser.forward' | 'browser.reload') => void
 }): React.JSX.Element {
+  const menuActions =
+    actions ??
+    createRemoteBrowserContextMenuActions(
+      contextMenu,
+      onDismiss ??
+        (() => {
+          throw new Error('remote_browser_menu_dismiss_owner_unavailable')
+        }),
+      onNavigate ??
+        (() => {
+          throw new Error('remote_browser_menu_navigation_owner_unavailable')
+        }),
+      () => {
+        if (!onOpenLinkInOrcaBrowser) {
+          throw new Error('remote_browser_menu_open_owner_unavailable')
+        }
+        onOpenLinkInOrcaBrowser()
+      }
+    )
+  const run = (action: keyof RemoteBrowserContextMenuActions): void => {
+    void (async () => {
+      await menuActions[action]()
+    })().catch(() => {})
+  }
   const contextMenuRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -171,7 +264,7 @@ export function RemoteBrowserPageContextMenu({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-50" onPointerDown={onDismiss} />
+      <div className="fixed inset-0 z-50" onPointerDown={() => run('dismiss')} />
       <div
         ref={contextMenuRef}
         role="menu"
@@ -184,7 +277,7 @@ export function RemoteBrowserPageContextMenu({
             <button
               role="menuitem"
               className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-              onClick={onOpenLinkInOrcaBrowser}
+              onClick={() => run('open-orca')}
             >
               {translate(
                 'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
@@ -194,13 +287,7 @@ export function RemoteBrowserPageContextMenu({
             <button
               role="menuitem"
               className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-              onClick={() => {
-                const targetUrl = normalizeExternalBrowserUrl(contextMenu.linkUrl!)
-                if (targetUrl) {
-                  void window.api.shell.openUrl(targetUrl)
-                }
-                onDismiss()
-              }}
+              onClick={() => run('external-link')}
             >
               {translate(
                 'auto.components.browser.pane.BrowserPane.8ce4f6b12e',
@@ -210,10 +297,7 @@ export function RemoteBrowserPageContextMenu({
             <button
               role="menuitem"
               className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-              onClick={() => {
-                void window.api.ui.writeClipboardText(contextMenu.linkUrl ?? '')
-                onDismiss()
-              }}
+              onClick={() => run('copy-link')}
             >
               {translate(
                 'auto.components.browser.pane.BrowserPane.efb0e8f7f3',
@@ -228,10 +312,7 @@ export function RemoteBrowserPageContextMenu({
             <button
               role="menuitem"
               className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-              onClick={() => {
-                void window.api.ui.writeClipboardText(contextMenu.selectionText)
-                onDismiss()
-              }}
+              onClick={() => run('copy-selection')}
             >
               {translate('auto.components.browser.pane.BrowserPane.2a4c4b8e1f', 'Copy')}
             </button>
@@ -241,21 +322,21 @@ export function RemoteBrowserPageContextMenu({
         <button
           role="menuitem"
           className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-          onClick={() => onNavigate('browser.back')}
+          onClick={() => run('back')}
         >
           {translate('auto.components.browser.pane.BrowserPane.40edfa75cb', 'Back')}
         </button>
         <button
           role="menuitem"
           className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-          onClick={() => onNavigate('browser.forward')}
+          onClick={() => run('forward')}
         >
           {translate('auto.components.browser.pane.BrowserPane.250a9b3e42', 'Forward')}
         </button>
         <button
           role="menuitem"
           className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-          onClick={() => onNavigate('browser.reload')}
+          onClick={() => run('reload')}
         >
           {translate('auto.components.browser.pane.BrowserPane.0e080d820e', 'Reload')}
         </button>
@@ -263,13 +344,7 @@ export function RemoteBrowserPageContextMenu({
         <button
           role="menuitem"
           className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-          onClick={() => {
-            const targetUrl = normalizeExternalBrowserUrl(contextMenu.pageUrl)
-            if (targetUrl) {
-              void window.api.shell.openUrl(targetUrl)
-            }
-            onDismiss()
-          }}
+          onClick={() => run('external-page')}
         >
           {translate(
             'auto.components.browser.pane.BrowserPane.f7ab83f7ed',
@@ -279,10 +354,7 @@ export function RemoteBrowserPageContextMenu({
         <button
           role="menuitem"
           className="relative flex w-full cursor-default items-center gap-2 rounded-[7px] px-2 py-0.5 text-[12px] leading-5 font-medium outline-none select-none hover:bg-black/8 dark:hover:bg-white/14"
-          onClick={() => {
-            void window.api.ui.writeClipboardText(contextMenu.pageUrl)
-            onDismiss()
-          }}
+          onClick={() => run('copy-page')}
         >
           {translate('auto.components.browser.pane.BrowserPane.1b179ab561', 'Copy Page URL')}
         </button>

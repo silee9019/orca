@@ -139,6 +139,8 @@ function RightSidebarInner(): React.JSX.Element {
   return (
     <div
       ref={containerRef}
+      data-viewer-sidebar="right"
+      data-available-sidebar-panels={visibleItems.map((item) => item.id).join(',')}
       className={cn(
         'relative flex-shrink-0 flex flex-row',
         // Why: overflow-visible is needed when open so the resize handle

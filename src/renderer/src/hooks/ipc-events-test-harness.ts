@@ -81,9 +81,7 @@ export type IpcEventsHarnessOptions = {
   clientHostedBrowserRowsSnapshotError?: Error
 }
 
-/**
- * Loads useIpcEvents against a stubbed preload API so IPC behavior is asserted through the hook.
- */
+/** Loads the app-lifetime IPC bridge against a stubbed preload API. */
 export async function loadIpcEventsHarness(
   storeState: HarnessStoreState,
   options: IpcEventsHarnessOptions = {}
@@ -146,6 +144,8 @@ export async function loadIpcEventsHarness(
   vi.doMock('@/lib/activate-tab-and-focus-pane', () => ({ activateTabAndFocusPane: vi.fn() }))
 
   vi.stubGlobal('window', {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
     api: new Proxy(
       {
@@ -249,7 +249,8 @@ export async function loadIpcEventsHarness(
     )
   })
 
-  const { useIpcEvents } = await import('./useIpcEvents')
+  const { installAppLifetimeIpcEvents: useIpcEvents } =
+    await import('./ipc-events/app-lifetime-ipc-bridge')
   return {
     useIpcEvents,
     createTerminal: (request) => {

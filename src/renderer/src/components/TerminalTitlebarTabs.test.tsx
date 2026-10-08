@@ -13,12 +13,17 @@ import type { TerminalController } from './use-terminal-controller'
 
 const mocks = vi.hoisted(() => ({
   state: {} as Record<string, unknown>,
+  subscriptions: new Set<() => void>(),
   tabBarProps: [] as Record<string, unknown>[]
 }))
 
 vi.mock('../store', () => ({
   useAppStore: Object.assign((selector: (state: unknown) => unknown) => selector(mocks.state), {
-    getState: () => mocks.state
+    getState: () => mocks.state,
+    subscribe: (listener: () => void) => {
+      mocks.subscriptions.add(listener)
+      return () => mocks.subscriptions.delete(listener)
+    }
   })
 }))
 vi.mock('./tab-bar/TabBar', () => ({
@@ -80,11 +85,14 @@ function renderTitlebarTabs(): void {
   } as unknown as TerminalController
   const root = createRoot(container)
   act(() => root.render(<TerminalTitlebarTabs controller={controller} />))
+  expect(mocks.subscriptions.size).toBe(1)
   act(() => root.unmount())
+  expect(mocks.subscriptions.size).toBe(0)
 }
 
 describe('TerminalTitlebarTabs', () => {
   beforeEach(() => {
+    mocks.subscriptions.clear()
     mocks.tabBarProps = []
     mocks.state = { tabsByWorktree: {}, unifiedTabsByWorktree: {}, getActiveTab: () => null }
     titlebarTarget = document.createElement('div')

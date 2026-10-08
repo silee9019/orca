@@ -78,7 +78,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -168,7 +169,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -245,7 +247,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -319,7 +322,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -405,7 +409,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -528,7 +533,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -619,7 +625,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     await vi.waitFor(() => {

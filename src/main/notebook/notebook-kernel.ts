@@ -40,7 +40,11 @@ function parseFrame(value: unknown): BridgeFrame | null {
 }
 
 /** Splits bridge stdout into frames, skipping any line that is not one. */
-export function createFrameReader(onFrame: (frame: BridgeFrame) => void): (text: string) => void {
+export type NotebookFramePolicy = { maxLineBytes: number; onProtocolFailure: () => void }
+export function createFrameReader(
+  onFrame: (frame: BridgeFrame) => void,
+  policy?: NotebookFramePolicy
+): (text: string) => void {
   // Each frame ships as its line completes; a consumer throw escapes the stdout listener and is fatal anyway.
   const parser = createNdjsonParser(
     (value) => {
@@ -50,9 +54,15 @@ export function createFrameReader(onFrame: (frame: BridgeFrame) => void): (text:
       }
     },
     // The bridge keeps fd 1 to itself, so an unreadable line means the frame channel is damaged.
-    (error) => console.warn('[notebook-kernel] Dropped an unreadable bridge record:', error),
+    (error) => {
+      if (policy) {
+        policy.onProtocolFailure()
+      } else {
+        console.warn('[notebook-kernel] Dropped an unreadable bridge record:', error)
+      }
+    },
     // Notebook display frames can contain large images; preserve the existing unrestricted size.
-    { maxLineBytes: Number.POSITIVE_INFINITY }
+    { maxLineBytes: policy?.maxLineBytes ?? Number.POSITIVE_INFINITY }
   )
   return (text) => parser.feed(text)
 }
@@ -68,11 +78,13 @@ export type NotebookKernel = {
 export function startNotebookKernel({
   python,
   cwd,
-  onFrame
+  onFrame,
+  framePolicy
 }: {
   python: string
   cwd: string
   onFrame: (frame: KernelFrame) => void
+  framePolicy?: NotebookFramePolicy
 }): { kernel: NotebookKernel; ready: Promise<KernelStartResult>; exited: Promise<void> } {
   const child = spawnProcess({
     program: python,
@@ -112,7 +124,7 @@ export function startNotebookKernel({
       } else if (!stopping) {
         onFrame(frame)
       }
-    })
+    }, framePolicy)
   )
   child.once('error', (error) => settle({ status: 'failed', detail: error.message }))
   child.once('close', (code) => {

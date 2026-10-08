@@ -13,6 +13,7 @@ export function SidebarWorktreeListEmptyState({
   return (
     <div
       data-worktree-sidebar-container
+      data-workspace-list-empty
       data-contextual-tour-target="workspace-list"
       className="relative min-h-0 flex-1"
     >

@@ -7,6 +7,10 @@ import {
   AiVaultSearchStatusRequestSchema,
   AiVaultSetSearchEnabledParamsSchema
 } from '../ai-vault-search-contract'
+import { AppLifecycleControlParams, AppLifecycleInstallParams } from '../app-lifecycle-control'
+import { AppSurfaceControlParams, DesktopNativeMenuParams } from '../app-surface-control'
+import { ArtifactViewerParams } from '../artifact-viewer-command'
+import { AutomationViewerParams } from '../automation-viewer-command'
 import {
   BrowserClientFileChannelAbortParams,
   BrowserClientFileChannelReadParams,
@@ -18,12 +22,36 @@ import {
   BrowserNetworkTunnelAttachParams
 } from '../browser-client-host-protocol'
 import { BrowserClientPageMetadataParams } from '../browser-client-page-metadata-protocol'
+import { CliDesktopSettingsUpdate } from '../cli-desktop-settings'
+import { CliSettingsUpdate } from '../cli-runtime-settings'
+import { SettingsPreflightCheck, SettingsPreflightContext } from '../cli-settings-preflight'
+import {
+  EmulatorFocusGroupParams,
+  EmulatorPointerViewParams,
+  EmulatorRotateViewParams,
+  EmulatorScreenKeyParams,
+  EmulatorScreenPasteParams,
+  EmulatorSelectTabParams,
+  EmulatorSessionViewParams,
+  EmulatorWheelParams
+} from '../emulator-frame-command'
+import { ExtensionsSidebarParams } from '../extensions-sidebar-command'
 import {
   PairingGetEndpointsParamsSchema,
   PairingProvisionRelayParamsSchema
 } from '../mobile-relay-credential-contract'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
+import { PluginSettingsViewerParams } from '../plugin-settings-viewer-command'
 import { pluginConsentRequestSchema } from '../plugins/plugin-consent-request'
+import { pluginMarketplaceGitSourceSchema } from '../plugins/plugin-marketplace'
+import {
+  AccountCredentialSaveParams,
+  AccountCredentialStatusParams
+} from './account-credentials-params'
+import { AccountInspectionParams } from './account-inspection-params'
+import { AccountLoginProviderParams, AccountLoginStartParams } from './account-login-params'
+import { AccountPreferenceParams } from './account-preference-params'
+import { AccountSecretSettingParams } from './account-secret-settings-params'
 import {
   AccountsUnsubscribeParams,
   AddClaudeFromConfigDirParams,
@@ -37,19 +65,82 @@ import {
   SelectCodexAccountForTargetParams,
   SelectDataAccountParams
 } from './accounts-params'
+import { AccountsViewerParams } from './accounts-viewer-params'
+import { ActivityViewerParams } from './activity-viewer-params'
+import { AgentAwakeSubscriptionParams } from './agent-awake-watch-params'
 import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
+import { AgentMigrationSubscriptionParams } from './agent-migration-watch-params'
+import {
+  AgentPaneRestoreParams,
+  AgentPaneRetireParams,
+  AgentPaneTransferParams
+} from './agent-pane-authority-params'
+import { AgentPermissionModeParams } from './agent-permission-mode-params'
 import { CreateAgentSessionParams, EnsureAgentSessionParams } from './agent-session-params'
+import {
+  AgentStatusDismissParams,
+  AgentStatusInterruptParams,
+  AgentStatusListParams,
+  AgentStatusQuestionAnsweredParams,
+  AgentStatusRetireTabParams
+} from './agent-status-cli-params'
+import { AgentStatusReconcileParams } from './agent-status-reconcile-params'
+import { AgentStatusSubscriptionParams } from './agent-status-watch-params'
+import { AgentWorkerRecoverySubscriptionParams } from './agent-worker-recovery-watch-params'
+import {
+  AiVaultListCancelParams,
+  AiVaultListCapabilitiesParams
+} from './ai-vault-list-cancel-params'
 import {
   AiVaultListSessionsParams,
   AiVaultPrepareSessionResumeParams,
   AiVaultSessionTitlesParams
 } from './ai-vault-params'
 import {
+  AiVaultDeleteSessionParams,
+  AiVaultSubagentSessionsParams
+} from './ai-vault-session-actions-params'
+import {
   AntigravityAccountMutationParams,
   AntigravityAccountTargetParams
 } from './antigravity-accounts-params'
+import { DesktopFeedbackSubmitParams } from './app-feedback-params'
+import {
+  AppTargetParams,
+  DesktopCliDistroParams,
+  DesktopCliMutationParams,
+  DesktopDiagnosticBundleParams,
+  DesktopDiagnosticCollectParams,
+  DesktopDiagnosticDeleteParams,
+  DesktopDiagnosticUploadParams,
+  DesktopDockBadgeParams,
+  DesktopOnboardingUpdateParams,
+  DesktopPetDeleteParams,
+  DesktopPetFileParams,
+  DesktopPetImportParams,
+  DesktopPetPreferencesParams,
+  DesktopPetRemoveParams,
+  DesktopSelectPathParams,
+  DesktopShellPathParams,
+  DesktopShellUrlParams,
+  DesktopStarPromptParams,
+  DesktopTelemetryEventParams,
+  DesktopTelemetryOptInParams,
+  DesktopUpdateBuildsParams,
+  DesktopUpdateCheckParams
+} from './app-lifecycle-params'
+import { AppVaultFirstPromptParams } from './app-vault-params'
 import { ArtifactsDeleteParams, ListOptions, SourceRequest, WriteRequest } from './artifacts-params'
+import {
+  AutomationRunPrecheckParams,
+  AutomationSnapshotNameParams,
+  ExternalAutomationActionParams,
+  ExternalAutomationCreateParams,
+  ExternalAutomationListParams,
+  ExternalAutomationRunsParams,
+  ExternalAutomationUpdateParams
+} from './automation-extensions-params'
 import {
   AutomationCreate,
   AutomationId,
@@ -57,6 +148,7 @@ import {
   AutomationRuns,
   AutomationUpdate
 } from './automation-params'
+import { BitbucketConnect } from './bitbucket-params'
 import { CertificateProceed } from './browser-core-params'
 import { MouseClick } from './browser-extras-params'
 import { BrowserIdentitySet, ProfileCreate } from './browser-identity-params'
@@ -112,9 +204,12 @@ import {
   Viewport,
   Wait
 } from './browser-params'
+import { BrowserProfileImportFile } from './browser-profile-file-params'
 import { ScreencastUnsubscribe } from './browser-screencast-params'
 import { BrowserOpenUrlParams, BrowserTabCreateParams } from './browser-tab-create-params'
-import { ClientEventsUnsubscribeParams } from './client-events-params'
+import { BrowserViewerCommand } from './browser-viewer-params'
+import { CardViewerParams } from './card-viewer-params'
+import { ClientEventsSubscribeParams, ClientEventsUnsubscribeParams } from './client-events-params'
 import {
   NativeChatSessionOptionsMutation,
   PRBotAuthorOverrideUpdate,
@@ -128,6 +223,10 @@ import {
   SaveImageAsTempFile,
   StartImageUpload
 } from './clipboard-params'
+import {
+  CodexPaneSharedServerMutationParams,
+  CodexPaneSharedServerStatusParams
+} from './codex-pane-shared-server-params'
 import { ComputerCapabilitiesParams, ComputerPermissionsStatusParams } from './computer-params'
 import {
   Click,
@@ -144,6 +243,23 @@ import {
   SetValue,
   TypeText
 } from './computer-schemas-params'
+import { ConnectionsViewerParams } from './connections-viewer-params'
+import { CrashReportParams } from './crash-report-params'
+import {
+  DaemonFolderAccessCancelParams,
+  DaemonFolderAccessPlanParams,
+  DaemonFolderAccessStartParams,
+  DaemonFolderAccessStatusParams,
+  DaemonFolderAccessVerifyParams
+} from './daemon-folder-access-params'
+import {
+  DaemonManagementListParams,
+  DaemonManagementStopManyParams,
+  DaemonManagementStopParams
+} from './daemon-management-params'
+import { DaemonRestartParams, DaemonRestartPlanParams } from './daemon-restart-params'
+import { EmulatorControlParams, EmulatorFocusParams } from './emulator-control-params'
+import { EmulatorObservationParams, EmulatorStreamStopParams } from './emulator-observation-params'
 import {
   AttachParams as AttachParamsOfEmulatorParams,
   AxParams,
@@ -164,6 +280,25 @@ import {
   TapParams,
   TypeParams
 } from './emulator-params'
+import {
+  EnvironmentBrowserPlacement,
+  EnvironmentConnect,
+  EnvironmentPairing,
+  EnvironmentProbe,
+  EnvironmentRemove,
+  EnvironmentSelector
+} from './environment-management-params'
+import {
+  VmAttach,
+  VmProvision,
+  VmProvisionIdentity,
+  VmRecipe,
+  VmRepo,
+  VmRuntime,
+  VmStopCleanup,
+  VmWorkspace
+} from './ephemeral-vm-params'
+import { FeatureTourParams } from './feature-tour-params'
 import {
   FileCommitUpload,
   FileCopy,
@@ -196,6 +331,7 @@ import {
   FolderWorkspaceSelector,
   FolderWorkspaceUpdate
 } from './folder-workspace-params'
+import { GitAppendGitignore } from './git-ignore-params'
 import {
   GitBranchCompare,
   GitBranchDiff,
@@ -297,6 +433,7 @@ import {
   HostedReviewCreationEligibility,
   HostedReviewForBranch
 } from './hosted-review-params'
+import { IssueCommandRunnerParams } from './issue-command-runner-params'
 import {
   AssignableUsers,
   Connect,
@@ -334,6 +471,7 @@ import {
   McpListIssues
 } from './linear-issue-list-params'
 import {
+  ConcreteIssueUpdate,
   Connect as ConnectOfLinearParams,
   CreateIssue as CreateIssueOfLinearParams,
   CustomViewContents,
@@ -352,13 +490,37 @@ import {
   WorkspaceSelection
 } from './linear-params'
 import { CreateProject } from './linear-project-create-params'
+import {
+  MobileAddressParams,
+  MobileNetworkHumanComplete,
+  MobileNetworkHumanRequest,
+  MobileNetworkHumanStart,
+  MobilePairingParams,
+  MobileRevokeParams,
+  RuntimePairingParams
+} from './mobile-connection-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat-params'
+import { LocalNetworkConnectionTestParams } from './network-connection-params'
 import {
   NotificationGetMissedSinceParams,
   NotificationRegisterPushParams,
   NotificationUnsubscribeParams,
   NotificationsSubscribeParams
 } from './notifications-params'
+import {
+  ProfileAuthOperationParams,
+  ProfileCloudCreateParams,
+  ProfileCreateParams,
+  ProfileCurrentParams,
+  ProfileFindProjectsParams,
+  ProfileOrgInviteParams,
+  ProfileOrgParams,
+  ProfileOrgRemoveParams,
+  ProfileOrgRevokeParams,
+  ProfileOrgRoleParams,
+  ProfileTransferParams,
+  ProfileUseParams
+} from './orca-profile-params'
 import {
   FederationDispatchParams,
   FederationFleetSnapshotParams,
@@ -408,6 +570,30 @@ import {
 import { WorkerStartParams } from './orchestration-worker-start-params'
 import { WorkerDispatchParams as WorkerDispatchParamsOfOrchestrationWorkerStopParams } from './orchestration-worker-stop-params'
 import {
+  DeveloperPermissionRequestParams,
+  DeveloperPermissionSettingsParams,
+  NotificationDismissParams,
+  NotificationDispatchParams,
+  NotificationProbeParams,
+  NotificationSoundParams,
+  OsPermissionConfirmedParams,
+  OsPermissionEmptyParams,
+  OsPermissionViewerParams,
+  TccPromptClaimParams,
+  TccPromptOwnerParams,
+  TccPromptReleaseParams
+} from './os-permissions-params'
+import { PluginInspectPanelParams, PluginInvokePanelActionParams } from './plugins-cli-params'
+import {
+  PluginInstallParams,
+  PluginKeyParams,
+  PluginMarketplaceInstallParams,
+  PluginMarketplacePreviewParams,
+  PluginMarketplaceRefreshParams,
+  PluginMarketplaceSourceParams,
+  PluginPreferencesUpdate
+} from './plugins-management-params'
+import {
   PluginInvokeCommandParams,
   PluginReadPanelEntryParams,
   PluginSetEnabledParams,
@@ -418,6 +604,8 @@ import {
   PreflightDetectRemoteAgents,
   PreflightDetectRemoteWindowsTerminalCapabilities
 } from './preflight-params'
+import { ProfileAuthControlParams } from './profile-auth-params'
+import { ProjectFilterParams } from './project-filter-params'
 import {
   ProjectHostSetupClone,
   ProjectHostSetupCreate,
@@ -426,6 +614,15 @@ import {
   ProjectHostSetupUpdate,
   ProjectUpdate
 } from './project-runtime-params'
+import { PtyProviderSessionsParams } from './pty-provider-sessions-params'
+import { RemoteWorkspacePublishParams } from './remote-workspace-publish-params'
+import {
+  RemoteWorkspaceClientsParams,
+  RemoteWorkspaceInventoryParams,
+  RemoteWorkspaceReadParams
+} from './remote-workspace-read-params'
+import { RemoteWorkspaceSubscriptionParams } from './remote-workspace-watch-params'
+import { RendererResyncSubscriptionParams } from './renderer-delivery-resync-watch-params'
 import {
   ProjectGroupCreate,
   ProjectGroupImportNested,
@@ -443,6 +640,7 @@ import {
   RepoSparsePresetSave,
   RepoUpdate
 } from './repo-params'
+import { ResourceManagerViewerParams } from './resource-manager-params'
 import { BrowserTarget } from './rpc-param-primitives'
 import { ClientCapabilitiesUpdate } from './runtime-client-capabilities-params'
 import { SessionTabsUnsubscribeAllParams } from './session-tabs-params'
@@ -458,11 +656,33 @@ import {
   UpdatePaneLayout,
   WorktreeTabSelector
 } from './session-tabs-schemas-params'
+import { SettingsKeybindingUpdate, SettingsWarpImportSource } from './settings-control-params'
+import { SettingsViewerParams } from './settings-viewer-params'
+import { SetupGuideParams } from './setup-guide-params'
+import { SidebarViewerParams } from './sidebar-viewer-params'
+import {
+  SkillAuthorizedBundlePackageInstallParams,
+  SkillAuthorizedBundleShareInstallParams,
+  SkillAuthorizedPackageInstallParams,
+  SkillAuthorizedShareInstallParams
+} from './skills-authorized-install-params'
+import {
+  SkillPackageIdParams,
+  SkillPackageVersionParams,
+  SkillShareIdParams
+} from './skills-cloud-params'
+import {
+  SkillPreparationIdParams,
+  SkillUpdateStartParams,
+  skillSharePrepareIpcSchema,
+  skillSharePublishIpcSchema
+} from './skills-lifecycle-params'
 import {
   SkillsCancelInstallParams,
   SkillsDiscoverParams,
   SkillsGetInstallProgressParams
 } from './skills-params'
+import { SparsePresetRemoveParams } from './sparse-preset-params'
 import {
   DictationChunk,
   DictationHandle,
@@ -470,7 +690,22 @@ import {
   DictationStart,
   SpeechModelAction
 } from './speech-params'
+import {
+  SshManagedAddForward,
+  SshManagedAddTarget,
+  SshManagedBrowse,
+  SshManagedConfigAlias,
+  SshManagedConfigQuery,
+  SshManagedCredential,
+  SshManagedDestructiveTarget,
+  SshManagedImportConfig,
+  SshManagedRemoveForward,
+  SshManagedTarget,
+  SshManagedUpdateForward,
+  SshManagedUpdateTarget
+} from './ssh-management-params'
 import { SshTarget } from './ssh-params'
+import { StatusBarViewerParams } from './status-bar-viewer-params'
 import {
   AgentsParams,
   AttachParams,
@@ -496,8 +731,36 @@ import {
   ThreadGoalParams,
   UnsubscribeParams
 } from './structured-agent-session-params'
+import { StructuredHeldSubscriptionParams } from './structured-held-watch-params'
+import { TerminalControlSubscriptionParams } from './terminal-control-watch-params'
+import {
+  TerminalDeliveryDebugReadParams,
+  TerminalDeliveryDebugResetParams
+} from './terminal-delivery-debug-params'
+import { TerminalEffectsSubscriptionParams } from './terminal-effects-watch-params'
+import { TerminalExitSubscriptionParams } from './terminal-exit-watch-params'
+import {
+  FloatingTerminalCwdParams,
+  SavedTerminalScrollbackParams,
+  TerminalMainBufferParams
+} from './terminal-host-details-params'
+import { TerminalHostInventoryParams } from './terminal-host-inventory-params'
+import { TerminalHostResizeParams } from './terminal-host-resize-params'
+import { TerminalHostViewportParams } from './terminal-host-viewport-params'
+import { TerminalListenerCountParams } from './terminal-listener-count-params'
 import { TerminalAdoptOrphans } from './terminal-orphan-params'
+import { TerminalPresentationWaitParams } from './terminal-presentation-wait-params'
+import { TerminalPresentationSubscriptionParams } from './terminal-presentation-watch-params'
+import { TerminalPreviewDataSubscriptionParams } from './terminal-preview-data-watch-params'
+import { TerminalPreviewInputParams } from './terminal-preview-input-params'
+import { TerminalPrivateSpawnParams } from './terminal-private-spawn-params'
+import { TerminalPtyStopParams } from './terminal-pty-stop-params'
 import { TerminalQuickCommandsUpdate } from './terminal-quick-command-params'
+import { TerminalRenderEvidenceParams } from './terminal-render-evidence-params'
+import { TerminalSideEffectSnapshotParams } from './terminal-side-effect-snapshot-params'
+import { TerminalSignalParams } from './terminal-signal-params'
+import { TerminalSpawnSubscriptionParams } from './terminal-spawn-watch-params'
+import { TerminalStartupRestorationParams } from './terminal-startup-restoration-params'
 import {
   TerminalMultiplex,
   TerminalResizeForClient,
@@ -531,7 +794,149 @@ import {
   TerminalUpdateViewport
 } from './terminal-viewport-schemas-params'
 import { UpdaterCheckParams } from './updater-params'
+import {
+  RateLimitPollingParams,
+  RateLimitTargetParams,
+  UsageBreakdownParams,
+  UsageEnabledParams,
+  UsageProviderParams,
+  UsageQueryParams,
+  UsageRefreshParams,
+  UsageSessionsParams,
+  UsageViewerParams
+} from './usage-params'
+import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
+import { BranchRenameFailureRead } from './workspace-branch-rename-failure-params'
+import { WorkspaceCleanupDismiss } from './workspace-cleanup-dismissal-params'
+import { DesktopCleanupScanRequest, DesktopCleanupScanStart } from './workspace-cleanup-scan-params'
+import {
+  WorkspaceCrashReportCopy,
+  WorkspaceCrashReportDismiss,
+  WorkspaceCrashReportSubmit
+} from './workspace-crash-report-params'
+import { DesktopProvisionedRootAdopt } from './workspace-desktop-adopt-params'
+import { DesktopWorktreeCreate } from './workspace-desktop-create-params'
+import { DesktopWorktreeMetaUpdate } from './workspace-desktop-meta-params'
+import {
+  DesktopWorktreeRemovalPreview,
+  DesktopWorktreeRemove
+} from './workspace-desktop-remove-params'
+import { DesktopDiagnosticPreviewOpen } from './workspace-diagnostic-preview-params'
+import {
+  DesktopDownloadSessionAppend,
+  DesktopDownloadSessionRequest,
+  DesktopDownloadSessionStart,
+  DesktopSaveDownloadedFile
+} from './workspace-download-session-params'
+import {
+  DesktopDroppedPathsResolve,
+  DesktopExternalPathImport
+} from './workspace-external-path-import-params'
+import {
+  DesktopFileListRequest,
+  DesktopFileListResult,
+  DesktopFileListStart
+} from './workspace-file-list-params'
+import {
+  DesktopFileSearchRequest,
+  DesktopFileSearchResult,
+  DesktopFileSearchStart
+} from './workspace-file-search-params'
+import {
+  CliFileWatchRequest,
+  CliFileWatchStart,
+  CliFileWatchStatus
+} from './workspace-file-watch-params'
+import { WorkspaceFilterParams } from './workspace-filter-params'
+import {
+  DesktopGitStatusRequest,
+  DesktopGitStatusResult,
+  DesktopGitStatusStart
+} from './workspace-git-status-params'
+import { GitHubAccountDiagnostic, GitHubStarRequest } from './workspace-github-account-params'
+import { WorkspaceGitHubCacheWriteParams } from './workspace-github-cache'
+import { DesktopGitHubRefresh } from './workspace-github-refresh-params'
+import {
+  GitLabBranchMergeRequestLookup,
+  GitLabIssueLookup,
+  GitLabMergeRequestLookup
+} from './workspace-gitlab-inspection-params'
+import { DesktopDirectoryCreate, DesktopHostPathExists } from './workspace-host-path-params'
+import { JiraProjectAssignableUsers } from './workspace-jira-project-users-params'
+import {
+  JiraCliReadRequest,
+  JiraCliSearchStart,
+  JiraCliSummaryStart
+} from './workspace-jira-read-params'
+import { DesktopWorktreeLineageUpdate } from './workspace-lineage-params'
+import { WorkspaceListViewerParams } from './workspace-list-viewer-params'
+import { DesktopLocalCloneRequest, DesktopLocalCloneStart } from './workspace-local-clone-params'
+import { DesktopLocalhostLabel } from './workspace-localhost-label-params'
+import {
+  DesktopLogTailRead,
+  DesktopLogTailRequest,
+  DesktopLogTailStart
+} from './workspace-log-tail-params'
+import {
+  DesktopNestedScanRequest,
+  DesktopNestedScanResult,
+  DesktopNestedScanStart
+} from './workspace-nested-scan-params'
+import {
+  NotebookEnvironmentList,
+  NotebookKernelInstall,
+  NotebookPythonDescribe,
+  NotebookVenvCreate
+} from './workspace-notebook-environment-params'
+import {
+  DesktopNotebookKernelExecute,
+  DesktopNotebookKernelFrames,
+  DesktopNotebookKernelRequest,
+  DesktopNotebookKernelStart
+} from './workspace-notebook-kernel-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
+import { DesktopRemoteCloneStart } from './workspace-remote-clone-params'
+import {
+  RemoteFileDownloadRequest,
+  RemoteFileDownloadStart
+} from './workspace-remote-file-download-params'
+import {
+  RemoteFolderDownloadRequest,
+  RemoteFolderDownloadStart
+} from './workspace-remote-folder-download-params'
+import { DesktopRepoAddLocal, DesktopRepoAddRemote } from './workspace-repo-add-params'
+import { DesktopRepoCreateRemote } from './workspace-repo-create-remote-params'
+import {
+  RepoFolderPickerRequest,
+  RepoFolderPickerStart
+} from './workspace-repo-folder-picker-params'
+import { RepoHostRefSearch, RepoHostRemoval, RepoHostReorder } from './workspace-repo-host-params'
+import { RepoIconPickerStart } from './workspace-repo-icon-picker-params'
+import { DesktopRepoUpdate } from './workspace-repo-update-params'
+import { RepoHostGitUsername } from './workspace-repo-username-params'
+import { WorkspaceReviewCacheReadParams } from './workspace-review-cache-params'
+import {
+  WorkspaceSessionStateFlushParams,
+  WorkspaceSessionStateReadParams
+} from './workspace-session-state-params'
+import {
+  WorkspaceSessionPatchParams,
+  WorkspaceSessionWriteParams
+} from './workspace-session-write-params'
+import {
+  DesktopShellOpenEditor,
+  DesktopShellOpenFile,
+  DesktopShellOpenUri
+} from './workspace-shell-action-params'
+import { DesktopDocumentFileCopy } from './workspace-shell-copy-params'
+import {
+  WorkspaceSpaceScanRequest,
+  WorkspaceSpaceScanResult,
+  WorkspaceSpaceScanStart
+} from './workspace-space-scan-params'
+import { DesktopVisibleWorktrees } from './workspace-visible-worktree-params'
+import { DesktopWorkItemNotify } from './workspace-work-item-notify-params'
+import { DesktopWorktreeForget } from './workspace-worktree-forget-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
   WorktreeActivate,
@@ -547,7 +952,11 @@ import {
   WorktreeSortOrder,
   WorktreeTeardownMissingTerminalsParams
 } from './worktree-params'
-import { SkillBundleInstallRequestSchema } from '../skill-bundle-install-contract'
+import { SearchSettingsViewerParams } from '../search-settings-viewer'
+import {
+  SkillBundleInstallPreviewRequestSchema,
+  SkillBundleInstallRequestSchema
+} from '../skill-bundle-install-contract'
 import { SkillDeleteRequestSchema } from '../skill-delete-contract'
 import {
   SkillInstallPreviewRequestSchema,
@@ -559,11 +968,19 @@ import {
   SkillUploadChunkRequestSchema,
   SkillUploadCommitRequestSchema
 } from '../skill-upload-session-contract'
+import { SkillsViewerParams } from '../skills-viewer-command'
+import { SparsePresetViewerParams } from '../sparse-preset-viewer-command'
+import { VoiceViewerParams } from '../voice-viewer'
 
 // Why: the host parses params with these schemas, so a client that matches this map
 // matches the dispatcher. Clients must import it for types only — parsing a params
 // schema client-side runs the coercing transforms and rewrites the wire bytes.
 export const RPC_PARAMS_BY_METHOD = {
+  'accountCredentials.clear': AccountCredentialStatusParams,
+  'accountCredentials.save': AccountCredentialSaveParams,
+  'accountCredentials.status': AccountCredentialStatusParams,
+  'accountPreference.control': AccountPreferenceParams,
+  'accountSecretSettings.apply': AccountSecretSettingParams,
   'accounts.addClaudeFromConfigDir': AddClaudeFromConfigDirParams,
   'accounts.addCodexFromHome': AddCodexFromHomeParams,
   'accounts.addDataFromHome': AddDataAccountParams,
@@ -572,20 +989,31 @@ export const RPC_PARAMS_BY_METHOD = {
   'accounts.antigravityRemove': AntigravityAccountMutationParams,
   'accounts.antigravitySelect': AntigravityAccountMutationParams,
   'accounts.consumeCodexResetCredit': ConsumeCodexResetCreditParams,
+  'accounts.inspect': AccountInspectionParams,
   'accounts.list': ListAccountsParams,
   'accounts.listData': null,
+  'accounts.loginCancel': AccountLoginProviderParams,
+  'accounts.loginStart': AccountLoginStartParams,
+  'accounts.loginStatus': AccountLoginProviderParams,
+  'accounts.loginUrl': null,
+  'accounts.observeCodexLogin': null,
   'accounts.removeClaude': RemoveAccountParams,
   'accounts.removeCodex': RemoveAccountParams,
   'accounts.removeData': RemoveDataAccountParams,
   'accounts.selectClaude': SelectAccountParams,
+  'accounts.selectClaudeForTarget': SelectCodexAccountForTargetParams,
   'accounts.selectCodex': SelectAccountParams,
   'accounts.selectCodexForTarget': SelectCodexAccountForTargetParams,
   'accounts.selectData': SelectDataAccountParams,
   'accounts.subscribe': null,
   'accounts.unsubscribe': AccountsUnsubscribeParams,
+  'accounts.viewerAction': AccountsViewerParams,
   'agent.launch': AgentLaunch,
   'agent.launchReplay': AgentLaunchReplay,
+  'agentAwake.status': AgentStatusListParams,
+  'agentAwake.subscribe': AgentAwakeSubscriptionParams,
   'agentHooks.prepareCodexForWslPane': PrepareCodexForWslPaneParams,
+  'agentPermissionMode.control': AgentPermissionModeParams,
   'agentSession.agents': AgentsParams,
   'agentSession.cancel': CancelParams,
   'agentSession.close': OptionsParams,
@@ -596,6 +1024,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentSession.createSupport': CreateSupportParams,
   'agentSession.ensure': AttachParams,
   'agentSession.handoffStatus': HandoffStatusParams,
+  'agentSession.held': AgentStatusListParams,
   'agentSession.history': HistoryParams,
   'agentSession.hold': HoldParams,
   'agentSession.modelCatalog': ModelCatalogParams,
@@ -619,14 +1048,45 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentSession.subscribeTurnCompletions': null,
   'agentSession.threadGoal': ThreadGoalParams,
   'agentSession.unsubscribe': UnsubscribeParams,
+  'agentStatus.dismiss': AgentStatusDismissParams,
+  'agentStatus.inferInterrupt': AgentStatusInterruptParams,
+  'agentStatus.inferQuestionAnswered': AgentStatusQuestionAnsweredParams,
+  'agentStatus.list': AgentStatusListParams,
+  'agentStatus.migration': AgentStatusListParams,
+  'agentStatus.migrationSubscribe': AgentMigrationSubscriptionParams,
+  'agentStatus.reconcileEndedProcess': AgentStatusReconcileParams,
+  'agentStatus.restorePaneAuthority': AgentPaneRestoreParams,
+  'agentStatus.retirePaneAuthority': AgentPaneRetireParams,
+  'agentStatus.retireTab': AgentStatusRetireTabParams,
+  'agentStatus.subscribe': AgentStatusSubscriptionParams,
+  'agentStatus.transferPaneAuthority': AgentPaneTransferParams,
+  'agentStatus.workerRecoverySubscribe': AgentWorkerRecoverySubscriptionParams,
   'agentTeams.prepareLaunch': AgentTeamsPrepareLaunch,
   'agentTeams.tmuxCompat': AgentTeamsTmuxCompat,
+  'aiVault.cancelOwnedListSessions': AiVaultListCancelParams,
+  'aiVault.deleteSession': AiVaultDeleteSessionParams,
   'aiVault.listSessions': AiVaultListSessionsParams,
+  'aiVault.listSubagentSessions': AiVaultSubagentSessionsParams,
+  'aiVault.ownedListCapabilities': AiVaultListCapabilitiesParams,
   'aiVault.prepareSessionResume': AiVaultPrepareSessionResumeParams,
   'aiVault.resolveSessionTitles': AiVaultSessionTitlesParams,
   'aiVault.searchSessions': AiVaultSearchRequestSchema,
   'aiVault.searchStatus': AiVaultSearchStatusRequestSchema,
   'aiVault.setSearchEnabled': AiVaultSetSearchEnabledParamsSchema,
+  'app.control': AppLifecycleControlParams,
+  'app.featureWallAssets': null,
+  'app.floatingMarkdownDirectory': null,
+  'app.getStatus': null,
+  'app.keyboardInputSource': null,
+  'app.keyboardLayout': null,
+  'app.nativeMenu': DesktopNativeMenuParams,
+  'app.platform': null,
+  'app.setDockBadge': DesktopDockBadgeParams,
+  'app.shellAvailability': null,
+  'app.surfaceControl': AppSurfaceControlParams,
+  'app.wslDistros': null,
+  'appVault.clearSearchIndex': AppTargetParams,
+  'appVault.firstUserPrompt': AppVaultFirstPromptParams,
   'artifacts.delete': ArtifactsDeleteParams,
   'artifacts.getPublishedLink': SourceRequest,
   'artifacts.list': ListOptions,
@@ -634,13 +1094,26 @@ export const RPC_PARAMS_BY_METHOD = {
   'artifacts.share': WriteRequest,
   'artifacts.unshare': SourceRequest,
   'artifacts.update': WriteRequest,
+  'artifacts.viewerAction': ArtifactViewerParams,
   'automation.create': AutomationCreate,
   'automation.delete': AutomationId,
+  'automation.externalAction': ExternalAutomationActionParams,
+  'automation.externalCreate': ExternalAutomationCreateParams,
+  'automation.externalList': ExternalAutomationListParams,
+  'automation.externalRuns': ExternalAutomationRunsParams,
+  'automation.externalUpdate': ExternalAutomationUpdateParams,
   'automation.list': AutomationList,
+  'automation.precheck': AutomationRunPrecheckParams,
   'automation.runNow': AutomationId,
   'automation.runs': AutomationRuns,
+  'automation.runsPage': AutomationRuns,
   'automation.show': AutomationId,
+  'automation.snapshotWorkspaceName': AutomationSnapshotNameParams,
   'automation.update': AutomationUpdate,
+  'automation.viewerAction': AutomationViewerParams,
+  'bitbucket.connect': BitbucketConnect,
+  'bitbucket.disconnect': null,
+  'bitbucket.status': null,
   'browser.back': BrowserTarget,
   'browser.capture.start': BrowserTarget,
   'browser.capture.stop': BrowserTarget,
@@ -697,6 +1170,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'browser.profileCreate': ProfileCreate,
   'browser.profileDelete': ProfileDelete,
   'browser.profileDetectBrowsers': null,
+  'browser.profileImportFile': BrowserProfileImportFile,
   'browser.profileImportFromBrowser': ProfileImportFromBrowser,
   'browser.profileList': null,
   'browser.reload': BrowserTarget,
@@ -732,6 +1206,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'browser.upload': Upload,
   'browser.viewport': Viewport,
   'browser.wait': Wait,
+  'cache.getGitHub': WorkspaceReviewCacheReadParams,
+  'cache.setGitHub': WorkspaceGitHubCacheWriteParams,
   'clipboard.abortImageUpload': AbortImageUpload,
   'clipboard.appendImageUploadChunk': AppendImageUploadChunk,
   'clipboard.commitImageUpload': CommitImageUpload,
@@ -747,17 +1223,79 @@ export const RPC_PARAMS_BY_METHOD = {
   'computer.pasteText': PasteText,
   'computer.performSecondaryAction': PerformSecondaryAction,
   'computer.permissions': ComputerPermissions,
+  'computer.permissionsReset': OsPermissionConfirmedParams,
   'computer.permissionsStatus': ComputerPermissionsStatusParams,
   'computer.pressKey': PressKey,
   'computer.scroll': ScrollOfComputerSchemasParams,
   'computer.setValue': SetValue,
   'computer.typeText': TypeText,
+  'connections.viewer.apply': ConnectionsViewerParams,
+  'crashReports.copyLatestDiagnostics': WorkspaceCrashReportCopy,
+  'crashReports.dismiss': WorkspaceCrashReportDismiss,
+  'crashReports.getLatestPending': null,
+  'crashReports.getLatestReport': null,
+  'crashReports.submit': WorkspaceCrashReportSubmit,
+  'daemon.folderAccessCancel': DaemonFolderAccessCancelParams,
+  'daemon.folderAccessPlan': DaemonFolderAccessPlanParams,
+  'daemon.folderAccessStart': DaemonFolderAccessStartParams,
+  'daemon.folderAccessStatus': DaemonFolderAccessStatusParams,
+  'daemon.folderAccessVerify': DaemonFolderAccessVerifyParams,
+  'daemon.restartPinned': DaemonRestartParams,
+  'daemon.restartPlan': DaemonRestartPlanParams,
+  'daemon.sessions.list': DaemonManagementListParams,
+  'daemon.sessions.stop': DaemonManagementStopParams,
+  'daemon.sessions.stopMany': DaemonManagementStopManyParams,
+  'desktopCli.getInstallStatus': null,
+  'desktopCli.getWslInstallStatus': DesktopCliDistroParams,
+  'desktopCli.install': DesktopCliMutationParams,
+  'desktopCli.remove': DesktopCliMutationParams,
+  'desktopDiagnostics.collectBundle': DesktopDiagnosticCollectParams,
+  'desktopDiagnostics.deleteBundle': DesktopDiagnosticDeleteParams,
+  'desktopDiagnostics.discardBundle': DesktopDiagnosticBundleParams,
+  'desktopDiagnostics.getStatus': null,
+  'desktopDiagnostics.readBundle': DesktopDiagnosticBundleParams,
+  'desktopDiagnostics.uploadBundle': DesktopDiagnosticUploadParams,
+  'desktopFeedback.submit': DesktopFeedbackSubmitParams,
+  'desktopOnboarding.get': null,
+  'desktopOnboarding.update': DesktopOnboardingUpdateParams,
+  'desktopPet.delete': DesktopPetDeleteParams,
+  'desktopPet.import': DesktopPetImportParams,
+  'desktopPet.preferences': null,
+  'desktopPet.read': DesktopPetFileParams,
+  'desktopPet.remove': DesktopPetRemoveParams,
+  'desktopPet.setPreferences': DesktopPetPreferencesParams,
+  'desktopShell.openPath': DesktopShellPathParams,
+  'desktopShell.openUrl': DesktopShellUrlParams,
+  'desktopShell.pathExists': DesktopShellPathParams,
+  'desktopShell.selectPath': DesktopSelectPathParams,
+  'desktopStarPrompt.control': DesktopStarPromptParams,
+  'desktopTelemetry.acknowledgeBanner': null,
+  'desktopTelemetry.getConsentState': null,
+  'desktopTelemetry.setOptIn': DesktopTelemetryOptInParams,
+  'desktopTelemetry.track': DesktopTelemetryEventParams,
+  'desktopUpdater.check': DesktopUpdateCheckParams,
+  'desktopUpdater.dismissAvailableUpdate': null,
+  'desktopUpdater.dismissNudge': null,
+  'desktopUpdater.download': null,
+  'desktopUpdater.getLinuxPackageInstallInstructions': null,
+  'desktopUpdater.getStatus': null,
+  'desktopUpdater.getVersion': null,
+  'desktopUpdater.install': AppLifecycleInstallParams,
+  'desktopUpdater.listBuilds': DesktopUpdateBuildsParams,
+  'desktopUpdater.showLinuxPackage': null,
+  'developerPermissions.getStatus': OsPermissionEmptyParams,
+  'developerPermissions.openSettings': DeveloperPermissionSettingsParams,
+  'developerPermissions.request': DeveloperPermissionRequestParams,
   'diagnostics.memory': null,
+  'diagnostics.openRetainedPreview': DesktopDiagnosticPreviewOpen,
   'emulator.attach': AttachParamsOfEmulatorParams,
   'emulator.availability': EmulatorAvailabilityParams,
   'emulator.ax': AxParams,
   'emulator.button': ButtonParams,
+  'emulator.control': EmulatorControlParams,
   'emulator.exec': ExecParams,
+  'emulator.focus': EmulatorFocusParams,
+  'emulator.focusGroup': EmulatorFocusGroupParams,
   'emulator.gesture': GestureParams,
   'emulator.kill': KillParams,
   'emulator.launch': LaunchParams,
@@ -765,19 +1303,65 @@ export const RPC_PARAMS_BY_METHOD = {
   'emulator.listDevices': EmulatorListDevicesParams,
   'emulator.listSimulators': EmulatorListSimulatorsParams,
   'emulator.logcat': LogcatParams,
+  'emulator.observe': EmulatorObservationParams,
   'emulator.permissions': PermissionsParams,
+  'emulator.pointerView': EmulatorPointerViewParams,
   'emulator.rotate': RotateParams,
+  'emulator.rotateView': EmulatorRotateViewParams,
+  'emulator.screenKey': EmulatorScreenKeyParams,
+  'emulator.screenPaste': EmulatorScreenPasteParams,
+  'emulator.selectTab': EmulatorSelectTabParams,
+  'emulator.sessionView': EmulatorSessionViewParams,
   'emulator.shutdown': ShutdownParams,
+  'emulator.startFrameStream': EmulatorObservationParams,
+  'emulator.startVideoStream': EmulatorObservationParams,
+  'emulator.stopFrameStream': EmulatorStreamStopParams,
+  'emulator.stopVideoStream': EmulatorStreamStopParams,
   'emulator.tap': TapParams,
   'emulator.type': TypeParams,
   'emulator.unregisterActive': EmulatorUnregisterActiveParams,
+  'emulator.wheel': EmulatorWheelParams,
+  'environment.management.connect': EnvironmentConnect,
+  'environment.management.disconnect': EnvironmentSelector,
+  'environment.management.list': null,
+  'environment.management.prepareBrowserPlacement': EnvironmentBrowserPlacement,
+  'environment.management.probe': EnvironmentProbe,
+  'environment.management.remove': EnvironmentRemove,
+  'environment.management.resolve': EnvironmentSelector,
+  'environment.management.status': null,
+  'environment.management.verifyAndAdd': EnvironmentPairing,
+  'extensions.sidebarAction': ExtensionsSidebarParams,
   'files.browseServerDir': ServerDirectoryBrowse,
+  'files.cliWatchStart': CliFileWatchStart,
+  'files.cliWatchStatus': CliFileWatchStatus,
+  'files.cliWatchStop': CliFileWatchRequest,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
+  'files.createDesktopDirectory': DesktopDirectoryCreate,
   'files.createDir': FileMutationOpen,
   'files.createDirNoClobber': FileMutationOpen,
   'files.createFile': FileMutationOpen,
   'files.delete': FileDelete,
+  'files.desktopDownloadSessionAppend': DesktopDownloadSessionAppend,
+  'files.desktopDownloadSessionCancel': DesktopDownloadSessionRequest,
+  'files.desktopDownloadSessionFinish': DesktopDownloadSessionRequest,
+  'files.desktopDownloadSessionStart': DesktopDownloadSessionStart,
+  'files.desktopDownloadSessionStatus': DesktopDownloadSessionRequest,
+  'files.desktopListCancel': DesktopFileListRequest,
+  'files.desktopListResult': DesktopFileListResult,
+  'files.desktopListStart': DesktopFileListStart,
+  'files.desktopListStatus': DesktopFileListRequest,
+  'files.desktopLogTailRead': DesktopLogTailRead,
+  'files.desktopLogTailStart': DesktopLogTailStart,
+  'files.desktopLogTailStatus': DesktopLogTailRequest,
+  'files.desktopLogTailStop': DesktopLogTailRequest,
+  'files.desktopPathExists': DesktopHostPathExists,
+  'files.desktopSaveDownloadedFile': DesktopSaveDownloadedFile,
+  'files.desktopSearchCancel': DesktopFileSearchRequest,
+  'files.desktopSearchResult': DesktopFileSearchResult,
+  'files.desktopSearchStart': DesktopFileSearchStart,
+  'files.desktopSearchStatus': DesktopFileSearchRequest,
+  'files.importDesktopExternalPaths': DesktopExternalPathImport,
   'files.list': WorktreeSelector,
   'files.listAll': FileListAll,
   'files.listMarkdownDocuments': WorktreeSelector,
@@ -791,7 +1375,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.readPreview': FileOpen,
   'files.readTerminalArtifact': TerminalArtifactFile,
   'files.readTerminalArtifactPreview': TerminalArtifactFile,
+  'files.remoteFileDownloadCancel': RemoteFileDownloadRequest,
+  'files.remoteFileDownloadStart': RemoteFileDownloadStart,
+  'files.remoteFileDownloadStatus': RemoteFileDownloadRequest,
+  'files.remoteFolderDownloadCancel': RemoteFolderDownloadRequest,
+  'files.remoteFolderDownloadStart': RemoteFolderDownloadStart,
+  'files.remoteFolderDownloadStatus': RemoteFolderDownloadRequest,
   'files.rename': FileRename,
+  'files.resolveDesktopDroppedPaths': DesktopDroppedPathsResolve,
   'files.resolveTerminalPath': ResolveTerminalPath,
   'files.search': FileSearch,
   'files.searchPaths': FilePathSearch,
@@ -809,6 +1400,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'folderWorkspace.update': FolderWorkspaceUpdate,
   'git.abortMerge': WorktreeSelectorOfGitParams,
   'git.abortRebase': WorktreeSelectorOfGitParams,
+  'git.appendGitignore': GitAppendGitignore,
+  'git.awaitEnvironmentStartupBarrier': null,
   'git.branchCompare': GitBranchCompare,
   'git.branchDiff': GitBranchDiff,
   'git.bulkDiscard': GitBulkPaths,
@@ -822,11 +1415,16 @@ export const RPC_PARAMS_BY_METHOD = {
   'git.commitCompare': GitCommitCompare,
   'git.commitDiff': GitCommitDiff,
   'git.conflictOperation': WorktreeSelectorOfGitParams,
+  'git.desktopStatusCancel': DesktopGitStatusRequest,
+  'git.desktopStatusResult': DesktopGitStatusResult,
+  'git.desktopStatusStart': DesktopGitStatusStart,
+  'git.desktopStatusStatus': DesktopGitStatusRequest,
   'git.diff': GitDiff,
   'git.discard': GitFilePath,
   'git.discoverCommitMessageModels': GitDiscoverCommitMessageModels,
   'git.fastForward': GitTargetedRemote,
   'git.fetch': GitTargetedRemote,
+  'git.findHugeFoldersToIgnore': WorktreeSelectorOfGitParams,
   'git.forkSync': GitForkSync,
   'git.generateCommitMessage': GitGenerateCommitMessage,
   'git.generatePullRequestFields': GitGeneratePullRequestFields,
@@ -845,8 +1443,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.addIssueComment': IssueComment,
   'github.addPRReviewComment': PRReviewComment,
   'github.addPRReviewCommentReply': PRReviewCommentReply,
+  'github.checkOrcaStarred': null,
   'github.countWorkItems': WorkItemsCount,
   'github.createIssue': CreateIssue,
+  'github.diagnoseAuth': GitHubAccountDiagnostic,
+  'github.enqueueDesktopPRRefresh': DesktopGitHubRefresh,
   'github.issue': Issue,
   'github.listAssignableUsers': RepoSelector,
   'github.listBindableAccounts': BindableAccounts,
@@ -855,6 +1456,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.listWorkItems': WorkItemsList,
   'github.markPRReadyForReview': MarkPrReadyForReview,
   'github.mergePR': MergePr,
+  'github.notifyDesktopWorkItemMutated': DesktopWorkItemNotify,
   'github.prCheckDetails': PullRequestCheckDetails,
   'github.prChecks': PullRequestChecks,
   'github.prComments': PullRequest,
@@ -877,6 +1479,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.project.viewTable': ProjectViewTable,
   'github.project.workItemDetailsBySlug': ProjectWorkItemDetailsBySlug,
   'github.rateLimit': RateLimit,
+  'github.refreshDesktopPRNow': DesktopGitHubRefresh,
   'github.removePRReviewers': RemovePrReviewers,
   'github.repoSlug': RepoSelector,
   'github.repoUpstream': RepoSelector,
@@ -886,11 +1489,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.setPRAutoMerge': SetPrAutoMerge,
   'github.setPRCommentReaction': PRCommentReaction,
   'github.setPRFileViewed': PullRequestFileViewed,
+  'github.starOrca': GitHubStarRequest,
   'github.updateIssue': UpdateIssue,
   'github.updatePR': UpdatePr,
   'github.updatePRState': UpdatePrState,
   'github.updatePRTitle': UpdatePrTitle,
   'github.validateAccountBinding': ValidateAccountBinding,
+  'github.viewer': null,
   'github.workItem': WorkItem,
   'github.workItemByOwnerRepo': WorkItemByOwnerRepo,
   'github.workItemDetails': WorkItem,
@@ -899,12 +1504,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.addMRInlineComment': AddMRInlineComment,
   'gitlab.createIssue': CreateIssueOfGitlabParams,
   'gitlab.diagnoseAuth': EmptyParams,
+  'gitlab.issue': GitLabIssueLookup,
   'gitlab.jobTrace': JobTrace,
+  'gitlab.listAssignableUsers': RepoSelectorOfGitlabParams,
   'gitlab.listIssues': IssuesListOfGitlabParams,
   'gitlab.listLabels': RepoSelectorOfGitlabParams,
   'gitlab.listMRs': WorkItemsListOfGitlabParams,
   'gitlab.listWorkItems': WorkItemsListOfGitlabParams,
   'gitlab.mergeMR': MergeMr,
+  'gitlab.mr': GitLabMergeRequestLookup,
+  'gitlab.mrForBranch': GitLabBranchMergeRequestLookup,
+  'gitlab.projectSlug': RepoSelectorOfGitlabParams,
   'gitlab.rateLimit': GitLabRateLimit,
   'gitlab.resolveMRDiscussion': ResolveMRDiscussion,
   'gitlab.retryJob': RetryJob,
@@ -913,8 +1523,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.updateMR': UpdateMr,
   'gitlab.updateMRReviewers': UpdateMrReviewers,
   'gitlab.updateMRState': UpdateMrState,
+  'gitlab.viewer': null,
   'gitlab.workItemByPath': WorkItemByPath,
   'gitlab.workItemDetails': WorkItemDetails,
+  'hooks.createIssueCommandRunner': IssueCommandRunnerParams,
   'host.gitBash.isAvailable': null,
   'host.platform': null,
   'host.pwsh.isAvailable': null,
@@ -925,6 +1537,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'hostedReview.forBranch': HostedReviewForBranch,
   'hostedReview.getCreationEligibility': HostedReviewCreationEligibility,
   'jira.addIssueComment': IssueCommentOfJiraParams,
+  'jira.cliSearchCancel': JiraCliReadRequest,
+  'jira.cliSearchStart': JiraCliSearchStart,
+  'jira.cliSearchStatus': JiraCliReadRequest,
+  'jira.cliSummaryCancel': JiraCliReadRequest,
+  'jira.cliSummaryStart': JiraCliSummaryStart,
+  'jira.cliSummaryStatus': JiraCliReadRequest,
   'jira.connect': Connect,
   'jira.createIssue': CreateIssueOfJiraParams,
   'jira.disconnect': SiteSelection,
@@ -934,6 +1552,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.issueComments': IssueKey,
   'jira.issueCommentsStream': IssueKey,
   'jira.listAssignableUsers': AssignableUsers,
+  'jira.listAssignableUsersForProject': JiraProjectAssignableUsers,
   'jira.listCreateFields': ProjectIssueTypeFields,
   'jira.listIssueTypes': ProjectIssueTypes,
   'jira.listIssues': ListIssues,
@@ -948,6 +1567,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.status': null,
   'jira.testConnection': SiteSelection,
   'jira.updateIssue': IssueUpdate,
+  'keybindings.ensureFile': null,
+  'keybindings.get': null,
+  'keybindings.macCapturedDigitRowChords': null,
+  'keybindings.openFile': null,
+  'keybindings.reload': null,
+  'keybindings.revealFile': null,
+  'keybindings.setAction': SettingsKeybindingUpdate,
   'linear.addIssueComment': IssueCommentOfLinearParams,
   'linear.agentIssueList': LinearIssueList,
   'linear.agentProjectList': LinearProjectList,
@@ -989,8 +1615,30 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.teamStates': TeamId,
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
+  'linear.updateIssueFields': ConcreteIssueUpdate,
+  'macosTccPrompts.acknowledgePending': TccPromptClaimParams,
+  'macosTccPrompts.consumePending': TccPromptOwnerParams,
+  'macosTccPrompts.dismiss': OsPermissionConfirmedParams,
+  'macosTccPrompts.getStatus': OsPermissionEmptyParams,
+  'macosTccPrompts.observeThreshold': null,
+  'macosTccPrompts.releasePending': TccPromptReleaseParams,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
+  'mobile.connection.devices': null,
+  'mobile.connection.firewall': MobileAddressParams,
+  'mobile.connection.grants': null,
+  'mobile.connection.networkInterfaces': null,
+  'mobile.connection.pairing': MobilePairingParams,
+  'mobile.connection.relay': null,
+  'mobile.connection.revokeDevice': MobileRevokeParams,
+  'mobile.connection.revokeGrant': MobileRevokeParams,
+  'mobile.connection.runtimePairing': RuntimePairingParams,
+  'mobile.connection.status': null,
+  'mobile.networkAction.cancel': MobileNetworkHumanRequest,
+  'mobile.networkAction.complete': MobileNetworkHumanComplete,
+  'mobile.networkAction.start': MobileNetworkHumanStart,
+  'mobile.networkAction.status': MobileNetworkHumanRequest,
+  'mobile.networkAction.verify': MobileNetworkHumanRequest,
   'mobileWeb.bundle.chunk': MobileWebBundleChunkParamsSchema,
   'mobileWeb.bundle.manifest': null,
   'mobileWeb.bundle.range': MobileWebBundleChunkParamsSchema,
@@ -998,7 +1646,25 @@ export const RPC_PARAMS_BY_METHOD = {
   'nativeChat.subscribe': NativeChatSession,
   'nativeChat.unsubscribe': NativeChatUnsubscribe,
   'network.browserTunnel': BrowserNetworkTunnelAttachParams,
+  'network.connection.testLocal': LocalNetworkConnectionTestParams,
+  'notebook.createDesktopVenv': NotebookVenvCreate,
+  'notebook.describeDesktopPython': NotebookPythonDescribe,
+  'notebook.desktopKernelExecute': DesktopNotebookKernelExecute,
+  'notebook.desktopKernelFrames': DesktopNotebookKernelFrames,
+  'notebook.desktopKernelInterrupt': DesktopNotebookKernelRequest,
+  'notebook.desktopKernelShutdown': DesktopNotebookKernelRequest,
+  'notebook.desktopKernelStart': DesktopNotebookKernelStart,
+  'notebook.desktopKernelStatus': DesktopNotebookKernelRequest,
+  'notebook.installDesktopIpykernel': NotebookKernelInstall,
+  'notebook.listDesktopEnvironments': NotebookEnvironmentList,
+  'notifications.dismiss': NotificationDismissParams,
+  'notifications.dispatch': NotificationDispatchParams,
+  'notifications.getDesktopAwayState': OsPermissionViewerParams,
   'notifications.getMissedSince': NotificationGetMissedSinceParams,
+  'notifications.getPermissionStatus': OsPermissionViewerParams,
+  'notifications.openSystemSettings': OsPermissionConfirmedParams,
+  'notifications.playSound': NotificationSoundParams,
+  'notifications.probeDelivery': NotificationProbeParams,
   'notifications.registerPush': NotificationRegisterPushParams,
   'notifications.subscribe': NotificationsSubscribeParams,
   'notifications.testPush': null,
@@ -1047,18 +1713,57 @@ export const RPC_PARAMS_BY_METHOD = {
   'orchestration.workerTerminalUserInput': OrchestrationWorkerTerminalUserInputParams,
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
+  'plugins.addMarketplace': pluginMarketplaceGitSourceSchema,
   'plugins.consent': pluginConsentRequestSchema,
+  'plugins.getLogs': PluginKeyParams,
+  'plugins.getPreferences': null,
+  'plugins.inspectPanel': PluginInspectPanelParams,
+  'plugins.install': PluginInstallParams,
+  'plugins.installMarketplacePlugin': PluginMarketplaceInstallParams,
   'plugins.invokeCommand': PluginInvokeCommandParams,
+  'plugins.invokePanelAction': PluginInvokePanelActionParams,
   'plugins.list': null,
+  'plugins.listLanguagePacks': null,
+  'plugins.listMarketplacePlugins': null,
+  'plugins.listMarketplaces': null,
   'plugins.panelAction': PluginsPanelActionParams,
+  'plugins.previewMarketplacePlugin': PluginMarketplacePreviewParams,
+  'plugins.previewMarketplaceUpdate': PluginKeyParams,
   'plugins.readPanelEntry': PluginReadPanelEntryParams,
+  'plugins.refresh': null,
+  'plugins.refreshMarketplaces': PluginMarketplaceRefreshParams,
+  'plugins.remove': PluginKeyParams,
+  'plugins.removeMarketplace': PluginMarketplaceSourceParams,
+  'plugins.rollbackMarketplacePlugin': PluginKeyParams,
   'plugins.setEnabled': PluginSetEnabledParams,
+  'plugins.updatePreferences': PluginPreferencesUpdate,
+  'plugins.viewerAction': PluginSettingsViewerParams,
   'preflight.check': PreflightCheck,
   'preflight.detectAgents': null,
   'preflight.detectRemoteAgents': PreflightDetectRemoteAgents,
   'preflight.detectRemoteWindowsTerminalCapabilities':
     PreflightDetectRemoteWindowsTerminalCapabilities,
   'preflight.refreshAgents': null,
+  'preflight.zcodeInteractiveCapability': null,
+  'profile.authCancel': ProfileAuthOperationParams,
+  'profile.authOperation': ProfileAuthOperationParams,
+  'profile.authStart': ProfileCurrentParams,
+  'profile.authStatus': null,
+  'profile.createCloudLinked': ProfileCloudCreateParams,
+  'profile.createLocal': ProfileCreateParams,
+  'profile.findProjects': ProfileFindProjectsParams,
+  'profile.list': null,
+  'profile.orgInvite': ProfileOrgInviteParams,
+  'profile.orgMembers': ProfileOrgParams,
+  'profile.orgRemoveMember': ProfileOrgRemoveParams,
+  'profile.orgRevokeInvite': ProfileOrgRevokeParams,
+  'profile.orgSetRole': ProfileOrgRoleParams,
+  'profile.refreshAuth': null,
+  'profile.selectOrg': ProfileOrgParams,
+  'profile.signOut': ProfileCurrentParams,
+  'profile.transferProject': ProfileTransferParams,
+  'profile.use': ProfileUseParams,
+  'profileAuth.control': ProfileAuthControlParams,
   'project.list': null,
   'project.update': ProjectUpdate,
   'projectGroup.create': ProjectGroupCreate,
@@ -1068,34 +1773,93 @@ export const RPC_PARAMS_BY_METHOD = {
   'projectGroup.moveProject': ProjectGroupMoveProject,
   'projectGroup.scanNested': ProjectGroupScanNested,
   'projectGroup.update': ProjectGroupUpdate,
+  'projectGroups.desktopScanCancel': DesktopNestedScanRequest,
+  'projectGroups.desktopScanResult': DesktopNestedScanResult,
+  'projectGroups.desktopScanStart': DesktopNestedScanStart,
+  'projectGroups.desktopScanStatus': DesktopNestedScanRequest,
   'projectHostSetup.clone': ProjectHostSetupClone,
   'projectHostSetup.create': ProjectHostSetupCreate,
   'projectHostSetup.delete': ProjectHostSetupDelete,
   'projectHostSetup.list': null,
   'projectHostSetup.setupExistingFolder': ProjectHostSetupExistingFolder,
   'projectHostSetup.update': ProjectHostSetupUpdate,
+  'pty.macTccAttribution': OsPermissionEmptyParams,
+  'rateLimits.fetchInactiveClaudeAccounts': null,
+  'rateLimits.fetchInactiveCodexAccounts': null,
+  'rateLimits.get': null,
+  'rateLimits.refresh': null,
+  'rateLimits.refreshClaudeForTarget': RateLimitTargetParams,
+  'rateLimits.refreshCodexForTarget': RateLimitTargetParams,
+  'rateLimits.refreshGrok': null,
+  'rateLimits.refreshMiniMax': null,
+  'rateLimits.setPollingInterval': RateLimitPollingParams,
+  'rateLimits.subscribe': null,
+  'remoteWorkspace.clientId': RemoteWorkspaceInventoryParams,
+  'remoteWorkspace.get': RemoteWorkspaceReadParams,
+  'remoteWorkspace.listConnectedClients': RemoteWorkspaceClientsParams,
+  'remoteWorkspace.listEnabledConnectedTargets': RemoteWorkspaceInventoryParams,
+  'remoteWorkspace.publishTargets': RemoteWorkspacePublishParams,
+  'remoteWorkspace.subscribe': RemoteWorkspaceSubscriptionParams,
+  'renderer.deliveryResync.subscribe': RendererResyncSubscriptionParams,
   'repo.add': RepoPath,
+  'repo.addDesktopLocal': DesktopRepoAddLocal,
+  'repo.addDesktopRemote': DesktopRepoAddRemote,
   'repo.baseRefDefault': RepoSelector,
   'repo.clone': RepoClone,
   'repo.create': RepoCreate,
+  'repo.createDesktopRemote': DesktopRepoCreateRemote,
+  'repo.defaultProjectParent': null,
+  'repo.desktopLocalCloneCancel': DesktopLocalCloneRequest,
+  'repo.desktopLocalCloneResult': DesktopLocalCloneRequest,
+  'repo.desktopLocalCloneStart': DesktopLocalCloneStart,
+  'repo.desktopLocalCloneStatus': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneCancel': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneResult': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneStart': DesktopRemoteCloneStart,
+  'repo.desktopRemoteCloneStatus': DesktopLocalCloneRequest,
   'repo.gitAvailable': null,
+  'repo.gitUsernameForHost': RepoHostGitUsername,
   'repo.hooks': RepoSelector,
   'repo.hooksCheck': RepoSelector,
   'repo.issueCommandRead': RepoSelector,
   'repo.issueCommandWrite': RepoIssueCommandWrite,
   'repo.list': null,
+  'repo.removeForHost': RepoHostRemoval,
+  'repo.removeSparsePreset': SparsePresetRemoveParams,
   'repo.reorder': RepoReorder,
+  'repo.reorderForHost': RepoHostReorder,
   'repo.rm': RepoSelector,
   'repo.saveSparsePreset': RepoSparsePresetSave,
   'repo.searchRefs': RepoSearchRefs,
+  'repo.searchRefsForHost': RepoHostRefSearch,
   'repo.setBaseRef': RepoSetBaseRef,
   'repo.setupScriptImports': RepoSelector,
   'repo.show': RepoSelector,
   'repo.sparsePresets': RepoSelector,
   'repo.update': RepoUpdate,
+  'repo.updateDesktop': DesktopRepoUpdate,
+  'repoFolderPicker.cancel': RepoFolderPickerRequest,
+  'repoFolderPicker.result': RepoFolderPickerRequest,
+  'repoFolderPicker.start': RepoFolderPickerStart,
+  'repoFolderPicker.status': RepoFolderPickerRequest,
+  'repoIconPicker.cancel': RepoFolderPickerRequest,
+  'repoIconPicker.result': RepoFolderPickerRequest,
+  'repoIconPicker.start': RepoIconPickerStart,
+  'repoIconPicker.status': RepoFolderPickerRequest,
+  'resourceManager.viewer': ResourceManagerViewerParams,
+  'runtime.browserDrivers': null,
   'runtime.clientCapabilities.update': ClientCapabilitiesUpdate,
-  'runtime.clientEvents.subscribe': null,
+  'runtime.clientEvents.subscribe': ClientEventsSubscribeParams,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
+  'runtime.clientHostedBrowserRows': null,
+  'search.viewer': SearchSettingsViewerParams,
+  'session.flush': WorkspaceSessionStateFlushParams,
+  'session.listHostIds': TerminalHostInventoryParams,
+  'session.patchState': WorkspaceSessionPatchParams,
+  'session.prepareTerminalStartupRestoration': TerminalStartupRestorationParams,
+  'session.readState': WorkspaceSessionStateReadParams,
+  'session.readTerminalScrollback': SavedTerminalScrollbackParams,
+  'session.replaceState': WorkspaceSessionWriteParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
   'session.tabs.closeLifecycle': CloseLifecycleTab,
@@ -1109,32 +1873,77 @@ export const RPC_PARAMS_BY_METHOD = {
   'session.tabs.unsubscribe': SessionTabsUnsubscribe,
   'session.tabs.unsubscribeAll': SessionTabsUnsubscribeAllParams,
   'session.tabs.updatePaneLayout': UpdatePaneLayout,
+  'settings.control.detectAgents': SettingsPreflightContext,
+  'settings.control.get': null,
+  'settings.control.listFonts': null,
+  'settings.control.preflightCheck': SettingsPreflightCheck,
+  'settings.control.previewGhosttyImport': null,
+  'settings.control.previewWarpThemes': SettingsWarpImportSource,
+  'settings.control.refreshAgents': SettingsPreflightContext,
+  'settings.control.update': CliSettingsUpdate,
+  'settings.control.updatePRBotAuthorOverride': PRBotAuthorOverrideUpdate,
+  'settings.desktop.get': null,
+  'settings.desktop.update': CliDesktopSettingsUpdate,
   'settings.get': null,
   'settings.getTerminalQuickCommands': null,
   'settings.mutateNativeChatSessionOptions': NativeChatSessionOptionsMutation,
+  'settings.previewGhosttyImport': null,
+  'settings.previewWarpThemeAutoImport': null,
   'settings.update': SettingsUpdate,
   'settings.updatePRBotAuthorOverride': PRBotAuthorOverrideUpdate,
   'settings.updateTerminalQuickCommands': TerminalQuickCommandsUpdate,
+  'shell.copyDesktopDocumentFile': DesktopDocumentFileCopy,
+  'shell.openDesktopEditor': DesktopShellOpenEditor,
+  'shell.openDesktopFile': DesktopShellOpenFile,
+  'shell.openDesktopFileUri': DesktopShellOpenUri,
+  'shell.revealDesktopPath': DesktopShellOpenFile,
+  'skills.acknowledgeUpdateRun': null,
   'skills.beginUpload': SkillUploadBeginRequestSchema,
   'skills.cancelInstall': SkillsCancelInstallParams,
+  'skills.cancelShare': SkillPreparationIdParams,
+  'skills.cancelUpdateRun': null,
   'skills.cancelUpload': SkillUploadCommitRequestSchema,
   'skills.commitUpload': SkillUploadCommitRequestSchema,
   'skills.delete': SkillDeleteRequestSchema,
+  'skills.deletePackage': SkillPackageIdParams,
+  'skills.deletePackageVersion': SkillPackageVersionParams,
   'skills.discover': SkillsDiscoverParams,
+  'skills.freshnessInventory': null,
   'skills.getInstallProgress': SkillsGetInstallProgressParams,
+  'skills.getPackage': SkillPackageIdParams,
+  'skills.getUpdateRun': null,
   'skills.install': SkillInstallRequestSchema,
   'skills.installBundle': SkillBundleInstallRequestSchema,
+  'skills.installBundlePackageVersion': SkillAuthorizedBundlePackageInstallParams,
+  'skills.installBundleShare': SkillAuthorizedBundleShareInstallParams,
+  'skills.installPackageVersion': SkillAuthorizedPackageInstallParams,
+  'skills.installShare': SkillAuthorizedShareInstallParams,
   'skills.listManagedInstalls': null,
+  'skills.listOwnedShares': null,
+  'skills.prepareShare': skillSharePrepareIpcSchema,
+  'skills.previewBundleInstall': SkillBundleInstallPreviewRequestSchema,
   'skills.previewDelete': SkillDeleteRequestSchema,
   'skills.previewInstall': SkillInstallPreviewRequestSchema,
+  'skills.publishShare': skillSharePublishIpcSchema,
+  'skills.releaseShare': SkillPreparationIdParams,
   'skills.removeInstall': SkillRemoveRequestSchema,
+  'skills.resolveShare': SkillShareIdParams,
+  'skills.revokeShare': SkillShareIdParams,
   'skills.share': AgentSkillShareRequestSchema,
+  'skills.startUpdateRun': SkillUpdateStartParams,
   'skills.uploadChunk': SkillUploadChunkRequestSchema,
+  'skills.viewerAction': SkillsViewerParams,
+  'sparsePreset.viewerAction': SparsePresetViewerParams,
   'speech.dictation.cancel': DictationHandle,
   'speech.dictation.chunk': DictationChunk,
   'speech.dictation.finish': DictationHandle,
   'speech.dictation.setup': DictationSetup,
   'speech.dictation.start': DictationStart,
+  'speech.dictation.transcribe': SpeechFileTranscription,
+  'speech.key.clear': null,
+  'speech.key.save': SpeechKeySave,
+  'speech.key.status': null,
+  'speech.models.cancel': SpeechModelAction,
   'speech.models.delete': SpeechModelAction,
   'speech.models.download': SpeechModelAction,
   'speech.models.list': null,
@@ -1143,29 +1952,74 @@ export const RPC_PARAMS_BY_METHOD = {
   'ssh.listRemovedTargetLabels': null,
   'ssh.listTargetSummaries': null,
   'ssh.listTargets': null,
+  'ssh.management.addPortForward': SshManagedAddForward,
+  'ssh.management.addTarget': SshManagedAddTarget,
+  'ssh.management.browseDir': SshManagedBrowse,
+  'ssh.management.credentialRequests': null,
+  'ssh.management.disconnect': SshManagedTarget,
+  'ssh.management.importConfig': SshManagedImportConfig,
+  'ssh.management.listConfigHosts': SshManagedConfigQuery,
+  'ssh.management.listDetectedPorts': SshManagedTarget,
+  'ssh.management.listPortForwards': SshManagedTarget,
+  'ssh.management.listRemovedTargetLabels': null,
+  'ssh.management.needsPassphrasePrompt': SshManagedTarget,
+  'ssh.management.removePortForward': SshManagedRemoveForward,
+  'ssh.management.removeTarget': SshManagedDestructiveTarget,
+  'ssh.management.resetRelay': SshManagedDestructiveTarget,
+  'ssh.management.resolveConfigHost': SshManagedConfigAlias,
+  'ssh.management.submitCredential': SshManagedCredential,
+  'ssh.management.terminateSessions': SshManagedDestructiveTarget,
+  'ssh.management.testConnection': SshManagedTarget,
+  'ssh.management.updatePortForward': SshManagedUpdateForward,
+  'ssh.management.updateTarget': SshManagedUpdateTarget,
   'stats.summary': null,
   'status.get': null,
+  'structuredHeld.subscribe': StructuredHeldSubscriptionParams,
   'terminal.adoptOrphans': TerminalAdoptOrphans,
   'terminal.agentStatus': TerminalHandle,
+  'terminal.claimHostViewport': TerminalHostViewportParams,
   'terminal.clearBuffer': TerminalHandle,
   'terminal.close': TerminalHandle,
   'terminal.closeAll': TerminalCloseAll,
   'terminal.closeTab': TerminalHandle,
+  'terminal.codexSharedServerStatus': CodexPaneSharedServerStatusParams,
+  'terminal.confirmForegroundProcess': CodexPaneSharedServerStatusParams,
+  'terminal.controlRequests.subscribe': TerminalControlSubscriptionParams,
   'terminal.create': TerminalCreateParams,
   'terminal.createAgentSession': CreateAgentSessionParams,
+  'terminal.cwd': CodexPaneSharedServerStatusParams,
+  'terminal.dataListenerCount': TerminalListenerCountParams,
+  'terminal.deliveryDebug': TerminalDeliveryDebugReadParams,
+  'terminal.disableCodexSharedServerAutoStart': CodexPaneSharedServerMutationParams,
+  'terminal.drivers': TerminalHostInventoryParams,
+  'terminal.effects.subscribe': TerminalEffectsSubscriptionParams,
   'terminal.ensureAgentSession': EnsureAgentSessionParams,
+  'terminal.exit.subscribe': TerminalExitSubscriptionParams,
+  'terminal.fitOverrides': TerminalHostInventoryParams,
+  'terminal.floatingCwd': FloatingTerminalCwdParams,
   'terminal.focus': TerminalFocus,
   'terminal.getAutoRestoreFit': TerminalGetAutoRestoreFitParams,
   'terminal.getDisplayMode': TerminalHandle,
   'terminal.inspectProcess': TerminalInspectProcess,
   'terminal.isRunningAgent': TerminalHandle,
   'terminal.list': TerminalListParams,
+  'terminal.listProviderSessions': PtyProviderSessionsParams,
+  'terminal.mainBufferSnapshot': TerminalMainBufferParams,
+  'terminal.modelRestore.subscribe': TerminalControlSubscriptionParams,
   'terminal.multiplex': TerminalMultiplex,
+  'terminal.presence': CodexPaneSharedServerStatusParams,
+  'terminal.presentation.subscribe': TerminalPresentationSubscriptionParams,
+  'terminal.previewData.subscribe': TerminalPreviewDataSubscriptionParams,
+  'terminal.previewInput': TerminalPreviewInputParams,
   'terminal.read': TerminalRead,
   'terminal.recoverPane': TerminalRecoverPane,
   'terminal.rename': TerminalRename,
+  'terminal.rendererData.subscribe': TerminalPreviewDataSubscriptionParams,
+  'terminal.rendererReplay.subscribe': TerminalPreviewDataSubscriptionParams,
+  'terminal.resetDeliveryDebug': TerminalDeliveryDebugResetParams,
   'terminal.resetInputModes': TerminalHandle,
   'terminal.resizeForClient': TerminalResizeForClient,
+  'terminal.resizeHost': TerminalHostResizeParams,
   'terminal.resolveActive': TerminalResolveActive,
   'terminal.resolveIdentity': TerminalHandle,
   'terminal.resolvePane': TerminalResolvePane,
@@ -1175,40 +2029,110 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.setDisplayMode': TerminalSetDisplayMode,
   'terminal.setViewerColors': TerminalSetViewerColors,
   'terminal.show': TerminalHandle,
+  'terminal.sideEffectSnapshot': TerminalSideEffectSnapshotParams,
+  'terminal.signal': TerminalSignalParams,
+  'terminal.size': CodexPaneSharedServerStatusParams,
   'terminal.sleep': TerminalCloseAll,
+  'terminal.spawn.subscribe': TerminalSpawnSubscriptionParams,
+  'terminal.spawnPrivate': TerminalPrivateSpawnParams,
   'terminal.split': TerminalSplit,
   'terminal.stop': TerminalCloseAll,
+  'terminal.stopCodexSharedServer': CodexPaneSharedServerMutationParams,
   'terminal.stopExact': TerminalStopExact,
+  'terminal.stopPty': TerminalPtyStopParams,
   'terminal.subscribe': TerminalSubscribe,
   'terminal.unsubscribe': TerminalUnsubscribe,
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
+  'terminal.waitDriver': TerminalPresentationWaitParams,
+  'terminal.waitFit': TerminalPresentationWaitParams,
+  'terminal.writeInput': TerminalPreviewInputParams,
+  'terminal.writeInputAccepted': TerminalPreviewInputParams,
+  'terminal.writeRenderEvidence': TerminalRenderEvidenceParams,
+  'ui.activityViewer': ActivityViewerParams,
+  'ui.browserViewer': BrowserViewerCommand,
+  'ui.cardViewer': CardViewerParams,
+  'ui.crashReportViewer': CrashReportParams,
+  'ui.featureTourViewer': FeatureTourParams,
   'ui.get': null,
+  'ui.projectFilter': ProjectFilterParams,
   'ui.recordFeatureInteraction': FeatureInteractionIdParam,
   'ui.set': UiUpdate,
+  'ui.settingsViewer': SettingsViewerParams,
+  'ui.setupGuideViewer': SetupGuideParams,
+  'ui.sidebarViewer': SidebarViewerParams,
+  'ui.statusBarViewer': StatusBarViewerParams,
+  'ui.workspaceFilter': WorkspaceFilterParams,
+  'ui.workspaceListViewer': WorkspaceListViewerParams,
   'updater.check': UpdaterCheckParams,
   'updater.download': null,
   'updater.getStatus': null,
   'updater.install': null,
+  'usage.getBreakdown': UsageBreakdownParams,
+  'usage.getDaily': UsageQueryParams,
+  'usage.getRecentSessions': UsageSessionsParams,
+  'usage.getScanState': UsageProviderParams,
+  'usage.getSnapshot': UsageSessionsParams,
+  'usage.getSummary': UsageQueryParams,
+  'usage.refresh': UsageRefreshParams,
+  'usage.setEnabled': UsageEnabledParams,
+  'usage.viewerAction': UsageViewerParams,
+  'vm.attach': VmAttach,
+  'vm.cleanup': VmRuntime,
+  'vm.cleanup.command': VmRuntime,
+  'vm.cleanup.stop': VmStopCleanup,
+  'vm.doctor': VmRecipe,
+  'vm.provision': VmProvision,
+  'vm.provision.cancel': VmProvisionIdentity,
+  'vm.provision.status': VmProvisionIdentity,
+  'vm.recipes.catalog': null,
+  'vm.recipes.list': VmRepo,
+  'vm.resume': VmWorkspace,
+  'vm.runtimes.list': null,
+  'vm.suspend': VmWorkspace,
+  'voice.viewer': VoiceViewerParams,
+  'workspaceCleanup.clearDismissals': null,
+  'workspaceCleanup.dismiss': WorkspaceCleanupDismiss,
+  'workspaceCleanup.getCachedScan': null,
+  'workspaceCleanup.scanCancel': DesktopCleanupScanRequest,
+  'workspaceCleanup.scanResult': DesktopCleanupScanRequest,
+  'workspaceCleanup.scanStart': DesktopCleanupScanStart,
+  'workspaceCleanup.scanStatus': DesktopCleanupScanRequest,
   'workspacePorts.kill': WorkspacePortKillParams,
+  'workspacePorts.registerDesktopLocalhostLabel': DesktopLocalhostLabel,
   'workspacePorts.scan': WorkspacePortScanParams,
+  'workspaceSpace.getCachedAnalysis': null,
+  'workspaceSpace.scanCancel': WorkspaceSpaceScanRequest,
+  'workspaceSpace.scanResult': WorkspaceSpaceScanResult,
+  'workspaceSpace.scanStart': WorkspaceSpaceScanStart,
+  'workspaceSpace.scanStatus': WorkspaceSpaceScanRequest,
   'worktree.activate': WorktreeActivate,
+  'worktree.adoptDesktopProvisionedRoot': DesktopProvisionedRootAdopt,
   'worktree.create': WorktreeCreate,
+  'worktree.createDesktop': DesktopWorktreeCreate,
   'worktree.detectedList': WorktreeDetectedListParams,
   'worktree.forceDeleteBranch': WorktreeForceDeleteBranch,
+  'worktree.forgetDesktop': DesktopWorktreeForget,
   'worktree.lineageList': null,
   'worktree.list': WorktreeListParams,
+  'worktree.listAllVisible': null,
   'worktree.listRetiredNames': WorktreeDetectedListParams,
+  'worktree.listVisible': DesktopVisibleWorktrees,
   'worktree.persistSortOrder': WorktreeSortOrder,
   'worktree.prefetchCreateBase': WorktreePrefetchCreateBase,
+  'worktree.previewDesktopRemoval': DesktopWorktreeRemovalPreview,
   'worktree.ps': WorktreePsParams,
+  'worktree.removeDesktop': DesktopWorktreeRemove,
   'worktree.resolveMrBase': WorktreeResolveMrBase,
   'worktree.resolvePrBase': WorktreeResolvePrBase,
   'worktree.rm': WorktreeRemove,
   'worktree.set': WorktreeSet,
   'worktree.show': WorktreeSelectorOfWorktreeParams,
   'worktree.sleep': WorktreeSelectorOfWorktreeParams,
-  'worktree.teardownMissingTerminals': WorktreeTeardownMissingTerminalsParams
+  'worktree.teardownMissingTerminals': WorktreeTeardownMissingTerminalsParams,
+  'worktree.updateDesktopLineage': DesktopWorktreeLineageUpdate,
+  'worktree.updateDesktopMetadata': DesktopWorktreeMetaUpdate,
+  'worktrees.branchRenameFailureOutput': BranchRenameFailureRead
 } as const
 
 // Why: these methods bind a schema the shared contract cannot hold because its value

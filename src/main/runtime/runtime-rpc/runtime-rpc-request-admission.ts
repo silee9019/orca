@@ -5,13 +5,14 @@ import type { RpcRequest, RpcResponse } from '../rpc/core'
 import { errorResponse } from '../rpc/errors'
 import { RuntimeRpcBinaryRouting } from './runtime-rpc-binary-routing'
 import { classifyRuntimeLongPoll, type RuntimeLongPollClass } from './runtime-rpc-long-poll'
+import { dispatchLocalNativeChatStream } from './local-native-chat-stream'
 
 export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
-  // Why: Unix socket dispatch is one-shot and auths via the shared token from the 0o600 metadata file. See §3.1.
+  // Local requests authenticate with the shared token from the 0o600 metadata file.
   protected async handleMessage(
     rawMessage: string,
     context?: RpcMessageContext
-  ): Promise<RpcResponse> {
+  ): Promise<RpcResponse | undefined> {
     // Why: the transport sends an empty message when a client exceeds max size, then closes the connection.
     if (!rawMessage) {
       return this.buildError('unknown', 'request_too_large', 'RPC request exceeds the maximum size')
@@ -22,6 +23,9 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
       return parsed.error
     }
     const request = parsed.request
+    if (request.localStream === 1) {
+      return dispatchLocalNativeChatStream(request, context, this.runtime, this.dispatcher)
+    }
 
     // Why: long-poll admission fence; short RPCs bypass the counter. See §7 risk #2.
     const longPoll = classifyRuntimeLongPoll(request)
@@ -35,6 +39,22 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
     }
 
     try {
+      if (
+        (request.method === 'accounts.observeCodexLogin' ||
+          request.method === 'rateLimits.subscribe' ||
+          request.method === 'macosTccPrompts.observeThreshold') &&
+        context?.streamReply
+      ) {
+        await this.dispatcher.dispatchStreaming(request, context.streamReply, {
+          signal: context.signal
+        })
+        return {
+          id: request.id,
+          ok: true,
+          result: { type: 'end' },
+          _meta: { runtimeId: this.runtime.getRuntimeId() }
+        }
+      }
       return await this.dispatcher.dispatch(request, {
         signal: longPoll ? context?.signal : undefined
       })
@@ -141,10 +161,27 @@ export class RuntimeRpcRequestAdmission extends RuntimeRpcBinaryRouting {
 
   protected writeMetadata(): void {
     const metadata: RuntimeMetadata = {
+      remoteWorkspaceStreaming: 1,
       runtimeId: this.runtime.getRuntimeId(),
+      terminalPresentationStreaming: 1,
       pid: this.pid,
       transports: this.transports,
+      agentAwakeStreaming: 1,
       authToken: this.authToken,
+      nativeChatStreaming: 1,
+      structuredHeldStreaming: 1,
+      agentStatusStreaming: 1,
+      agentStatusMigrationStreaming: 1,
+      agentWorkerRecoveryStreaming: 1,
+      terminalEffectsStreaming: 1,
+      terminalExitStreaming: 1,
+      terminalSpawnStreaming: 1,
+      terminalControlStreaming: 1,
+      terminalModelRestoreStreaming: 1,
+      rendererDeliveryResyncStreaming: 1,
+      terminalRendererDataStreaming: 1,
+      terminalRendererReplayStreaming: 1,
+      terminalPreviewDataStreaming: 1,
       startedAt: this.runtime.getStartedAt()
     }
     writeRuntimeMetadata(this.userDataPath, metadata)

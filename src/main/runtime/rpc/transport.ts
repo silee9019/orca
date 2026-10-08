@@ -12,8 +12,15 @@
 // out. `startKeepalive` is opt-in per request — only long-poll dispatches
 // call it, so short RPCs pay no timer overhead. See design doc §3.1.
 export type RpcMessageContext = {
+  streamReply?: (response: string) => void
   signal: AbortSignal
   startKeepalive: () => void
+  clientEventStream?: { emit(response: string): void; finish(): void }
+  stream?: {
+    connectionId: string
+    begin: () => boolean
+    send: (response: string) => void
+  }
 }
 
 export type RpcTransport = {

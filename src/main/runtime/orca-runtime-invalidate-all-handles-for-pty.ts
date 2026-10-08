@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import { publishPtySpawned } from './pty-spawn-observers'
 import { OrcaRuntimeWithResolveKnownWorkspaceFileTarget } from './orca-runtime-resolve-known-workspace-file-target'
 import type { PtyIncarnationId } from '../../shared/pty-incarnation'
 import { getPtyExecutionHost } from '../../shared/terminal-execution-host'
@@ -177,5 +178,6 @@ export class OrcaRuntimeWithInvalidateAllHandlesForPty extends OrcaRuntimeWithRe
       leaf.writable = this.graphStatus === 'ready'
       this.adoptPreAllocatedHandle(leaf)
     }
+    publishPtySpawned(this, ptyId, incarnationId, options.awaitsRegistration !== false)
   }
 }

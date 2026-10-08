@@ -146,6 +146,14 @@ export class OrcaRuntimeWithGetOrchestrationDispatchAuthority extends OrcaRuntim
     }
   }
 
+  getTerminalPresence(ptyId: string): boolean | null {
+    try {
+      return this.ptyController?.hasPty?.(ptyId) ?? null
+    } catch {
+      return null
+    }
+  }
+
   async resolveTerminalCwd(handle: string): Promise<string | null> {
     const ptyId = this.resolveLeafForHandle(handle)?.ptyId
     if (!ptyId) {
@@ -155,6 +163,10 @@ export class OrcaRuntimeWithGetOrchestrationDispatchAuthority extends OrcaRuntim
     if (tracked) {
       return tracked
     }
+    return this.getTerminalCwd(ptyId)
+  }
+
+  async getTerminalCwd(ptyId: string): Promise<string | null> {
     try {
       const cwd = await this.ptyController?.getCwd?.(ptyId)
       return cwd && cwd.trim().length > 0 ? cwd : null

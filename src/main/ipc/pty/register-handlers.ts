@@ -215,6 +215,7 @@ export function registerPtyHandlers(
 
   // Why: route through getProviderForPty() so CLI commands work for remote PTYs too; localProvider would silently fail for them.
   installPtyRuntimeController({
+    pendingData: session.pendingData,
     runtime,
     store,
     adoptStablePane: adoptStablePaneBound,

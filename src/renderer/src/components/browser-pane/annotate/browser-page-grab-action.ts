@@ -1,21 +1,11 @@
+import { writeVerifiedClipboardText } from '@/runtime/clipboard-text-write'
 import type { MutableRefObject } from 'react'
-import type {
-  BrowserGrabPayload,
-  BrowserGrabScreenshot
-} from '../../../../../shared/browser-grab-types'
+import type { BrowserGrabPayload } from '../../../../../shared/browser-grab-types'
 import { formatGrabPayloadAsText } from './GrabConfirmationSheet'
 import type { GrabModeHook } from './useGrabMode'
 import type { BrowserPageGrabToastState, GrabIntent } from '../describe-page/browser-page-types'
 
-export function runBrowserGrabActionShortcut({
-  key,
-  grabIntent,
-  grab,
-  grabPayloadRef,
-  toolTargetIdRef,
-  recordFeatureInteraction,
-  showGrabToast
-}: {
+export type BrowserGrabActionArgs = {
   key: 'c' | 's'
   grabIntent: GrabIntent
   grab: GrabModeHook
@@ -27,77 +17,142 @@ export function runBrowserGrabActionShortcut({
     type: BrowserPageGrabToastState['type'],
     payload?: BrowserGrabPayload | null
   ) => void
-}): void {
+}
+export type BrowserGrabActionOutcome = {
+  copied: boolean
+  source: 'hover' | 'selection'
+  rearmed: boolean
+}
+type VerifiedAction = { stillCurrent: () => boolean }
+export function runBrowserGrabActionShortcut(
+  args: BrowserGrabActionArgs & { verified: VerifiedAction }
+): Promise<BrowserGrabActionOutcome>
+export function runBrowserGrabActionShortcut(args: BrowserGrabActionArgs): void
+export function runBrowserGrabActionShortcut({
+  key,
+  grabIntent,
+  grab,
+  grabPayloadRef,
+  toolTargetIdRef,
+  recordFeatureInteraction,
+  showGrabToast,
+  verified
+}: BrowserGrabActionArgs & {
+  verified?: VerifiedAction
+}): void | Promise<BrowserGrabActionOutcome> {
+  const missed = (source: 'hover' | 'selection'): BrowserGrabActionOutcome => ({
+    copied: false,
+    source,
+    rearmed: false
+  })
   if (grabIntent === 'annotate') {
-    return
+    return verified ? Promise.resolve(missed('hover')) : undefined
   }
-  const copyFromPayload = (payload: BrowserGrabPayload): void => {
+  const copyFromPayload = (payload: BrowserGrabPayload): void | Promise<boolean> => {
+    const dataUrl = payload.screenshot?.dataUrl
+    if (verified) {
+      return (async () => {
+        if (!verified.stillCurrent()) {
+          return false
+        }
+        if (key === 'c') {
+          if (!(await writeVerifiedClipboardText(formatGrabPayloadAsText(payload)))) {
+            return false
+          }
+        } else {
+          if (!dataUrl?.startsWith('data:image/png;base64,')) {
+            return false
+          }
+          const ack = await window.api.ui.writeVerifiedClipboardImage(dataUrl)
+          if (ack?.written !== true) {
+            return false
+          }
+        }
+        if (!verified.stillCurrent()) {
+          return false
+        }
+        recordFeatureInteraction('browser-grab')
+        showGrabToast(key === 'c' ? 'Copied' : 'Screenshotted', 'success', payload)
+        return true
+      })()
+    }
     if (key === 'c') {
-      const text = formatGrabPayloadAsText(payload)
-      void window.api.ui.writeClipboardText(text)
+      void window.api.ui.writeClipboardText(formatGrabPayloadAsText(payload))
       recordFeatureInteraction('browser-grab')
       showGrabToast('Copied', 'success', payload)
+    } else if (dataUrl?.startsWith('data:image/png;base64,')) {
+      void window.api.ui.writeClipboardImage(dataUrl)
+      recordFeatureInteraction('browser-grab')
+      showGrabToast('Screenshotted', 'success', payload)
     } else {
-      const dataUrl = payload.screenshot?.dataUrl
-      if (dataUrl?.startsWith('data:image/png;base64,')) {
-        void window.api.ui.writeClipboardImage(dataUrl)
-        recordFeatureInteraction('browser-grab')
-        showGrabToast('Screenshotted', 'success', payload)
-      } else {
-        showGrabToast('No screenshot available', 'error', payload)
-      }
+      showGrabToast('No screenshot available', 'error', payload)
     }
   }
-
   if (grab.state === 'confirming') {
-    // Why: right-click (contextMenu) skips the left-click auto-copy, so C must still work here.
-    if (grab.contextMenu && key === 'c') {
-      const currentPayload = grabPayloadRef.current
-      if (currentPayload) {
-        copyFromPayload(currentPayload)
+    if ((grab.contextMenu && key === 'c') || key === 's') {
+      const payload = grabPayloadRef.current
+      if (verified) {
+        return (async () => {
+          if (!payload || !(await copyFromPayload(payload)) || !verified.stillCurrent()) {
+            return missed('selection')
+          }
+          grab.rearm()
+          return { copied: true, source: 'selection', rearmed: true }
+        })()
       }
-      grab.rearm()
-    } else if (key === 's') {
-      const currentPayload = grabPayloadRef.current
-      if (currentPayload) {
-        copyFromPayload(currentPayload)
+      if (payload) {
+        copyFromPayload(payload)
       }
       grab.rearm()
     }
-  } else {
-    // armed/awaiting — extract hovered element via IPC without clicking
-    void (async () => {
-      let result: Awaited<ReturnType<typeof window.api.browser.extractHoverPayload>>
-      try {
-        result = await window.api.browser.extractHoverPayload({
-          browserPageId: toolTargetIdRef.current
-        })
-      } catch {
-        // Why: the guest can be destroyed or the IPC channel torn down mid-shortcut; surface it like a miss instead of an unhandled rejection.
+    return verified ? Promise.resolve(missed('selection')) : undefined
+  }
+  const page = toolTargetIdRef.current
+  const run = async (): Promise<BrowserGrabActionOutcome> => {
+    let result: Awaited<ReturnType<typeof window.api.browser.extractHoverPayload>>
+    try {
+      result = await window.api.browser.extractHoverPayload({ browserPageId: page })
+    } catch {
+      if (!verified) {
         showGrabToast('Could not read the hovered element', 'error')
-        return
       }
-      if (!result.ok) {
+      return missed('hover')
+    }
+    if (!result.ok) {
+      if (!verified) {
         showGrabToast('No element hovered', 'error')
-        return
       }
-      const payload = result.payload as BrowserGrabPayload
-
-      if (key === 's') {
-        try {
-          const ssResult = await window.api.browser.captureSelectionScreenshot({
-            browserPageId: toolTargetIdRef.current,
-            rect: payload.target.rectViewport
-          })
-          if (ssResult.ok) {
-            payload.screenshot = ssResult.screenshot as BrowserGrabScreenshot
-          }
-        } catch {
-          // Screenshot failure is non-fatal for the copy flow
+      return missed('hover')
+    }
+    if (verified && !verified.stillCurrent()) {
+      return missed('hover')
+    }
+    const payload = result.payload
+    if (key === 's') {
+      try {
+        const screenshot = await window.api.browser.captureSelectionScreenshot({
+          browserPageId: verified ? page : toolTargetIdRef.current,
+          rect: payload.target.rectViewport
+        })
+        if (screenshot.ok) {
+          payload.screenshot = screenshot.screenshot
+        } else if (verified) {
+          return missed('hover')
+        }
+      } catch {
+        if (verified) {
+          return missed('hover')
         }
       }
-
-      copyFromPayload(payload)
-    })()
+    }
+    if (verified && !verified.stillCurrent()) {
+      return missed('hover')
+    }
+    const copied = await copyFromPayload(payload)
+    return { copied: verified ? copied === true : true, source: 'hover', rearmed: false }
   }
+  if (verified) {
+    return run()
+  }
+  void run()
 }

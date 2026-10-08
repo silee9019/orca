@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+import type { NativeContextViewerTarget } from '../../../../shared/rpc-contract/usage-params'
 import { NativeChatPromptEditor } from './NativeChatPromptEditor'
 import type { NativeChatComposerInput } from './native-chat-composer-input'
 import type { ClipboardEventHandler, KeyboardEventHandler, RefObject } from 'react'
@@ -63,6 +65,7 @@ export type NativeChatComposerFieldProps = {
   onStop?: () => void
   sessionOptionsSurface: SessionOptionsSurface | null
   sessionOptionsSnapshot: SessionOptionDescriptor[]
+  contextUsageTarget?: z.infer<typeof NativeContextViewerTarget>
   contextUsage?: NativeChatContextUsageSummary | null
   sessionOptionsPickerRequest?: NativeChatOptionPickerRequest | null
   goalMode?: NativeChatComposerGoalMode
@@ -141,6 +144,7 @@ export function NativeChatComposerField({
   onStop,
   sessionOptionsSurface,
   sessionOptionsSnapshot,
+  contextUsageTarget,
   contextUsage,
   sessionOptionsPickerRequest,
   goalMode
@@ -308,6 +312,7 @@ export function NativeChatComposerField({
                 onStop={onStop}
                 sessionOptionsSurface={sessionOptionsSurface}
                 sessionOptionsSnapshot={sessionOptionsSnapshot}
+                contextUsageTarget={contextUsageTarget}
                 contextUsage={contextUsage}
                 sessionOptionsPickerRequest={sessionOptionsPickerRequest}
                 onExitGoalMode={goalMode?.active ? goalMode.exit : undefined}

@@ -34,6 +34,7 @@ export const REPO_METHODS = [
     params: null,
     handler: (_params, context) => {
       context.runtime.enrichMissingRepoGitRemoteIdentities?.()
+      context.runtime.enrichRepoGitUsernames?.()
       return {
         repos: context.runtime
           .listRepos()

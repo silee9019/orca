@@ -41,21 +41,29 @@ export async function stopReplacedPanePty(deps: PtyKillIpcDeps, id: string): Pro
 /** Stops a renderer-owned PTY and settles only once its shutdown has been observed or synthesized. */
 export async function stopRendererOwnedPty(
   deps: PtyKillIpcDeps,
-  args: { id: string; keepHistory?: boolean }
+  args: { id: string; keepHistory?: boolean },
+  assertTarget?: () => void
 ): Promise<void> {
   // Why: only hibernation passes keepHistory, and its exit must keep the pane's wake binding.
-  await stopRendererOwnedPtyAs(deps, args, args?.keepHistory === true ? 'reversible' : null)
+  await stopRendererOwnedPtyAs(
+    deps,
+    args,
+    args?.keepHistory === true ? 'reversible' : null,
+    assertTarget
+  )
 }
 
 async function stopRendererOwnedPtyAs(
   deps: PtyKillIpcDeps,
   args: { id: string; keepHistory?: boolean },
-  intentionalStop: TerminalIntentionalStopKind | null
+  intentionalStop: TerminalIntentionalStopKind | null,
+  assertTarget?: () => void
 ): Promise<void> {
   if (typeof args?.id !== 'string' || !args.id || args.id.startsWith('remote:')) {
     // Why: runtime terminal handles belong to terminal.close; unowned PTY routing could target the local provider.
     throw new Error('Invalid PTY provider id')
   }
+  assertTarget?.()
   const settleStop = intentionalStop
     ? deps.runtime?.intentionalPtyStops?.mark(
         args.id,
@@ -65,7 +73,7 @@ async function stopRendererOwnedPtyAs(
     : undefined
   let stopped = false
   try {
-    await stopRendererOwnedPtyProcess(deps, args)
+    await stopRendererOwnedPtyProcess(deps, args, assertTarget)
     stopped = true
   } finally {
     settleStop?.(stopped)
@@ -74,7 +82,8 @@ async function stopRendererOwnedPtyAs(
 
 async function stopRendererOwnedPtyProcess(
   deps: PtyKillIpcDeps,
-  args: { id: string; keepHistory?: boolean }
+  args: { id: string; keepHistory?: boolean },
+  assertTarget?: () => void
 ): Promise<void> {
   const {
     store,
@@ -93,6 +102,7 @@ async function stopRendererOwnedPtyProcess(
   if (startupPromise) {
     await startupPromise
   }
+  assertTarget?.()
   // Why stated rather than inferred: this IPC serves both the ordinary tab close and pane
   // hibernation, and only hibernation passes keepHistory. Recording a replayable kill for a
   // hibernating pane would destroy it on the next handshake.

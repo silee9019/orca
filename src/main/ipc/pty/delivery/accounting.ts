@@ -1,3 +1,4 @@
+import { publishPtyControlRequest } from '../../../runtime/pty-control-request-observers'
 import type {
   PtyDeliveryWriteOff,
   PtyRendererDeliveryStateReport
@@ -160,6 +161,11 @@ export function requestDeliveryResyncForGatedPty(session: PtyIpcSession): void {
   }, PTY_DELIVERY_RESYNC_TIMEOUT_MS)
   session.deliveryResyncTimer.unref?.()
   session.mainWindow.webContents.send('pty:requestDeliveryResync', { requestId })
+  publishPtyControlRequest(session.runtime, {
+    kind: 'delivery-resync',
+    rendererId: session.mainWindow.webContents.id,
+    requestId
+  })
 }
 
 export function writeOffLostRendererDelivery(

@@ -264,6 +264,7 @@ export const WORKSPACE_FILE_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['file', 'delete'],
+    aliases: [['file', 'rm']],
     summary: 'Delete a path on the workspace host',
     usage: 'orca file delete --params-file <file|-> --confirm <target> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],

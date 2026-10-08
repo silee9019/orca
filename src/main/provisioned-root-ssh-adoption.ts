@@ -6,7 +6,10 @@ import type {
   CreateWorktreeResult
 } from '../shared/worktree/create-types'
 import type { WorktreeMeta } from '../shared/worktree/meta-types'
-import type { AutomationWorkspaceProvenance } from '../shared/worktree/types'
+import type {
+  AutomationWorkspaceProvenance,
+  CliWorkspaceProvenance
+} from '../shared/worktree/types'
 import { isRuntimeOwnedSshTargetId, toSshExecutionHostId } from '../shared/execution-host'
 import { normalizeRuntimePathForComparison } from '../shared/cross-platform-path'
 import {
@@ -32,6 +35,7 @@ import {
 
 type AdoptionArgs = AdoptProvisionedRootArgs & {
   automationProvenance?: AutomationWorkspaceProvenance
+  cliProvenance?: CliWorkspaceProvenance
 }
 
 export async function adoptProvisionedRootSshCheckout(args: {
@@ -173,7 +177,7 @@ function buildProvisionedRootMeta(
     args.displayName,
     args.displayNameKind,
     args.name,
-    false,
+    args.cliProvenance?.kind === 'created-by-cli',
     args.nameWasGenerated === true
   )
   const displayNameMeta = resolveWorktreeCreateDisplayNameMeta(
@@ -198,6 +202,7 @@ function buildProvisionedRootMeta(
     creatorProvenance: { kind: 'host' },
     orcaCreationWorkspaceLayout: getWorktreeCreationLayout(repo, store.getSettings()),
     ...(args.automationProvenance ? { automationProvenance: args.automationProvenance } : {}),
+    ...(args.cliProvenance ? { cliProvenance: args.cliProvenance } : {}),
     ...(args.compareBaseRef || args.baseBranch
       ? { baseRef: args.compareBaseRef ?? args.baseBranch }
       : {}),

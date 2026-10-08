@@ -15,10 +15,27 @@ export type RuntimeTransportMetadata =
     }
 
 export type RuntimeMetadata = {
+  agentAwakeStreaming?: 1
   runtimeId: string
+  remoteWorkspaceStreaming?: 1
   pid: number
+  terminalPresentationStreaming?: 1
   transports: RuntimeTransportMetadata[]
   authToken: string | null
+  nativeChatStreaming?: 1
+  structuredHeldStreaming?: 1
+  agentStatusStreaming?: 1
+  agentStatusMigrationStreaming?: 1
+  agentWorkerRecoveryStreaming?: 1
+  terminalEffectsStreaming?: 1
+  terminalExitStreaming?: 1
+  terminalSpawnStreaming?: 1
+  terminalControlStreaming?: 1
+  terminalModelRestoreStreaming?: 1
+  rendererDeliveryResyncStreaming?: 1
+  terminalRendererDataStreaming?: 1
+  terminalRendererReplayStreaming?: 1
+  terminalPreviewDataStreaming?: 1
   startedAt: number
 }
 

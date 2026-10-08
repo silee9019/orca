@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import { publishLegacyWorkerRecovery } from './legacy-worker-recovery-observers'
 import { OrcaRuntimeWithAutomationOperations } from './orca-runtime-automation-operations'
 import {
   resolveTerminalSessionWorktreeId,
@@ -120,11 +121,11 @@ export class OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity extends Orc
       pty.tabId = null
       pty.paneKey = null
     }
-    this.notifier?.resolveLegacyWorkerTerminalRecovery?.(
-      candidate.paneKey,
-      'rolled_back',
-      candidate.ptyId
-    )
+    publishLegacyWorkerRecovery(this, this.notifier, {
+      paneKey: candidate.paneKey,
+      resolution: 'rolled_back',
+      ptyId: candidate.ptyId
+    })
   }
 
   protected getLegacyWorkerRecoveryActivation(worktreeId: string): {

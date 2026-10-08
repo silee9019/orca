@@ -1,4 +1,5 @@
-import { useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { parseHostAccessLink } from '../../../../shared/remote-pairing-address'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
@@ -16,7 +17,7 @@ type RuntimeEnvironmentMutationActionParams = {
   loadEnvironments: (verified?: {
     environmentId: string
     runtimeStatus: RuntimeStatus
-  }) => Promise<void>
+  }) => Promise<PublicKnownRuntimeEnvironment[] | null>
   connectEnvironment: (environment: PublicKnownRuntimeEnvironment) => Promise<boolean>
 }
 
@@ -29,6 +30,7 @@ export function useRuntimeEnvironmentMutationActions({
   loadEnvironments,
   connectEnvironment
 }: RuntimeEnvironmentMutationActionParams) {
+  const busyRef = useRef(false)
   const [isSaving, setIsSaving] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [removeError, setRemoveError] = useState<string | null>(null)
@@ -46,17 +48,25 @@ export function useRuntimeEnvironmentMutationActions({
     setAddServerFailure(null)
   }
 
-  const addEnvironment = async (allowLoopback: boolean): Promise<void> => {
+  const addEnvironment = async (allowLoopback: boolean): Promise<boolean> => {
+    if (busyRef.current) {
+      return false
+    }
     const trimmedName = name.trim()
     const trimmedPairingCode = pairingCode.trim()
-    if (!trimmedName || !trimmedPairingCode) {
+    const parsed = parseHostAccessLink(trimmedPairingCode)
+    if (
+      !trimmedName ||
+      !parsed.ok ||
+      (parsed.value.endpointKind === 'loopback' && !allowLoopback)
+    ) {
       toast.error(
         translate(
           'auto.components.settings.RuntimeEnvironmentsPane.0c55a47480',
           'Name and pairing code are required.'
         )
       )
-      return
+      return false
     }
     const duplicate = environments.find(
       (environment) => environment.name.trim().toLowerCase() === trimmedName.toLowerCase()
@@ -69,9 +79,10 @@ export function useRuntimeEnvironmentMutationActions({
           { value0: duplicate.name }
         )
       )
-      return
+      return false
     }
     setAddServerFailure(null)
+    busyRef.current = true
     setIsSaving(true)
     try {
       const result = await window.api.runtimeEnvironments.verifyAndAddFromPairingCode({
@@ -83,22 +94,27 @@ export function useRuntimeEnvironmentMutationActions({
         if (mountedRef.current) {
           setAddServerFailure({ kind: result.kind, message: result.message })
         }
-        return
+        return false
+      }
+      const current = await loadEnvironments({
+        environmentId: result.environment.id,
+        runtimeStatus: result.runtimeStatus
+      })
+      if (
+        !current?.some((entry) => entry.id === result.environment.id && entry.name === trimmedName)
+      ) {
+        return false
       }
       if (mountedRef.current) {
         setName('')
         setPairingCode('')
       }
-      await loadEnvironments({
-        environmentId: result.environment.id,
-        runtimeStatus: result.runtimeStatus
-      })
       if (!allowLocalRuntime) {
         const connected = await connectEnvironment(result.environment)
         if (!connected) {
           await window.api.runtimeEnvironments.remove({ selector: result.environment.id })
           await loadEnvironments()
-          return
+          return false
         }
       } else {
         if (mountedRef.current) {
@@ -114,6 +130,7 @@ export function useRuntimeEnvironmentMutationActions({
       if (mountedRef.current) {
         setAddServerFormOpen(false)
       }
+      return mountedRef.current
     } catch (error) {
       if (mountedRef.current) {
         toast.error(
@@ -125,7 +142,9 @@ export function useRuntimeEnvironmentMutationActions({
               )
         )
       }
+      return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setIsSaving(false)
       }
@@ -135,6 +154,10 @@ export function useRuntimeEnvironmentMutationActions({
   const removeEnvironment = async (
     environment: PublicKnownRuntimeEnvironment
   ): Promise<boolean> => {
+    if (busyRef.current) {
+      return false
+    }
+    busyRef.current = true
     setRemovingId(environment.id)
     setRemoveError(null)
     try {
@@ -150,7 +173,18 @@ export function useRuntimeEnvironmentMutationActions({
         return false
       }
       await window.api.runtimeEnvironments.remove({ selector: environment.id })
-      await loadEnvironments()
+      const current = await loadEnvironments()
+      if (!current || current.some((entry) => entry.id === environment.id)) {
+        if (mountedRef.current) {
+          setRemoveError(
+            translate(
+              'auto.components.settings.RuntimeEnvironmentsPane.removeUnverified',
+              'Server removal could not be verified.'
+            )
+          )
+        }
+        return false
+      }
       if (mountedRef.current) {
         toast.success(
           translate(
@@ -170,6 +204,7 @@ export function useRuntimeEnvironmentMutationActions({
       }
       return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setRemovingId(null)
       }

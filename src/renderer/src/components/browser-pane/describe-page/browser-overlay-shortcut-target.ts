@@ -15,16 +15,23 @@ export function browserOverlayOwnsShortcutTarget(
 }
 
 /** Whether a pane in this shortcut scope should answer a chrome-focus chord. */
-export function browserChromeShortcutOwnsEvent(
+export function browserChromeShortcutOwnsTarget(
   chromeShortcutScope: BrowserChromeShortcutScope,
-  event: Event,
+  target: EventTarget | null,
   workspaceId: string
 ): boolean {
   return (
     // Why: the floating panel sits over the focused split, so its chords belong to its own browser.
-    (chromeShortcutScope === 'focused' &&
-      !isEventTargetInsideFloatingWorkspacePanel(event.target)) ||
+    (chromeShortcutScope === 'focused' && !isEventTargetInsideFloatingWorkspacePanel(target)) ||
     (chromeShortcutScope === 'owned-target' &&
-      browserOverlayOwnsShortcutTarget(event.target, workspaceId))
+      browserOverlayOwnsShortcutTarget(target, workspaceId))
   )
+}
+
+export function browserChromeShortcutOwnsEvent(
+  scope: BrowserChromeShortcutScope,
+  event: Event,
+  workspaceId: string
+): boolean {
+  return browserChromeShortcutOwnsTarget(scope, event.target, workspaceId)
 }

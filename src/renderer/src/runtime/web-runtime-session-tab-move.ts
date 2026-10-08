@@ -1,8 +1,4 @@
-import type { RuntimeRpcResponse } from '../../../shared/runtime-rpc-envelope'
-import type {
-  RuntimeMobileSessionTabMove,
-  RuntimeMobileSessionTabMoveResult
-} from '../../../shared/runtime-types'
+import type { RuntimeMobileSessionTabMove } from '../../../shared/runtime-types'
 import { useAppStore } from '../store'
 import { unwrapRuntimeRpcResult } from './runtime-rpc-client'
 import { toRuntimeWorktreeSelector } from './runtime-worktree-selector'
@@ -21,6 +17,7 @@ export async function moveWebRuntimeSessionTab(
   args: RuntimeMobileSessionTabMove & {
     worktreeId: string
     environmentId?: string | null
+    requireAcknowledgedMove?: boolean
   }
 ): Promise<boolean> {
   const environmentId =
@@ -55,7 +52,9 @@ export async function moveWebRuntimeSessionTab(
       }) ?? (isWebTerminalSurfaceTabId(tabId) ? toHostSessionTabId(tabId) : null)
     const toHostTabId = (tabId: string): string => resolveHostBackedTabId(tabId) ?? tabId
     const movedHostTabId =
-      args.kind === 'reorder' ? resolveHostBackedTabId(args.tabId) : toHostTabId(args.tabId)
+      args.kind === 'reorder' || args.requireAcknowledgedMove
+        ? resolveHostBackedTabId(args.tabId)
+        : toHostTabId(args.tabId)
     if (!movedHostTabId) {
       clearWebSessionReorderIntent(intentOwner, args.worktreeId, args.targetGroupId)
       return false
@@ -110,7 +109,19 @@ export async function moveWebRuntimeSessionTab(
       params: move,
       timeoutMs: 15_000
     })
-    unwrapRuntimeRpcResult(response as RuntimeRpcResponse<RuntimeMobileSessionTabMoveResult>)
+    const result = unwrapRuntimeRpcResult(response)
+    if (
+      args.requireAcknowledgedMove &&
+      (typeof result !== 'object' ||
+        result === null ||
+        !('moved' in result) ||
+        result.moved !== true)
+    ) {
+      if (args.kind === 'reorder') {
+        clearWebSessionReorderIntent(intentOwner, args.worktreeId, args.targetGroupId)
+      }
+      return false
+    }
     return true
   } catch (error) {
     if (args.kind === 'reorder') {

@@ -1,3 +1,10 @@
+import { useSshWorkspaceOverlayViewerController } from '@/hooks/useSshConfirmationViewerController'
+import { useMountedRef } from '@/hooks/useMountedRef'
+import {
+  selectRuntimeAwareSshStatus,
+  selectRuntimeAwareSshTargetRemoved
+} from '@/store/slices/runtime-environment-ssh-selectors'
+import { toSshExecutionHostId, toRuntimeExecutionHostId } from '../../../../shared/execution-host'
 import { useCallback } from 'react'
 import { Loader2, Server, ServerOff } from 'lucide-react'
 import { toast } from 'sonner'
@@ -22,6 +29,7 @@ import type { SshConnectionStatus } from '../../../../shared/ssh-types'
 
 type WorktreeCardSshHostControlProps = {
   targetId: string
+  workspaceId?: string
   /** Card passes `sshTargetLabel || repo.displayName` — the selector can return a bare target id. */
   targetLabel: string
   /** Null for runtime-owned targets: renders the passive connected glyph, as before. */
@@ -71,6 +79,7 @@ function PassiveGlyph({
 
 export function WorktreeCardSshHostControl({
   targetId,
+  workspaceId,
   targetLabel,
   status,
   targetRemoved,
@@ -78,36 +87,54 @@ export function WorktreeCardSshHostControl({
   iconOnly,
   onPointerDown
 }: WorktreeCardSshHostControlProps): React.JSX.Element | null {
+  const mountedRef = useMountedRef()
   const setSshConnectionState = useAppStore((store) => store.setSshConnectionState)
   // Why: shared registry, not local state — the terminal overlay and every other card on
   // this host dial the same connection, and the store status lags a click by one IPC hop.
   const inFlight = useSshConnectInFlight(targetId)
 
-  const handleConnect = useCallback(async () => {
-    if (isSshConnectInFlight(targetId) || isConnectingSshStatus(status)) {
-      return
+  const handleConnect = useCallback(async (): Promise<boolean> => {
+    const state = useAppStore.getState()
+    const current = selectRuntimeAwareSshStatus(state, sshOwnerEnvironmentId, targetId)
+    const configured = sshOwnerEnvironmentId
+      ? state.sshStateByEnvironment.get(sshOwnerEnvironmentId)?.targetsHydrated
+      : state.sshTargetsHydrated
+    if (
+      !mountedRef.current ||
+      !configured ||
+      targetRemoved ||
+      selectRuntimeAwareSshTargetRemoved(state, sshOwnerEnvironmentId, targetId) ||
+      !canConnectSshStatus(current) ||
+      !canConnectSshStatus(status) ||
+      isSshConnectInFlight(targetId)
+    ) {
+      return false
     }
     try {
       if (sshOwnerEnvironmentId) {
         // Bucket state is written inside the helper, mirroring the local path.
-        await trackSshConnect(
+        const result = await trackSshConnect(
           targetId,
           connectRuntimeEnvironmentSshTarget(sshOwnerEnvironmentId, targetId)
         )
-      } else {
-        // Why: track the connect request, not this bounded wait — the backend is still
-        // dialing after the UI timeout fires, so releasing here would let the next click
-        // raise a second credential prompt.
-        const connectState = await withUiConnectTimeout(
-          trackSshConnect(targetId, window.api.ssh.connect({ targetId })),
-          SSH_RECONNECT_UI_TIMEOUT_MS
-        )
-        if (connectState) {
-          // Why: ssh.connect can resolve before the global state-change IPC lands;
-          // the waiting deferred PTY reattach path keys off this renderer store.
-          setSshConnectionState(targetId, connectState)
-        }
+        return result?.targetId === targetId && result.status === 'connected'
       }
+      // Why: track the connect request, not this bounded wait — the backend is still
+      // dialing after the UI timeout fires, so releasing here would let the next click
+      // raise a second credential prompt.
+      const connectState = await withUiConnectTimeout(
+        trackSshConnect(targetId, window.api.ssh.connect({ targetId })),
+        SSH_RECONNECT_UI_TIMEOUT_MS
+      )
+      if (connectState) {
+        // Why: ssh.connect can resolve before the global state-change IPC lands;
+        // the waiting deferred PTY reattach path keys off this renderer store.
+        if (connectState.targetId !== targetId) {
+          return false
+        }
+        setSshConnectionState(targetId, connectState)
+      }
+      return connectState?.targetId === targetId && connectState.status === 'connected'
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -131,8 +158,38 @@ export function WorktreeCardSshHostControl({
           useAppStore.getState().setRemovedSshTargetLabels(removedLabels)
         })().catch(() => {})
       }
+      return false
     }
-  }, [setSshConnectionState, sshOwnerEnvironmentId, status, targetId])
+  }, [mountedRef, setSshConnectionState, sshOwnerEnvironmentId, status, targetId, targetRemoved])
+
+  useSshWorkspaceOverlayViewerController({
+    read: () => {
+      const state = useAppStore.getState()
+      const current = selectRuntimeAwareSshStatus(state, sshOwnerEnvironmentId, targetId)
+      const configured = sshOwnerEnvironmentId
+        ? state.sshStateByEnvironment.get(sshOwnerEnvironmentId)?.targetsHydrated
+        : state.sshTargetsHydrated
+      const removed =
+        targetRemoved || selectRuntimeAwareSshTargetRemoved(state, sshOwnerEnvironmentId, targetId)
+      return {
+        surface: 'worktree-card',
+        workspaceId: workspaceId ?? null,
+        targetId,
+        expectedHostId: sshOwnerEnvironmentId
+          ? toRuntimeExecutionHostId(sshOwnerEnvironmentId)
+          : toSshExecutionHostId(targetId),
+        removed,
+        canConnect:
+          Boolean(configured) &&
+          !removed &&
+          !isSshConnectInFlight(targetId) &&
+          canConnectSshStatus(current) &&
+          canConnectSshStatus(status),
+        connected: current === 'connected' && status === 'connected'
+      }
+    },
+    connect: handleConnect
+  })
 
   // A live connection outranks a stale removal tombstone. A null status is a runtime-owned
   // target: no renderer-reachable connect, and the card has always shown the plain host glyph

@@ -17,6 +17,8 @@ export function createShellApi(): NonNullable<Partial<PreloadApi>['shell']> {
       Promise.resolve(window.open(path, '_blank', 'noopener,noreferrer') as never),
     openInFileManager: () => Promise.resolve(openResult),
     openInExternalEditor: () => Promise.resolve(openResult),
+    openVerifiedUrl: () =>
+      Promise.reject(new Error('Verified OS URL opening is unavailable in the web client')),
     openUrl: (url) => Promise.resolve(window.open(url, '_blank', 'noopener,noreferrer') as never),
     openFilePath: () => Promise.resolve(false),
     openFileUri: (uri) =>

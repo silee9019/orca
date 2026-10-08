@@ -28,6 +28,11 @@ import {
   resolveHostFlagTarget
 } from '../execution-host-flag'
 import { getOptionalStringFlag, getRequiredStringFlag } from '../flags'
+import {
+  readProjectProviderIdentity,
+  readProjectImportMethod
+} from '../project-provider-identity-input'
+import { confirmWorkspaceCommand } from '../workspace-command-input'
 import { resolveRepoPathArgument } from '../repo-path-arguments'
 import { RuntimeClientError, type RuntimeRpcSuccess } from '../runtime-client'
 
@@ -68,9 +73,6 @@ async function getResolvedHostId(
   return host.id
 }
 
-// Why: the setup paths keep the unresolved id on purpose. The runtime rejects every `ssh:` host
-// for those operations regardless of whether it exists, so resolving first would answer "no such
-// target" and imply the command would have worked with the right id.
 function getRequiredHostId(flags: Map<string, string | boolean>): ExecutionHostId {
   const host = parseHostFlag(flags)
   if (!host) {
@@ -117,9 +119,11 @@ export const PROJECT_HANDLERS: Record<string, CommandHandler> = {
     const pathIsOffClient = client.isRemote || getSshTargetIdForExecutionHost(hostId) !== null
     const args: ProjectHostSetupExistingFolderArgs = {
       projectId: getRequiredStringFlag(flags, 'project'),
+      projectProviderIdentity: readProjectProviderIdentity(flags),
       hostId,
       path: resolveRepoPathArgument(rawPath, cwd, pathIsOffClient, 'Remote project setup'),
       kind: getOptionalRepoKind(flags),
+      setupMethod: readProjectImportMethod(flags),
       displayName: getOptionalStringFlag(flags, 'display-name')
     }
     const result = await callProjectHostSetup<{ result: ProjectHostSetupResult }>(
@@ -133,6 +137,7 @@ export const PROJECT_HANDLERS: Record<string, CommandHandler> = {
     const rawDestination = getRequiredStringFlag(flags, 'destination')
     const args: ProjectHostSetupCloneArgs = {
       projectId: getRequiredStringFlag(flags, 'project'),
+      projectProviderIdentity: readProjectProviderIdentity(flags),
       hostId: getRequiredHostId(flags),
       url: getRequiredStringFlag(flags, 'url'),
       destination: resolveRepoPathArgument(
@@ -152,19 +157,20 @@ export const PROJECT_HANDLERS: Record<string, CommandHandler> = {
   },
   'project setup-create': async ({ flags, client, cwd, json }) => {
     const path = getOptionalStringFlag(flags, 'path')
+    const hostId = await getResolvedHostId(flags, client)
     const args: ProjectHostSetupCreateArgs = {
       projectId: getRequiredStringFlag(flags, 'project'),
-      // Why: unlike the setup paths below, the runtime does not reject `ssh:` here — this records
-      // independent metadata — so an unknown target would persist a row pointing at a machine
-      // that does not exist. Resolving catches that. `local` and `runtime:` pass through
-      // untouched, because this is also the provisioning path and a runtime host legitimately
-      // may not exist yet when its metadata is written.
-      hostId: await getResolvedHostId(flags, client),
+      hostId,
       setupId: getOptionalStringFlag(flags, 'setup-id'),
       path:
         path === undefined
           ? undefined
-          : resolveRepoPathArgument(path, cwd, client.isRemote, 'Project setup create'),
+          : resolveRepoPathArgument(
+              path,
+              cwd,
+              client.isRemote || hostId !== 'local',
+              'Project setup create'
+            ),
       kind: getOptionalRepoKind(flags),
       displayName: getOptionalStringFlag(flags, 'display-name'),
       worktreeBasePath: getOptionalStringFlag(flags, 'worktree-base-path'),
@@ -181,14 +187,27 @@ export const PROJECT_HANDLERS: Record<string, CommandHandler> = {
   },
   'project setup-update': async ({ flags, client, cwd, json }) => {
     const path = getOptionalStringFlag(flags, 'path')
+    const setupId = getRequiredStringFlag(flags, 'setup')
+    let pathIsOffClient = client.isRemote
+    if (path !== undefined && !pathIsOffClient) {
+      const response = await callProjectHostSetup<{ setups: ProjectHostSetup[] }>(
+        client,
+        'projectHostSetup.list'
+      )
+      const setup = response.result.setups.find((candidate) => candidate.id === setupId)
+      if (!setup) {
+        throw new RuntimeClientError('invalid_argument', 'Project host setup not found')
+      }
+      pathIsOffClient = setup.hostId !== 'local'
+    }
     const args: ProjectHostSetupUpdateArgs = {
-      setupId: getRequiredStringFlag(flags, 'setup'),
+      setupId,
       updates: {
         displayName: getOptionalStringFlag(flags, 'display-name'),
         path:
           path === undefined
             ? undefined
-            : resolveRepoPathArgument(path, cwd, client.isRemote, 'Project setup update'),
+            : resolveRepoPathArgument(path, cwd, pathIsOffClient, 'Project setup update'),
         worktreeBasePath: getOptionalStringFlag(flags, 'worktree-base-path'),
         gitUsername: getOptionalStringFlag(flags, 'git-username'),
         kind: getOptionalRepoKind(flags),
@@ -203,12 +222,15 @@ export const PROJECT_HANDLERS: Record<string, CommandHandler> = {
     )
     printResult(result, json, formatProjectHostSetupUpdateResult)
   },
-  'project setup-delete': async ({ flags, client, json }) => {
+  'project setup-delete': async (ctx) => {
+    const { flags, client, json } = ctx
+    const setupId = getRequiredStringFlag(flags, 'setup')
+    confirmWorkspaceCommand(ctx, setupId)
     const result = await callProjectHostSetup<{ result: ProjectHostSetupDeleteResult }>(
       client,
       'projectHostSetup.delete',
       {
-        setupId: getRequiredStringFlag(flags, 'setup')
+        setupId
       }
     )
     printResult(result, json, formatProjectHostSetupDeleteResult)

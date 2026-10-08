@@ -1,3 +1,7 @@
+import type {
+  PluginMarketplaceParentReadback,
+  PluginMarketplaceMutationReceipt
+} from './plugin-marketplace-parent-readback'
 import { Blocks, Loader2, SearchX } from 'lucide-react'
 import type { PluginHostListEntry } from '../../../../preload/api-types'
 import { translate } from '@/i18n/i18n'
@@ -24,7 +28,11 @@ type PluginSettingsOverviewProps = {
   onReview: (pluginKey: string) => void
   onToggleEnabled: (plugin: PluginHostListEntry) => void
   onToggleLogs: (pluginKey: string) => void
-  onMarketplaceInstalled: (pluginKey: string) => Promise<void>
+  onMarketplaceInstalled: (
+    pluginKey: string,
+    receipt?: PluginMarketplaceMutationReceipt
+  ) => Promise<void>
+  readMarketplaceParent?: () => PluginMarketplaceParentReadback
   onRollbackRequest: (pluginKey: string) => void
   onRemoveRequest: (pluginKey: string) => void
   onUpdateDevPaths: (paths: string[]) => Promise<void>
@@ -58,6 +66,7 @@ export function PluginSettingsOverview({
   onToggleEnabled,
   onToggleLogs,
   onMarketplaceInstalled,
+  readMarketplaceParent,
   onRollbackRequest,
   onRemoveRequest,
   onUpdateDevPaths
@@ -103,6 +112,7 @@ export function PluginSettingsOverview({
           <PluginMarketplaceBrowser
             installedPlugins={plugins}
             onInstalled={onMarketplaceInstalled}
+            readMarketplaceParent={readMarketplaceParent}
             onRefreshInstalled={onRefresh}
             renderInstalledContent={(search) => {
               const filteredPlugins = plugins.filter((plugin) =>

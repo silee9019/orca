@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+import { useAgentSkillSetupViewer } from '../../runtime/agent-skill-setup-viewer'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -26,7 +28,7 @@ export function CliSkillSetupTerminal(): React.JSX.Element {
     : activeSkillRuntime.agentRuntime
   const prepareCommandForShell = (command: string, effectiveShell: string | undefined): string =>
     buildSkillSetupTerminalCommand(command, effectiveShell, terminalRuntime)
-  const handleCopySkillCommand = async (): Promise<void> => {
+  const handleCopySkillCommand = useCallback(async (): Promise<boolean> => {
     try {
       await window.api.ui.writeClipboardText(skillCommand)
       toast.success(
@@ -35,6 +37,7 @@ export function CliSkillSetupTerminal(): React.JSX.Element {
           'Copied the skill install command.'
         )
       )
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -44,8 +47,20 @@ export function CliSkillSetupTerminal(): React.JSX.Element {
               'Failed to copy skill command.'
             )
       )
+      return false
     }
-  }
+  }, [skillCommand])
+  useAgentSkillSetupViewer({
+    panelKey: 'feature-tip-cli-skills-terminal',
+    title: 'CLI skill setup',
+    ownerKey: JSON.stringify([
+      skillCommand,
+      terminalRuntime,
+      activeSkillRuntime.terminalShellOverride
+    ]),
+    source: handleCopySkillCommand,
+    copy: { target: skillCommand, run: handleCopySkillCommand }
+  })
 
   return (
     <div className="min-w-0">

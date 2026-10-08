@@ -1,3 +1,4 @@
+import { publishPtyControlRequest } from '../../../runtime/pty-control-request-observers'
 import { randomUUID } from 'node:crypto'
 import { getPtyIpc } from '../../pty-host-bindings'
 import { parseTerminalKittyKeyboardFlags } from '../../../../shared/terminal-kitty-keyboard-flags'
@@ -108,5 +109,10 @@ export function requestSerializedBuffer(
       payload.opts = opts
     }
     mainWindow.webContents.send('pty:serializeBuffer:request', payload)
+    publishPtyControlRequest(session.runtime, {
+      kind: 'serialize-buffer',
+      rendererId: mainWindow.webContents.id,
+      ...payload
+    })
   })
 }

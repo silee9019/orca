@@ -19,6 +19,8 @@ export type WarpThemeImportSource =
   | { kind: 'auto' }
   | { kind: 'chooseFile' }
   | { kind: 'chooseFolder' }
+  | { kind: 'files'; paths: string[] }
+  | { kind: 'folder'; path: string }
 
 export type WarpThemeImportPreviewTheme = TerminalCustomTheme & {
   selectionValue: string

@@ -50,6 +50,15 @@ describe('SshConnectionManager', () => {
     mockState.instances.length = 0
   })
 
+  it('removes the connected manager entry after explicit disconnect completes', async () => {
+    const manager = new SshConnectionManager({ onStateChange: vi.fn() })
+    await manager.connect(target)
+    expect(manager.getState(target.id)?.status).toBe('connected')
+    await manager.disconnect(target.id)
+    expect(mockState.instances[0].disconnect).toHaveBeenCalledOnce()
+    expect(manager.getState(target.id)).toBeNull()
+  })
+
   it('lets disconnect start a new connect before the cancelled attempt settles', async () => {
     let rejectFirst!: (error: Error) => void
     mockState.connectResults.push(

@@ -1,4 +1,9 @@
-import { useEffect, useState } from 'react'
+import { AccountMountedActionError } from '../../../../shared/account-mounted-viewer-command'
+import {
+  useMountedOpenCodeGoDraftControls,
+  useMountedOpenCodeGoCommitControls
+} from '../../runtime/use-mounted-account-credential-controls'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { Badge } from '../ui/badge'
@@ -11,6 +16,15 @@ export function OpenCodeGoCredentials({ onSaved }: { onSaved: () => void }): Rea
   const [draft, setDraft] = useState('')
   const [configured, setConfigured] = useState(false)
   const [busy, setBusy] = useState(false)
+  const writeInFlight = useRef(false)
+  useMountedOpenCodeGoDraftControls({
+    set: (value) => {
+      if (busy) {
+        throw new AccountMountedActionError('unavailable')
+      }
+      setDraft(value)
+    }
+  })
   useEffect(() => {
     let active = true
     void window.api.opencodeGoCredentials.getStatus().then(
@@ -26,7 +40,11 @@ export function OpenCodeGoCredentials({ onSaved }: { onSaved: () => void }): Rea
     }
   }, [])
 
-  const updateCredential = async (clear: boolean): Promise<void> => {
+  const updateCredential = async (clear: boolean): Promise<boolean> => {
+    if (writeInFlight.current) {
+      return false
+    }
+    writeInFlight.current = true
     setBusy(true)
     try {
       const status = clear
@@ -35,12 +53,27 @@ export function OpenCodeGoCredentials({ onSaved }: { onSaved: () => void }): Rea
       setConfigured(status.apiKeyConfigured)
       setDraft('')
       onSaved()
+      return true
     } catch {
       toast.error(translate('sessionHistory.settings.saveError', 'Could not save. Try again.'))
+      return false
     } finally {
+      writeInFlight.current = false
       setBusy(false)
     }
   }
+
+  useMountedOpenCodeGoCommitControls(async (operation) => {
+    if (busy) {
+      throw new AccountMountedActionError('busy')
+    }
+    if ((operation === 'save' && !draft.trim()) || (operation === 'clear' && !configured)) {
+      throw new AccountMountedActionError('unavailable')
+    }
+    if (!(await updateCredential(operation === 'clear'))) {
+      throw new AccountMountedActionError('failed')
+    }
+  })
 
   return (
     <SearchableSetting

@@ -12,6 +12,7 @@ export function useTabDragGestureLifecycle({
   clearDragStateRef: RefObject<() => void>
   tabDragActiveRef: RefObject<boolean>
 }): {
+  readGestureResources: () => { passthroughHeld: boolean; missedEndInstalled: boolean }
   acquireWebviewDragPassthrough: () => void
   installMissedEndFallback: () => void
   releaseMissedEndFallback: () => void
@@ -61,7 +62,15 @@ export function useTabDragGestureLifecycle({
     [releaseMissedEndFallback, releaseWebviewDragPassthrough]
   )
 
+  const readGestureResources = useCallback(
+    () => ({
+      passthroughHeld: releaseWebviewDragPassthroughRef.current !== null,
+      missedEndInstalled: releaseMissedEndFallbackRef.current !== null
+    }),
+    []
+  )
   return {
+    readGestureResources,
     acquireWebviewDragPassthrough,
     installMissedEndFallback,
     releaseMissedEndFallback,

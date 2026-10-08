@@ -180,6 +180,7 @@ export function OrchestrationPane({
       <OrchestrationSkillPromptDialog
         command={orchestrationInstallCommand}
         open={skillPromptOpen}
+        canOpen={!activeSkillRuntime.installDisabledReason && !orchestrationSkillDetected}
         onOpenChange={setSkillPromptOpen}
       />
 

@@ -20,7 +20,8 @@ export function ArtifactCollection({
   loadingMore,
   loadMore,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  search
 }: {
   artifacts: readonly ArtifactListItem[]
   deletingId: string | null
@@ -32,10 +33,13 @@ export function ArtifactCollection({
   loadMore: () => void
   onRefresh: () => void
   isRefreshing: boolean
+  search?: { query: string; onChange: (value: string) => void }
 }): React.JSX.Element {
-  const [query, setQuery] = useState('')
+  const [localQuery, setQuery] = useState('')
+  const query = search?.query ?? localQuery
   // Why: clamp on the way in so a multi-MB paste never reaches state or filtering.
-  const onQueryChange = (next: string): void => setQuery(clampArtifactListSearchQuery(next))
+  const onQueryChange = (next: string): void =>
+    (search?.onChange ?? setQuery)(clampArtifactListSearchQuery(next))
   const matches = useMemo(() => filterArtifactsBySearchQuery(artifacts, query), [artifacts, query])
   // Why: state, not a ref — the windowed rows need the scroller on their own mount pass.
   const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null)

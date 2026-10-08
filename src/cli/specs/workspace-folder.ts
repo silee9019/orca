@@ -36,6 +36,7 @@ export const WORKSPACE_FOLDER_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['folder-workspace', 'delete'],
+    aliases: [['folder-workspace', 'rm']],
     summary: 'Delete a folder workspace without requiring Git',
     usage: 'orca folder-workspace delete --params-file <file|-> --confirm <target> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],

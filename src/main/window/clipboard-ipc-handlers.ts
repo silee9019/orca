@@ -1,3 +1,4 @@
+import { writeClipboardImageWithAck } from './clipboard-image-write'
 import {
   app,
   clipboard,
@@ -22,7 +23,6 @@ import {
   type SaveClipboardImageAsTempFileArgs
 } from './clipboard-image-temp-file'
 import {
-  assertClipboardImageBase64LengthWithinLimit,
   assertClipboardImageByteLengthWithinLimit,
   assertClipboardImageDimensionsWithinLimit,
   clipboardFormatsIncludeImage,
@@ -221,42 +221,18 @@ export function registerClipboardHandlers(store: Store): void {
       'selection'
     )
   })
-  ipcMain.handle('clipboard:writeImage', (event, dataUrl: string) => {
-    assertTrustedClipboardSender(event)
-    // Why: only accept validated PNG data URIs to prevent writing arbitrary
-    // data to the clipboard. The renderer already validates the prefix, but
-    // defense-in-depth applies here too.
-    const prefix = 'data:image/png;base64,'
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith(prefix)) {
-      return
+  ipcMain.handle(
+    'clipboard:writeImage',
+    (event, dataUrl: string, options?: { requireWrite?: boolean }) => {
+      assertTrustedClipboardSender(event)
+      return writeClipboardImageWithAck(
+        dataUrl,
+        options?.requireWrite === true,
+        (buffer) => nativeImage.createFromBuffer(buffer),
+        (image) => clipboard.writeImage(image)
+      )
     }
-    const contentBase64 = dataUrl.slice(prefix.length)
-    try {
-      assertClipboardImageBase64LengthWithinLimit(contentBase64.length)
-    } catch {
-      return
-    }
-    // Why: use createFromBuffer instead of createFromDataURL — the latter
-    // silently returns an empty image on some macOS + Electron combinations
-    // when the data URL is large (>500KB). Decoding the base64 manually and
-    // using createFromBuffer is more reliable.
-    const buffer = Buffer.from(contentBase64, 'base64')
-    try {
-      assertClipboardImageByteLengthWithinLimit(buffer.byteLength)
-    } catch {
-      return
-    }
-    const image = nativeImage.createFromBuffer(buffer)
-    if (image.isEmpty()) {
-      return
-    }
-    try {
-      assertClipboardImageDimensionsWithinLimit(image.getSize())
-    } catch {
-      return
-    }
-    clipboard.writeImage(image)
-  })
+  )
 }
 
 function normalizeClipboardWriteFileRequest(args: unknown): ClipboardWriteFileRequest | null {

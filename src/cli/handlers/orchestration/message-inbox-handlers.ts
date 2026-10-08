@@ -9,11 +9,13 @@ import {
   formatMessageReadOnlyTag,
   type OrchestrationMessageSummary as MessageSummary
 } from '../../../shared/orchestration-check-output'
+import { readOrchestrationMessageBody } from './message-body'
 import { callOrchestrationMutation } from './mutation-request'
 import { resolveOrchestrationTerminalHandle } from './terminal-identity'
 
 export const ORCHESTRATION_INBOX_HANDLERS: Record<string, CommandHandler> = {
   'orchestration reply': async ({ flags, client, cwd, json }) => {
+    const body = await readOrchestrationMessageBody(flags, cwd, true)
     const from = await resolveOrchestrationTerminalHandle(flags, cwd, client, 'from')
     const result = await callOrchestrationMutation<{ message: { id: string } }>(
       client,
@@ -21,12 +23,16 @@ export const ORCHESTRATION_INBOX_HANDLERS: Record<string, CommandHandler> = {
       'orchestration.reply',
       {
         id: getRequiredStringFlag(flags, 'id'),
-        body: getRequiredStringFlag(flags, 'body'),
+        body,
         run: getOptionalStringFlag(flags, 'run'),
         from
       }
     )
-    printResult(result, json, (value) => `Replied ${value.message.id}`)
+    printResult(
+      { ...result, result: { message: { id: result.result.message.id } } },
+      json,
+      (value) => `Replied ${value.message.id}`
+    )
   },
 
   'orchestration inbox': async ({ flags, client, json }) => {

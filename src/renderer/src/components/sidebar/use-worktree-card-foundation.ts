@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE } from '../../../../shared/constants'
 import {
@@ -83,8 +83,8 @@ export function useWorktreeCardFoundation({
   )
 
   const handleOpenAutomation = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation()
       const automationId = worktree.automationProvenance?.automationId
       if (!automationId) {
         return
@@ -107,8 +107,8 @@ export function useWorktreeCardFoundation({
   )
 
   const handleOpenAutomationRun = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation()
       const provenance = worktree.automationProvenance
       if (!provenance) {
         return
@@ -129,6 +129,14 @@ export function useWorktreeCardFoundation({
     ]
   )
 
+  const navigationHostId = worktree.automationProvenance?.hostId ?? worktree.hostId
+  const automationNavigationTarget = useMemo(
+    () => ({
+      workspaceId: worktree.id,
+      ...(navigationHostId ? { hostId: navigationHostId } : {})
+    }),
+    [navigationHostId, worktree.id]
+  )
   const deleteState = useAppStore((s) => {
     return getDeleteStateForWorktreeHost(worktree, s.deleteStateByWorktreeId)
   })
@@ -223,6 +231,7 @@ export function useWorktreeCardFoundation({
     handleEditComment,
     handleOpenAutomation,
     handleOpenAutomationRun,
+    automationNavigationTarget,
     deleteState,
     conflictOperation,
     remoteBranchConflict,

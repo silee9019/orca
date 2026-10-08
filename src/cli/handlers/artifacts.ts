@@ -1,3 +1,5 @@
+import { ArtifactViewerParams } from '../../shared/artifact-viewer-command'
+import { readJsonInput } from '../json-input'
 import { basename, extname, resolve } from 'node:path'
 import type {
   ArtifactCloudOperation,
@@ -6,6 +8,11 @@ import type {
   ArtifactListItem,
   ArtifactWriteRequest
 } from '../../shared/artifacts'
+import {
+  ARTIFACT_LIST_SEARCH_QUERY_MAX_BYTES,
+  filterArtifactsBySearchQuery
+} from '../../shared/artifact-list-search'
+import { isClipboardTextByteLengthOverLimit } from '../../shared/clipboard-text'
 import { ARTIFACT_CLI_MAX_RPC_BYTES } from '../../shared/artifacts'
 import {
   parseRemoteArtifactInput,
@@ -161,9 +168,34 @@ function requireOperation<T>(operation: ArtifactCloudOperation<T>): T {
 }
 
 export const ARTIFACT_HANDLERS: Record<string, CommandHandler> = {
+  'artifacts viewer': async (ctx) => {
+    rejectArtifactRemoteSelectionFlags(ctx)
+    const parsed = ArtifactViewerParams.safeParse({
+      viewer: ctx.flags.get('viewer'),
+      action: await readJsonInput(ctx)
+    })
+    if (!parsed.success) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'A desktop viewer and valid artifact action JSON are required.'
+      )
+    }
+    printResult(await ctx.client.call('artifacts.viewerAction', parsed.data), ctx.json, (value) =>
+      JSON.stringify(value, null, 2)
+    )
+  },
   'artifacts list': async (ctx) => {
     rejectArtifactRemoteSelectionFlags(ctx)
     const cursor = stringFlag(ctx, 'cursor')
+    const rawQuery = ctx.flags.get('query')
+    if (rawQuery !== undefined && typeof rawQuery !== 'string') {
+      throw new RuntimeClientError('invalid_argument', '--query requires a text value.')
+    }
+    const query = rawQuery ?? ''
+    const id = stringFlag(ctx, 'id')
+    if (isClipboardTextByteLengthOverLimit(query, ARTIFACT_LIST_SEARCH_QUERY_MAX_BYTES)) {
+      throw new RuntimeClientError('invalid_argument', 'Artifact query exceeds 2048 UTF-8 bytes.')
+    }
     const response = await ctx.client.call<ArtifactCloudOperation<ArtifactListPage>>(
       'artifacts.list',
       {
@@ -172,7 +204,9 @@ export const ARTIFACT_HANDLERS: Record<string, CommandHandler> = {
       }
     )
     const value = requireOperation(response.result)
-    printResult({ ...response, result: value }, ctx.json, formatArtifactListPage)
+    const matching = filterArtifactsBySearchQuery(value.artifacts, query)
+    const artifacts = id ? matching.filter((item) => item.artifact.slug === id) : matching
+    printResult({ ...response, result: { ...value, artifacts } }, ctx.json, formatArtifactListPage)
   },
   'artifacts share': async (ctx) => {
     rejectArtifactRemoteSelectionFlags(ctx)

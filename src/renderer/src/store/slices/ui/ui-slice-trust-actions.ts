@@ -2,6 +2,7 @@ import type { UISlice, UISliceGet, UISliceSet } from './ui-slice-contract'
 import { getSetupScriptPromptDismissalKey } from '../../../lib/setup-script-prompt'
 
 export function createUiTrustActions(set: UISliceSet, _get: UISliceGet): Partial<UISlice> {
+  let browserImportHintGeneration = 0
   return {
     trustedOrcaHooks: {},
     markOrcaHookScriptConfirmed: (repoId, kind, contentHash) =>
@@ -83,14 +84,27 @@ export function createUiTrustActions(set: UISliceSet, _get: UISliceGet): Partial
         return updates
       }),
     browserImportHintHidden: false,
-    setBrowserImportHintHidden: (hidden) =>
+    setBrowserImportHintHidden: (hidden, acknowledged) => {
+      const generation = ++browserImportHintGeneration
       set((s) => {
         if (s.browserImportHintHidden === hidden) {
+          acknowledged?.(true, () => generation === browserImportHintGeneration)
           return s
         }
-        window.api.ui.set({ browserImportHintHidden: hidden }).catch(console.error)
+        window.api.ui.set({ browserImportHintHidden: hidden }).then(
+          () =>
+            acknowledged?.(
+              generation === browserImportHintGeneration,
+              () => generation === browserImportHintGeneration
+            ),
+          (error) => {
+            console.error(error)
+            acknowledged?.(false, () => generation === browserImportHintGeneration)
+          }
+        )
         return { browserImportHintHidden: hidden }
-      }),
+      })
+    },
     mobileEmulatorTabIntroDismissed: false,
     dismissMobileEmulatorTabIntro: () =>
       set((s) => {

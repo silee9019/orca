@@ -53,7 +53,12 @@ import { AutomationListToolbar } from './AutomationListToolbar'
 const TEMPLATE_EMPTY_STATES: ReadonlySet<string> = new Set(['host-empty', 'all-hosts-empty'])
 const EMPTY_AUTOMATION_RUNS: ReadonlyMap<string, AutomationRun> = new Map()
 
+export type AutomationListViewerNavigation = {
+  move: (key: AutomationListArrowKey) => void
+  activate: () => void
+}
 export type AutomationsListPanelProps = {
+  viewerRef?: React.Ref<AutomationListViewerNavigation>
   hasListItems: boolean
   hasFilteredListItems: boolean
   listSearchQuery: string
@@ -117,6 +122,7 @@ export type AutomationsListPanelProps = {
 
 export function AutomationsListPanel(props: AutomationsListPanelProps): React.JSX.Element {
   const {
+    viewerRef,
     hasListItems,
     hasFilteredListItems,
     listSearchQuery,
@@ -230,6 +236,14 @@ export function AutomationsListPanel(props: AutomationsListPanelProps): React.JS
     setActivePaneTab,
     onOpenDetail
   })
+  React.useImperativeHandle(
+    viewerRef,
+    () => ({
+      move: handleSearchArrowNavigate,
+      activate: handleSearchEnter
+    }),
+    [handleSearchArrowNavigate, handleSearchEnter]
+  )
   React.useEffect(() => {
     if (!pendingKeyboardScrollRef.current) {
       return

@@ -1,3 +1,4 @@
+import { useAppSurfaceControl } from '../../hooks/ipc-events/app-surface-ipc-bridge'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { usePetUrl } from './usePetUrl'
@@ -371,6 +372,20 @@ export function PetOverlay(): React.JSX.Element {
       // ignore storage failures
     }
   }, [dragging, position])
+
+  useAppSurfaceControl('pet-overlay', (input) => {
+    if (input.kind !== 'pet-overlay') {
+      return
+    }
+    if (input.action === 'status') {
+      return { position, size, dragging, stored: loadStoredPosition(size) }
+    }
+    if (dragging || input.x === undefined || input.y === undefined) {
+      throw new Error('Finish dragging and specify x and y')
+    }
+    setPosition(clampToViewport({ x: input.x, y: input.y }, size))
+    return { state: 'requested' }
+  })
 
   const motionAllowed = documentVisible && !reducedMotion
   // Why: a still/vertical grab freezes on frame 0 (Codex grab-and-hold); a

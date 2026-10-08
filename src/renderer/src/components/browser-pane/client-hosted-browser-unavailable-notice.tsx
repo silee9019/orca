@@ -1,3 +1,4 @@
+import type { BrowserServerReopenOwner } from './use-browser-server-reopen-commands'
 import { Globe } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import {
@@ -11,10 +12,12 @@ import {
  * offered is reopening the page on the server.
  */
 export function ClientHostedBrowserUnavailableNotice({
+  commandOwner,
   runtimeEnvironmentId,
   worktreeId,
   lastCommittedUrl
 }: {
+  commandOwner?: BrowserServerReopenOwner
   runtimeEnvironmentId: string
   worktreeId: string
   lastCommittedUrl: string
@@ -34,6 +37,7 @@ export function ClientHostedBrowserUnavailableNotice({
         </div>
         <div className="text-xs leading-5 text-muted-foreground">{reopenOnServerCaveat()}</div>
         <ReopenBrowserPageOnServerButton
+          commandOwner={commandOwner}
           environmentId={runtimeEnvironmentId}
           worktreeId={worktreeId}
           lastCommittedUrl={lastCommittedUrl}

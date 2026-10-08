@@ -1,3 +1,6 @@
+import { SKILL_AUTHORIZED_INSTALL_METHODS } from './skills-authorized-install'
+import { SKILL_LIFECYCLE_METHODS } from './skills-lifecycle'
+import { SKILL_CLOUD_METHODS } from './skills-cloud'
 import { defineMethod } from '../core'
 import type { z } from 'zod'
 import { getAppEnvironment } from '../../../../shared/app-environment'
@@ -65,6 +68,9 @@ function skillDeleteDependencies(
 }
 
 export const SKILL_METHODS = [
+  ...SKILL_CLOUD_METHODS,
+  ...SKILL_LIFECYCLE_METHODS,
+  ...SKILL_AUTHORIZED_INSTALL_METHODS,
   defineMethod({
     name: 'skills.discover',
     params: SkillsDiscoverParams,

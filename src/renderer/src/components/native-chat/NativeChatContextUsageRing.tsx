@@ -1,3 +1,6 @@
+import { useNativeContextViewerController } from '../../runtime/native-context-viewer-controller'
+import type { z } from 'zod'
+import type { NativeContextViewerTarget } from '../../../../shared/rpc-contract/usage-params'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Progress } from '@/components/ui/progress'
@@ -79,9 +82,11 @@ function useContextCardOpen(): {
 
 /** Composer ring for context-window usage; hover, click, tap, or Enter shows the provider's breakdown. */
 export function NativeChatContextUsageRing({
+  target,
   usage
 }: {
   usage: NativeChatContextUsageSummary
+  target?: z.infer<typeof NativeContextViewerTarget>
 }): React.JSX.Element {
   const filled = Math.min(Math.max(usage.percentage, 0), 100)
   const critical = usage.percentage >= CRITICAL_PERCENTAGE
@@ -93,6 +98,7 @@ export function NativeChatContextUsageRing({
     { used, window, percent: String(usage.percentage) }
   )
   const { open, setOpen, setOpenAfterHover } = useContextCardOpen()
+  useNativeContextViewerController(target, open, setOpen)
   const rows = keyRows(usage.rows)
   return (
     <div

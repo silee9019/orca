@@ -1,7 +1,17 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import {
+  runtimeEnvironmentCall,
+  runtimeEnvironmentGetStatus,
+  settingsSet,
+  settingsGet,
+  runtimeEnvironmentList,
+  setActiveRuntimeEnvironmentPreference,
+  env2Lineage,
+  makeRuntimeEnvironment,
+  deferred
+} from './settings-test-fixture'
+import { describe, expect, it, vi } from 'vitest'
 import { createTestStore, makeWorktree } from './store-test-helpers'
 import type { AppState } from '../types'
-import type { WorktreeLineage } from '../../../../shared/worktree/lineage-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
 import { toast } from 'sonner'
 import {
@@ -9,11 +19,7 @@ import {
   MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION,
   RUNTIME_PROTOCOL_VERSION
 } from '../../../../shared/protocol-version'
-import { clearRuntimeCompatibilityCacheForTests } from '../../runtime/runtime-rpc-client'
-import {
-  RUNTIME_CATALOG_STALE_MS,
-  resetRuntimeCatalogListingForTests
-} from './runtime-status-hydration'
+import { RUNTIME_CATALOG_STALE_MS } from './runtime-status-hydration'
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() } }))
 vi.mock('@/lib/agent-status', async (importOriginal) => {
@@ -22,162 +28,6 @@ vi.mock('@/lib/agent-status', async (importOriginal) => {
     ...actual,
     detectAgentStatusFromTitle: vi.fn().mockReturnValue(null)
   }
-})
-
-const runtimeEnvironmentCall = vi.fn()
-const runtimeEnvironmentGetStatus = vi.fn()
-const settingsSet = vi.fn().mockResolvedValue(undefined)
-const settingsGet = vi.fn()
-const runtimeEnvironmentList = vi.fn()
-const setActiveRuntimeEnvironmentPreference = vi.fn().mockResolvedValue(undefined)
-const worktreesListDetected = vi.fn()
-
-const env2Lineage: WorktreeLineage = {
-  worktreeId: 'repo-env-2::/env-2/repo',
-  worktreeInstanceId: 'env-2-instance',
-  parentWorktreeId: 'repo-env-2::/env-2/parent',
-  parentWorktreeInstanceId: 'env-2-parent-instance',
-  origin: 'manual',
-  capture: { source: 'manual-action', confidence: 'explicit' },
-  createdAt: 1
-}
-
-function makeRuntimeEnvironment(id: string): PublicKnownRuntimeEnvironment {
-  const endpointId = `ws-${id}`
-  return {
-    id,
-    name: id,
-    createdAt: 1,
-    updatedAt: 1,
-    lastUsedAt: null,
-    runtimeId: null,
-    endpoints: [{ id: endpointId, kind: 'websocket', label: 'WebSocket', endpoint: 'ws://x' }],
-    preferredEndpointId: endpointId
-  }
-}
-
-function deferred<T>() {
-  let resolve: (value: T) => void = () => {}
-  let reject: (reason?: unknown) => void = () => {}
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve
-    reject = promiseReject
-  })
-  return { promise, resolve, reject }
-}
-
-beforeEach(() => {
-  delete (globalThis as { __ORCA_WEB_CLIENT__?: boolean }).__ORCA_WEB_CLIENT__
-  clearRuntimeCompatibilityCacheForTests()
-  resetRuntimeCatalogListingForTests()
-  vi.clearAllMocks()
-  runtimeEnvironmentGetStatus.mockResolvedValue({
-    id: 'status-rpc-1',
-    ok: true,
-    result: {
-      runtimeId: 'runtime-2',
-      graphStatus: 'ready',
-      runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
-      minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION
-    },
-    _meta: { runtimeId: 'runtime-2' }
-  })
-  settingsGet.mockResolvedValue({ notifications: {} })
-  runtimeEnvironmentList.mockResolvedValue([])
-  runtimeEnvironmentCall.mockImplementation(
-    ({ method, params }: { method: string; params?: { repo?: string } }) => {
-      const detectedRepoId = params?.repo ?? 'repo-env-2'
-      const detectedPath = detectedRepoId === 'repo-env-1' ? '/env-1/repo' : '/env-2/repo'
-      const result =
-        method === 'status.get'
-          ? {
-              runtimeId: 'runtime-2',
-              graphStatus: 'ready',
-              runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
-              minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION
-            }
-          : method === 'repo.list'
-            ? {
-                repos: [
-                  {
-                    id: 'repo-env-2',
-                    path: '/env-2/repo',
-                    displayName: 'Env 2',
-                    badgeColor: 'blue',
-                    addedAt: 1
-                  }
-                ]
-              }
-            : method === 'worktree.list'
-              ? {
-                  worktrees: [
-                    makeWorktree({
-                      id: 'repo-env-2::/env-2/repo',
-                      repoId: 'repo-env-2',
-                      path: '/env-2/repo'
-                    })
-                  ],
-                  totalCount: 1,
-                  truncated: false
-                }
-              : method === 'worktree.detectedList'
-                ? {
-                    repoId: detectedRepoId,
-                    authoritative: true,
-                    source: 'git',
-                    worktrees: [
-                      {
-                        ...makeWorktree({
-                          id: `${detectedRepoId}::${detectedPath}`,
-                          repoId: detectedRepoId,
-                          path: detectedPath
-                        }),
-                        ownership: 'orca-managed',
-                        selectedCheckout: true,
-                        visible: true
-                      }
-                    ]
-                  }
-                : method === 'browser.profileList'
-                  ? { profiles: [] }
-                  : method === 'projectGroup.list'
-                    ? { groups: [] }
-                    : method === 'worktree.lineageList'
-                      ? { lineage: { [env2Lineage.worktreeId]: env2Lineage } }
-                      : method === 'settings.get'
-                        ? { settings: {} }
-                        : {}
-      return Promise.resolve({ id: 'rpc-1', ok: true, result, _meta: { runtimeId: 'runtime-2' } })
-    }
-  )
-  worktreesListDetected.mockResolvedValue({
-    repoId: 'repo-env-1',
-    authoritative: true,
-    source: 'git',
-    worktrees: [
-      {
-        ...makeWorktree({
-          id: 'repo-env-1::/env-1/repo',
-          repoId: 'repo-env-1',
-          path: '/env-1/repo'
-        }),
-        ownership: 'orca-managed',
-        selectedCheckout: true,
-        visible: true
-      }
-    ]
-  })
-  vi.stubGlobal('window', {
-    api: {
-      settings: { get: settingsGet, set: settingsSet, setActiveRuntimeEnvironmentPreference },
-      runtimeEnvironments: {
-        call: runtimeEnvironmentCall,
-        getStatus: runtimeEnvironmentGetStatus,
-        list: runtimeEnvironmentList
-      },
-      worktrees: { listDetected: worktreesListDetected }
-    }
-  })
 })
 
 describe('createSettingsSlice checked persistence', () => {
@@ -866,4 +716,124 @@ describe('fetchSettings runtime catalog probe', () => {
       now.mockRestore()
     }
   })
+})
+
+it('keeps an explicit viewer selection local to that store without profile writes or another viewer broadcast', async () => {
+  const viewerA = createTestStore()
+  const viewerB = createTestStore()
+  await viewerA.getState().fetchSettings()
+  await viewerB.getState().fetchSettings()
+  const beforeB = viewerB.getState().settings
+  const broadcasts = vi.fn()
+  setActiveRuntimeEnvironmentPreference.mockImplementationOnce(async ({ environmentId }) => {
+    broadcasts(environmentId)
+    const current = viewerB.getState().settings
+    if (current) {
+      viewerB.setState({ settings: { ...current, activeRuntimeEnvironmentId: environmentId } })
+    }
+    return { ...viewerA.getState().settings, activeRuntimeEnvironmentId: environmentId }
+  })
+  await expect(
+    viewerA.getState().setActiveRuntimeEnvironmentPreference('env-2', { scope: 'viewer' })
+  ).resolves.toBe(true)
+  expect(viewerA.getState().settings?.activeRuntimeEnvironmentId).toBe('env-2')
+  expect(viewerB.getState().settings).toEqual(beforeB)
+  expect(setActiveRuntimeEnvironmentPreference).not.toHaveBeenCalled()
+  expect(broadcasts).not.toHaveBeenCalled()
+})
+
+it('preserves settings updates that arrive while a viewer selection awaits host verification', async () => {
+  const store = createTestStore()
+  await store.getState().fetchSettings()
+  let resume: (() => void) | undefined
+  const gate = new Promise<void>((resolve) => {
+    resume = resolve
+  })
+  runtimeEnvironmentGetStatus.mockImplementationOnce(async () => {
+    await gate
+    return {
+      id: 'status-fixture',
+      ok: true,
+      result: {
+        runtimeId: 'runtime-2',
+        graphStatus: 'ready',
+        runtimeProtocolVersion: RUNTIME_PROTOCOL_VERSION,
+        minCompatibleRuntimeClientVersion: MIN_COMPATIBLE_RUNTIME_CLIENT_VERSION
+      },
+      _meta: { runtimeId: 'runtime-2' }
+    }
+  })
+  const selecting = store
+    .getState()
+    .setActiveRuntimeEnvironmentPreference('env-2', { scope: 'viewer' })
+  const current = store.getState().settings
+  if (!current) {
+    throw new Error('missing fixture settings')
+  }
+  store.setState({ settings: { ...current, machineName: 'updated-while-awaiting' } })
+  resume?.()
+  await expect(selecting).resolves.toBe(true)
+  expect(store.getState().settings?.machineName).toBe('updated-while-awaiting')
+  expect(setActiveRuntimeEnvironmentPreference).not.toHaveBeenCalled()
+})
+
+it('preserves concurrent viewer settings while owner visibility defaults hydrate', async () => {
+  const store = createTestStore()
+  await store.getState().fetchSettings()
+  const originalCall = runtimeEnvironmentCall.getMockImplementation()
+  const gate = deferred<void>()
+  const started = deferred<void>()
+  runtimeEnvironmentCall.mockImplementation(async (args) => {
+    if (args.method === 'settings.get') {
+      started.resolve()
+      await gate.promise
+      return {
+        id: 'visibility-fixture',
+        ok: true,
+        result: { settings: { worktreeVisibilityDefaults: { external: 'show' } } },
+        _meta: { runtimeId: 'runtime-2' }
+      }
+    }
+    return originalCall?.(args)
+  })
+  const selecting = store
+    .getState()
+    .setActiveRuntimeEnvironmentPreference('env-2', { scope: 'viewer' })
+  await started.promise
+  const current = store.getState().settings
+  if (!current) {
+    throw new Error('missing fixture settings')
+  }
+  store.setState({ settings: { ...current, machineName: 'updated-during-owner-hydration' } })
+  gate.resolve()
+  await expect(selecting).resolves.toBe(true)
+  expect(store.getState().settings?.machineName).toBe('updated-during-owner-hydration')
+  expect(store.getState().settings?.activeRuntimeEnvironmentId).toBe('env-2')
+  expect(store.getState().settings?.worktreeVisibilityDefaults).toEqual({ external: 'show' })
+  expect(setActiveRuntimeEnvironmentPreference).not.toHaveBeenCalled()
+})
+
+it('persists the explicit profile default even when that viewer already selected the same server locally', async () => {
+  const viewerA = createTestStore()
+  const viewerB = createTestStore()
+  await viewerA.getState().fetchSettings()
+  await viewerB.getState().fetchSettings()
+  let profileId: string | null = null
+  setActiveRuntimeEnvironmentPreference.mockImplementationOnce(async ({ environmentId }) => {
+    profileId = environmentId
+    const settingsB = viewerB.getState().settings
+    if (settingsB) {
+      viewerB.setState({ settings: { ...settingsB, activeRuntimeEnvironmentId: environmentId } })
+    }
+    return { ...viewerA.getState().settings, activeRuntimeEnvironmentId: environmentId }
+  })
+  await viewerA.getState().setActiveRuntimeEnvironmentPreference('env-2', { scope: 'viewer' })
+  expect(profileId).toBeNull()
+  expect(setActiveRuntimeEnvironmentPreference).not.toHaveBeenCalled()
+  await expect(
+    viewerA.getState().setActiveRuntimeEnvironmentPreference('env-2', { scope: 'profile' })
+  ).resolves.toBe(true)
+  expect(profileId).toBe('env-2')
+  expect(setActiveRuntimeEnvironmentPreference).toHaveBeenCalledTimes(1)
+  expect(viewerB.getState().settings?.activeRuntimeEnvironmentId).toBe('env-2')
 })

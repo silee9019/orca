@@ -10,6 +10,24 @@ import type { MarkupComposeResult } from './markup-screenshot-compose'
 // direct send.
 export async function deliverMarkupToClipboard(result: MarkupComposeResult): Promise<void> {
   await window.api.ui.writeClipboardImage(result.dataUrl)
+  showMarkupCopiedFeedback()
+}
+
+export async function deliverMarkupToClipboardVerified(
+  result: MarkupComposeResult,
+  stillCurrent: () => boolean
+): Promise<void> {
+  if (!stillCurrent()) {
+    throw new Error('browser_markup_copy_cancelled')
+  }
+  const acknowledgment = await window.api.ui.writeVerifiedClipboardImage(result.dataUrl)
+  if (acknowledgment.written !== true || !stillCurrent()) {
+    throw new Error('browser_markup_copy_effect_unknown')
+  }
+  showMarkupCopiedFeedback()
+}
+
+function showMarkupCopiedFeedback(): void {
   const isMac = navigator.userAgent.includes('Mac')
   toast.success(
     translate(

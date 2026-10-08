@@ -1,17 +1,16 @@
-import React, { useMemo, useState } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import { HermesCronOutputSection } from './HermesCronOutputSection'
+import React, { useMemo } from 'react'
 import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Clock,
   Fingerprint,
   MessageSquare,
   Sparkles,
   Terminal
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import CommentMarkdown from '@/components/sidebar/CommentMarkdown'
 import { cn } from '@/lib/utils'
 import { isRunnableAutomationSchedule } from '../../../../shared/automation-schedule-parsing'
@@ -79,45 +78,6 @@ function getMetadataIconStyle(label: string): MetadataIconStyle {
   }
 }
 
-type CollapsibleSectionProps = {
-  title: string
-  defaultOpen?: boolean
-  children: React.ReactNode
-  tone?: 'default' | 'muted'
-  icon?: LucideIcon
-  iconClass?: string
-}
-
-function CollapsibleSection({
-  title,
-  defaultOpen = false,
-  children,
-  tone = 'default',
-  icon: Icon,
-  iconClass
-}: CollapsibleSectionProps): React.JSX.Element {
-  const [open, setOpen] = useState(defaultOpen)
-  return (
-    <section
-      className={cn(
-        'overflow-hidden rounded-lg border border-border/50',
-        tone === 'muted' ? 'bg-muted/15' : 'bg-background'
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-muted/40"
-      >
-        {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-        {Icon ? <Icon className={cn('size-3.5', iconClass ?? 'text-muted-foreground')} /> : null}
-        {title}
-      </button>
-      {open ? <div className="border-t border-border/50 px-4 py-3">{children}</div> : null}
-    </section>
-  )
-}
-
 type SectionCardProps = {
   title: string
   accent?: 'response' | 'error' | 'default'
@@ -167,7 +127,13 @@ function MetadataValue({ label, value }: { label: string; value: string }): Reac
   )
 }
 
-export function HermesCronOutputView({ content }: { content: string }): React.JSX.Element {
+export function HermesCronOutputView({
+  content,
+  ownerKey = 'standalone'
+}: {
+  content: string
+  ownerKey?: string
+}): React.JSX.Element {
   const parsed = useMemo(() => parseHermesOutput(content), [content])
 
   const responseSection = parsed.sections.find(isResponseSection)
@@ -252,7 +218,9 @@ export function HermesCronOutputView({ content }: { content: string }): React.JS
       ) : null}
 
       {promptSection ? (
-        <CollapsibleSection
+        <HermesCronOutputSection
+          ownerKey={JSON.stringify([ownerKey, 'prompt'])}
+          content={content}
           title={translate('auto.components.automations.HermesCronOutputView.e27c716b43', 'Prompt')}
           tone="muted"
           icon={MessageSquare}
@@ -263,11 +231,13 @@ export function HermesCronOutputView({ content }: { content: string }): React.JS
             content={promptSection.body}
             className="text-sm leading-relaxed text-foreground/90"
           />
-        </CollapsibleSection>
+        </HermesCronOutputSection>
       ) : null}
 
       {otherSections.map((section) => (
-        <CollapsibleSection
+        <HermesCronOutputSection
+          ownerKey={JSON.stringify([ownerKey, section.heading])}
+          content={content}
           key={section.heading}
           title={section.heading}
           tone="muted"
@@ -279,7 +249,7 @@ export function HermesCronOutputView({ content }: { content: string }): React.JS
             content={section.body}
             className="text-sm leading-relaxed text-foreground/90"
           />
-        </CollapsibleSection>
+        </HermesCronOutputSection>
       ))}
     </div>
   )

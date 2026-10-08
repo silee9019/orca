@@ -1,3 +1,5 @@
+import { useBrowserViewportPanCommands } from '../host-guest/use-browser-viewport-pan-commands'
+import { useBrowserPageGuestHitTesting } from './use-browser-page-guest-hit-testing'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
@@ -80,6 +82,8 @@ export function BrowserPagePane({
     isMobileDriven,
     hasRemoteViewer: isRemotelyViewed
   })
+  // Why: a blank tab reads as 'about:blank' or the resolved data: URL, so match both to keep the "New Browser Tab" overlay visible.
+  const isBlankTab = browserTab.url === 'about:blank' || browserTab.url === ORCA_BROWSER_BLANK_URL
   const pageViewport = ensureBrowserPageViewport(browserTab.id, workspaceId)
   const pageViewportContainer = pageViewport?.container ?? null
   const pageViewportScroller = pageViewport?.scroller ?? null
@@ -111,6 +115,12 @@ export function BrowserPagePane({
       scrollBrowserPageViewport(browserTab.id, event.deltaX, event.deltaY)
     })
   }, [browserTab.id, browserTab.viewportPresetId, pageViewportScroller])
+  useBrowserViewportPanCommands(
+    browserTab.id,
+    isActive,
+    browserTab.viewportPresetId ?? null,
+    pageViewportScroller
+  )
   const chromeHeaderRef = useRef<HTMLDivElement | null>(null)
   const webviewRef = useRef<Electron.WebviewTag | null>(null)
   const addressBarInputRef = useRef<HTMLInputElement | null>(null)
@@ -171,9 +181,12 @@ export function BrowserPagePane({
     worktreeId
   })
   const grab = useGrabMode(browserTab.id)
-  const markup = useBrowserPageMarkupCapture(webviewRef)
+  const markup = useBrowserPageMarkupCapture(webviewRef, { page: browserTab.id, active: isActive })
   const grabAnnotations = useBrowserPageGrabAnnotations({
     browserTabId: browserTab.id,
+    grabActionCommandOwner: { page: browserTab.id, active: isActive },
+    markupIsActive: markup.isActive,
+    grabCommandDisabled: isBlankTab,
     isActive,
     grab,
     containerRef,
@@ -185,6 +198,7 @@ export function BrowserPagePane({
     setBrowserAnnotationTrayOpen: annotationSend.setBrowserAnnotationTrayOpen
   })
   const nav = useBrowserPageNavigationDownloads({
+    isActive,
     browserTabId: browserTab.id,
     worktreeId,
     webviewRef,
@@ -292,8 +306,6 @@ export function BrowserPagePane({
     grabIsInteractive: grab.state !== 'idle' && grab.state !== 'error'
   })
 
-  // Why: a blank tab reads as 'about:blank' or the resolved data: URL, so match both to keep the "New Browser Tab" overlay visible.
-  const isBlankTab = browserTab.url === 'about:blank' || browserTab.url === ORCA_BROWSER_BLANK_URL
   // Why: synchronous webview URL access blocks render; navigation handlers update this cache before their store writes can re-render the pane.
   const liveBrowserUrl = getLiveBrowserUrl(browserTab.id) ?? browserTab.url
   const externalUrl = getOpenableExternalUrl(liveBrowserUrl)
@@ -308,23 +320,7 @@ export function BrowserPagePane({
     isDefaultZoom: zoom.browserZoomPercent === zoom.browserDefaultZoomPercent
   })
 
-  useEffect(() => {
-    const webview = webviewRef.current
-    if (!webview) {
-      return
-    }
-    // Why: Electron webviews keep receiving native input under a React overlay unless their own hit testing is disabled.
-    webview.style.pointerEvents = inputLocked ? 'none' : 'auto'
-  }, [inputLocked])
-
-  useEffect(() => {
-    const webview = webviewRef.current
-    if (!webview) {
-      return
-    }
-    // Why: some Electron builds keep painting a hidden guest layer, so drop it from layout (display:none) instead of just hiding it.
-    webview.style.display = showFailureOverlay ? 'none' : 'flex'
-  }, [showFailureOverlay])
+  useBrowserPageGuestHitTesting(webviewRef, inputLocked, showFailureOverlay)
 
   return (
     <div
@@ -343,6 +339,7 @@ export function BrowserPagePane({
     >
       {/* IPC-driven context menu in a Portal so position:fixed escapes ancestor transform/backdrop-filter containing blocks. */}
       <BrowserPageContextMenu
+        isActive={isActive}
         browserPageId={browserTab.id}
         worktreeId={worktreeId}
         canGoBack={browserTab.canGoBack}

@@ -133,6 +133,16 @@ export function SidebarSettingsHelpMenu(): React.JSX.Element {
     setFeedbackOpen(true)
   }
 
+  React.useEffect(() => {
+    const open = (event: Event): void => {
+      event.preventDefault()
+      setFeedbackDialogMounted(true)
+      setFeedbackOpen(true)
+    }
+    window.addEventListener('orca:open-sidebar-feedback', open)
+    return () => window.removeEventListener('orca:open-sidebar-feedback', open)
+  }, [])
+
   const handleShowOnboarding = (): void => {
     const now = Date.now()
     if (now - lastShowOnboardingAtRef.current < 500) {

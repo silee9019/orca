@@ -133,6 +133,23 @@ export class OrcaRuntimeWithGetTerminalInteractiveWait extends OrcaRuntimeWithAd
     }
   }
 
+  getPtyExitMetadata(ptyId: string, expectedIncarnationId: string) {
+    const pty = this.ptysById.get(ptyId)
+    if (
+      !pty ||
+      pty.incarnationId !== expectedIncarnationId ||
+      typeof pty.lastExitCode !== 'number'
+    ) {
+      return null
+    }
+    return {
+      ptyId,
+      incarnationId: pty.incarnationId,
+      code: pty.lastExitCode,
+      ...(pty.lastExitCause ? { cause: pty.lastExitCause } : {})
+    }
+  }
+
   getTerminalProcessIncarnation(handle: string): string | null {
     const structured = resolveStructuredWorkerAuthority(
       handle,

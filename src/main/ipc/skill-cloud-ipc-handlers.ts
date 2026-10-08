@@ -1,3 +1,4 @@
+import { setSkillSharingForRpc } from '../runtime/rpc/methods/skills-lifecycle'
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
@@ -55,7 +56,7 @@ function registerSharingHandlers(
     },
     { installStateDirectory: join(app.getPath('userData'), 'skill-installs') }
   )
-  handleMainWindowSkillIpc('skills:prepareShare', async (_event, value: unknown) => {
+  const prepareShare = async (value: unknown) => {
     const input = skillSharePrepareIpcSchema.parse(value)
     const result = await discover(input.target)
     const requested = new Set(input.skillIds)
@@ -70,8 +71,9 @@ function registerSharingHandlers(
         skills.length === 1 ? (skills[0].description ?? '') : `${skills.length} shared skills`,
       packageId: input.packageId
     })
-  })
-  handleMainWindowSkillIpc('skills:publishShare', async (_event, value: unknown) => {
+  }
+  handleMainWindowSkillIpc('skills:prepareShare', (_event, value: unknown) => prepareShare(value))
+  const publishShare = async (value: unknown) => {
     const input = skillSharePublishIpcSchema.parse(value)
     return preparations.publish(input, (progress) => {
       for (const window of BrowserWindow.getAllWindows()) {
@@ -80,7 +82,9 @@ function registerSharingHandlers(
         }
       }
     })
-  })
+  }
+  setSkillSharingForRpc({ preparations, prepare: prepareShare, publish: publishShare })
+  handleMainWindowSkillIpc('skills:publishShare', (_event, value: unknown) => publishShare(value))
   handleMainWindowSkillIpc('skills:cancelShare', (_event, id: unknown) => {
     preparations.cancel(z.string().uuid().parse(id))
   })

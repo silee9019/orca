@@ -1,7 +1,18 @@
-import type { BrowserLoadError } from '../../../../../shared/browser-workspace-types'
+import type {
+  BrowserPageDocLocation,
+  BrowserLoadError
+} from '../../../../../shared/browser-workspace-types'
 import { convertBrowserPageToWorkspaceDoc } from '@/lib/file-preview'
 import { resolveWorkspaceDocAddressTarget } from '@/lib/workspace-doc-address-input'
 import { useAppStore } from '@/store'
+
+export type WorkspaceDocAddressOutcome =
+  | {
+      status: 'workspace-doc'
+      docLocation: BrowserPageDocLocation
+      conversion: ReturnType<typeof convertBrowserPageToWorkspaceDoc>
+    }
+  | { status: 'unsupported' }
 
 /**
  * The workspace-document leg of an address-bar submission, shared by every URL pane: a typed
@@ -17,6 +28,7 @@ export function routeWorkspaceDocAddressSubmission(params: {
   pageId: string
   value: string
   onLoadError: (loadError: BrowserLoadError) => void
+  onOutcome?: (outcome: WorkspaceDocAddressOutcome) => void
 }): boolean {
   const docTarget = resolveWorkspaceDocAddressTarget(
     useAppStore.getState(),
@@ -24,7 +36,8 @@ export function routeWorkspaceDocAddressSubmission(params: {
     params.value
   )
   if (docTarget.status === 'workspace-doc') {
-    convertBrowserPageToWorkspaceDoc(params.pageId, docTarget.docLocation)
+    const conversion = convertBrowserPageToWorkspaceDoc(params.pageId, docTarget.docLocation)
+    params.onOutcome?.({ status: 'workspace-doc', docLocation: docTarget.docLocation, conversion })
     return true
   }
   if (docTarget.status === 'unsupported') {
@@ -33,6 +46,7 @@ export function routeWorkspaceDocAddressSubmission(params: {
       description: docTarget.message,
       validatedUrl: params.value.trim() || 'about:blank'
     })
+    params.onOutcome?.({ status: 'unsupported' })
     return true
   }
   return false

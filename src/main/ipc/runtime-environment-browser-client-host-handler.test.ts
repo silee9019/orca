@@ -1,3 +1,6 @@
+import { buildRegistry } from '../runtime/rpc/core'
+import type { OrcaRuntimeService } from '../runtime/orca-runtime'
+import { ENVIRONMENT_MANAGEMENT_METHODS } from '../runtime/rpc/methods/environment-management'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   BROWSER_CLIENT_AUTOMATION_RUNTIME_CAPABILITY,
@@ -238,3 +241,45 @@ function environment(): KnownRuntimeEnvironment {
     preferredEndpointId: 'endpoint-a'
   }
 }
+
+it('routes explicit placement RPC through the same registered owner and rejects paired management', async () => {
+  registerRuntimeEnvironmentBrowserClientHostHandler({
+    getUserDataPath: () => '/profile',
+    getSettings: () => ({ browserClientHostedRemoteEnabled: true })
+  })
+  resolveEnvironmentMock.mockReturnValue(environment())
+  manuallyDisconnectedMock.mockReturnValue(false)
+  getRuntimeEnvironmentStatusMock.mockResolvedValue({
+    id: 'status',
+    ok: false,
+    error: { code: 'offline', message: 'offline' },
+    _meta: { runtimeId: 'runtime-a' }
+  })
+  const method = buildRegistry(ENVIRONMENT_MANAGEMENT_METHODS).get(
+    'environment.management.prepareBrowserPlacement'
+  )
+  if (!method || 'stream' in method) {
+    throw new Error('missing placement method')
+  }
+  // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The local owner adapter never reads RpcContext.runtime; only transport identity is inspected.
+  const runtime = {} as OrcaRuntimeService
+  const params = method.params?.parse({
+    selector: 'environment-a',
+    expectedPairingRevision: 7,
+    preference: 'auto'
+  })
+  await expect(method.handler(params, { runtime })).resolves.toEqual({ kind: 'server' })
+  expect(getRuntimeEnvironmentStatusMock).toHaveBeenCalledWith(
+    '/profile',
+    'environment-a',
+    undefined,
+    { observeOnly: true }
+  )
+  startHostMock.mockClear()
+  expect(() => method.handler(params, { runtime, clientKind: 'runtime' })).toThrow(
+    'local_connection_required'
+  )
+  expect(startHostMock).not.toHaveBeenCalled()
+  manuallyDisconnectedMock.mockReturnValue(true)
+  await expect(method.handler(params, { runtime })).rejects.toThrow('runtime_manually_disconnected')
+})

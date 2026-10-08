@@ -1,3 +1,4 @@
+import { useWorkspaceFileOpenCommands } from './use-workspace-file-open-commands'
 import React, { useCallback } from 'react'
 import {
   Copy,
@@ -133,7 +134,14 @@ export function FileExplorerRowContextMenu({
     if (result.status === 'unsupported') {
       toast.error(result.message)
     }
+    return result
   }, [activeWorktreeId, node.path])
+  useWorkspaceFileOpenCommands({
+    node,
+    worktreeId: activeWorktreeId,
+    enabled: canOpenInOrcaBrowser,
+    open: handleOpenInOrcaBrowser
+  })
   const handleDownload = useCallback(() => {
     const downloadTarget = connectionId || runtimeDownloadContext
     if (!downloadTarget) {

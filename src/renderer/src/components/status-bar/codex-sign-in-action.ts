@@ -28,7 +28,7 @@ export async function signInCodexAccount(
   accountId: string,
   target: CodexStatusRuntimeTarget,
   dependencies: CodexSignInActionDependencies
-): Promise<void> {
+): Promise<boolean> {
   const {
     accountState,
     accountsExpandedRef,
@@ -43,7 +43,7 @@ export async function signInCodexAccount(
     setReauthenticatingAccountId
   } = dependencies
   if (isSwitching || reauthenticatingAccountId !== null) {
-    return
+    return false
   }
   const previousActiveAccountId = getCodexStatusActiveId(accountState, target)
   setReauthenticatingAccountId(accountId)
@@ -82,6 +82,7 @@ export async function signInCodexAccount(
     toast.success(
       translate('auto.components.status.bar.StatusBar.codexSignInSuccess', 'Signed in to Codex')
     )
+    return mountedRef.current
   } catch (error) {
     console.error('Failed to re-authenticate Codex account from status bar:', error)
     toast.error(
@@ -90,6 +91,7 @@ export async function signInCodexAccount(
         'Codex sign-in failed. Please try again.'
       )
     )
+    return false
   } finally {
     if (mountedRef.current) {
       setReauthenticatingAccountId(null)

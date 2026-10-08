@@ -95,7 +95,11 @@ describe('manual SSH host label fallback', () => {
     let savedTarget: SshTargetCreateInput | undefined
     const ssh = {
       resolveConfigHost: vi.fn(),
-      listTargets: vi.fn().mockResolvedValue([]),
+      listTargets: vi
+        .fn()
+        .mockImplementation(async () =>
+          savedTarget ? [{ ...savedTarget, id: 'ssh-1', source: 'manual' }] : []
+        ),
       addTarget: vi.fn().mockImplementation(async ({ target }) => {
         savedTarget = target
         return { target: { ...target, id: 'ssh-1', source: 'manual' }, repoReadoptions: [] }
@@ -131,7 +135,9 @@ describe('bulk add of ~/.ssh/config hosts', () => {
     })
     const ssh = {
       importConfig,
-      listTargets: vi.fn().mockResolvedValue([]),
+      listTargets: vi
+        .fn()
+        .mockResolvedValue([{ id: 'ssh-1', label: 'prod', host: 'prod', port: 22, username: '' }]),
       addTarget: vi.fn(),
       listConfigHosts: vi.fn(),
       resolveConfigHost: vi.fn()
@@ -208,4 +214,28 @@ describe('SSH config picker response admission', () => {
       )
     ).rejects.toThrow('Restart Orca')
   })
+})
+
+it('does not acknowledge a saved host absent from the canonical refresh', async () => {
+  const target = {
+    ...EMPTY_FORM,
+    host: 'host.example',
+    id: 'missing',
+    source: 'manual' as const,
+    port: 22
+  }
+  const outcome = await saveNewSshHostFromForm({
+    form: { ...EMPTY_FORM, host: 'host.example' },
+    ssh: {
+      listTargets: vi.fn().mockResolvedValue([]),
+      addTarget: vi.fn().mockResolvedValue({ target, repoReadoptions: [] }),
+      resolveConfigHost: vi.fn(),
+      listConfigHosts: vi.fn(),
+      importConfig: vi.fn()
+    },
+    recordSshRepoReadoptions: vi.fn(),
+    setSshTargetsMetadata: vi.fn(),
+    recordFeatureInteraction: vi.fn()
+  })
+  expect(outcome).toBe('failed')
 })

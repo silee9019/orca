@@ -1,3 +1,30 @@
+import type {
+  addManagedSshTarget,
+  importManagedSshConfig,
+  listManagedSshConfigHosts,
+  removeManagedSshTarget,
+  resolveManagedSshConfigHost,
+  updateManagedSshTarget
+} from '../ipc/ssh-target-crud-handlers'
+import type {
+  managedSshNeedsCredential,
+  resetManagedSshRelay,
+  terminateManagedSshSessions,
+  testManagedSshConnection
+} from '../ipc/ssh-connection-handlers'
+import type { disconnectRegisteredSshTarget } from '../ipc/ssh-session-teardown'
+import type {
+  addManagedSshPortForward,
+  listManagedSshDetectedPorts,
+  listManagedSshPortForwards,
+  removeManagedSshPortForward,
+  updateManagedSshPortForward
+} from '../ipc/ssh-port-forward-handlers'
+import type {
+  listManagedSshCredentialRequests,
+  submitManagedSshCredential
+} from '../ipc/ssh-passphrase'
+import type { browseManagedSshDirectory } from '../ipc/ssh-browse'
 import type { SshConnectionStore } from './ssh-connection-store'
 import type { SshChannelMultiplexer } from './ssh-channel-multiplexer'
 import type { SshConnectionManager } from './ssh-connection-manager'
@@ -107,4 +134,89 @@ export function setSshConnectionManagerResolver(
  */
 export function getSshConnectionManager(): SshConnectionManager | null {
   return registeredGetSshConnectionManager?.() ?? null
+}
+
+export type SshTargetManagement = {
+  addTarget: typeof addManagedSshTarget
+  updateTarget: typeof updateManagedSshTarget
+  removeTarget: typeof removeManagedSshTarget
+  importConfig: typeof importManagedSshConfig
+  listConfigHosts: typeof listManagedSshConfigHosts
+  resolveConfigHost: typeof resolveManagedSshConfigHost
+}
+let registeredTargetManagement: SshTargetManagement | null = null
+export function setSshTargetManagement(operations: SshTargetManagement | null): void {
+  registeredTargetManagement = operations
+}
+export function getSshTargetManagement(): SshTargetManagement {
+  if (!registeredTargetManagement) {
+    throw new Error('ssh_management_not_registered')
+  }
+  return registeredTargetManagement
+}
+
+export type SshConnectionManagement = {
+  terminateSessions: typeof terminateManagedSshSessions
+  resetRelay: typeof resetManagedSshRelay
+  needsPassphrasePrompt: typeof managedSshNeedsCredential
+  testConnection: typeof testManagedSshConnection
+  disconnect: typeof disconnectRegisteredSshTarget
+}
+let registeredConnectionManagement: SshConnectionManagement | null = null
+export function setSshConnectionManagement(operations: SshConnectionManagement | null): void {
+  registeredConnectionManagement = operations
+}
+export function getSshConnectionManagement(): SshConnectionManagement {
+  if (!registeredConnectionManagement) {
+    throw new Error('ssh_management_not_registered')
+  }
+  return registeredConnectionManagement
+}
+
+export type SshPortForwardManagement = {
+  addPortForward: typeof addManagedSshPortForward
+  updatePortForward: typeof updateManagedSshPortForward
+  removePortForward: typeof removeManagedSshPortForward
+  listPortForwards: typeof listManagedSshPortForwards
+  listDetectedPorts: typeof listManagedSshDetectedPorts
+}
+let registeredPortForwardManagement: SshPortForwardManagement | null = null
+export function setSshPortForwardManagement(operations: SshPortForwardManagement | null): void {
+  registeredPortForwardManagement = operations
+}
+export function getSshPortForwardManagement(): SshPortForwardManagement {
+  if (!registeredPortForwardManagement) {
+    throw new Error('ssh_management_not_registered')
+  }
+  return registeredPortForwardManagement
+}
+
+export type SshCredentialManagement = {
+  submitCredential: typeof submitManagedSshCredential
+  listRequests: typeof listManagedSshCredentialRequests
+}
+let registeredCredentialManagement: SshCredentialManagement | null = null
+export function setSshCredentialManagement(operations: SshCredentialManagement | null): void {
+  registeredCredentialManagement = operations
+}
+export function getSshCredentialManagement(): SshCredentialManagement {
+  if (!registeredCredentialManagement) {
+    throw new Error('ssh_management_not_registered')
+  }
+  return registeredCredentialManagement
+}
+
+type SshDirectoryManagement = (args: {
+  targetId: string
+  dirPath: string
+}) => ReturnType<typeof browseManagedSshDirectory>
+let registeredDirectoryManagement: SshDirectoryManagement | null = null
+export function setSshDirectoryManagement(operation: SshDirectoryManagement | null): void {
+  registeredDirectoryManagement = operation
+}
+export function getSshDirectoryManagement(): SshDirectoryManagement {
+  if (!registeredDirectoryManagement) {
+    throw new Error('ssh_management_not_registered')
+  }
+  return registeredDirectoryManagement
 }

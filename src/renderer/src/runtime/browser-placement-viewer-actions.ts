@@ -1,0 +1,228 @@
+import { requestBrowserClientInputFeedback } from './browser-client-input-feedback-request'
+import { applyBrowserClientHistoryDocumentRequest } from './browser-client-history-document-request'
+import { requestBrowserTabDragCancel } from './browser-tab-drag-cancel-request'
+import { requestBrowserTitlebarPairedActivation } from './browser-titlebar-paired-activation-request'
+import { requestBrowserTabDrop } from './browser-tab-drop-request'
+import { applyBrowserClientStagedDocumentRequest } from './browser-client-staged-document-request'
+import { applyBrowserClientHistoryRequest } from './browser-client-history-request'
+import { applyBrowserClientDeferredRequest } from './browser-client-deferred-request'
+import { requestBrowserToolbarExternal } from './browser-toolbar-external-request'
+import { applyBrowserClientDocumentRequest } from './browser-client-document-request'
+import { applyBrowserClientSubmissionRequest } from './browser-client-submission-request'
+import { applyBrowserClientReloadRequest } from './browser-client-reload-request'
+import { applyBrowserClientFindRequest } from './browser-client-find-request'
+import { requestBrowserNewTab } from './browser-new-tab-request'
+import { applyBrowserClientAddressRequest } from './browser-client-address-request'
+import { requestBrowserPairedNewTab } from './browser-paired-new-tab-request'
+import { requestBrowserServerReopen } from './browser-server-reopen-request'
+import { applyBrowserClientNavigationRequest } from './browser-client-navigation-request'
+import { requestBrowserGrabToast } from './browser-grab-toast-request'
+import { requestBrowserWebAuthnFocus } from './browser-webauthn-focus-request'
+import { requestBrowserEgress } from './browser-egress-request'
+import { requestBrowserViewportPan } from './browser-viewport-pan-request'
+import { requestBrowserMarkupHint } from './browser-markup-hint-request'
+import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
+import { requestBrowserMarkup } from './browser-markup-request'
+import { applyBrowserImportHintAction } from './browser-import-hint-actions'
+import { requestBrowserBanner } from './browser-banner-request'
+import { requestBrowserOverlayFocus } from './browser-overlay-focus-request'
+import { applyBrowserSetupGuideAction } from './browser-setup-guide-actions'
+import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
+import { requestClientHostedBrowserRow } from './client-hosted-browser-row-request'
+import { applyBrowserClientMarkupRequest } from './browser-client-markup-request'
+import { requestBrowserTakeBack } from './browser-take-back-request'
+import { requestBrowserObservation } from './browser-observation-request'
+import { applyComputerPermissionsViewerAction } from './computer-permissions-viewer-actions'
+import { requestBrowserWebAuthnDialog } from './browser-webauthn-dialog-request'
+import { requestWorkspaceFileOpen } from './workspace-file-open-request'
+import { requestWorkspacePortOpen } from './workspace-port-open-request'
+import { applyBrowserPaletteSelection } from './browser-palette-selection'
+import { requestFloatingBrowser } from './floating-browser-request'
+import { requestRemoteFilePicker } from './remote-file-picker-request'
+import { requestLinkedBrowser } from './linked-browser-request'
+import { requestBrowserFailure } from './browser-failure-request'
+import type { BrowserPlacementViewerCommand } from './browser-placement-viewer-command'
+import type { BrowserViewerResult } from '../../../shared/browser-viewer-command'
+
+export async function applyBrowserPlacementViewerAction(
+  command: BrowserPlacementViewerCommand,
+  expiresAt: number
+): Promise<BrowserViewerResult> {
+  const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'tab-drag-cancel') {
+    const tabDragCancel = await requestBrowserTabDragCancel(command.target, expiresAt)
+    return { ...base, applied: true, tabDragCancel }
+  }
+  if (command.operation === 'client-input-feedback') {
+    const clientInputFeedback = await requestBrowserClientInputFeedback(command, expiresAt)
+    return { ...base, applied: true, clientInputFeedback }
+  }
+  if (command.operation === 'client-history-document') {
+    return applyBrowserClientHistoryDocumentRequest(command, expiresAt)
+  }
+  if (command.operation === 'tab-drop') {
+    const tabDrop = await requestBrowserTabDrop(command.target, command.destination, expiresAt)
+    return { ...base, applied: true, tabDrop }
+  }
+  if (command.operation === 'titlebar-activate-paired') {
+    return {
+      ...base,
+      applied: true,
+      titlebarPairedActivation: await requestBrowserTitlebarPairedActivation(
+        command.target,
+        expiresAt
+      )
+    }
+  }
+  if (command.operation === 'server-reopen') {
+    const serverReopen = await requestBrowserServerReopen(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, serverReopen }
+  }
+  if (command.operation === 'grab-toast') {
+    const grabToast = await requestBrowserGrabToast(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, grabToast }
+  }
+  if (command.operation === 'webauthn-dialog-focus') {
+    const webAuthnFocus = await requestBrowserWebAuthnFocus(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, webAuthnFocus }
+  }
+  if (command.operation === 'browser-import-hint') {
+    const browserImportHint = await applyBrowserImportHintAction(command.command, expiresAt)
+    return { ...base, applied: true, browserImportHint }
+  }
+  if (command.operation === 'egress') {
+    const egress = await requestBrowserEgress(command.command, expiresAt)
+    return { ...base, applied: true, egress }
+  }
+  if (command.operation === 'banner') {
+    return {
+      ...base,
+      applied: true,
+      banner: await requestBrowserBanner(command.command, expiresAt)
+    }
+  }
+  if (command.operation === 'viewport-pan') {
+    const viewportPan = await requestBrowserViewportPan(command.page, command.delta, expiresAt)
+    return { ...base, page: command.page, applied: true, viewportPan }
+  }
+  if (command.operation === 'markup-hint') {
+    const markupHint = await requestBrowserMarkupHint(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markupHint }
+  }
+  if (command.operation === 'markup-editor') {
+    const markupEditor = await requestBrowserMarkupEditor(command.page, command.command, expiresAt)
+    return { ...base, page: command.page, applied: true, markupEditor }
+  }
+  if (command.operation === 'markup') {
+    const markup = await requestBrowserMarkup(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markup }
+  }
+  if (command.operation === 'overlay-focus') {
+    return {
+      ...base,
+      applied: true,
+      overlayFocus: requestBrowserOverlayFocus(command.command, expiresAt)
+    }
+  }
+  if (command.operation === 'browser-setup-guide') {
+    const browserSetupGuide = await applyBrowserSetupGuideAction(command.command, expiresAt)
+    return { ...base, applied: true, browserSetupGuide }
+  }
+  if (command.operation === 'browser-feature-wall') {
+    const browserFeatureWall = await applyBrowserFeatureWallAction(command.command, expiresAt)
+    return { ...base, applied: true, browserFeatureWall }
+  }
+  if (command.operation === 'client-hosted-row') {
+    const clientHostedRow = await requestClientHostedBrowserRow(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, clientHostedRow }
+  }
+  if (command.operation === 'new-tab') {
+    return { ...base, newTab: await requestBrowserNewTab(command.target, expiresAt), applied: true }
+  }
+  if (command.operation === 'new-tab-paired') {
+    return {
+      ...base,
+      applied: true,
+      pairedNewTab: await requestBrowserPairedNewTab(command.target, expiresAt)
+    }
+  }
+  if (command.operation === 'toolbar-external') {
+    const toolbarExternal = await requestBrowserToolbarExternal(command.command, expiresAt)
+    return { ...base, page: command.command.page, applied: true, toolbarExternal }
+  }
+  if (command.operation === 'client-deferred') {
+    return applyBrowserClientDeferredRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-history') {
+    return applyBrowserClientHistoryRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-staged-document') {
+    return applyBrowserClientStagedDocumentRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-document') {
+    return applyBrowserClientDocumentRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-submission') {
+    return applyBrowserClientSubmissionRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-reload') {
+    return applyBrowserClientReloadRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-find') {
+    return applyBrowserClientFindRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-address') {
+    return applyBrowserClientAddressRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-navigation') {
+    return applyBrowserClientNavigationRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-markup') {
+    return await applyBrowserClientMarkupRequest(command, expiresAt)
+  }
+  if (command.operation === 'take-back') {
+    const takeBack = await requestBrowserTakeBack(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, takeBack }
+  }
+  if (command.operation === 'observe-page') {
+    const observation = await requestBrowserObservation(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, observation }
+  }
+  if (command.operation === 'computer-permissions') {
+    const computerPermissions = await applyComputerPermissionsViewerAction(
+      command.command,
+      expiresAt
+    )
+    return { ...base, applied: true, computerPermissions }
+  }
+  if (command.operation === 'webauthn-dialog') {
+    const webAuthnDialog = await requestBrowserWebAuthnDialog(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, webAuthnDialog }
+  }
+  if (command.operation === 'load-failure') {
+    const failureState = await requestBrowserFailure(command.page, command.command, expiresAt)
+    return { ...base, page: command.page, applied: true, failureState }
+  }
+  if (command.operation === 'workspace-file-open') {
+    const fileOpenState = requestWorkspaceFileOpen(command.command, expiresAt)
+    return { ...base, applied: true, fileOpenState }
+  }
+  if (command.operation === 'workspace-port-open') {
+    const portOpenState = await requestWorkspacePortOpen(command.command, expiresAt)
+    return { ...base, applied: true, portOpenState }
+  }
+  if (command.operation === 'palette-select') {
+    const paletteState = await applyBrowserPaletteSelection(command.selection, expiresAt)
+    return { ...base, applied: true, paletteState }
+  }
+  if (command.operation === 'floating-browser') {
+    const floatingBrowser = requestFloatingBrowser(command.command, expiresAt)
+    return { ...base, applied: true, floatingBrowser }
+  }
+  if (command.operation === 'remote-picker') {
+    const remotePicker = await requestRemoteFilePicker(command.command, expiresAt)
+    return { ...base, applied: true, remotePicker }
+  }
+  const linkedBrowser = await requestLinkedBrowser(command.command, expiresAt)
+  return { ...base, applied: true, linkedBrowser }
+}

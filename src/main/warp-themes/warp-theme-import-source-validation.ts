@@ -1,18 +1,24 @@
+import { isAbsolute } from 'node:path'
+import { z } from 'zod'
 import type { WarpThemeImportSource } from '../../shared/terminal-custom-themes'
+import { SettingsWarpImportSource } from '../../shared/rpc-contract/settings-control-params'
 
-const VALID_SOURCE_KINDS = new Set(['auto', 'chooseFile', 'chooseFolder'])
+const Source = z.union([
+  SettingsWarpImportSource.removeDefault(),
+  z.object({ kind: z.literal('chooseFile') }).strict(),
+  z.object({ kind: z.literal('chooseFolder') }).strict()
+])
 
 export function validateWarpThemeImportSource(source: unknown): WarpThemeImportSource | null {
-  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+  const result = Source.safeParse(source)
+  if (!result.success) {
     return null
   }
-  const entries = Object.entries(source)
-  if (entries.length !== 1 || entries[0]?.[0] !== 'kind') {
+  if (result.data.kind === 'files' && result.data.paths.some((path) => !isAbsolute(path))) {
     return null
   }
-  const kind = entries[0][1]
-  if (typeof kind !== 'string' || !VALID_SOURCE_KINDS.has(kind)) {
+  if (result.data.kind === 'folder' && !isAbsolute(result.data.path)) {
     return null
   }
-  return { kind } as WarpThemeImportSource
+  return result.data
 }

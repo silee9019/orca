@@ -1,3 +1,4 @@
+import { useSshAdvancedViewerController } from '@/hooks/useSshConnectionsViewerController'
 import { useEffect, useRef, useState } from 'react'
 import { FileKey } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -57,6 +58,7 @@ export function SshTargetForm({
   // does not leak across cancel → reopen (form component stays mounted).
   const hasAdvancedConnectionFields = hasAdvancedConnectionValues(form)
   const [advancedOpen, setAdvancedOpen] = useState(hasAdvancedConnectionFields)
+  useSshAdvancedViewerController(open, advancedOpen, setAdvancedOpen)
   const baselineRef = useRef(form)
   // Why: the session effect and the outside-dismiss handler need the latest draft
   // without re-subscribing the effect to every keystroke. Sync in an effect so

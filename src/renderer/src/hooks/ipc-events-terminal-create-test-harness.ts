@@ -208,7 +208,8 @@ export async function setupTerminalCreateSurfacing(
     })
   )
 
-  const { useIpcEvents: registerIpcEvents } = await import('./useIpcEvents')
+  const { installAppLifetimeIpcEvents: registerIpcEvents } =
+    await import('./ipc-events/app-lifetime-ipc-bridge')
   registerIpcEvents()
   await Promise.resolve()
 

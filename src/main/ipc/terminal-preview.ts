@@ -101,7 +101,8 @@ export function registerTerminalPreviewHandlers(runtime: OrcaRuntimeService): vo
         event.sender,
         ptyId,
         runtime.registerRawTerminalViewSubscriber(ptyId),
-        removeSubscription
+        removeSubscription,
+        runtime
       )
       const unsubscribeData = runtime.subscribeToTerminalData(ptyId, (data, meta) =>
         subscription.append(data, meta)

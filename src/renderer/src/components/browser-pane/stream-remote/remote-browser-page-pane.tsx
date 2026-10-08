@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
 import { BROWSER_CERTIFICATE_TRUST_RUNTIME_CAPABILITY } from '../../../../../shared/protocol-version'
 import type { BrowserPage as BrowserPageState } from '../../../../../shared/browser-workspace-types'
 import { runtimeEnvironmentSupportsCapability } from '@/runtime/runtime-rpc-client'
 import { convertBrowserPageToWorkspaceDoc } from '@/lib/file-preview'
-import { openWorkspaceBrowserTab } from '@/lib/workspace-browser-tab-open'
-import { resolveBrowserSourceUnifiedTab } from '@/lib/browser-workspace-source-resolution'
+import { openRemoteBrowserWorkspaceDocument } from './open-remote-browser-workspace-document'
+import { openRemoteContextMenuLink } from './open-remote-context-menu-link'
 import { useBrowserPageChromeFocus } from '../assemble-chrome/use-browser-page-chrome-focus'
 import { useBrowserAddressBarEditSession } from '../assemble-chrome/use-browser-address-bar-edit-session'
 import { useElementGuestFocus } from '../assemble-chrome/browser-page-guest-focus'
 import { consumeBrowserPageDeferredNavigation } from '../navigate/browser-page-deferred-navigation'
-import { useMarkupMode, type MarkupCaptureContext } from '../annotate/useMarkupMode'
-import { deliverMarkupToClipboard } from '../annotate/markup-clipboard-delivery'
+import { useRemoteBrowserMarkupCapture } from './use-remote-browser-markup-capture'
 import {
   isRemoteBrowserStreamBusy,
   remoteBrowserStreamNotice
@@ -24,6 +23,7 @@ import type {
 import type { RemoteBrowserPaneNotice } from './remote-browser-page-input-model'
 import { useRemoteBrowserPageLifecycle } from './use-remote-browser-page-lifecycle'
 import { useRemoteBrowserPageStream } from './use-remote-browser-page-stream'
+import { useRemoteBrowserPaneCommands } from './use-remote-browser-pane-commands'
 import { useRemoteBrowserPageNavigation } from './use-remote-browser-page-navigation'
 import {
   useRemoteBrowserPageInput,
@@ -57,12 +57,10 @@ export function RemoteBrowserPagePane({
   onUpdatePageState: (tabId: string, updates: BrowserTabPageState) => void
   onSetUrl: BrowserPageUrlSetter
 }): React.JSX.Element {
-  const activeRuntimeEnvironmentId = runtimeEnvironmentId
   const addressBarInputRef = useRef<HTMLInputElement | null>(null)
   const imageRef = useRef<HTMLImageElement | null>(null)
   const remoteViewportRef = useRef<HTMLDivElement | null>(null)
-  // Why: the screencast <img> only exists once a frame lands, so before the first one the
-  // viewport is the only place guest focus can go.
+  // Before the first frame, only the viewport can receive guest focus.
   const guestFocus = useElementGuestFocus(imageRef, remoteViewportRef)
   const { startAddressBarFocusGrab } = useBrowserPageChromeFocus({
     browserTabId: browserTab.id,
@@ -160,7 +158,7 @@ export function RemoteBrowserPagePane({
   } = useRemoteBrowserPageLifecycle({
     browserTab,
     worktreeId,
-    activeRuntimeEnvironmentId,
+    activeRuntimeEnvironmentId: runtimeEnvironmentId,
     isActive,
     setPaneNotice,
     setPaneBusy,
@@ -234,8 +232,8 @@ export function RemoteBrowserPagePane({
     imageRef.current?.focus()
   }, [hasStreamFrame])
 
-  const { reconnectRemoteStream } = useRemoteBrowserPageStream({
-    activeRuntimeEnvironmentId,
+  const { reconnectRemoteStream, reconnectGeneration } = useRemoteBrowserPageStream({
+    activeRuntimeEnvironmentId: runtimeEnvironmentId,
     browserPageId: browserTab.id,
     isActive,
     lifecycle,
@@ -262,6 +260,7 @@ export function RemoteBrowserPagePane({
 
   const {
     getRemoteImagePoint,
+    performRemoteInput,
     handleRemotePointerDown,
     handleRemotePointerUp,
     handleRemoteScreenshotKeyDown
@@ -281,6 +280,13 @@ export function RemoteBrowserPagePane({
     closeMissingRemotePage,
     scheduleRemoteTabInfoRefresh,
     setPaneNotice
+  })
+
+  const markup = useRemoteBrowserMarkupCapture(imageRef, remoteViewportRef, {
+    page: browserTab.id,
+    active: isActive && !stagedPage,
+    environmentId: runtimeEnvironmentId,
+    remotePageId: lifecycle.tokens.remotePage
   })
 
   useRemoteBrowserPageWheel({
@@ -303,7 +309,34 @@ export function RemoteBrowserPagePane({
     remoteWheelInFlightRef
   })
 
-  const { contextMenu, setContextMenu, handleRemoteContextMenu } = useRemoteBrowserPageContextMenu({
+  const {
+    contextMenu,
+    handleRemoteContextMenu,
+    actions: contextMenuActions,
+    performMenu
+  } = useRemoteBrowserPageContextMenu({
+    commandOwner: {
+      page: browserTab.id,
+      active: isActive && !stagedPage,
+      environmentId: runtimeEnvironmentId,
+      remotePageId: lifecycle.tokens.remotePage
+    },
+    onNavigate: (method) => {
+      const page = lifecycle.tokens.remotePage
+      return runRemoteNavigation(
+        method,
+        undefined,
+        () => mountedRef.current && lifecycle.tokens.remotePage === page
+      )
+    },
+    onOpenLink: (linkUrl) =>
+      openRemoteContextMenuLink(
+        browserTab.id,
+        worktreeId,
+        runtimeEnvironmentId,
+        linkUrl,
+        setPaneNotice
+      ),
     busy,
     browserTabUrl: browserTab.url,
     imageRef,
@@ -319,26 +352,31 @@ export function RemoteBrowserPagePane({
     setPaneNotice
   })
 
-  // Why: markup snapshots the displayed screencast <img> (no injection), so it works on remote panes even though element-grab doesn't.
-  const markup = useMarkupMode({
-    getCaptureContext: useCallback((): MarkupCaptureContext | null => {
-      const element = imageRef.current
-      const container = remoteViewportRef.current
-      if (!element || !container) {
-        return null
-      }
-      const rect = container.getBoundingClientRect()
-      if (rect.width <= 0 || rect.height <= 0) {
-        return null
-      }
-      return {
-        source: { kind: 'image', element },
-        cssWidth: rect.width,
-        cssHeight: rect.height,
-        outputScale: window.devicePixelRatio || 1
-      }
-    }, []),
-    onDeliver: deliverMarkupToClipboard
+  const openWorkspaceDocument = (
+    location: Parameters<typeof openRemoteBrowserWorkspaceDocument>[2]
+  ) => convertBrowserPageToWorkspaceDoc(browserTab.id, location)
+
+  useRemoteBrowserPaneCommands({
+    page: browserTab.id,
+    environmentId: runtimeEnvironmentId,
+    remotePageId: lifecycle.tokens.remotePage,
+    active: isActive,
+    staged: stagedPage,
+    streamStatus,
+    reconnectGeneration,
+    reconnect: reconnectRemoteStream,
+    performInput: performRemoteInput,
+    performMarkup: markup.performCommand,
+    performMenu,
+    performDocument: (command) =>
+      openRemoteBrowserWorkspaceDocument(
+        browserTab.id,
+        runtimeEnvironmentId,
+        command.document,
+        openWorkspaceDocument
+      ),
+    performNavigation: (command, isCurrent) =>
+      runRemoteNavigation(`browser.${command.navigation}`, command.url, isCurrent)
   })
 
   return (
@@ -349,48 +387,16 @@ export function RemoteBrowserPagePane({
       className="relative flex h-full min-h-0 flex-1 flex-col bg-background"
     >
       {contextMenu ? (
-        <RemoteBrowserPageContextMenu
-          contextMenu={contextMenu}
-          onDismiss={() => setContextMenu(null)}
-          onOpenLinkInOrcaBrowser={() => {
-            const linkUrl = contextMenu.linkUrl!
-            setContextMenu(null)
-            const sourceUnifiedTab = resolveBrowserSourceUnifiedTab(
-              useAppStore.getState(),
-              browserTab.id,
-              worktreeId
-            )
-            void openWorkspaceBrowserTab({
-              workspaceId: worktreeId,
-              url: linkUrl,
-              ...(sourceUnifiedTab ? { afterTabId: sourceUnifiedTab.id } : {}),
-              focusOnCreate: false,
-              selectWorktree: false,
-              intent: { kind: 'url' },
-              expectedRuntimeEnvironmentId: runtimeEnvironmentId,
-              placementPreference: 'server'
-            }).catch((error) => {
-              setPaneNotice({
-                kind: 'direct',
-                text: error instanceof Error ? error.message : String(error)
-              })
-            })
-          }}
-          onNavigate={(method) => {
-            void runRemoteNavigation(method)
-            setContextMenu(null)
-          }}
-        />
+        <RemoteBrowserPageContextMenu contextMenu={contextMenu} actions={contextMenuActions} />
       ) : null}
       <RemoteBrowserPageToolbar
+        commandOwner={{ page: browserTab.id, active: isActive && !stagedPage }}
         runtimeEnvironmentId={runtimeEnvironmentId}
         addressBarValue={addressBarValue}
         onAddressBarChange={setAddressBarValue}
         onSubmitAddressBar={submitAddressBar}
         onNavigateToUrl={navigateToUrl}
-        onOpenWorkspaceDoc={(docLocation) =>
-          convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)
-        }
+        onOpenWorkspaceDoc={(docLocation) => openWorkspaceDocument(docLocation)}
         addressBarInputRef={addressBarInputRef}
         addressBarEditSession={addressBarEditSession}
         busy={busy}
@@ -403,6 +409,7 @@ export function RemoteBrowserPagePane({
         onReload={() => void runRemoteNavigation('browser.reload')}
       />
       <RemoteBrowserPageViewport
+        isActive={isActive}
         remoteViewportRef={remoteViewportRef}
         imageRef={imageRef}
         frameUrl={frameUrl}
@@ -415,7 +422,7 @@ export function RemoteBrowserPagePane({
         remoteCertificateTrustSupported={remoteCertificateTrustSupported}
         certificateFailure={certificateFailure}
         remotePageHandle={remotePageHandle}
-        activeRuntimeEnvironmentId={activeRuntimeEnvironmentId}
+        activeRuntimeEnvironmentId={runtimeEnvironmentId}
         worktreeId={worktreeId}
         runtimeWorktree={runtimeWorktree}
         runtimeTarget={runtimeTarget}

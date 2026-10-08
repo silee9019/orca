@@ -1,3 +1,4 @@
+import type { PluginCommandInput } from '../../shared/plugins/plugin-command-input'
 import { fork, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -31,7 +32,8 @@ export type PluginWorkerHostCallExecutor = (
 export type PluginWorkerHandle = {
   /** Command ids the worker registered on activate (⊆ manifest commands). */
   commands: readonly string[]
-  invokeCommand(commandId: string, args?: unknown): Promise<unknown>
+  commandInputVersion?: 1
+  invokeCommand(commandId: string, args?: unknown, input?: PluginCommandInput): Promise<unknown>
   deliverEvent(event: PluginEventName, payload: unknown): void
   /** Milliseconds timestamp of the last completed work (for idle reap). */
   lastActivityAt(): number
@@ -146,6 +148,7 @@ export async function startPluginWorker(
     }
   })
 
+  let commandInputVersion: 1 | undefined
   const commands = await new Promise<string[]>((resolve, reject) => {
     let settled = false
     const timer = setTimeout(() => {
@@ -187,6 +190,7 @@ export async function startPluginWorker(
             settled = true
             clearTimeout(timer)
             options.signal?.removeEventListener('abort', onAbort)
+            commandInputVersion = message.commandInputVersion
             resolve(message.commands)
           }
           return
@@ -260,7 +264,8 @@ export async function startPluginWorker(
 
   return {
     commands,
-    invokeCommand(commandId, args) {
+    commandInputVersion,
+    invokeCommand(commandId, args, input) {
       if (exited || disposed) {
         return Promise.reject(new Error(`${tag} worker is not running`))
       }
@@ -271,7 +276,7 @@ export async function startPluginWorker(
           reject(new Error(`${tag} ${commandId} timed out after ${invokeTimeoutMs}ms`))
         }, invokeTimeoutMs)
         pendingCommands.set(callId, { resolve, reject, timer })
-        sendToChild({ type: 'invokeCommand', callId, commandId, args })
+        sendToChild({ type: 'invokeCommand', callId, commandId, args, input })
       })
     },
     deliverEvent(event, payload) {

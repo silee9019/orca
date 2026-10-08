@@ -1,3 +1,4 @@
+import { installPtyDataListenerCountReply } from '../pty-data-listener-count-reply'
 import { ipcRenderer } from 'electron'
 import type { ProjectExecutionRuntimeResolution } from '../../shared/project-execution-runtime'
 import type { StartupCommandDelivery } from '../../shared/codex-startup-delivery'
@@ -207,3 +208,5 @@ export const ptySessionControlApi = {
   getForegroundProcess: (id: string): Promise<string | null> =>
     ipcRenderer.invoke('pty:getForegroundProcess', { id })
 } satisfies Partial<PreloadApi['pty']>
+
+installPtyDataListenerCountReply(ipcRenderer, () => ptySessionControlApi.getPtyDataListenerCount())

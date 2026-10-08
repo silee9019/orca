@@ -1,3 +1,5 @@
+import { usePairingInputViewer } from '@/runtime/pairing-input-viewer'
+import { useSshAdvancedViewerController } from '@/hooks/useSshConnectionsViewerController'
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,6 +32,7 @@ export function SshHostFields({
   onSubmit: () => void
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(preferAdvancedOpen)
+  useSshAdvancedViewerController(true, advancedOpen, setAdvancedOpen, 'add-host')
   return (
     <form
       className="grid gap-3 sm:grid-cols-2"
@@ -160,6 +163,12 @@ export function RemoteServerFields({
   onAllowLoopbackChange: (value: boolean) => void
   onSubmit: () => void
 }) {
+  usePairingInputViewer({
+    surface: 'sidebar',
+    value: pairingCode,
+    disabled,
+    set: onPairingCodeChange
+  })
   const inputError = pairingCode.trim() !== '' && !parsedLink.ok
   const loopbackBlocked =
     parsedLink.ok && parsedLink.value.endpointKind === 'loopback' && !allowLoopback

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePluginDevelopmentViewerController } from '@/runtime/plugin-development-viewer-controller'
 import { ChevronRight, Loader2 } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
@@ -26,6 +27,13 @@ export function PluginDevelopmentSection({
 }: PluginDevelopmentSectionProps): React.JSX.Element {
   const [pathInput, setPathInput] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const detailsRef = usePluginDevelopmentViewerController({
+    pathInput,
+    paths,
+    busy,
+    error,
+    setPathInput
+  })
 
   const addPath = async (): Promise<void> => {
     const path = pathInput.trim()
@@ -57,7 +65,7 @@ export function PluginDevelopmentSection({
   }
 
   return (
-    <details className="group">
+    <details ref={detailsRef} className="group">
       <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded-md py-1.5 pr-2 text-[13px] font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden">
         <ChevronRight className="size-3.5 text-muted-foreground transition-transform group-open:rotate-90" />
         {translate('auto.components.settings.PluginDevelopmentSection.title', 'Development')}

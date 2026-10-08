@@ -612,7 +612,7 @@ describe('AutomationsPage owner conflicts', () => {
     expect(rows(container, 'automation-row')).toContain('Ambiguous')
     const orphanedRow = listedRow(orphaned.id)
     expect(mocks.listPanel?.isActionEnabled(orphanedRow, 'history')).toBe(true)
-    expect(mocks.listPanel?.isActionEnabled(orphanedRow, 'run-now')).toBe(false)
+    expect(mocks.listPanel?.isActionEnabled(orphanedRow, 'run')).toBe(false)
   })
 
   it('greys out the actions on a row no owner could be captured for', async () => {

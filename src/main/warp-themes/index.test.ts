@@ -1,3 +1,4 @@
+import { createGlobalSettingsFixture } from '../../shared/global-settings-test-fixture'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import path from 'node:path'
 import type * as WarpThemeDiscovery from './discovery'
@@ -106,6 +107,32 @@ describe('previewWarpThemeImport', () => {
     realpathMock.mockImplementation((filePath: string) => Promise.resolve(filePath))
     opendirMock.mockResolvedValue(mockDirectory([fileEntry('z.yml'), fileEntry('a.yml')]))
     parseWarpThemeYamlWithTimeoutMock.mockImplementation(parseWarpThemeYaml)
+  })
+
+  it('previews explicit host files without opening a native picker', async () => {
+    const store = { getSettings: () => createGlobalSettingsFixture() }
+    const preview = await previewWarpThemeImport(store, {
+      kind: 'files',
+      paths: ['/fixture/b.yaml', '/fixture/a.yaml']
+    })
+    expect(preview.found).toBe(true)
+    expect(preview.themes).toHaveLength(2)
+    expect(readFileMock.mock.calls.map(([filePath]) => filePath)).toEqual([
+      '/fixture/a.yaml',
+      '/fixture/b.yaml'
+    ])
+    expect(showOpenDialogMock).not.toHaveBeenCalled()
+  })
+
+  it('previews an explicit host folder and rejects relative paths without discovery or dialogs', async () => {
+    const store = { getSettings: () => createGlobalSettingsFixture() }
+    const preview = await previewWarpThemeImport(store, { kind: 'folder', path: '/fixture/themes' })
+    expect(preview.found).toBe(true)
+    expect(showOpenDialogMock).not.toHaveBeenCalled()
+    readFileMock.mockClear()
+    const invalid = await previewWarpThemeImport(store, { kind: 'files', paths: ['relative.yaml'] })
+    expect(invalid).toMatchObject({ found: false, error: 'Invalid Warp theme import source.' })
+    expect(readFileMock).not.toHaveBeenCalled()
   })
 
   it('sorts theme files before duplicate id suffixing', async () => {

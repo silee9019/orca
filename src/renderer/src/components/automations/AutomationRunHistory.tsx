@@ -1,3 +1,4 @@
+import { useAutomationHistoryViewer } from '../../runtime/automation-history-viewer'
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ const RUN_ROW_HEADER_SURFACE_CLASS =
 type AutomationRunHistoryProps = {
   runs: AutomationRun[]
   automationId: string
+  ownerKey?: string | null
   worktreeMap: ReadonlyMap<string, Worktree>
   /** Set when the history read failed; the runs below are unknown, not zero. */
   notice?: AutomationActionNotice | null
@@ -55,6 +57,7 @@ type AutomationRunHistoryProps = {
 export function AutomationRunHistory({
   runs,
   automationId,
+  ownerKey = null,
   worktreeMap,
   notice,
   onRecoverHistory,
@@ -84,6 +87,21 @@ export function AutomationRunHistory({
     selectedRunState.automationId === automationId ? selectedRunState.runId : null
   const selectedIndex = selectedRunId ? runs.findIndex((run) => run.id === selectedRunId) : -1
   const selectedRun = (selectedIndex >= 0 ? runs[selectedIndex] : undefined) ?? runs[0] ?? null
+
+  const handleRunSelect = (run: AutomationRun): void => {
+    setSelectedRunState({ automationId, runId: run.id })
+    onOpenRun(run)
+  }
+  useAutomationHistoryViewer({
+    ownerKey,
+    automationId,
+    runs,
+    selectedRunId: selectedRun?.id ?? null,
+    unavailable: Boolean(notice),
+    notice,
+    onRecover: onRecoverHistory,
+    onSelect: handleRunSelect
+  })
 
   // Both options must be stable across renders: virtual-core memoizes its
   // measurements on measuringOptions, which closes over getItemKey, and an inline
@@ -302,10 +320,7 @@ export function AutomationRunHistory({
                       'items-center px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                       selectedRun?.id === run.id && 'bg-accent text-accent-foreground'
                     )}
-                    onClick={() => {
-                      setSelectedRunState({ automationId, runId: run.id })
-                      onOpenRun(run)
-                    }}
+                    onClick={() => handleRunSelect(run)}
                   >
                     <div className="min-w-0">
                       <div>{formatAutomationDateTime(run.scheduledFor)}</div>

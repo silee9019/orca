@@ -1,3 +1,4 @@
+import { registerDesktopDownloadSessionForRpc } from '../../desktop-download-session-requests'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { open, writeFile } from 'node:fs/promises'
@@ -26,6 +27,7 @@ function validateRequiredString(value: unknown, label: string): string {
 
 export function registerFilesystemDownloadHandlers(context: FilesystemHandlerContext): void {
   const { downloadSessions, closeDownloadSession } = context
+  registerDesktopDownloadSessionForRpc(context.store)
 
   ipcMain.handle(
     'fs:downloadFile',
@@ -71,7 +73,7 @@ export function registerFilesystemDownloadHandlers(context: FilesystemHandlerCon
     }
   )
 
-  registerFilesystemDownloadFolderHandlers()
+  registerFilesystemDownloadFolderHandlers(context.store)
 
   ipcMain.handle(
     'fs:saveDownloadedFile',

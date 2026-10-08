@@ -10,6 +10,7 @@ import { renderTabBarSurface } from './tab-bar-surface'
 import { useTabBarItemActions } from './use-tab-bar-item-actions'
 import { useActiveClientHostedBrowserRowId } from '@/lib/pane-manager/client-hosted-browser-row-state'
 
+import { useBrowserGroupUiCommands } from './use-browser-group-ui-commands'
 function TabBarInner(props: TabBarProps): React.JSX.Element {
   const {
     worktreeId,
@@ -24,6 +25,18 @@ function TabBarInner(props: TabBarProps): React.JSX.Element {
     onPinFile
   } = props
   const runtime = useTabBarRuntimeModel({ worktreeId, groupId })
+  useBrowserGroupUiCommands(
+    groupId
+      ? {
+          target: { worktree: worktreeId, group: groupId },
+          enabled:
+            !terminalOnly &&
+            runtime.managedBrowserCreationEnabled &&
+            groupId === runtime.resolvedGroupId,
+          newBrowser: onNewBrowserTab
+        }
+      : undefined
+  )
   const createMenu = useTabBarCreateMenuController({
     worktreeId,
     resolvedGroupId: runtime.resolvedGroupId,

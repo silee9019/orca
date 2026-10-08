@@ -77,6 +77,7 @@ export function useAgentPaneThreads(args: {
    *  is ignored so the badge is always clearable. */
   markAllReadThreads: AgentPaneThread[]
   visibleThreadGroups: ActivityThreadGroup[]
+  querySettled: boolean
 } {
   const { query, readFilter, groupBy, selectedPaneKey, showChildAgents = false } = args
   const agentsVisibleHostIds = useAppStore((s) => s.agentsVisibleHostIds)
@@ -299,6 +300,7 @@ export function useAgentPaneThreads(args: {
     effectiveSelectedPaneKey,
     visibleThreads,
     markAllReadThreads,
-    visibleThreadGroups
+    visibleThreadGroups,
+    querySettled: query === deferredQuery
   }
 }

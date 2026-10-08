@@ -1,3 +1,6 @@
+import { resolveFloatingTerminalCwd } from '../ipc/floating-workspace-directory'
+import { previewGhosttyImport } from '../ghostty/index'
+import { previewWarpThemeImport } from '../warp-themes'
 import {
   applySessionSearchSettingsChange,
   installChildSessionSearchService
@@ -34,6 +37,15 @@ import {
 } from '../runtime/agent-status-observed-pane-identity'
 import { startAgentStateRulesLiveUpdates } from '../runtime/agent-state-rules/agent-state-rules-live-update'
 import { recordDurableCrashBreadcrumb } from '../crash-reporting/durable-crash-breadcrumb'
+import { RuntimeSettingsActions } from '../runtime/runtime-settings-actions'
+import { broadcastKeybindingsChanged } from '../ipc/keybindings'
+import { listSystemFontFamilies } from '../system-fonts'
+import { applyDesktopSettingsUpdate } from '../ipc/desktop-settings-update'
+import { setAccountPreferenceAccess } from '../runtime/account-preference-access'
+import { setAccountSecretSettingsWriter } from '../runtime/account-secret-settings-writer'
+import { setAgentPermissionModeAccess } from '../runtime/agent-permission-mode-access'
+import { isWslAvailableAsync, listWslDistrosAsync } from '../wsl'
+import type { GlobalSettings } from '../../shared/global-settings-types'
 
 export function getDesktopWindowStatus(): RuntimeDesktopWindowStatus {
   const activation = state.desktopActivationGate
@@ -50,6 +62,30 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
   if (!store || !stats) {
     throw new Error('Store and stats must be initialized before runtime')
   }
+  const applySettings = async (updates: Partial<GlobalSettings>) => {
+    const settings = await applyDesktopSettingsUpdate(
+      store,
+      updates,
+      state.agentAwakeService ?? undefined
+    )
+    await store.flushPendingOrThrowAsync({ drainToStableGeneration: true })
+    return settings
+  }
+  const read = () => store.getSettings()
+  setAccountSecretSettingsWriter(applySettings)
+  setAgentPermissionModeAccess({ read, write: applySettings })
+  setAccountPreferenceAccess({
+    read,
+    write: applySettings,
+    validateWslTarget: async (distro) => {
+      if (process.platform !== 'win32' || !(await isWslAvailableAsync())) {
+        throw new Error('WSL is not available on this host.')
+      }
+      if (distro !== null && !(await listWslDistrosAsync()).includes(distro)) {
+        throw new Error('The requested WSL distro is not available on this host.')
+      }
+    }
+  })
   const orchestrationEnvironmentTransport: OrchestrationEnvironmentTransport = {
     resolve: (selector) => {
       const environment = resolveEnvironment(app.getPath('userData'), selector)
@@ -76,6 +112,18 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
   // `orca serve`, which never opens one, and the fleet path runs there too.
   const observedPaneIdentities = new AgentStatusObservedPaneIdentities()
   const runtime = new OrcaRuntimeService(store, stats, {
+    settingsActions: new RuntimeSettingsActions({
+      previewGhosttyImport: () => previewGhosttyImport(store),
+      previewWarpThemes: (source) => previewWarpThemeImport(store, source),
+      getKeybindings: () => state.keybindings,
+      onKeybindingsChanged: (snapshot) => {
+        broadcastKeybindingsChanged(snapshot)
+        void state.pluginService?.reconcileActivationState()
+      },
+      listFonts: listSystemFontFamilies,
+      getSettings: () => store.getSettings(),
+      applySettings
+    }),
     prepareClaudeAuth: (target) => state.claudeRuntimeAuth!.prepareForClaudeLaunch(target),
     agentSessionClaimSigner: loadAgentSessionClaimSigner(
       getProfileUserDataPath(),
@@ -94,6 +142,8 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
       }
     },
     getDesktopWindowStatus,
+    getAgentAwakeStatus: () => state.agentAwakeService?.getStatus() ?? null,
+    subscribeAgentAwakeChanges: (listener) => state.agentAwakeService?.subscribe(listener) ?? null,
     // Why: worktree.ps pulls hook-reported agent status (same source as the desktop sidebar) at query time so mobile shows the same agents.
     getAgentStatusSnapshot: () =>
       agentHookServer.getStatusSnapshot().filter((entry) => entry.providerSessionOnly !== true),
@@ -155,6 +205,7 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
     // Why the same function the settings IPC handler calls: a paired client's write and a
     // local one must reconcile the scanner child through one path, or they can disagree.
     applySessionSearchSettings: applySessionSearchSettingsChange,
+    resolveFloatingTerminalCwd: (args) => resolveFloatingTerminalCwd(store, args),
     skillTransactionRecovery: state.skillTransactionRecovery
   })
   // Both desktop and headless serve own a host-local search service.
@@ -199,6 +250,15 @@ export function configureRuntimeServices(runtime: OrcaRuntimeService): void {
   )
   runtime.setSkillCloudService(new SkillCloudService(app.getPath('userData')))
   runtime.setAccountServices({ claudeAccounts, codexAccounts, rateLimits })
+  runtime.setAccountInspectionServices(() => store.getSettings(), codexAccounts.runtimeHomeService)
+  const { claudeUsage, codexUsage, openCodeUsage, museUsage } = state
+  if (!claudeUsage || !codexUsage || !openCodeUsage || !museUsage) {
+    throw new Error('Usage stores must be initialized before runtime wiring')
+  }
+  runtime.setUsageServices(
+    { claude: claudeUsage, codex: codexUsage, opencode: openCodeUsage, muse: museUsage },
+    rateLimits
+  )
   runtime.setCommitMessageAgentEnvironmentResolvers({
     // Why: Codex hooks/auth live in Orca's managed runtime home even for the default path, so every launch must resolve CODEX_HOME via runtime-home.
     prepareForCodexLaunch: prepareCodexRuntimeHomeForLaunch,

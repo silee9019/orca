@@ -1,3 +1,5 @@
+import { setAutomationAgentDraft } from './automation-editor-field-draft'
+import type { TuiAgent } from '../../../../shared/tui-agent'
 import AgentCombobox from '@/components/agent/AgentCombobox'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -69,6 +71,11 @@ export function AutomationEditorSettingsSidebar({
   onDraftChange,
   onSetupDecisionTouched
 }: AutomationEditorSettingsSidebarProps): React.JSX.Element {
+  const selectAgent = (agentId: TuiAgent | null): void => {
+    if (agentId) {
+      onDraftChange((current) => setAutomationAgentDraft(current, agentId))
+    }
+  }
   return (
     <aside className="flex w-[320px] shrink-0 flex-col overflow-auto border-l border-border/50 bg-muted/20 px-5 py-5 scrollbar-sleek">
       <div className="flex flex-col">
@@ -101,9 +108,7 @@ export function AutomationEditorSettingsSidebar({
                 <AgentCombobox
                   agents={visibleAgents}
                   value={draft.agentId}
-                  onValueChange={(agentId) =>
-                    agentId && onDraftChange((current) => ({ ...current, agentId }))
-                  }
+                  onValueChange={selectAgent}
                   defaultAgent={settings?.defaultTuiAgent ?? null}
                   triggerClassName={`h-9 w-full min-w-0 ${pickerTriggerClassName}`}
                   allowNarrowTrigger
@@ -146,6 +151,7 @@ export function AutomationEditorSettingsSidebar({
             draft={draft}
             isHermesTarget={isHermesTarget}
             worktrees={worktrees}
+            ownerKey={JSON.stringify(destination?.resolution)}
             repoMap={repoMap}
             pickerTriggerClassName={pickerTriggerClassName}
             segmentedGroupClassName={segmentedGroupClassName}
@@ -224,6 +230,7 @@ export function AutomationEditorSettingsSidebar({
         </div>
         <AutomationSetupDecisionField
           createTarget={isHermesTarget ? 'hermes' : 'orca'}
+          ownerKey={JSON.stringify(destination?.resolution)}
           draft={draft}
           repos={repos}
           projectHostSetups={projectHostSetups}

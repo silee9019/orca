@@ -1,6 +1,11 @@
 import type { Repo } from '../../../../shared/repo-types'
 import type { Worktree, DetectedWorktree } from '../../../../shared/worktree/types'
 import type { Store } from '../../../persistence/loading-store/store'
+import { getRepoExecutionHostId } from '../../../../shared/execution-host'
+import {
+  readAllWorktreeMetaForHost,
+  writeWorktreeMetaForHost
+} from '../../../persistence/host-qualified-worktree-meta'
 import {
   createWorktreeVisibilitySourceMatcher,
   resolveCustomWorktreeVisibilitySources
@@ -21,7 +26,8 @@ import {
 
 export function listFolderWorkspaces(store: Store, repo: Repo): Worktree[] {
   const rootId = getFolderWorkspaceRootId(repo)
-  const allMeta = store.getAllWorktreeMeta()
+  const executionHostId = getRepoExecutionHostId(repo)
+  const allMeta = readAllWorktreeMetaForHost(store, executionHostId)
   const ids = Object.keys(allMeta).filter((worktreeId) =>
     isFolderWorkspaceIdForRepo(repo, worktreeId)
   )
@@ -36,7 +42,7 @@ export function listFolderWorkspaces(store: Store, repo: Repo): Worktree[] {
       const meta =
         existing?.instanceId && Object.keys(ownershipUpdates).length === 0
           ? existing
-          : store.setWorktreeMeta(worktreeId, {
+          : writeWorktreeMetaForHost(store, worktreeId, executionHostId, {
               instanceId:
                 existing?.instanceId ?? getFolderWorkspaceInstanceIdentity(repo, worktreeId),
               ...ownershipUpdates,
@@ -58,6 +64,7 @@ export function listFolderWorkspaces(store: Store, repo: Repo): Worktree[] {
 export function buildFolderDetectedWorktrees(store: Store, repo: Repo): DetectedWorktree[] {
   const settings = store.getSettings()
   const worktrees = listFolderWorkspaces(store, repo)
+  const allMeta = readAllWorktreeMetaForHost(store, getRepoExecutionHostId(repo))
   const worktreeVisibilitySourceMatcher = createWorktreeVisibilitySourceMatcher(
     [repo.path, ...worktrees.map((worktree) => worktree.path)],
     resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults),
@@ -67,7 +74,7 @@ export function buildFolderDetectedWorktrees(store: Store, repo: Repo): Detected
     toDetectedWorktree({
       repo,
       worktree,
-      meta: store.getWorktreeMeta(worktree.id),
+      meta: allMeta[worktree.id],
       settings,
       knownOrcaLayouts: [],
       isLegacyRepoForVisibility: true,
@@ -77,15 +84,18 @@ export function buildFolderDetectedWorktrees(store: Store, repo: Repo): Detected
 }
 
 export function listVisibleFolderWorkspaces(store: Store, repo: Repo): Worktree[] {
-  return buildFolderDetectedWorktrees(store, repo)
+  const worktrees = buildFolderDetectedWorktrees(store, repo)
+  const executionHostId = getRepoExecutionHostId(repo)
+  const allMeta = readAllWorktreeMetaForHost(store, executionHostId)
+  return worktrees
     .filter((worktree) => worktree.visible)
     .map((worktree) => {
-      const meta = store.getWorktreeMeta(worktree.id)
+      const meta = allMeta[worktree.id]
       const ownershipUpdates = getProjectHostSetupMetaUpdates(store, repo, meta)
       const repairedMeta =
         meta && Object.keys(ownershipUpdates).length === 0
           ? meta
-          : store.setWorktreeMeta(worktree.id, ownershipUpdates)
+          : writeWorktreeMetaForHost(store, worktree.id, executionHostId, ownershipUpdates)
       return mergeFolderWorkspace(repo, worktree.id, repairedMeta)
     })
 }

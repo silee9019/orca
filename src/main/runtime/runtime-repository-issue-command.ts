@@ -39,13 +39,7 @@ export class RuntimeRepositoryIssueCommand {
     const issueCommandPath = joinWorktreeRelativePath(repo.path, '.orca/issue-command')
     const fsProvider = getSshFilesystemProvider(connectionId)
     if (!fsProvider) {
-      return {
-        localContent: null,
-        sharedContent: null,
-        effectiveContent: null,
-        localFilePath: issueCommandPath,
-        source: 'none' as const
-      }
+      throw new Error('Remote filesystem unavailable. Reconnect the SSH target before retrying.')
     }
     const localContent = await readRemoteOverride(fsProvider, issueCommandPath)
     const sharedContent = await readRemoteShared(fsProvider, repo.path)
@@ -66,7 +60,7 @@ export class RuntimeRepositoryIssueCommand {
   async write(repoSelector: string, content: string): Promise<{ ok: true }> {
     const repo = await this.deps.resolveRepo(repoSelector)
     if (isFolderRepo(repo)) {
-      return { ok: true }
+      throw new Error('Issue command overrides require a Git repository.')
     }
     const connectionId = getStoredRepoSshConnectionId(repo)
     if (!connectionId) {
@@ -76,7 +70,7 @@ export class RuntimeRepositoryIssueCommand {
     const issueCommandPath = joinWorktreeRelativePath(repo.path, '.orca/issue-command')
     const fsProvider = getSshFilesystemProvider(connectionId)
     if (!fsProvider) {
-      return { ok: true }
+      throw new Error('Remote filesystem unavailable. Reconnect the SSH target before retrying.')
     }
     const trimmed = content.trim()
     if (!trimmed) {
@@ -103,7 +97,10 @@ async function readRemoteOverride(
   try {
     const result = await fsProvider.readFile(issueCommandPath)
     return result.isBinary ? null : result.content.trim() || null
-  } catch {
+  } catch (error) {
+    if (!isENOENT(error)) {
+      throw error
+    }
     return null
   }
 }
@@ -115,7 +112,10 @@ async function readRemoteShared(
   try {
     const result = await fsProvider.readFile(joinWorktreeRelativePath(repoPath, 'orca.yaml'))
     return result.isBinary ? null : parseOrcaYaml(result.content)?.issueCommand?.trim() || null
-  } catch {
+  } catch (error) {
+    if (!isENOENT(error)) {
+      throw error
+    }
     return null
   }
 }
@@ -130,23 +130,17 @@ async function ensureRemoteOrcaDirIgnored(
     result = await fsProvider.readFile(gitignorePath)
   } catch (error) {
     if (!isENOENT(error)) {
-      console.warn('[runtime] Could not inspect remote .gitignore for .orca', error)
-      return
+      throw error
     }
-    try {
-      await fsProvider.writeFile(gitignorePath, '.orca\n')
-    } catch (writeError) {
-      console.warn('[runtime] Could not update remote .gitignore to exclude .orca', writeError)
-    }
+    await fsProvider.writeFile(gitignorePath, '.orca\n')
     return
   }
-  if (result.isBinary || /^\.orca\/?$/m.test(result.content)) {
+  if (result.isBinary) {
+    throw new Error('Cannot protect the private issue command with a binary .gitignore.')
+  }
+  if (/^\.orca\/?$/m.test(result.content)) {
     return
   }
   const separator = result.content.endsWith('\n') ? '' : '\n'
-  try {
-    await fsProvider.writeFile(gitignorePath, `${result.content}${separator}.orca\n`)
-  } catch (writeError) {
-    console.warn('[runtime] Could not update remote .gitignore to exclude .orca', writeError)
-  }
+  await fsProvider.writeFile(gitignorePath, `${result.content}${separator}.orca\n`)
 }

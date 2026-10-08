@@ -1,3 +1,4 @@
+import { useAddressPickerConnectionsController } from './use-address-picker-viewer-controller'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronDown, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -262,6 +263,27 @@ export function AddressPicker({
     return true
   }
 
+  const removeCustomValue = onCustomRemove
+    ? (next: string): void => {
+        restoreFocusAfterRemovalRef.current = true
+        onCustomRemove(next)
+      }
+    : undefined
+  useAddressPickerConnectionsController({
+    id: customInputId,
+    disabled,
+    pickerOpen,
+    dialogOpen,
+    commandValue,
+    value,
+    options,
+    customOptions: displayedCustomOptions,
+    picker: handlePickerOpenChange,
+    custom: setDialogOpen,
+    highlight: setCommandValue,
+    select: selectValue,
+    remove: removeCustomValue
+  })
   return (
     <>
       <Popover open={pickerOpen} onOpenChange={handlePickerOpenChange}>

@@ -1,0 +1,290 @@
+import { createBrowserReaderCli } from './browser-reader-cli.fixture'
+import type { RpcAnyMethod } from '../../src/main/runtime/rpc/core'
+import { CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS } from '../../src/cli/specs/client-hosted-browser-row'
+import { CLIENT_HOSTED_BROWSER_ROW_HANDLERS } from '../../src/cli/handlers/client-hosted-browser-row'
+import { BROWSER_TAKE_BACK_COMMAND_SPECS } from '../../src/cli/specs/browser-take-back'
+import { BROWSER_TAKE_BACK_HANDLERS } from '../../src/cli/handlers/browser-take-back'
+import { BROWSER_OBSERVATION_COMMAND_SPECS } from '../../src/cli/specs/browser-observation'
+import { BROWSER_OBSERVATION_HANDLERS } from '../../src/cli/handlers/browser-observation'
+import { BROWSER_WEBAUTHN_DIALOG_COMMAND_SPECS } from '../../src/cli/specs/browser-webauthn-dialog'
+import { BROWSER_WEBAUTHN_DIALOG_HANDLERS } from '../../src/cli/handlers/browser-webauthn-dialog'
+import { BROWSER_FAILURE_COMMAND_SPECS } from '../../src/cli/specs/browser-failure'
+import { BROWSER_FAILURE_HANDLERS } from '../../src/cli/handlers/browser-failure'
+import { WORKSPACE_FILE_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-file-open'
+import { WORKSPACE_FILE_OPEN_HANDLERS } from '../../src/cli/handlers/workspace-file-open'
+import { WORKSPACE_PORT_OPEN_COMMAND_SPECS } from '../../src/cli/specs/workspace-port-open'
+import { WORKSPACE_PORT_OPEN_HANDLERS } from '../../src/cli/handlers/workspace-port-open'
+import { BROWSER_PALETTE_COMMAND_SPECS } from '../../src/cli/specs/browser-palette'
+import { BROWSER_PALETTE_HANDLERS } from '../../src/cli/handlers/browser-palette'
+import { REMOTE_FILE_PICKER_COMMAND_SPECS } from '../../src/cli/specs/remote-file-picker'
+import { REMOTE_FILE_PICKER_HANDLERS } from '../../src/cli/handlers/remote-file-picker'
+import { createServer, type Socket } from 'node:net'
+import { once } from 'node:events'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { z } from 'zod'
+import type { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
+import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
+import { BROWSER_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/browser-viewer'
+import { BROWSER_REMOTE_PANE_COMMAND_SPECS } from '../../src/cli/specs/browser-remote-pane'
+import { BROWSER_REMOTE_PANE_HANDLERS } from '../../src/cli/handlers/browser-remote-pane'
+import { RuntimeClient } from '../../src/cli/runtime-client'
+import { parseArgs, validateCommandAndFlags } from '../../src/cli/args'
+import { getRuntimeMetadataPath } from '../../src/shared/runtime-bootstrap'
+const Request = z.object({
+  id: z.string(),
+  method: z.string(),
+  params: z.unknown().optional(),
+  authToken: z.literal('fixture-token')
+})
+export async function createRemotePaneCliSocket(
+  runtime: OrcaRuntimeService,
+  methods: RpcAnyMethod[] = BROWSER_VIEWER_METHODS
+) {
+  const dir = await mkdtemp(path.join(tmpdir(), 'orca-remote-pane-'))
+  let dispatcher = new RpcDispatcher({ runtime, methods })
+  const endpoint =
+    process.platform === 'win32'
+      ? `\\\\.\\pipe\\${path.basename(dir)}`
+      : path.join(dir, 'runtime.sock')
+  const connectedClients = new Set<Socket>()
+  const server = createServer((socket) => {
+    connectedClients.add(socket)
+    socket.on('close', () => connectedClients.delete(socket))
+    socket.setEncoding('utf8')
+    let pending = ''
+    socket.on('data', (chunk) => {
+      pending += chunk.toString()
+      const index = pending.indexOf('\n')
+      if (index === -1) {
+        return
+      }
+      const request = Request.parse(JSON.parse(pending.slice(0, index)))
+      void dispatcher
+        .dispatch(request)
+        .then((response) => socket.end(`${JSON.stringify(response)}\n`))
+    })
+  })
+  const close = async () => {
+    for (const socket of connectedClients) {
+      socket.destroy()
+    }
+    if (server.listening) {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve()))
+      )
+    }
+    await rm(dir, { recursive: true, force: true })
+  }
+  try {
+    server.listen(endpoint)
+    await once(server, 'listening')
+    await writeFile(
+      getRuntimeMetadataPath(dir),
+      JSON.stringify({
+        runtimeId: runtime.getRuntimeId(),
+        pid: process.pid,
+        transports: [{ kind: process.platform === 'win32' ? 'named-pipe' : 'unix', endpoint }],
+        authToken: 'fixture-token',
+        startedAt: Date.now()
+      })
+    )
+  } catch (error) {
+    await close()
+    throw error
+  }
+  const run = async (
+    environmentId: string,
+    action = 'reconnect',
+    remotePage = 'none',
+    extra: string[] = []
+  ) => {
+    const specs = BROWSER_REMOTE_PANE_COMMAND_SPECS
+    const parsed = parseArgs(
+      [
+        'browser',
+        'remote-pane',
+        '--viewer',
+        'host',
+        '--page',
+        'local-page',
+        '--runtime-environment',
+        environmentId,
+        '--remote-page',
+        remotePage,
+        '--action',
+        action,
+        ...extra
+      ],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    const handler = BROWSER_REMOTE_PANE_HANDLERS[parsed.commandPath.join(' ')]
+    await handler({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runPicker = async (extra: string[]) => {
+    const specs = REMOTE_FILE_PICKER_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['file', 'remote-picker', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await REMOTE_FILE_PICKER_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runPalette = async (extra: string[]) => {
+    const specs = BROWSER_PALETTE_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'palette-select', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_PALETTE_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runPort = async (extra: string[]) => {
+    const specs = WORKSPACE_PORT_OPEN_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'port-open', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await WORKSPACE_PORT_OPEN_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runFile = async (extra: string[]) => {
+    const specs = WORKSPACE_FILE_OPEN_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'file-open', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await WORKSPACE_FILE_OPEN_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runFailure = async (extra: string[]) => {
+    const specs = BROWSER_FAILURE_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'failure', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_FAILURE_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: path.join(dir, 'folder'),
+      json: true
+    })
+  }
+  const runWebAuthnDialog = async (extra: string[]) => {
+    const specs = BROWSER_WEBAUTHN_DIALOG_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'webauthn', 'dialog-respond', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_WEBAUTHN_DIALOG_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
+  const runObservation = async (kind: 'visibility' | 'driver', extra: string[]) => {
+    const specs = BROWSER_OBSERVATION_COMMAND_SPECS
+    const parsed = parseArgs(
+      [
+        ...(kind === 'visibility' ? ['browser', 'observe'] : ['runtime', 'browser-observe']),
+        '--viewer',
+        'host',
+        ...extra
+      ],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_OBSERVATION_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
+  const runTakeBack = async (extra: string[]) => {
+    const specs = BROWSER_TAKE_BACK_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'take-back', '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await BROWSER_TAKE_BACK_HANDLERS['browser take-back']({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
+  const runClientRow = async (action: 'activate' | 'close', extra: string[]) => {
+    const specs = CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS
+    const parsed = parseArgs(
+      ['browser', 'hosted-row', action, '--viewer', 'host', ...extra],
+      specs.map((spec) => spec.path),
+      specs
+    )
+    validateCommandAndFlags(specs, parsed)
+    await CLIENT_HOSTED_BROWSER_ROW_HANDLERS[parsed.commandPath.join(' ')]({
+      ...parsed,
+      client: new RuntimeClient(dir),
+      cwd: dir,
+      json: true
+    })
+  }
+  return {
+    client: new RuntimeClient(dir),
+    runBrowserReader: createBrowserReaderCli(dir),
+    runClientRow,
+    runTakeBack,
+    runObservation,
+    runWebAuthnDialog,
+    runFailure,
+    runFile,
+    runPort,
+    runPalette,
+    runPicker,
+    run,
+    close,
+    useLegacyPeer: () => {
+      dispatcher = new RpcDispatcher({ runtime, methods: [] })
+    }
+  }
+}

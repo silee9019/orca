@@ -1,3 +1,4 @@
+import { useBrowserOverlayFocusCommands } from './use-browser-overlay-focus-commands'
 import { memo, useCallback, useMemo } from 'react'
 import { registerBrowserOverlaySlotViewport } from '../host-guest/browser-page-viewport'
 import { useShallow } from 'zustand/react/shallow'
@@ -95,6 +96,13 @@ const BrowserOverlaySlot = memo(function BrowserOverlaySlot({
       onFocusOwningGroup(groupId)
     }
   }, [groupId, onFocusOwningGroup])
+  useBrowserOverlayFocusCommands({
+    worktreeId: browserTab.worktreeId,
+    workspaceId: browserTab.id,
+    groupId,
+    isActive,
+    focus: handleFocus
+  })
 
   return (
     <div

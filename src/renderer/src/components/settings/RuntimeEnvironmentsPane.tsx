@@ -1,4 +1,6 @@
+import { useRuntimeServerViewer } from '@/runtime/runtime-server-viewer'
 import { useEffect, useRef, useState } from 'react'
+import { useRuntimeConnectionsViewerController } from '@/hooks/useRuntimeConnectionsViewerController'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { PublicKnownRuntimeEnvironment } from '../../../../shared/runtime-environments'
 import { useAppStore } from '@/store'
@@ -44,6 +46,8 @@ export type { RuntimeHostDetails } from './runtime-environment-host-details'
 type RuntimeEnvironmentsPaneProps = {
   settings: GlobalSettings
   setActiveRuntimeEnvironmentPreference: (environmentId: string | null) => Promise<boolean>
+  setProfileRuntimeEnvironmentPreference?: (environmentId: string | null) => Promise<boolean>
+  selectRuntimeEnvironmentForViewer?: (environmentId: string | null) => Promise<boolean>
   canGeneratePairingUrl?: boolean
   allowLocalRuntime?: boolean
   addServerIntentSignal?: number
@@ -52,6 +56,8 @@ type RuntimeEnvironmentsPaneProps = {
 export function RuntimeEnvironmentsPane({
   settings,
   setActiveRuntimeEnvironmentPreference,
+  selectRuntimeEnvironmentForViewer,
+  setProfileRuntimeEnvironmentPreference,
   canGeneratePairingUrl = true,
   allowLocalRuntime = true,
   addServerIntentSignal
@@ -101,7 +107,8 @@ export function RuntimeEnvironmentsPane({
     allowLocalRuntime,
     mountedRef,
     setDetailsByEnvironmentId,
-    setActiveRuntimeEnvironmentPreference,
+    setActiveRuntimeEnvironmentPreference:
+      setProfileRuntimeEnvironmentPreference ?? setActiveRuntimeEnvironmentPreference,
     getEnvironmentLabel
   })
   const {
@@ -126,6 +133,54 @@ export function RuntimeEnvironmentsPane({
     setAddServerFormOpen,
     loadEnvironments,
     connectEnvironment
+  })
+
+  const requestSwitch = (value: string): void => {
+    setSwitchError(null)
+    setPendingSwitchValue(value)
+  }
+  const cancelSwitch = (): void => {
+    setSwitchError(null)
+    setPendingSwitchValue(null)
+  }
+
+  useRuntimeConnectionsViewerController({
+    read: () => ({
+      environmentId: settings.activeRuntimeEnvironmentId ?? null,
+      pendingSwitchValue,
+      workflow,
+      addFormOpen: addServerFormOpen,
+      shareFormOpen: shareServerFormOpen,
+      advancedOpen,
+      name,
+      pairingCodeSet: pairingCode.length > 0
+    }),
+    profile: setProfileRuntimeEnvironmentPreference
+      ? {
+          select: setProfileRuntimeEnvironmentPreference,
+          persisted: async (id) =>
+            ((await window.api.settings.get()).activeRuntimeEnvironmentId ?? null) === id,
+          request: (id) => requestSwitch(id ?? LOCAL_RUNTIME_VALUE),
+          confirm: () => confirmSwitch(),
+          cancel: () => cancelSwitch()
+        }
+      : undefined,
+    matchesPairingCode: (value) => pairingCode === value,
+    hasEnvironment: (id) =>
+      id === null ? allowLocalRuntime : environments.some((environment) => environment.id === id),
+    useEnvironment: async (id) => {
+      if (!selectRuntimeEnvironmentForViewer) {
+        throw new Error('viewer_selection_unavailable')
+      }
+      return selectRuntimeEnvironmentForViewer(id)
+    },
+    setWorkflow,
+    setAddFormOpen: setAddServerFormOpen,
+    setShareFormOpen: setShareServerFormOpen,
+    setAdvancedOpen,
+    setName,
+    setPairingCode,
+    cancelAdd: closeAddServerForm
   })
 
   const environmentIdsKey = environments.map((environment) => environment.id).join('\n')
@@ -166,28 +221,69 @@ export function RuntimeEnvironmentsPane({
     setRemoveError(null)
     setPendingRemove(environment)
   }
-  const confirmSwitch = (): void => {
+  const confirmSwitch = async (): Promise<boolean> => {
     const value = pendingSwitchValue
-    if (!value) {
-      return
+    if (!value || switchingValue !== null) {
+      return false
     }
-    void switchToValue(value).then((switched) => {
-      if (switched && mountedRef.current) {
-        setPendingSwitchValue(null)
-      }
-    })
+    const switched = await switchToValue(value)
+    if (switched && mountedRef.current) {
+      setPendingSwitchValue(null)
+    }
+    return switched
   }
-  const confirmRemove = (): void => {
+  const confirmRemove = async (): Promise<boolean> => {
     const environment = pendingRemove
     if (!environment) {
-      return
+      return false
     }
-    void removeEnvironment(environment).then((removed) => {
-      if (removed && mountedRef.current) {
-        setPendingRemove(null)
-      }
-    })
+    const removed = await removeEnvironment(environment)
+    if (removed && mountedRef.current) {
+      setPendingRemove(null)
+    }
+    return removed
   }
+
+  useRuntimeServerViewer({
+    read: () => ({
+      visible: visibleWorkflow === 'connect',
+      busy: isBusy || isLoading,
+      addFormOpen: addServerFormOpen,
+      pendingRemoveId: pendingRemove?.id ?? null,
+      removeErrorSet: removeError !== null,
+      updatesOpen: useAppStore.getState().remoteServerUpdateDialogOpen,
+      environmentCount: environments.length
+    }),
+    refresh: () => loadEnvironments(),
+    matchesRefresh: (result) => environments === result && !isLoading,
+    add: (expectedName, expectedCode, allowLoopback) =>
+      name.trim() === expectedName && pairingCode.trim() === expectedCode
+        ? addEnvironment(allowLoopback)
+        : Promise.resolve(false),
+    connect: (id) => {
+      const environment = environments.find((entry) => entry.id === id)
+      return environment ? connectEnvironment(environment) : Promise.resolve(false)
+    },
+    disconnect: (id) => {
+      const environment = environments.find((entry) => entry.id === id)
+      return environment ? disconnectEnvironment(environment) : Promise.resolve(false)
+    },
+    removeOpen: (id) => {
+      const environment = environments.find((entry) => entry.id === id)
+      if (!environment) {
+        return false
+      }
+      openRemoveDialog(environment)
+      return true
+    },
+    removeCancel: () => {
+      setRemoveError(null)
+      setPendingRemove(null)
+    },
+    removeConfirm: confirmRemove,
+    hasEnvironment: (id) => environments.some((entry) => entry.id === id),
+    updates: setRemoteServerUpdateDialogOpen
+  })
 
   return (
     <SearchableSetting
@@ -252,10 +348,7 @@ export function RuntimeEnvironmentsPane({
         isBusy={isBusy}
         isLoading={isLoading}
         onToggleAdvanced={() => setAdvancedOpen((current) => !current)}
-        onValueChange={(value) => {
-          setSwitchError(null)
-          setPendingSwitchValue(value)
-        }}
+        onValueChange={requestSwitch}
         onRefresh={() => void loadEnvironments()}
       />
 
@@ -275,14 +368,10 @@ export function RuntimeEnvironmentsPane({
         getEnvironmentLabel={getEnvironmentLabel}
         onOpenChange={(open) => {
           if (!open && switchingValue === null) {
-            setSwitchError(null)
-            setPendingSwitchValue(null)
+            cancelSwitch()
           }
         }}
-        onCancel={() => {
-          setSwitchError(null)
-          setPendingSwitchValue(null)
-        }}
+        onCancel={cancelSwitch}
         onConfirm={confirmSwitch}
       />
 

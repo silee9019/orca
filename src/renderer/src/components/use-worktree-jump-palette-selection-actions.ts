@@ -1,12 +1,18 @@
 import { useCallback } from 'react'
+import { useEmulatorPaletteCommand } from './use-emulator-palette-command'
+import { useBrowserPaletteCommand } from './use-browser-palette-command'
 import { toast } from 'sonner'
-import { activateBrowserPagePaletteResult } from '@/lib/browser-page-palette-activation'
-import { activateSimulatorTabPaletteResult } from '@/lib/simulator-tab-palette-activation'
+import {
+  activateBrowserPagePaletteResult,
+  type BrowserPagePaletteActivationTarget
+} from '@/lib/browser-page-palette-activation'
+import {
+  activateSimulatorTabPaletteResult,
+  type SimulatorTabPaletteActivationTarget
+} from '@/lib/simulator-tab-palette-activation'
 import { activateWorkspaceTabPaletteResult } from '@/lib/workspace-tab-palette-activation'
 import { activateAndRevealWorktree } from '@/lib/worktree-activation'
 import { queueWorkspaceActivationTerminalFocus } from '@/lib/workspace-activation-terminal-focus'
-import type { BrowserPaletteSearchResult } from '@/lib/browser-palette-search'
-import type { SimulatorPaletteSearchResult } from '@/lib/simulator-palette-search'
 import type { WorkspaceTabPaletteSearchResult } from '@/lib/workspace-tab-palette-search'
 import type { CmdJActionResult, CmdJSettingsResult } from '@/components/cmd-j/palette-results'
 import type { CmdJProjectSearchResult } from '@/components/cmd-j/palette-project-results'
@@ -33,8 +39,24 @@ function getSettingsTargetFromSectionId(sectionId: string): {
   return { pane: sectionId as SettingsNavTarget, repoId: null }
 }
 
-type WorktreeJumpPaletteSelectionActionsInput = WorktreeJumpPaletteStoreState &
-  WorktreeJumpPaletteLocalState &
+type WorktreeJumpPaletteSelectionActionsInput = Pick<
+  WorktreeJumpPaletteStoreState,
+  | 'closeModal'
+  | 'recordFeatureInteraction'
+  | 'openSettingsTarget'
+  | 'openSettingsPage'
+  | 'revealSidebarRow'
+> &
+  Pick<
+    WorktreeJumpPaletteLocalState,
+    | 'skipRestoreFocusRef'
+    | 'setSelectedItemId'
+    | 'previousActiveTabTypeRef'
+    | 'previousBrowserPageIdRef'
+    | 'previousBrowserFocusTargetRef'
+    | 'previousWorktreeIdRef'
+    | 'previousFocusElementRef'
+  > &
   Pick<WorktreeJumpPaletteQuickActions, 'buildQuickActionContext'> &
   Pick<WorktreeJumpPaletteSelectionLifecycle, 'focusFallbackSurface' | 'requestBrowserFocus'>
 
@@ -81,7 +103,7 @@ export function useWorktreeJumpPaletteSelectionActions({
     [closeModal, focusFallbackSurface, recordFeatureInteraction]
   )
   const handleSelectBrowserPage = useCallback(
-    (result: BrowserPaletteSearchResult) => {
+    (result: BrowserPagePaletteActivationTarget) => {
       const activation = activateBrowserPagePaletteResult(result)
       if (activation.status === 'failed') {
         toast.error(
@@ -95,19 +117,21 @@ export function useWorktreeJumpPaletteSelectionActions({
                 'Workspace no longer exists'
               )
         )
-        return
+        return activation
       }
       recordFeatureInteraction('cmd-j-browser-page-open')
       skipRestoreFocusRef.current = true
       closeModal()
       setSelectedItemId('')
       requestBrowserFocus({ pageId: activation.pageId, target: activation.focusTarget })
+      return activation
     },
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs and setters preserve their original stable identities.
     [closeModal, recordFeatureInteraction, requestBrowserFocus]
   )
+  useBrowserPaletteCommand(handleSelectBrowserPage)
   const handleSelectSimulatorTab = useCallback(
-    (result: SimulatorPaletteSearchResult) => {
+    (result: SimulatorTabPaletteActivationTarget) => {
       const activation = activateSimulatorTabPaletteResult(result)
       if (activation.status === 'failed') {
         toast.error(
@@ -121,15 +145,17 @@ export function useWorktreeJumpPaletteSelectionActions({
                 'Workspace no longer exists'
               )
         )
-        return
+        return activation
       }
       skipRestoreFocusRef.current = true
       closeModal()
       setSelectedItemId('')
+      return activation
     },
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- controller refs and setters preserve their original stable identities.
     [closeModal]
   )
+  useEmulatorPaletteCommand(handleSelectSimulatorTab)
   const handleSelectWorkspaceTab = useCallback(
     (result: WorkspaceTabPaletteSearchResult) => {
       const activation = activateWorkspaceTabPaletteResult(result)

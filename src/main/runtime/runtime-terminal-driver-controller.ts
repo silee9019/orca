@@ -59,10 +59,10 @@ export class RuntimeTerminalDriverController {
   }
 
   clear(ptyId: string): boolean {
-    if (!this.current.delete(ptyId)) {
+    if (!this.current.has(ptyId)) {
       return false
     }
-    this.deps.notifyChanged(ptyId, { kind: 'idle' })
+    this.set(ptyId, { kind: 'idle' })
     return true
   }
 

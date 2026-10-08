@@ -142,3 +142,10 @@ export function getPtyRendererDeliveryDebugSnapshot(): PtyRendererDeliveryDebugS
 export function resetPtyRendererDeliveryDebug(): void {
   resetPtyRendererDeliveryDebugSnapshot()
 }
+
+export function hasPtyRendererDeliveryDebugBridge(): boolean {
+  return (
+    readPtyRendererDeliveryDebugSnapshotImpl !== null &&
+    resetPtyRendererDeliveryDebugSnapshotImpl !== null
+  )
+}

@@ -1,3 +1,4 @@
+import { useBrowserProfileSettingsRequest } from './use-browser-profile-settings-request'
 import { Import, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { emitBrowserCookieImportToast } from '@/lib/browser-cookie-import-toast'
@@ -58,7 +59,7 @@ export function BrowserProfileRow({
   const handleImportFromBrowser = async (
     browserFamily: string,
     browserProfile?: string
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const result = await useAppStore
       .getState()
       .importCookiesFromBrowser(profile.id, browserFamily, browserProfile)
@@ -91,10 +92,10 @@ export function BrowserProfileRow({
     } else {
       toast.error(result.reason)
     }
+    return result.ok
   }
-
-  const handleImportFromFile = async (): Promise<void> => {
-    const result = await useAppStore.getState().importCookiesToProfile(profile.id)
+  const handleImportFromFile = async (filePath?: string): Promise<boolean> => {
+    const result = await useAppStore.getState().importCookiesToProfile(profile.id, filePath)
     if (result.ok) {
       emitBrowserCookieImportToast(
         result.summary,
@@ -108,7 +109,44 @@ export function BrowserProfileRow({
     } else if (result.reason !== 'canceled') {
       toast.error(result.reason)
     }
+    return result.ok
   }
+
+  const clearDefaultCookies = async (): Promise<boolean> => {
+    const ok = await useAppStore.getState().clearDefaultSessionCookies()
+    if (ok) {
+      toast.success(
+        translate(
+          'auto.components.settings.BrowserProfileRow.2d4bea7f35',
+          'Default cookies cleared.'
+        )
+      )
+    }
+    return ok
+  }
+
+  const deleteProfile = async (): Promise<boolean> => {
+    const ok = await useAppStore.getState().deleteBrowserSessionProfile(profile.id)
+    if (ok) {
+      toast.success(
+        translate(
+          'auto.components.settings.BrowserProfileRow.8e636cae25',
+          'Profile "{{value0}}" removed.',
+          { value0: profile.label }
+        )
+      )
+    }
+    return ok
+  }
+  useBrowserProfileSettingsRequest({
+    surface: 'profile-row',
+    profileId: profile.id,
+    busy: isImporting,
+    importFromBrowser: handleImportFromBrowser,
+    importFromFile: handleImportFromFile,
+    deleteProfile,
+    clearDefault: clearDefaultCookies
+  })
 
   const sourceLabel = profile.source
     ? `${BROWSER_FAMILY_LABELS[profile.source.browserFamily] ?? profile.source.browserFamily}${profile.source.profileName ? ` (${profile.source.profileName})` : ''}`
@@ -223,17 +261,7 @@ export function BrowserProfileRow({
             size="icon"
             className="size-7 text-muted-foreground hover:text-destructive"
             disabled={!profile.source}
-            onClick={async () => {
-              const ok = await useAppStore.getState().clearDefaultSessionCookies()
-              if (ok) {
-                toast.success(
-                  translate(
-                    'auto.components.settings.BrowserProfileRow.2d4bea7f35',
-                    'Default cookies cleared.'
-                  )
-                )
-              }
-            }}
+            onClick={clearDefaultCookies}
           >
             <Trash2 className="size-3" />
           </Button>
@@ -242,18 +270,7 @@ export function BrowserProfileRow({
             variant="ghost"
             size="icon"
             className="size-7 text-muted-foreground hover:text-destructive"
-            onClick={async () => {
-              const ok = await useAppStore.getState().deleteBrowserSessionProfile(profile.id)
-              if (ok) {
-                toast.success(
-                  translate(
-                    'auto.components.settings.BrowserProfileRow.8e636cae25',
-                    'Profile "{{value0}}" removed.',
-                    { value0: profile.label }
-                  )
-                )
-              }
-            }}
+            onClick={deleteProfile}
           >
             <Trash2 className="size-3" />
           </Button>

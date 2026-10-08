@@ -69,6 +69,7 @@ export function useRemoteBrowserPageStream({
   setFrameMetadata: (metadata: BrowserScreencastFrameMetadata | null) => void
 }): {
   reconnectRemoteStream: () => void
+  reconnectGeneration: number
 } {
   // Bumped by Reconnect to re-run the open effect from scratch. See reconnectRemoteStream.
   const [reopenNonce, setReopenNonce] = useState(0)
@@ -298,5 +299,5 @@ export function useRemoteBrowserPageStream({
     stagedPage
   })
 
-  return { reconnectRemoteStream }
+  return { reconnectRemoteStream, reconnectGeneration: reopenNonce }
 }

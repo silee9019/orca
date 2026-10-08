@@ -35,7 +35,7 @@ export function OpenAiTranscriptionKeyDialog({
 }: OpenAiTranscriptionKeyDialogProps): React.JSX.Element {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent data-voice-key-dialog>
         <DialogHeader>
           <DialogTitle>
             {translate(

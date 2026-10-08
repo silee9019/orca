@@ -150,6 +150,8 @@ export async function useIpcEventsForCloseRouting({
   }))
 
   vi.stubGlobal('window', {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
     api: {
       repos: { onChanged: () => () => {} },
@@ -301,6 +303,7 @@ export async function useIpcEventsForCloseRouting({
     }
   })
 
-  const { useIpcEvents: registerIpcEvents } = await import('./useIpcEvents')
+  const { installAppLifetimeIpcEvents: registerIpcEvents } =
+    await import('./ipc-events/app-lifetime-ipc-bridge')
   registerIpcEvents()
 }

@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 
 import '@testing-library/jest-dom/vitest'
+import type * as ConfirmationDialogModule from '@/components/confirmation-dialog-context'
 import type { ReactNode } from 'react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { ConfirmationDialogProvider } from '@/components/confirmation-dialog'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { z } from 'zod'
+import { ArtifactViewerActionSchema } from '../../../../shared/artifact-viewer-command'
 import type { OrcaProfileAuthStatus } from '../../../../shared/orca-profiles'
 
 const mocks = vi.hoisted(() => ({
@@ -15,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     state: 'connected'
   } as Record<string, unknown>,
   closePage: vi.fn(),
+  setBlockingSurface: vi.fn(),
   connect: vi.fn(),
   confirm: vi.fn(),
   refreshAuth: vi.fn(),
@@ -37,9 +42,14 @@ vi.mock('sonner', () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }))
 
-vi.mock('@/components/confirmation-dialog-context', () => ({
-  useConfirmationDialog: () => mocks.confirm
-}))
+vi.mock('@/components/confirmation-dialog-context', async (importOriginal) => {
+  const actual = await importOriginal<typeof ConfirmationDialogModule>()
+  const { useContext } = await import('react')
+  return {
+    ...actual,
+    useConfirmationDialog: () => useContext(actual.ConfirmationDialogContext) ?? mocks.confirm
+  }
+})
 
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -61,6 +71,7 @@ vi.mock('@/store', () => ({
 function storeState(): Record<string, unknown> {
   return {
     closeArtifactsPage: mocks.closePage,
+    setContextualToursBlockingSurfaceVisible: mocks.setBlockingSurface,
     connectCurrentOrcaProfile: mocks.connect,
     orcaProfileAuthStatus: mocks.authStatus,
     refreshCurrentOrcaProfileAuth: mocks.refreshAuth,
@@ -72,6 +83,7 @@ function storeState(): Record<string, unknown> {
 }
 
 import ArtifactsPage from './ArtifactsPage'
+import { applyArtifactViewerAction } from '../../runtime/artifact-viewer-controller'
 import { artifactAccountIdentity } from './useArtifactPagination'
 
 describe('ArtifactsPage', () => {
@@ -129,6 +141,274 @@ describe('ArtifactsPage', () => {
   })
 
   afterEach(cleanup)
+
+  it('applies viewer query and detail selection to the mounted page before acknowledging', async () => {
+    render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /Quarterly report/ })
+    let request: ReturnType<typeof applyArtifactViewerAction> | undefined
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'query', value: 'no match' })
+    })
+    await expect(request).resolves.toMatchObject({ query: 'no match', visibleSlugs: [] })
+    expect(screen.getByPlaceholderText('Search...')).toHaveValue('no match')
+    expect(screen.getByText('No matches')).toBeInTheDocument()
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'query', value: '' })
+    })
+    await request
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'select', slug: 'report-123' })
+    })
+    await expect(request).resolves.toMatchObject({ selectedSlug: 'report-123' })
+    expect(screen.getByRole('heading', { level: 2, name: 'Quarterly report' })).toBeInTheDocument()
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'select', slug: null })
+    })
+    await expect(request).resolves.toMatchObject({ selectedSlug: null })
+    expect(screen.queryByRole('heading', { level: 2, name: 'Quarterly report' })).toBeNull()
+  })
+
+  async function applyPage(action: unknown) {
+    let request: ReturnType<typeof applyArtifactViewerAction> | undefined
+    await act(async () => {
+      request = applyArtifactViewerAction(ArtifactViewerActionSchema.parse(action))
+      void request.catch(() => undefined)
+    })
+    return request
+  }
+  const reviewedPageTarget = async () =>
+    z.object({ targetToken: z.string() }).parse(await applyPage({ kind: 'get' })).targetToken
+
+  it('copies and opens the reviewed loaded detail through the actual link callbacks', async () => {
+    render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /Quarterly report/ })
+    await applyPage({ kind: 'select', slug: 'report-123' })
+    const reviewedTarget = await reviewedPageTarget()
+    const target = {
+      slug: 'report-123',
+      reviewedTarget,
+      reviewedLink: 'https://share.onorca.dev/a/report-123'
+    }
+    await applyPage({ kind: 'copy-link', ...target })
+    expect(mocks.writeClipboardText).toHaveBeenCalledExactlyOnceWith(target.reviewedLink)
+    await applyPage({ kind: 'open-link', ...target })
+    expect(mocks.openUrl).toHaveBeenCalledExactlyOnceWith(target.reviewedLink)
+    await expect(
+      applyPage({ kind: 'copy-link', ...target, reviewedLink: 'https://example.com/stale' })
+    ).rejects.toThrow('viewer_target_changed')
+    mocks.openUrl.mockRejectedValueOnce(new Error('fixture-secret'))
+    await expect(applyPage({ kind: 'open-link', ...target })).rejects.toThrow(
+      'artifact_link_action_failed'
+    )
+    await applyPage({ kind: 'select', slug: null })
+    await expect(applyPage({ kind: 'copy-link', ...target })).rejects.toThrow(
+      'artifact_detail_closed'
+    )
+  })
+  it('rejects pending native actions and stale reviews when the account changes', async () => {
+    const view = render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /Quarterly report/ })
+    await applyPage({ kind: 'select', slug: 'report-123' })
+    const reviewedTarget = await reviewedPageTarget()
+    const action = {
+      kind: 'open-link',
+      slug: 'report-123',
+      reviewedTarget,
+      reviewedLink: 'https://share.onorca.dev/a/report-123'
+    }
+    let finish: (() => void) | undefined
+    mocks.openUrl.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve
+      })
+    )
+    let pending: ReturnType<typeof applyArtifactViewerAction> | undefined
+    await act(async () => {
+      pending = applyArtifactViewerAction(ArtifactViewerActionSchema.parse(action))
+      void pending.catch(() => undefined)
+    })
+    await expect(applyPage({ kind: 'query', value: 'busy' })).rejects.toThrow('viewer_busy')
+    mocks.authStatus = { activeProfileId: 'profile-b', configured: true, state: 'connected' }
+    view.rerender(<ArtifactsPage />)
+    await expect(pending).rejects.toThrow('viewer_target_changed')
+    await act(async () => finish?.())
+    await applyPage({ kind: 'select', slug: 'report-123' })
+    await expect(applyPage(action)).rejects.toThrow('viewer_target_changed')
+    expect(mocks.openUrl).toHaveBeenCalledOnce()
+  })
+
+  it('opens only available settings and starts the existing sign-in flow without enabling sharing', async () => {
+    mocks.authStatus = { configured: false, state: 'local' }
+    const view = render(<ArtifactsPage />)
+    await applyPage({ kind: 'open-account-settings' })
+    expect(mocks.openSettingsTarget).toHaveBeenCalledWith({ pane: 'orca-account', repoId: null })
+    await expect(applyPage({ kind: 'connect' })).rejects.toThrow('artifact_connect_unavailable')
+    mocks.authStatus = { configured: true, state: 'local' }
+    view.rerender(<ArtifactsPage />)
+    mocks.connect.mockResolvedValueOnce({ status: 'cancelled' })
+    await expect(applyPage({ kind: 'connect' })).rejects.toThrow(
+      'artifact_account_connection_not_completed'
+    )
+    mocks.connect.mockResolvedValueOnce({ status: 'connected' })
+    await applyPage({ kind: 'connect' })
+    expect(mocks.connect).toHaveBeenCalledTimes(2)
+    mocks.authStatus = { activeProfileId: 'profile-a', configured: true, state: 'connected' }
+    mocks.settings = { artifactSharingEnabled: false }
+    mocks.rpc.mockResolvedValue({ status: 'ok', value: { artifacts: [] } })
+    view.rerender(<ArtifactsPage />)
+    await screen.findByText('Publishing is turned off')
+    await applyPage({ kind: 'open-artifacts-settings' })
+    expect(mocks.openSettingsTarget).toHaveBeenLastCalledWith({ pane: 'artifacts', repoId: null })
+    expect(mocks.updateSettings).not.toHaveBeenCalled()
+  })
+
+  it('settles only the reviewed artifact deletion through the existing confirmation dialog', async () => {
+    render(
+      <ConfirmationDialogProvider>
+        <ArtifactsPage />
+      </ConfirmationDialogProvider>
+    )
+    await screen.findByRole('button', { name: /Quarterly report/ })
+    await applyPage({ kind: 'select', slug: 'report-123' })
+    const reviewedTarget = await reviewedPageTarget()
+    const target = {
+      slug: 'report-123',
+      reviewedTarget,
+      reviewedLink: 'https://share.onorca.dev/a/report-123'
+    }
+    let deletion: ReturnType<typeof applyArtifactViewerAction> | undefined
+    async function start() {
+      await act(async () => {
+        deletion = applyArtifactViewerAction(
+          ArtifactViewerActionSchema.parse({ kind: 'delete', ...target })
+        )
+        void deletion.catch(() => undefined)
+      })
+      await screen.findByRole('dialog', { name: 'Delete artifact?' })
+    }
+    await start()
+    await expect(applyPage({ kind: 'get' })).resolves.toMatchObject({ busy: true })
+    await expect(
+      applyPage({
+        kind: 'delete-confirmation',
+        slug: target.slug,
+        reviewedTarget: '00000000-0000-4000-8000-000000000001',
+        confirmed: true
+      })
+    ).rejects.toThrow('viewer_target_changed')
+    await applyPage({
+      kind: 'delete-confirmation',
+      slug: target.slug,
+      reviewedTarget,
+      confirmed: false
+    })
+    await expect(deletion).rejects.toThrow('artifact_delete_not_completed')
+    expect(mocks.rpc.mock.calls.filter((call) => call[1] === 'artifacts.delete')).toHaveLength(0)
+    await start()
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    mocks.rpc.mockRejectedValueOnce(new Error('fixture-secret'))
+    await applyPage({
+      kind: 'delete-confirmation',
+      slug: target.slug,
+      reviewedTarget,
+      confirmed: true
+    })
+    await expect(deletion).rejects.toThrow('artifact_delete_not_completed')
+    expect(errors.mock.calls.flat().map(String).join(' ')).not.toContain('fixture-secret')
+    expect(JSON.stringify(await applyPage({ kind: 'get' }))).not.toContain('fixture-secret')
+    expect(screen.getByRole('heading', { level: 2, name: 'Quarterly report' })).toBeTruthy()
+    await start()
+    mocks.rpc.mockResolvedValueOnce({ status: 'ok', value: undefined })
+    await applyPage({
+      kind: 'delete-confirmation',
+      slug: target.slug,
+      reviewedTarget,
+      confirmed: true
+    })
+    await expect(deletion).resolves.toMatchObject({ loadedSlugs: [], selectedSlug: null })
+    expect(mocks.rpc).toHaveBeenLastCalledWith({ kind: 'local' }, 'artifacts.delete', {
+      id: 'report-123'
+    })
+    expect(screen.queryByRole('button', { name: /Quarterly report/ })).toBeNull()
+  })
+
+  it.each(['unmount', 'account'] as const)(
+    'cancels the actual pending confirmation on %s changes',
+    async (mode) => {
+      const view = render(
+        <ConfirmationDialogProvider>
+          <ArtifactsPage />
+        </ConfirmationDialogProvider>
+      )
+      await screen.findByRole('button', { name: /Quarterly report/ })
+      await applyPage({ kind: 'select', slug: 'report-123' })
+      const reviewedTarget = await reviewedPageTarget()
+      let deletion: ReturnType<typeof applyArtifactViewerAction> | undefined
+      await act(async () => {
+        deletion = applyArtifactViewerAction(
+          ArtifactViewerActionSchema.parse({
+            kind: 'delete',
+            slug: 'report-123',
+            reviewedTarget,
+            reviewedLink: 'https://share.onorca.dev/a/report-123'
+          })
+        )
+        void deletion.catch(() => undefined)
+      })
+      await screen.findByRole('dialog', { name: 'Delete artifact?' })
+      await act(async () => {
+        if (mode === 'unmount') {
+          view.unmount()
+        } else {
+          mocks.authStatus = { activeProfileId: 'profile-b', configured: true, state: 'connected' }
+          view.rerender(
+            <ConfirmationDialogProvider>
+              <ArtifactsPage />
+            </ConfirmationDialogProvider>
+          )
+        }
+      })
+      await expect(deletion).rejects.toThrow(
+        mode === 'unmount' ? 'viewer_unmounted' : 'viewer_target_changed'
+      )
+      await expect(
+        applyPage({
+          kind: 'delete-confirmation',
+          slug: 'report-123',
+          reviewedTarget,
+          confirmed: true
+        })
+      ).rejects.toThrow('viewer_unavailable')
+      expect(mocks.rpc.mock.calls.filter((call) => call[1] === 'artifacts.delete')).toHaveLength(0)
+    }
+  )
+
+  it('loads the current viewer cursor and acknowledges the appended page', async () => {
+    mocks.rpc.mockReset()
+    mocks.rpc
+      .mockResolvedValueOnce({
+        status: 'ok',
+        value: { artifacts: [artifactListItem('First page', 'first')], nextCursor: 'page-two' }
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        value: { artifacts: [artifactListItem('Second page', 'second')] }
+      })
+    render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /First page/ })
+    let request: ReturnType<typeof applyArtifactViewerAction> | undefined
+    await act(async () => {
+      request = applyArtifactViewerAction({ kind: 'load-more' })
+    })
+    await expect(request).resolves.toMatchObject({
+      loadedSlugs: ['first', 'second'],
+      hasMore: false
+    })
+    expect(screen.getByRole('button', { name: /Second page/ })).toBeInTheDocument()
+    expect(mocks.rpc).toHaveBeenLastCalledWith({ kind: 'local' }, 'artifacts.list', {
+      cursor: 'page-two'
+    })
+  })
 
   it('renders the selected artifact in a right drawer with copy link as the primary action', async () => {
     render(<ArtifactsPage />)

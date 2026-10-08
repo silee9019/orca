@@ -117,7 +117,11 @@ export class OrcaRuntimeWithPickMostRecentActor extends OrcaRuntimeWithReclaimTe
     return true
   }
 
-  protected enqueueLayout(ptyId: string, target: PtyLayoutTarget): Promise<ApplyLayoutResult> {
+  protected enqueueLayout(
+    ptyId: string,
+    target: PtyLayoutTarget,
+    ownerMatches?: () => boolean
+  ): Promise<ApplyLayoutResult> {
     // Why: PTY-exit short-circuit. Fresh-subscribe gate lets the very first
     // transition through even though `layouts` has no entry yet.
     if (!this.layouts.has(ptyId) && !this.isFreshSubscribe(ptyId)) {
@@ -133,27 +137,28 @@ export class OrcaRuntimeWithPickMostRecentActor extends OrcaRuntimeWithReclaimTe
 
     return new Promise<ApplyLayoutResult>((resolve) => {
       if (!queue.running) {
-        queue.running = this.runLayoutSlot(ptyId, target, [resolve])
+        queue.running = this.runLayoutSlot(ptyId, target, [resolve], ownerMatches)
         return
       }
       const tail = queue.pending.at(-1)
-      if (tail && this.coalescesWith(tail.target, target)) {
+      if (tail && !tail.ownerMatches && !ownerMatches && this.coalescesWith(tail.target, target)) {
         tail.target = target
         tail.waiters.push(resolve)
         return
       }
-      queue.pending.push({ target, waiters: [resolve] })
+      queue.pending.push({ target, waiters: [resolve], ownerMatches })
     })
   }
 
   protected async runLayoutSlot(
     ptyId: string,
     target: PtyLayoutTarget,
-    waiters: ((r: ApplyLayoutResult) => void)[]
+    waiters: ((r: ApplyLayoutResult) => void)[],
+    ownerMatches?: () => boolean
   ): Promise<ApplyLayoutResult> {
     let result: ApplyLayoutResult
     try {
-      result = await this.applyLayout(ptyId, target)
+      result = await this.applyLayout(ptyId, target, ownerMatches)
     } catch (err) {
       // Why: defensive — applyLayout itself catches resize errors, but a
       // throw from one of the synchronous map writes (e.g. notifier hook)
@@ -171,7 +176,7 @@ export class OrcaRuntimeWithPickMostRecentActor extends OrcaRuntimeWithReclaimTe
     }
     const next = queue.pending.shift()
     if (next) {
-      queue.running = this.runLayoutSlot(ptyId, next.target, next.waiters)
+      queue.running = this.runLayoutSlot(ptyId, next.target, next.waiters, next.ownerMatches)
     } else {
       queue.running = null
       // Why: drop the entry once empty so the map doesn't grow without bound

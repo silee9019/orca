@@ -1,4 +1,6 @@
-import React, { useDeferredValue, useMemo, useState } from 'react'
+import React from 'react'
+import { useAutomationRunsDashboardFilters } from './use-automation-runs-dashboard-filters'
+import type { AutomationRunsViewerQuery } from '../../runtime/automation-runs-viewer-state'
 import { AlertCircle, ListFilter, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,14 +19,10 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import type { AutomationListRow } from './automation-list-row-identity'
-import {
-  countAutomationRunOutcomes,
-  filterAutomationRunsDashboardEntries,
-  getAutomationRunsHostKey,
-  getAutomationRunsScope,
-  type AutomationRunsDashboardEntry,
-  type AutomationRunsDashboardFailure,
-  type AutomationRunsStatusFilter
+import type {
+  AutomationRunsDashboardEntry,
+  AutomationRunsDashboardFailure,
+  AutomationRunsStatusFilter
 } from './automation-runs-dashboard-model'
 import { AutomationRunsTable } from './AutomationRunsTable'
 
@@ -52,6 +50,7 @@ export function AutomationRunsDashboard({
   loading,
   hasMore,
   onLoadMore,
+  request,
   now,
   onRefresh,
   onOpenRun
@@ -62,51 +61,36 @@ export function AutomationRunsDashboard({
   loading: boolean
   hasMore: boolean
   onLoadMore: () => void
+  request?: AutomationRunsViewerQuery
   now: number
   onRefresh: () => void
   onOpenRun: (entry: AutomationRunsDashboardEntry) => void
 }): React.JSX.Element {
-  const [query, setQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
-  const [status, setStatus] = useState<AutomationRunsStatusFilter>('all')
-  const [hostKeys, setHostKeys] = useState<string[]>([])
-  const hostOptions = useMemo(() => {
-    const options = new Map<string, string>()
-    for (const row of rows) {
-      const scope = getAutomationRunsScope(row)
-      options.set(
-        getAutomationRunsHostKey(row),
-        row.hostLabel ||
-          translate(
-            `auto.components.automations.AutomationRunsDashboard.${scope}`,
-            scope === 'local' ? 'Local' : 'Remote'
-          )
-      )
-    }
-    return [...options].map(([key, label]) => ({ key, label }))
-  }, [rows])
-  const hostEntries = useMemo(
-    () => filterAutomationRunsDashboardEntries({ entries, status: 'all', query: '', hostKeys }),
-    [entries, hostKeys]
-  )
-  const visibleEntries = useMemo(
-    () => filterAutomationRunsDashboardEntries({ entries, status, query: deferredQuery, hostKeys }),
-    [deferredQuery, entries, hostKeys, status]
-  )
-  const counts = useMemo(() => countAutomationRunOutcomes(hostEntries, now), [hostEntries, now])
-  const visibleFailures = failures.filter(
-    (failure) => hostKeys.length === 0 || hostKeys.includes(getAutomationRunsHostKey(failure.row))
-  )
-  const activeFilterCount = (status === 'all' ? 0 : 1) + (hostKeys.length > 0 ? 1 : 0)
-
-  const toggleHost = (hostKey: string): void => {
-    setHostKeys((current) =>
-      current.includes(hostKey)
-        ? current.filter((candidate) => candidate !== hostKey)
-        : [...current, hostKey]
-    )
-  }
-
+  const {
+    query,
+    setQuery,
+    status,
+    setStatus,
+    hostKeys,
+    setHostKeys,
+    hostOptions,
+    toggleHost,
+    counts,
+    visibleEntries,
+    visibleFailures,
+    activeFilterCount
+  } = useAutomationRunsDashboardFilters({
+    rows,
+    entries,
+    failures,
+    now,
+    loading,
+    hasMore,
+    request,
+    onOpenRun,
+    onRefresh,
+    onLoadMore
+  })
   return (
     <div className="scrollbar-sleek min-h-0 flex-1 overflow-auto px-3 pb-4 md:px-5">
       <div className="w-full">

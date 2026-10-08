@@ -1,22 +1,15 @@
 import type { DiscoveredSkill, SkillSourceKind } from '../../../../shared/skills'
-import { isClipboardTextByteLengthOverLimit } from '../../../../shared/clipboard-text'
+import {
+  isSkillsFilterQueryTooLarge,
+  type SkillsFilterState
+} from '../../../../shared/skills-viewer-command'
 import { skillMatchesAgent } from './skill-agent-filter'
 
-export type SkillsFilterState = {
-  query: string
-  sourceKind: SkillSourceKind | 'all'
-  /** Owning agent id, or 'all'. Resolved from the root a skill was found in. */
-  agent: string
-}
-
-export const SKILLS_FILTER_QUERY_MAX_BYTES = 2 * 1024
-
-export function isSkillsFilterQueryTooLarge(
-  query: string,
-  maxBytes = SKILLS_FILTER_QUERY_MAX_BYTES
-): boolean {
-  return isClipboardTextByteLengthOverLimit(query, maxBytes)
-}
+export type { SkillsFilterState } from '../../../../shared/skills-viewer-command'
+export {
+  SKILLS_FILTER_QUERY_MAX_BYTES,
+  isSkillsFilterQueryTooLarge
+} from '../../../../shared/skills-viewer-command'
 
 function normalize(value: string): string {
   return value.trim().toLowerCase()

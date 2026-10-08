@@ -6,6 +6,7 @@ const {
   handleMock,
   removeHandlerMock,
   getAuthorizedGuestMock,
+  copyPriorityProbeMock,
   setGrabModeMock,
   awaitGrabSelectionMock,
   cancelGrabOpMock,
@@ -20,6 +21,7 @@ const {
   handleMock: vi.fn(),
   removeHandlerMock: vi.fn(),
   getAuthorizedGuestMock: vi.fn(),
+  copyPriorityProbeMock: vi.fn().mockResolvedValue(true),
   setGrabModeMock: vi.fn().mockResolvedValue(true),
   awaitGrabSelectionMock: vi.fn().mockResolvedValue({ opId: 'op', kind: 'cancelled' }),
   cancelGrabOpMock: vi.fn(),
@@ -30,6 +32,10 @@ const {
   setViewportOverrideMock: vi.fn().mockResolvedValue(true),
   previewAuthoritySpy: vi.fn(),
   registrationWaitSpy: vi.fn()
+}))
+
+vi.mock('../browser/browser-grab-copy-shortcut-priority', () => ({
+  probeBrowserGrabCopyShortcutPriority: copyPriorityProbeMock
 }))
 
 vi.mock('electron', () => ({
@@ -110,6 +116,7 @@ const GRAB_REGISTRATION_WAIT_MS = 1_000
  * so a new channel cannot be added without deciding which side of the preview seam it belongs on.
  */
 const TOOL_CHANNELS = [
+  'browser:grabCopyShortcutPriority',
   'browser:setGrabMode',
   'browser:awaitGrabSelection',
   'browser:cancelGrab',
@@ -208,6 +215,7 @@ function renderPreviewForGrant(
   const documentUrl = buildDocPreviewUrl(grant.id, 'index.html')
   let contentsDestroyed = false
   const guest = {
+    id: 71,
     isFocused: () => true,
     isDestroyed: () => contentsDestroyed,
     getURL: () => documentUrl,
@@ -264,6 +272,7 @@ function resolvesToGuest(argument: unknown, guest: PreviewGuestContents): boolea
 }
 
 const GUEST_RECEIVING_MOCKS = [
+  copyPriorityProbeMock,
   setGrabModeMock,
   awaitGrabSelectionMock,
   captureSelectionScreenshotMock,
@@ -300,7 +309,14 @@ afterEach(() => {
 })
 
 /** Settles a tool request, elapsing the registration wait it may be parked in. */
-async function settle<T>(pending: Promise<T> | T | undefined): Promise<T | undefined> {
+async function settle<T>(
+  pending: Promise<T> | T | undefined,
+  channel?: string
+): Promise<T | undefined> {
+  if (channel === 'browser:grabCopyShortcutPriority') {
+    await expect(Promise.resolve(pending)).rejects.toThrow('not_ready')
+    return undefined
+  }
   await vi.advanceTimersByTimeAsync(GRAB_REGISTRATION_WAIT_MS)
   return pending
 }
@@ -354,7 +370,8 @@ describe('doc preview tool authorization', () => {
       const handler = registeredHandlers().get(channel)
 
       await settle(
-        handler?.(trustedSender(OTHER_RENDERER_ID), toolArgs(channel, preview.browserPageId))
+        handler?.(trustedSender(OTHER_RENDERER_ID), toolArgs(channel, preview.browserPageId)),
+        channel
       )
 
       for (const mock of [...GUEST_RECEIVING_MOCKS, cancelGrabOpMock]) {
@@ -367,7 +384,8 @@ describe('doc preview tool authorization', () => {
     const handler = registeredHandlers().get(channel)
 
     await settle(
-      handler?.(trustedSender(HOST_RENDERER_ID), toolArgs(channel, 'doc-page-unrendered'))
+      handler?.(trustedSender(HOST_RENDERER_ID), toolArgs(channel, 'doc-page-unrendered')),
+      channel
     )
 
     for (const mock of [...GUEST_RECEIVING_MOCKS, cancelGrabOpMock]) {
@@ -383,7 +401,8 @@ describe('doc preview tool authorization', () => {
     const handler = registeredHandlers().get(channel)
 
     await settle(
-      handler?.(trustedSender(HOST_RENDERER_ID), toolArgs(channel, preview.browserPageId))
+      handler?.(trustedSender(HOST_RENDERER_ID), toolArgs(channel, preview.browserPageId)),
+      channel
     )
 
     for (const mock of [...GUEST_RECEIVING_MOCKS, cancelGrabOpMock]) {

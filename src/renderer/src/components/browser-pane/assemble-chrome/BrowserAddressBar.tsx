@@ -1,3 +1,6 @@
+import { useBrowserAddressBarFormTimers } from './use-browser-address-bar-form-timers'
+import { useBrowserAddressBarWidth } from './use-browser-address-bar-width'
+import { useBrowserAddressCommands } from './use-browser-address-commands'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Globe } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -14,6 +17,7 @@ import type { BrowserAddressBarEditSessionBinding } from './use-browser-address-
 import BrowserAddressBarSuggestionList from './BrowserAddressBarSuggestionList'
 
 type BrowserAddressBarProps = {
+  commandOwner?: Parameters<typeof useBrowserAddressCommands>[0]
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
@@ -32,6 +36,7 @@ type BrowserAddressBarProps = {
 }
 
 export default function BrowserAddressBar({
+  commandOwner,
   value,
   onChange,
   onSubmit,
@@ -58,21 +63,7 @@ export default function BrowserAddressBar({
   const blurCloseTimerRef = useRef<number | null>(null)
   const closingResetTimerRef = useRef<number | null>(null)
   const slotRef = useRef<HTMLDivElement | null>(null)
-  const [inlineWidth, setInlineWidth] = useState<number | null>(null)
-
-  // Why: the slot keeps its flex width even while the bar overlays the toolbar,
-  // so measuring it here (not the form) cannot oscillate with the overlay.
-  useEffect(() => {
-    const slot = slotRef.current
-    if (!slot || typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const syncWidth = (): void => setInlineWidth(slot.getBoundingClientRect().width)
-    syncWidth()
-    const observer = new ResizeObserver(syncWidth)
-    observer.observe(slot)
-    return () => observer.disconnect()
-  }, [])
+  const inlineWidth = useBrowserAddressBarWidth(slotRef)
 
   const overlay = shouldOverlayBrowserAddressBar({ inlineWidth, focused: open })
 
@@ -129,24 +120,9 @@ export default function BrowserAddressBar({
     }
   }, [editSessionPageId, inputRef])
 
-  const clearAddressBarTimers = useCallback((): void => {
-    if (blurCloseTimerRef.current !== null) {
-      window.clearTimeout(blurCloseTimerRef.current)
-      blurCloseTimerRef.current = null
-    }
-    if (closingResetTimerRef.current !== null) {
-      window.clearTimeout(closingResetTimerRef.current)
-      closingResetTimerRef.current = null
-    }
-  }, [])
-
-  const setAddressBarFormRef = useCallback(
-    (node: HTMLFormElement | null) => {
-      if (node === null) {
-        clearAddressBarTimers()
-      }
-    },
-    [clearAddressBarTimers]
+  const setAddressBarFormRef = useBrowserAddressBarFormTimers(
+    blurCloseTimerRef,
+    closingResetTimerRef
   )
 
   const searchEngine: SearchEngine =
@@ -224,10 +200,6 @@ export default function BrowserAddressBar({
     setOpen(false)
   }, [restoreTypedQuery])
 
-  const cancelSuggestionPreview = useCallback((): void => {
-    dismissSuggestions()
-  }, [dismissSuggestions])
-
   const selectedValue =
     selectedValueOverride &&
     suggestions.some((suggestion) => suggestion.url === selectedValueOverride)
@@ -304,7 +276,7 @@ export default function BrowserAddressBar({
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Escape') {
-        cancelSuggestionPreview()
+        dismissSuggestions()
         return
       }
 
@@ -358,11 +330,34 @@ export default function BrowserAddressBar({
       selectedValue,
       selectSuggestionAtIndex,
       restoreTypedQuery,
-      cancelSuggestionPreview,
+      dismissSuggestions,
       clearSuggestionPreview,
       onSubmit
     ]
   )
+
+  useBrowserAddressCommands(commandOwner, {
+    value,
+    open,
+    selectedValue,
+    suggestions,
+    inputRef,
+    focus: handleFocus,
+    blur: handleBlur,
+    change: (text) => {
+      clearSuggestionPreview()
+      onChange(text)
+    },
+    dismiss: dismissSuggestions,
+    highlight: setSelectedValueOverride,
+    preview: selectSuggestionAtIndex,
+    select: handleSelect,
+    submit: () => {
+      setOpen(false)
+      clearSuggestionPreview()
+      onSubmit()
+    }
+  })
 
   useBrowserAddressBarDismissal(open, dismissSuggestions)
 

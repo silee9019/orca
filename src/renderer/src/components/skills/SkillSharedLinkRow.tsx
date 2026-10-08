@@ -1,3 +1,4 @@
+import { useSkillLinkRowViewerController } from '@/runtime/skill-links-viewer-controller'
 import { useState } from 'react'
 import { ChevronRight, Clipboard, Link2Off, Loader2, MoreHorizontal, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -33,32 +34,32 @@ function createdLabel(createdAt: string): string {
 function useShareContents(share: SkillCloudOwnedShare): {
   names: string[] | null
   failed: boolean
-  load: () => void
+  load: () => Promise<boolean>
 } {
   const [names, setNames] = useState<string[] | null>(null)
   const [failed, setFailed] = useState(false)
 
-  const load = (): void => {
+  const load = async (): Promise<boolean> => {
     if (names || failed) {
-      return
+      return !!names
     }
-    void (async () => {
-      try {
-        const operation = await window.api.skills.getPackage(share.packageId)
-        if (operation.status !== 'ok') {
-          setFailed(true)
-          return
-        }
-        const version = operation.value.versions.at(0)
-        setNames(
-          version && isSkillBundleVersion(version)
-            ? version.manifest.skills.map((entry) => entry.name)
-            : [share.name]
-        )
-      } catch {
+    try {
+      const operation = await window.api.skills.getPackage(share.packageId)
+      if (operation.status !== 'ok') {
         setFailed(true)
+        return false
       }
-    })()
+      const version = operation.value.versions.at(0)
+      setNames(
+        version && isSkillBundleVersion(version)
+          ? version.manifest.skills.map((entry) => entry.name)
+          : [share.name]
+      )
+      return true
+    } catch {
+      setFailed(true)
+      return false
+    }
   }
 
   return { names, failed, load }
@@ -72,14 +73,15 @@ export function SkillSharedLinkRow({
 }: {
   share: SkillCloudOwnedShare
   busy: boolean
-  onRevoke: () => void
-  onDeleted: () => void
+  onRevoke: () => void | Promise<boolean>
+  onDeleted: () => void | Promise<void>
 }): React.JSX.Element {
   const [confirming, setConfirming] = useState<'revoke' | 'delete' | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const { names, failed, load } = useShareContents(share)
 
-  const deletePackage = async (): Promise<void> => {
+  const deletePackage = async (): Promise<boolean> => {
     setDeleting(true)
     try {
       const operation = await window.api.skills.deletePackage(share.packageId)
@@ -90,12 +92,13 @@ export function SkillSharedLinkRow({
             'Orca could not delete this from the Cloud.'
           )
         )
-        return
+        return false
       }
       toast.success(
         translate('auto.components.skills.SkillSharedLinkRow.deleted', 'Deleted from the Cloud')
       )
-      onDeleted()
+      await onDeleted()
+      return true
     } finally {
       setDeleting(false)
     }
@@ -106,9 +109,32 @@ export function SkillSharedLinkRow({
     toast.success(translate('auto.components.settings.shareSkills.linkCopied', 'Share link copied'))
   }
 
+  useSkillLinkRowViewerController({
+    share,
+    confirming,
+    expanded,
+    names,
+    failed,
+    busy,
+    deleting,
+    setConfirming,
+    setExpanded,
+    load,
+    copy,
+    revoke: onRevoke,
+    deletePackage
+  })
+
   return (
     <li>
-      <Collapsible className="group/link" onOpenChange={(open) => open && load()}>
+      <Collapsible
+        className="group/link"
+        open={expanded}
+        onOpenChange={(open) => {
+          void (open && load())
+          setExpanded(open)
+        }}
+      >
         <div className="flex items-center gap-3 px-3 py-2">
           <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-3 text-left outline-none focus-visible:ring-1 focus-visible:ring-ring">
             <span className="min-w-0 flex-1">

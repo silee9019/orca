@@ -53,23 +53,24 @@ export function useTerminalPaneMobileActions(controller: TerminalPaneContextCont
     window.setTimeout(refitAndRefreshAllTerminalPanes, 100)
   }, [])
   const restorePaneTerminalFit = useCallback(
-    async (pane: ManagedPane, ptyId: string): Promise<void> => {
+    async (pane: ManagedPane, ptyId: string): Promise<boolean> => {
       const currentPtyId = paneTransportsRef.current.get(pane.id)?.getPtyId() ?? null
       if (currentPtyId !== ptyId) {
         refreshMobileOverlays()
-        return
+        return false
       }
       const restored = await restoreTerminalFitToDesktop(ptyId, settingsRef.current ?? undefined)
       if (restored) {
         scheduleRestoredTerminalRefit()
         pane.terminal.focus()
       }
+      return restored
     },
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- Preserve the pre-split dependency contract.
     [refreshMobileOverlays, scheduleRestoredTerminalRefit]
   )
   const restoreAllTerminalFits = useCallback(
-    async (focusPane: ManagedPane): Promise<void> => {
+    async (focusPane: ManagedPane): Promise<boolean> => {
       const restored = await restoreTerminalFitsToDesktop(
         getMobileOwnedTerminalPtyIds(),
         settingsRef.current ?? undefined
@@ -78,6 +79,7 @@ export function useTerminalPaneMobileActions(controller: TerminalPaneContextCont
         scheduleRestoredTerminalRefit()
         focusPane.terminal.focus()
       }
+      return restored
     },
     // oxlint-disable-next-line react-hooks/exhaustive-deps -- Preserve the pre-split dependency contract.
     [getMobileOwnedTerminalPtyIds, scheduleRestoredTerminalRefit]

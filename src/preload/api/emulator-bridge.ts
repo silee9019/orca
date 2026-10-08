@@ -1,7 +1,9 @@
+import { emulatorFocusApi } from './emulator-focus-bridge'
 import { ipcRenderer } from 'electron'
 import type { PreloadApi } from '../api-types'
 
 export const emulatorApi = {
+  ...emulatorFocusApi,
   startFrameStream: (args: {
     streamUrl: string
     streamKey?: string

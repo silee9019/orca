@@ -5,6 +5,7 @@ import { RuntimeClientError } from '../../runtime-client'
 import { readInjectedAgentSessionId } from '../../../shared/agent-session-caller-env'
 import { requireWorkerDoneSettlement } from '../orchestration-worker-settlement'
 import { getOptionalStructuredMessagePayload } from './message-payload'
+import { readOrchestrationMessageBody } from './message-body'
 import { callOrchestrationMutation } from './mutation-request'
 import { isDevCliInvocation } from './runtime-compatibility'
 import {
@@ -63,6 +64,7 @@ function rejectLifecycleGroupRecipient(type: string | undefined, to: string): vo
 
 export const ORCHESTRATION_SEND_HANDLER: Record<string, CommandHandler> = {
   'orchestration send': async ({ flags, client, cwd, json }) => {
+    const body = await readOrchestrationMessageBody(flags, cwd)
     const to = getOptionalStringFlag(flags, 'to')
     const type = getOptionalStringFlag(flags, 'type')
     if (to) {
@@ -92,7 +94,7 @@ export const ORCHESTRATION_SEND_HANDLER: Record<string, CommandHandler> = {
       to,
       run: getOptionalStringFlag(flags, 'run'),
       subject: getRequiredStringFlag(flags, 'subject'),
-      body: getOptionalStringFlag(flags, 'body'),
+      body,
       type,
       priority: getOptionalStringFlag(flags, 'priority'),
       threadId: getOptionalStringFlag(flags, 'thread-id'),
@@ -120,7 +122,14 @@ export const ORCHESTRATION_SEND_HANDLER: Record<string, CommandHandler> = {
     if ('lifecycle' in result.result && result.result.lifecycle?.action === 'rejected') {
       throw new RuntimeClientError(result.result.lifecycle.code, result.result.lifecycle.reason)
     }
-    printResult(result, json, (value) => {
+    const value = result.result
+    const receipt =
+      'message' in value
+        ? { ...value, message: { id: value.message.id, run_id: value.message.run_id } }
+        : 'messages' in value
+          ? { ...value, messages: value.messages.map(({ id }) => ({ id })) }
+          : value
+    printResult({ ...result, result: receipt }, json, (value) => {
       const warnings = 'warnings' in value ? (value.warnings ?? []) : []
       const withWarnings = (line: string): string =>
         warnings.length > 0

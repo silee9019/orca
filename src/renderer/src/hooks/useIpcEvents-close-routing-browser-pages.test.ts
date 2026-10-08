@@ -111,6 +111,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
@@ -229,7 +231,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     expect(tabCloseListenerRef.current).toBeTypeOf('function')
@@ -337,6 +340,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
@@ -455,7 +460,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     tabCloseListenerRef.current?.({
@@ -558,6 +564,8 @@ describe('useIpcEvents browser tab close routing', () => {
     }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       api: {
         repos: { onChanged: () => () => {} },
@@ -676,7 +684,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     tabCloseListenerRef.current?.({

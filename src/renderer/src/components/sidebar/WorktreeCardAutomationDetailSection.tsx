@@ -1,4 +1,6 @@
 import React from 'react'
+import { useWorkspaceAutomationViewer } from '@/runtime/workspace-automation-viewer'
+import type { WorkspaceAutomationNavigationTarget } from '../../../../shared/workspace-automation-viewer-command'
 import { CalendarClock, PlayCircle } from 'lucide-react'
 import type { AutomationWorkspaceProvenance } from '../../../../shared/worktree/types'
 import {
@@ -15,8 +17,11 @@ import {
 
 type WorktreeCardAutomationDetailSectionProps = {
   provenance: AutomationWorkspaceProvenance
+  automationNavigationTarget?: WorkspaceAutomationNavigationTarget
   onOpenAutomation?: (event: React.MouseEvent) => void
   onOpenAutomationRun?: (event: React.MouseEvent) => void
+  onNavigateAutomation?: () => void
+  onNavigateAutomationRun?: () => void
 }
 
 type AutomationProvenanceAvailability =
@@ -27,15 +32,29 @@ type AutomationProvenanceAvailability =
 
 export function WorktreeCardAutomationDetailSection({
   provenance,
+  automationNavigationTarget,
   onOpenAutomation,
-  onOpenAutomationRun
+  onOpenAutomationRun,
+  onNavigateAutomation,
+  onNavigateAutomationRun
 }: WorktreeCardAutomationDetailSectionProps): React.JSX.Element {
-  const [availability, setAvailability] = React.useState<AutomationProvenanceAvailability>({
-    status: 'checking'
-  })
+  const availabilityKey = JSON.stringify([
+    provenance.automationId,
+    provenance.automationRunId,
+    provenance.hostId
+  ])
+  const [resolved, setResolved] = React.useState<{
+    key: string | null
+    value: AutomationProvenanceAvailability
+  }>({ key: null, value: { status: 'checking' } })
+  const availability: AutomationProvenanceAvailability =
+    resolved.key === availabilityKey ? resolved.value : { status: 'checking' }
 
   React.useEffect(() => {
     let cancelled = false
+    const setAvailability = (value: AutomationProvenanceAvailability): void => {
+      setResolved({ key: availabilityKey, value })
+    }
     async function resolveAvailability(): Promise<void> {
       setAvailability({ status: 'checking' })
       try {
@@ -71,10 +90,20 @@ export function WorktreeCardAutomationDetailSection({
     return () => {
       cancelled = true
     }
-  }, [provenance.automationId, provenance.automationRunId, provenance.hostId])
+  }, [availabilityKey, provenance.automationId, provenance.automationRunId, provenance.hostId])
 
   const canOpenAutomation = availability.status === 'available'
   const canOpenAutomationRun = availability.status === 'available' && availability.runAvailable
+  const sectionKey = React.useId()
+  useWorkspaceAutomationViewer({
+    sectionKey,
+    target: automationNavigationTarget,
+    provenance,
+    canOpenAutomation,
+    canOpenRun: canOpenAutomationRun,
+    openAutomation: onNavigateAutomation,
+    openRun: onNavigateAutomationRun
+  })
 
   return (
     <WorktreeCardDetailSection>

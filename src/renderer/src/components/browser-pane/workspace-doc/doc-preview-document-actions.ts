@@ -27,8 +27,8 @@ export type DocPreviewDocument = {
  * Open the previewed document as an ordinary source tab. A second tab, not a mode switch: the
  * preview keeps its own id, so the reader can leave the rendered page where it was.
  */
-export function openDocPreviewSource(document: DocPreviewDocument): void {
-  useAppStore.getState().openFile({
+export function openDocPreviewSource(document: DocPreviewDocument): string {
+  return useAppStore.getState().openFile({
     filePath: document.filePath,
     relativePath: document.relativePath,
     worktreeId: document.worktreeId,
@@ -46,7 +46,7 @@ export function openDocPreviewSource(document: DocPreviewDocument): void {
  * cannot launch a path it has no copy of — so a remote document is downloaded first, exactly as
  * the terminal's "Download & open with default app" does.
  */
-export function openDocPreviewExternally(document: DocPreviewDocument): void {
+export function openDocPreviewExternally(document: DocPreviewDocument): Promise<boolean> {
   const state = useAppStore.getState()
   const worktreeRoot = state.getKnownWorktreeById(document.worktreeId)?.path ?? null
   // Why the per-file resolver: this is the same document the grant authorized, and that grant was
@@ -76,8 +76,7 @@ export function openDocPreviewExternally(document: DocPreviewDocument): void {
   const ownedByThisMachine =
     connectionId === null && runtimeEnvironmentId === null && worktreeRoot !== null
   if (ownedByThisMachine && canClientOsOpenWorkspaceFile(fileContext, document.filePath)) {
-    void window.api.shell.openFilePath(document.filePath)
-    return
+    return window.api.shell.openFilePath(document.filePath)
   }
   // Why refuse instead of downloading: with neither owner resolved the download route reads the
   // absolute path on THIS machine, so a client that happens to hold a file of the same name would
@@ -91,7 +90,7 @@ export function openDocPreviewExternally(document: DocPreviewDocument): void {
         { value0: document.relativePath }
       )
     )
-    return
+    return Promise.resolve(false)
   }
-  void downloadAndOpenRemoteTerminalFile(fileContext, document.filePath)
+  return downloadAndOpenRemoteTerminalFile(fileContext, document.filePath)
 }

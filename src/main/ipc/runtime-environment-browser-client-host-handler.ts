@@ -1,3 +1,4 @@
+import { setRuntimeBrowserPlacementManagement } from './runtime-environment-browser-placement-management'
 import { ipcMain } from 'electron'
 import {
   BrowserClientHostPlacementPreparationRequest,
@@ -17,44 +18,53 @@ export function registerRuntimeEnvironmentBrowserClientHostHandler(options: {
   getUserDataPath: () => string
   getSettings: () => Pick<GlobalSettings, 'browserClientHostedRemoteEnabled'>
 }): void {
+  const prepare = createRuntimeBrowserPlacementOperation(options)
+  setRuntimeBrowserPlacementManagement(prepare)
   ipcMain.handle(
     'runtimeEnvironments:prepareBrowserClientHostPlacement',
-    async (_event, input: unknown): Promise<BrowserPageCreationPlacement> => {
-      const args = BrowserClientHostPlacementPreparationRequest.parse(input)
-      const userDataPath = options.getUserDataPath()
-      const initialEnvironment = resolveEnvironment(userDataPath, args.selector)
-      requireConnected(initialEnvironment.id)
-      const placement = await prepareBrowserClientHostPlacement({
-        selector: initialEnvironment.id,
-        expectedPairingRevision: args.expectedPairingRevision,
-        preference: args.preference,
-        enabled: options.getSettings().browserClientHostedRemoteEnabled !== false,
-        resolveEnvironment: (selector) => resolveEnvironment(userDataPath, selector),
-        getStatus: async (environmentId) => {
-          requireConnected(environmentId)
-          const status = await getRuntimeEnvironmentStatus(userDataPath, environmentId, undefined, {
-            observeOnly: true
-          })
-          requireConnected(environmentId)
-          return status
-        },
-        startHost: startPairedRuntimeBrowserClientHost,
-        closeHost: closePairedRuntimeBrowserClientHostEnvironment
-      })
-      if (placement.kind === 'client') {
-        try {
-          requireConnected(initialEnvironment.id)
-        } catch (error) {
-          const reason = error instanceof Error ? error : new Error(String(error))
-          await closePairedRuntimeBrowserClientHostEnvironment(initialEnvironment.id, reason).catch(
-            () => false
-          )
-          throw reason
-        }
-      }
-      return placement
-    }
+    (_event, input: unknown) => prepare(input)
   )
+}
+
+export function createRuntimeBrowserPlacementOperation(options: {
+  getUserDataPath: () => string
+  getSettings: () => Pick<GlobalSettings, 'browserClientHostedRemoteEnabled'>
+}): (input: unknown) => Promise<BrowserPageCreationPlacement> {
+  return async (input) => {
+    const args = BrowserClientHostPlacementPreparationRequest.parse(input)
+    const userDataPath = options.getUserDataPath()
+    const initialEnvironment = resolveEnvironment(userDataPath, args.selector)
+    requireConnected(initialEnvironment.id)
+    const placement = await prepareBrowserClientHostPlacement({
+      selector: initialEnvironment.id,
+      expectedPairingRevision: args.expectedPairingRevision,
+      preference: args.preference,
+      enabled: options.getSettings().browserClientHostedRemoteEnabled !== false,
+      resolveEnvironment: (selector) => resolveEnvironment(userDataPath, selector),
+      getStatus: async (environmentId) => {
+        requireConnected(environmentId)
+        const status = await getRuntimeEnvironmentStatus(userDataPath, environmentId, undefined, {
+          observeOnly: true
+        })
+        requireConnected(environmentId)
+        return status
+      },
+      startHost: startPairedRuntimeBrowserClientHost,
+      closeHost: closePairedRuntimeBrowserClientHostEnvironment
+    })
+    if (placement.kind === 'client') {
+      try {
+        requireConnected(initialEnvironment.id)
+      } catch (error) {
+        const reason = error instanceof Error ? error : new Error(String(error))
+        await closePairedRuntimeBrowserClientHostEnvironment(initialEnvironment.id, reason).catch(
+          () => false
+        )
+        throw reason
+      }
+    }
+    return placement
+  }
 }
 
 function requireConnected(environmentId: string): void {

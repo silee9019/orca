@@ -19,14 +19,7 @@ import {
 // registerSubscriptionCleanup's existing-key eviction path.
 let accountsSubscriptionSeq = 0
 
-// Why: bridges the desktop ClaudeAccountService / CodexAccountService /
-// RateLimitService into the WebSocket / local-socket RPC. Read + switch +
-// remove for all clients; interactive add/re-auth flows spawn `claude login`
-// / `codex login` PTYs that need a desktop browser, so they intentionally
-// remain desktop-only. `accounts.addClaudeFromConfigDir` is the exception: it
-// captures an already-authenticated CLAUDE_CONFIG_DIR (no PTY) so the local
-// `orca account add` CLI can register accounts on a headless host; it is gated
-// to the local runtime connection, never a mobile device token. See #1438.
+// Imports remain host-only; interactive login uses the separate account login lifecycle.
 export const ACCOUNT_METHODS = [
   defineMethod({
     name: 'accounts.listData',
@@ -86,6 +79,12 @@ export const ACCOUNT_METHODS = [
     params: SelectCodexAccountForTargetParams,
     handler: async (params, { runtime }) =>
       runtime.selectCodexAccountForTarget(params.accountId, params.target)
+  }),
+  defineMethod({
+    name: 'accounts.selectClaudeForTarget',
+    params: SelectCodexAccountForTargetParams,
+    handler: async (params, { runtime }) =>
+      runtime.selectClaudeAccountForTarget(params.accountId, params.target)
   }),
   defineMethod({
     name: 'accounts.consumeCodexResetCredit',

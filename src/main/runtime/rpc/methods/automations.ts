@@ -1,3 +1,4 @@
+import { AUTOMATION_EXTENSION_METHODS } from './automation-extensions'
 import { AUTOMATION_OWNER_FENCING_RUNTIME_CAPABILITY } from '../../../../shared/protocol-version'
 import type { AutomationOwnerPrecondition } from '../../../../shared/automation-owner-precondition'
 import { defineMethod, type RpcContext } from '../core'
@@ -26,6 +27,7 @@ function mutationOwner(
 }
 
 export const AUTOMATION_METHODS = [
+  ...AUTOMATION_EXTENSION_METHODS,
   defineMethod({
     name: 'automation.list',
     params: AutomationList,

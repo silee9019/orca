@@ -11,6 +11,7 @@ import { MarkupDrawButton } from '../annotate/MarkupDrawButton'
 import type { MarkupModeController } from '../annotate/useMarkupMode'
 
 export function RemoteBrowserPageToolbar({
+  commandOwner,
   runtimeEnvironmentId,
   addressBarValue,
   onAddressBarChange,
@@ -28,6 +29,7 @@ export function RemoteBrowserPageToolbar({
   onForward,
   onReload
 }: {
+  commandOwner?: { page: string; active: boolean }
   runtimeEnvironmentId: string
   addressBarValue: string
   onAddressBarChange: (value: string) => void
@@ -61,6 +63,7 @@ export function RemoteBrowserPageToolbar({
       }}
       addressSlot={
         <BrowserAddressBar
+          commandOwner={commandOwner}
           value={addressBarValue}
           onChange={onAddressBarChange}
           onSubmit={onSubmitAddressBar}
@@ -72,6 +75,11 @@ export function RemoteBrowserPageToolbar({
             <RemoteRuntimeEgressIndicator
               runtimeEnvironmentId={runtimeEnvironmentId}
               presentation="streamed"
+              commandOwner={
+                commandOwner
+                  ? { page: commandOwner.page, isActive: commandOwner.active }
+                  : undefined
+              }
             />
           }
         />

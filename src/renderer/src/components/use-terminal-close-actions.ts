@@ -6,7 +6,9 @@ import { shouldDeferParkedPtyExitTabClose } from './terminal-pane/terminal-parke
 import { dispatchWorkspaceTabCommand } from '@/lib/workspace-tab-commands'
 import type { TerminalCreateController } from './use-terminal-create-actions'
 
-export function useTerminalCloseActions(controller: TerminalCreateController) {
+export function useTerminalCloseActions(
+  controller: Pick<TerminalCreateController, 'consumeSuppressedPtyExit'>
+) {
   const { consumeSuppressedPtyExit } = controller
   const handleCloseTab = useCallback((tabId: string) => {
     closeTerminalTab(tabId)

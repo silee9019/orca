@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { OptionalFiniteNumber, OptionalString, requiredString } from './rpc-param-primitives'
+import { OptionalLinearDueDateOrClear } from './linear-agent-access-params'
 
 export const VALID_CUSTOM_VIEW_MODELS = ['issue', 'project'] as const
 
@@ -113,6 +114,8 @@ export const IssueUpdate = z.object({
     assigneeId: z.union([z.string(), z.null()]).optional(),
     estimate: z.union([z.number().int().min(0), z.null()]).optional(),
     priority: z.number().int().min(0).max(4).optional(),
+    dueDate: OptionalLinearDueDateOrClear,
+    parentId: requiredString('Invalid parent issue ID').nullable().optional(),
     labelIds: z.array(z.string()).optional(),
     projectId: z.union([z.string(), z.null()]).optional()
   })
@@ -122,3 +125,5 @@ export const LinearIssueCommentsParams = z.object({
   issueId: requiredString('Issue ID is required'),
   workspaceId: OptionalString
 })
+
+export const ConcreteIssueUpdate = IssueUpdate.extend({ workspaceId: ConcreteWorkspaceId })

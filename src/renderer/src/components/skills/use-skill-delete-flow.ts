@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { bindSkillDeletionConfirmation } from '@/runtime/skill-delete-viewer-confirmation'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
@@ -55,6 +56,7 @@ export function useSkillDeleteFlow(
   hostLabel: string | null,
   onDeleted: (result: SkillDeleteResult) => void
 ): SkillDeleteFlow {
+  const active = useRef<AbortController | null>(null)
   const confirm = useConfirmationDialog()
   const mountedRef = useMountedRef()
   const [probeGeneration, setProbeGeneration] = useState(0)
@@ -63,6 +65,11 @@ export function useSkillDeleteFlow(
   >('checking')
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<SkillDeleteResult | null>(null)
+
+  useLayoutEffect(() => {
+    setResult(null)
+    return () => active.current?.abort()
+  }, [runtimeTarget])
 
   useEffect(() => {
     let current = true
@@ -93,13 +100,18 @@ export function useSkillDeleteFlow(
 
   const requestDelete = useCallback(
     async (skills: readonly DiscoveredSkill[]): Promise<boolean> => {
-      if (!runtimeTarget || skills.length === 0) {
+      if (!mountedRef.current || active.current || !runtimeTarget || skills.length === 0) {
         return false
       }
+      const abort = new AbortController()
+      active.current = abort
       const request = toRequest(skills)
       setRunning(true)
       try {
         const plan = await previewSkillDeletionOnRuntimeTarget(runtimeTarget, request)
+        if (abort.signal.aborted || !mountedRef.current) {
+          return false
+        }
         const actionable = plan.skills.filter((skill) => !skill.blocked)
         if (actionable.length === 0) {
           // The preview already knows this would remove nothing. Offering a
@@ -133,14 +145,16 @@ export function useSkillDeleteFlow(
             .filter((line): line is string => Boolean(line))
             .join('\n'),
           confirmLabel: skillDeleteActionLabel(actionable.length),
-          confirmVariant: 'destructive'
+          confirmVariant: 'destructive',
+          signal: abort.signal,
+          onViewerControl: bindSkillDeletionConfirmation(plan)
         })
-        if (!confirmed) {
+        if (!confirmed || abort.signal.aborted || !mountedRef.current) {
           return false
         }
-        const outcome = await deleteSkillsOnRuntimeTarget(runtimeTarget, request)
-        if (!mountedRef.current) {
-          return true
+        const outcome = await deleteSkillsOnRuntimeTarget(runtimeTarget, request, abort.signal)
+        if (!mountedRef.current || abort.signal.aborted) {
+          return false
         }
         const deleted = outcome.skills.filter((skill) => skill.status === 'deleted').length
         if (deleted > 0) {
@@ -150,6 +164,9 @@ export function useSkillDeleteFlow(
         onDeleted(outcome)
         return true
       } catch (error) {
+        if (abort.signal.aborted || !mountedRef.current) {
+          return false
+        }
         toast.error(
           error instanceof Error
             ? error.message
@@ -157,6 +174,9 @@ export function useSkillDeleteFlow(
         )
         return false
       } finally {
+        if (active.current === abort) {
+          active.current = null
+        }
         if (mountedRef.current) {
           setRunning(false)
         }

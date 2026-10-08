@@ -1,4 +1,3 @@
-import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentStatusClearIpcPayload } from '../../../shared/agent-status-types'
 import {
@@ -70,7 +69,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
 
@@ -133,7 +133,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -198,7 +199,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -254,7 +256,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -344,7 +347,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -394,7 +398,6 @@ describe('useIpcEvents agent status snapshot integration', () => {
     const currentSnapshot = new Promise<AgentStatusSetData[]>((resolve) => {
       resolveCurrentSnapshot = resolve
     })
-    const effectCleanups: (() => void)[] = []
     const setAgentStatus = vi.fn()
     const clearTransientAgentStatuses = vi.fn()
     const onSetListenerRef: { current: ((data: AgentStatusSetData) => void) | null } = {
@@ -418,16 +421,6 @@ describe('useIpcEvents agent status snapshot integration', () => {
       }
     })
 
-    vi.doMock('react', async () => {
-      const actual = await vi.importActual<typeof ReactModule>('react')
-      return {
-        ...actual,
-        useEffect: (effect: () => void | (() => void)) => {
-          const cleanup = effect()
-          effectCleanups.push(typeof cleanup === 'function' ? cleanup : () => {})
-        }
-      }
-    })
     vi.doMock('../store', () => ({
       useAppStore: {
         subscribe: vi.fn(() => () => {}),
@@ -450,10 +443,11 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
-    useIpcEvents()
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
+    const cleanup = useIpcEvents()
     await Promise.resolve()
-    effectCleanups[0]?.()
+    cleanup()
     useIpcEvents()
     await Promise.resolve()
     if (!onSetListenerRef.current || !onClearListenerRef.current) {
@@ -554,7 +548,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()

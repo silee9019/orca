@@ -109,6 +109,7 @@ export function BrowserPageChromeHeader({
         onDismissDownload={nav.dismissBrowserDownload}
       />
       <BrowserPageChromeBanners
+        commandOwner={{ page: browserTab.id, isActive }}
         resourceNotice={resourceNotice}
         setResourceNotice={setResourceNotice}
         grab={grab}

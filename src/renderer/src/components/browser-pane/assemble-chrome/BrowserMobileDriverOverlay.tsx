@@ -1,3 +1,8 @@
+import {
+  useBrowserTakeBackCommands,
+  type BrowserTakeBackVerification,
+  type BrowserTakeBackOwner
+} from './use-browser-take-back-commands'
 import { useCallback, useRef, useState, type ReactElement } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -7,50 +12,73 @@ import { translate } from '@/i18n/i18n'
 type Props = {
   driver: BrowserDriverState
   onTakeBack: () => void | Promise<void>
+  commandOwner?: BrowserTakeBackOwner
 }
 
 const OVERLAY_TITLE_ID = 'browser-mobile-driver-overlay-title'
 
-export function BrowserMobileDriverOverlay({ driver, onTakeBack }: Props): ReactElement | null {
+export function BrowserMobileDriverOverlay({
+  driver,
+  onTakeBack,
+  commandOwner
+}: Props): ReactElement | null {
   const [pending, setPending] = useState(false)
   const [takeBackFailed, setTakeBackFailed] = useState(false)
   const mountedRef = useRef(false)
+  const pendingRef = useRef(false)
 
   const setOverlayRef = useCallback((node: HTMLDivElement | null): void => {
     mountedRef.current = node !== null
     if (node) {
       // Why: take-back can resolve after the overlay renders null; a later
       // mobile session must not inherit the stale disabled state.
-      setPending(false)
+      setPending(pendingRef.current)
       setTakeBackFailed(false)
     }
   }, [])
 
-  if (driver.kind !== 'mobile') {
-    return null
-  }
-
-  const handleTakeBack = async (): Promise<void> => {
-    if (pending) {
+  const submitTakeBack = async (verify?: BrowserTakeBackVerification): Promise<void> => {
+    if (pendingRef.current) {
+      if (verify) {
+        throw new Error('browser_take_back_busy')
+      }
       return
     }
+    pendingRef.current = true
     setPending(true)
     setTakeBackFailed(false)
     try {
       await onTakeBack()
-    } catch {
+      await verify?.complete()
+    } catch (error) {
       // Why: the reclaim RPC can fail (runtime gone, phone still holding the lock).
       // Surface it and leave the button enabled instead of silently re-locking.
-      if (mountedRef.current) {
+      if (mountedRef.current && (!verify || verify.isCurrent())) {
         setTakeBackFailed(true)
       }
+      if (verify) {
+        throw error
+      }
     } finally {
+      pendingRef.current = false
       if (mountedRef.current) {
         setPending(false)
       }
     }
   }
 
+  const handleTakeBack = async (): Promise<void> => {
+    await submitTakeBack()
+  }
+  useBrowserTakeBackCommands({
+    identity: commandOwner,
+    driver,
+    isPending: () => pendingRef.current,
+    takeBack: (verify) => submitTakeBack(verify)
+  })
+  if (driver.kind !== 'mobile') {
+    return null
+  }
   return (
     <div
       ref={setOverlayRef}

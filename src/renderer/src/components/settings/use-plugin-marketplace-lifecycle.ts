@@ -1,3 +1,4 @@
+import type { PluginMarketplaceMutationReceipt } from './plugin-marketplace-parent-readback'
 import {
   useEffect,
   useState,
@@ -29,10 +30,13 @@ export function usePluginMarketplaceLifecycle({
 }: PluginMarketplaceLifecycleOptions): {
   rollbackPlugin: PluginHostListEntry | null
   rollbackError: string | null
-  reloadAfterMutation: (pluginKey: string) => Promise<void>
+  reloadAfterMutation: (
+    pluginKey: string,
+    receipt?: PluginMarketplaceMutationReceipt
+  ) => Promise<void>
   requestRollback: (pluginKey: string) => void
   cancelRollback: () => void
-  confirmRollback: (pluginKey: string) => Promise<void>
+  confirmRollback: (pluginKey: string) => Promise<boolean>
 } {
   const [rollbackPluginId, setRollbackPluginId] = useState<string | null>(null)
   const [rollbackError, setRollbackError] = useState<string | null>(null)
@@ -45,10 +49,13 @@ export function usePluginMarketplaceLifecycle({
     }
   }, [mounted, rollbackPlugin, rollbackPluginId])
 
-  const reloadAfterMutation = async (pluginKey: string): Promise<void> => {
+  const reloadAfterMutation = async (
+    pluginKey: string,
+    receipt?: PluginMarketplaceMutationReceipt
+  ): Promise<void> => {
     try {
       const nextPlugins = await window.api.plugins.list()
-      if (!mountedRef.current) {
+      if (!mountedRef.current || (receipt && !receipt.canApply())) {
         return
       }
       applyCompletedMutation(nextPlugins)
@@ -56,14 +63,15 @@ export function usePluginMarketplaceLifecycle({
       if (changedPlugin?.needsReconsent || changedPlugin?.status === 'pending') {
         setConsentPluginId(pluginKey)
       }
+      receipt?.applied()
     } catch (cause) {
-      if (mountedRef.current) {
+      if (mountedRef.current && (!receipt || receipt.canApply())) {
         setPluginListError(cause)
       }
     }
   }
 
-  const confirmRollback = async (pluginKey: string): Promise<void> => {
+  const confirmRollback = async (pluginKey: string): Promise<boolean> => {
     setBusyPluginKeys((current) => new Set(current).add(pluginKey))
     setRollbackError(null)
     try {
@@ -75,6 +83,7 @@ export function usePluginMarketplaceLifecycle({
       if (mountedRef.current) {
         setRollbackPluginId(null)
       }
+      return true
     } catch (cause) {
       console.warn('[plugins] marketplace rollback failed:', cause)
       if (mountedRef.current) {
@@ -85,6 +94,7 @@ export function usePluginMarketplaceLifecycle({
           )
         )
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setBusyPluginKeys((current) => {

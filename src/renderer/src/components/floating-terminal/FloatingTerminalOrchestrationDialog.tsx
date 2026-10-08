@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -67,13 +67,13 @@ export function FloatingTerminalOrchestrationDialog({
     }
   }, [orchestrationSkillDetected, onSetupStateChange])
 
-  const recheckOrchestrationSkill = async (): Promise<boolean> => {
+  const recheckOrchestrationSkill = useCallback(async (): Promise<boolean> => {
     const installed = await refreshOrchestrationSkill()
     if (activeSkillRuntime.canUseLocalSkillFreshness) {
       await refreshSkillFreshness()
     }
     return installed
-  }
+  }, [refreshOrchestrationSkill, activeSkillRuntime.canUseLocalSkillFreshness])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

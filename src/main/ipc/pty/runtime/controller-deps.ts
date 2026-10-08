@@ -1,3 +1,4 @@
+import type { PtyPendingDataDrainQueue } from '../../pty-pending-data-drain-queue'
 import type { PtyRendererDelivery } from '../session'
 import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
 import type { Store } from '../../../persistence'
@@ -20,6 +21,7 @@ import type { AdoptStablePaneArgs, AdoptStablePaneResult } from '../ipc/spawn-ty
 import type { finishPtyShutdown } from '../provider/liveness'
 
 export type PtyRuntimeControllerDeps = {
+  pendingData?: PtyPendingDataDrainQueue
   runtime?: OrcaRuntimeService
   store?: Store
   adoptStablePane: (args: AdoptStablePaneArgs) => Promise<AdoptStablePaneResult | null>

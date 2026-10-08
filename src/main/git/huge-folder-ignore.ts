@@ -3,12 +3,10 @@ import { appendFile, readFile, stat } from 'node:fs/promises'
 import * as path from 'node:path'
 import { checkIgnoredPaths } from './check-ignored-paths'
 import type { GitRuntimeOptions } from './git-runtime-options'
-
-// Why: the overwhelmingly common cause of a status listing big enough to hit the
-// entry limit is a dependency/build folder that should have been ignored. Offer
-// to ignore these by name (matching the well-known offenders) the way a mature
-// SCM does, rather than asking the user to hand-edit .gitignore.
-const KNOWN_HUGE_FOLDER_NAMES = ['node_modules', '.next', 'dist', 'build', 'target', 'vendor']
+import {
+  KNOWN_HUGE_FOLDER_NAMES,
+  hugeFolderGitignoreAddition
+} from '../../shared/git-huge-folder-ignore'
 
 /**
  * Return the relative names of known-huge folders that exist in the worktree and
@@ -52,27 +50,18 @@ export async function appendFolderToGitignore(
   worktreePath: string,
   folderName: string
 ): Promise<boolean> {
-  const safeFolderName = folderName.trim()
-  if (!KNOWN_HUGE_FOLDER_NAMES.includes(safeFolderName) || /[\\/\r\n]/.test(safeFolderName)) {
-    throw new Error(`Refusing to add unrecognized folder to .gitignore: ${folderName}`)
-  }
+  hugeFolderGitignoreAddition(folderName, '')
   const gitignorePath = path.join(worktreePath, '.gitignore')
-  const line = `${safeFolderName}/`
   let existingContent = ''
   try {
     existingContent = await readFile(gitignorePath, 'utf-8')
   } catch {
-    // .gitignore doesn't exist yet — we'll create it below
+    existingContent = ''
   }
-  const alreadyListed = existingContent
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .some((l) => l === safeFolderName || l === line)
-  if (alreadyListed) {
+  const addition = hugeFolderGitignoreAddition(folderName, existingContent)
+  if (addition === null) {
     return false
   }
-  // Why: keep a clean trailing newline whether or not the file ended with one.
-  const needsLeadingNewline = existingContent.length > 0 && !existingContent.endsWith('\n')
-  await appendFile(gitignorePath, `${needsLeadingNewline ? '\n' : ''}${line}\n`, 'utf-8')
+  await appendFile(gitignorePath, addition, 'utf-8')
   return true
 }

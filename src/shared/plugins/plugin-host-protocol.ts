@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pluginCommandInputSchema } from './plugin-command-input'
 import { PLUGIN_COMMAND_LIMIT, PLUGIN_EVENT_NAMES, pluginCommandIdSchema } from './plugin-manifest'
 import { PLUGIN_CAPABILITY_KINDS } from './plugin-capabilities'
 
@@ -23,7 +24,8 @@ export const pluginWorkerInvokeCommandSchema = z.object({
   type: z.literal('invokeCommand'),
   callId: z.number().int().nonnegative(),
   commandId: z.string().min(1),
-  args: z.unknown().optional()
+  args: z.unknown().optional(),
+  input: pluginCommandInputSchema.optional()
 })
 
 export const pluginWorkerDeliverEventSchema = z.object({
@@ -55,7 +57,8 @@ export const pluginWorkerParentMessageSchema = z.discriminatedUnion('type', [
 export const pluginWorkerReadySchema = z.object({
   type: z.literal('ready'),
   /** Command ids the worker registered handlers for (⊆ manifest commands). */
-  commands: z.array(pluginCommandIdSchema).max(PLUGIN_COMMAND_LIMIT)
+  commands: z.array(pluginCommandIdSchema).max(PLUGIN_COMMAND_LIMIT),
+  commandInputVersion: z.literal(1).optional()
 })
 
 export const pluginWorkerCommandResultSchema = z.object({

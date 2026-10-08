@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { SparsePresetChooserViewer } from '../../runtime/sparse-preset-chooser-viewer'
 import { Check, Pencil, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +16,7 @@ import type { SparsePreset } from '../../../../shared/worktree/create-types'
 
 type SparsePresetChooserProps = {
   presets: SparsePreset[]
+  viewerScope?: { repoId: string; ownerKey: string }
   selectedPresetId: string | null
   onSelect: (preset: SparsePreset) => void
   onSelectFull: () => void
@@ -27,14 +30,31 @@ export function SparsePresetChooser({
   onSelect,
   onSelectFull,
   onEdit,
-  onNew
+  onNew,
+  viewerScope
 }: SparsePresetChooserProps): React.JSX.Element {
+  const [query, setQuery] = useState('')
+  const [commandValue, setCommandValue] = useState(
+    selectedPresetId ? `preset:${selectedPresetId}` : 'full'
+  )
   return (
     <Command
-      defaultValue={selectedPresetId ? `preset:${selectedPresetId}` : 'full'}
+      value={commandValue}
+      onValueChange={setCommandValue}
       className="max-h-[min(var(--radix-popover-content-available-height),24rem)]"
     >
+      <SparsePresetChooserViewer
+        scope={viewerScope}
+        presets={presets}
+        fullLabel={translate('sparsePreset.fullCheckout', 'Full checkout')}
+        query={query}
+        commandValue={commandValue}
+        setQuery={setQuery}
+        setCommandValue={setCommandValue}
+      />
       <CommandInput
+        value={query}
+        onValueChange={setQuery}
         placeholder={translate('sparsePreset.search', 'Find a preset…')}
         aria-label={translate('sparsePreset.search', 'Find a preset…')}
       />

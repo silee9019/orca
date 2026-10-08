@@ -9,10 +9,13 @@ function getMacNotificationSettingsUrl(): string {
   return `${MACOS_NOTIFICATION_SETTINGS_URL}?id=${encodeURIComponent(bundleId)}`
 }
 
-export function openNotificationSystemSettings(): void {
+export async function openNotificationSystemSettings(): Promise<boolean> {
   if (process.platform === 'darwin') {
-    void shell.openExternal(getMacNotificationSettingsUrl())
+    await shell.openExternal(getMacNotificationSettingsUrl())
   } else if (process.platform === 'win32') {
-    void shell.openExternal('ms-settings:notifications')
+    await shell.openExternal('ms-settings:notifications')
+  } else {
+    return false
   }
+  return true
 }

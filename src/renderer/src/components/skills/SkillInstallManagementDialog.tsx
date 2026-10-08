@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useManagedSkillViewerController } from '@/runtime/managed-skill-viewer-controller'
+import { skillInstallViewerHosts } from '@/runtime/skill-install-viewer-hosts'
+import { useManagedSkillInstallInventory } from './use-managed-skill-install-inventory'
+import { useSkillsViewerDialog } from '@/runtime/skills-viewer-controller'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Dialog } from '@/components/ui/dialog'
 import { useAppStore } from '@/store'
-import type {
-  ManagedSkillInstall,
-  SkillInstallResult
-} from '../../../../shared/skill-install-contract'
+import type { SkillInstallResult } from '../../../../shared/skill-install-contract'
 import type { SkillBundleInstallResult } from '../../../../shared/skill-bundle-install-contract'
 import type { SkillCloudPackageDetails } from '../../../../shared/skill-cloud-contract'
 import { notifyInstalledAgentSkillsChanged } from '@/hooks/useInstalledAgentSkills'
@@ -31,7 +32,17 @@ export function SkillInstallManagementDialog({
   const sshConnectionStates = useAppStore((state) => state.sshConnectionStates)
   const sshTargetLabels = useAppStore((state) => state.sshTargetLabels)
   const [environmentId, setEnvironmentId] = useState('local')
-  const [installs, setInstalls] = useState<ManagedSkillInstall[]>([])
+  const hosts = skillInstallViewerHosts({
+    runtimeEnvironments,
+    sshConnectionStates,
+    sshTargetLabels,
+    runtimeStatus: new Map()
+  })
+  const ownerRevisions = new Map(
+    [...hosts.ownerRevisions].map(([id, revision]) => [id, `${id}:${revision}`])
+  )
+  const ownerKey = ownerRevisions.get(environmentId)
+
   const [selectedKey, setSelectedKey] = useState('')
   const [details, setDetails] = useState<SkillCloudPackageDetails | null>(null)
   const [versionId, setVersionId] = useState('')
@@ -42,8 +53,26 @@ export function SkillInstallManagementDialog({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const installProgress = useSkillInstallProgress()
-  const loadGeneration = useRef(0)
   const detailGeneration = useRef(0)
+
+  const onLoading = useCallback(() => {
+    detailGeneration.current += 1
+  }, [])
+  const onLoaded = useCallback(() => {
+    setSelectedKey('')
+    setDetails(null)
+    setNotice(null)
+  }, [])
+  const { installs, load, inventoryReady, invalidate, isCurrentOwner } =
+    useManagedSkillInstallInventory({
+      open,
+      environmentId,
+      ownerKey,
+      onLoading,
+      onLoaded,
+      setBusy,
+      setError
+    })
 
   const groups = useMemo(() => groupManagedSkillInstalls(installs), [installs])
   const selected = useMemo(
@@ -51,51 +80,6 @@ export function SkillInstallManagementDialog({
     [groups, selectedKey]
   )
   const selectedInstall = selected?.installs[0] ?? null
-
-  const load = useCallback(async (): Promise<void> => {
-    const generation = ++loadGeneration.current
-    detailGeneration.current += 1
-    if (!open) {
-      return
-    }
-    setBusy(true)
-    setError(null)
-    try {
-      const operation = await window.api.skills.listManagedInstalls(
-        environmentId === 'local' ? undefined : environmentId
-      )
-      if (generation !== loadGeneration.current) {
-        return
-      }
-      if (operation.status !== 'ok') {
-        setError(operation.message)
-        return
-      }
-      setInstalls(operation.value)
-      setSelectedKey('')
-      setDetails(null)
-      setNotice(null)
-    } catch (cause) {
-      if (generation !== loadGeneration.current) {
-        return
-      }
-      console.warn('[skills] managed install listing failed:', cause)
-      setError(
-        translate(
-          'auto.components.skills.install.inspectManagedFailed',
-          'Orca could not inspect managed installs on this machine.'
-        )
-      )
-    } finally {
-      if (generation === loadGeneration.current) {
-        setBusy(false)
-      }
-    }
-  }, [environmentId, open])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const selectInstall = async (group: SkillManagedInstallGroup): Promise<void> => {
     const generation = ++detailGeneration.current
@@ -110,6 +94,9 @@ export function SkillInstallManagementDialog({
     try {
       const operation = await window.api.skills.getPackage(group.packageId)
       if (generation !== detailGeneration.current) {
+        return
+      }
+      if (!isCurrentOwner()) {
         return
       }
       if (operation.status !== 'ok') {
@@ -198,6 +185,9 @@ export function SkillInstallManagementDialog({
               }
             : {})
         })
+        if (!isCurrentOwner()) {
+          return
+        }
         if (operation.status !== 'ok') {
           setError(
             operation.status === 'reconnect-required'
@@ -227,6 +217,9 @@ export function SkillInstallManagementDialog({
         ...(selectedInstall.providers ? { providers: selectedInstall.providers } : {}),
         ...(discardLocal ? { conflictResolution: 'replace-and-discard-local' } : {})
       })
+      if (!isCurrentOwner()) {
+        return
+      }
       if (operation.status !== 'ok') {
         setError(
           operation.status === 'reconnect-required'
@@ -302,6 +295,9 @@ export function SkillInstallManagementDialog({
           })
         )
       )
+      if (!isCurrentOwner()) {
+        return
+      }
       const unsupported = operations.find((operation) => operation.status !== 'ok')
       if (unsupported?.status === 'unsupported') {
         setError(unsupported.message)
@@ -330,7 +326,7 @@ export function SkillInstallManagementDialog({
   }
 
   const close = (): void => {
-    loadGeneration.current += 1
+    invalidate()
     detailGeneration.current += 1
     setSelectedKey('')
     setDetails(null)
@@ -339,6 +335,40 @@ export function SkillInstallManagementDialog({
     setResult(null)
     onOpenChange(false)
   }
+
+  useSkillsViewerDialog('management', open, busy, close)
+  useManagedSkillViewerController({
+    open,
+    environmentId,
+    setEnvironmentId,
+    ownerKey,
+    ownerRevisions,
+    availableEnvironments: hosts.availableEnvironments,
+    inventoryReady,
+    groups,
+    selectedKey,
+    details,
+    versionId,
+    setVersionId,
+    busy,
+    confirmRemove,
+    result,
+    bundleResult,
+    error,
+    notice,
+    activeOperationId: installProgress.activeOperationId,
+    selectInstall,
+    collapse,
+    load,
+    installVersion,
+    remove,
+    cancelInstall,
+    close,
+    sendToMachine: (shareId) => {
+      close()
+      useAppStore.getState().openSkillShare(shareId)
+    }
+  })
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !busy && close()}>

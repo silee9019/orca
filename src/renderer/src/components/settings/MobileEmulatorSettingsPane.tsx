@@ -1,4 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  statusText,
+  statusBadgeClassName,
+  availabilityDetail,
+  type SimulatorDeviceRow,
+  type EmulatorAvailability
+} from './mobile-emulator-availability'
+import {
+  useEmulatorSettingsViewer,
+  type EmulatorSdkActions,
+  type EmulatorSkillActions
+} from '@/runtime/emulator-settings-viewer'
+import { useAppStore } from '@/store'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, RefreshCw } from 'lucide-react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { cn } from '@/lib/utils'
@@ -9,29 +22,12 @@ import { Label } from '../ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { AndroidLogo, IosBrandIcon } from '../mobile/MobileBrandIcons'
 import { MobileEmulatorAgentControlRow } from './MobileEmulatorAgentControlRow'
+import { copyEmulatorExamplePrompt } from './MobileEmulatorExamples'
 import { MobileEmulatorAvailabilityDetails } from './MobileEmulatorAvailabilityDetails'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsRow, SettingsSwitchRow } from './SettingsFormControls'
 import { getMobileEmulatorSearchEntries } from './mobile-emulator-search'
 import { translate } from '@/i18n/i18n'
-
-type SimulatorDeviceRow = {
-  name: string
-  udid: string
-  state: string
-  runtime?: string
-  isAvailable?: boolean
-}
-
-type EmulatorAvailability = {
-  platform: string
-  available: boolean
-  devices: SimulatorDeviceRow[]
-  simctl: { ok: boolean; message?: string }
-  serveSim: { ok: boolean; message?: string }
-  android: { sdkFound: boolean; sdkPath?: string; message: string }
-  message: string
-}
 
 type MobileEmulatorSettingsPaneProps = {
   settings: GlobalSettings
@@ -42,33 +38,6 @@ const AUTOMATIC_DEVICE_VALUE = '__orca_automatic_emulator_device__'
 const AUTOMATIC_DEVICE_LABEL = 'Auto-select device'
 const SIMULATOR_STATE_SUFFIX_RE =
   /\s+\((Booted|Booting|Creating|Shutdown|Shutting Down|Unavailable|Unknown)\)\s*$/i
-
-function statusText(availability: EmulatorAvailability | null, enabled: boolean): string {
-  if (!enabled) {
-    return translate('auto.components.settings.MobileEmulatorSettingsPane.a4f1c82d90', 'Disabled')
-  }
-  if (!availability) {
-    return translate(
-      'auto.components.settings.MobileEmulatorSettingsPane.b5e2d93e01',
-      'Checking...'
-    )
-  }
-  return availability.available
-    ? translate('auto.components.settings.MobileEmulatorSettingsPane.c6f3ea4f12', 'Ready')
-    : translate('auto.components.settings.MobileEmulatorSettingsPane.d704fb5023', 'Needs setup')
-}
-
-function statusBadgeClassName(availability: EmulatorAvailability | null, enabled: boolean): string {
-  if (!enabled) {
-    return 'border-border/50 bg-muted/30 text-muted-foreground'
-  }
-  if (!availability) {
-    return 'border-border/50 bg-muted/30 text-muted-foreground'
-  }
-  return availability.available
-    ? 'border-status-success-border bg-status-success-background text-status-success'
-    : 'border-destructive/30 bg-destructive/10 text-destructive'
-}
 
 function deviceLabel(device: SimulatorDeviceRow): string {
   const state = device.state.trim()
@@ -96,28 +65,6 @@ function DeviceSelectItemLabel({ device }: { device: SimulatorDeviceRow }): Reac
   )
 }
 
-function availabilityDetail(availability: EmulatorAvailability | null): string {
-  if (!availability) {
-    return translate(
-      'auto.components.settings.MobileEmulatorSettingsPane.06b06429c6',
-      'Checking Android SDK and iOS Simulator support.'
-    )
-  }
-  if (availability.available) {
-    return availability.devices.length === 1
-      ? translate(
-          'auto.components.settings.MobileEmulatorSettingsPane.6d1483d4a0',
-          '1 emulator device detected.'
-        )
-      : translate(
-          'auto.components.settings.MobileEmulatorSettingsPane.0a452d4d3b',
-          '{{value0}} emulator devices detected.',
-          { value0: availability.devices.length }
-        )
-  }
-  return availability.simctl.message || availability.serveSim.message || availability.message
-}
-
 export function MobileEmulatorSettingsPane({
   settings,
   updateSettings
@@ -125,17 +72,45 @@ export function MobileEmulatorSettingsPane({
   const [availability, setAvailability] = useState<EmulatorAvailability | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const enabled = settings.mobileEmulatorEnabled !== false
+  const refreshingRef = useRef(false)
+  const changing = useRef(false)
+  const sdkRevision = useRef(0)
+  const refreshedAvailability = useRef<EmulatorAvailability | null>(null)
+  const details = useRef<EmulatorSdkActions | null>(null)
+  const skill = useRef<EmulatorSkillActions | null>(null)
+  const registerSkillActions = useCallback((actions: EmulatorSkillActions) => {
+    skill.current = actions
+    return () => {
+      if (skill.current === actions) {
+        skill.current = null
+      }
+    }
+  }, [])
+  const registerSdkActions = useCallback((actions: EmulatorSdkActions) => {
+    details.current = actions
+    return () => {
+      if (details.current === actions) {
+        details.current = null
+      }
+    }
+  }, [])
 
-  const refreshAvailability = useCallback(async (): Promise<void> => {
+  const refreshAvailability = useCallback(async (): Promise<boolean> => {
+    if (refreshingRef.current) {
+      return false
+    }
+    refreshingRef.current = true
     setRefreshing(true)
     try {
-      const result = (await callRuntimeRpc(
+      const result = await callRuntimeRpc<EmulatorAvailability>(
         { kind: 'local' },
         'emulator.availability',
         {}
-      )) as EmulatorAvailability
+      )
+      refreshedAvailability.current = result
       setAvailability(result)
-    } catch (error) {
+      return true
+    } catch {
       setAvailability({
         platform: '',
         available: false,
@@ -143,12 +118,60 @@ export function MobileEmulatorSettingsPane({
         simctl: { ok: false },
         serveSim: { ok: false },
         android: { sdkFound: false, message: '' },
-        message: error instanceof Error ? error.message : 'Could not check emulator availability.'
+        message: 'Could not check emulator availability.'
       })
+      return false
     } finally {
+      refreshingRef.current = false
       setRefreshing(false)
     }
   }, [])
+
+  const setSetting = useCallback(
+    async (updates: Partial<GlobalSettings>): Promise<boolean> => {
+      if (changing.current) {
+        return false
+      }
+      changing.current = true
+      try {
+        await updateSettings(updates)
+        const persisted = await window.api.settings.get()
+        return Object.entries(updates).every(
+          ([key, value]) => (Reflect.get(persisted, key) ?? null) === (value ?? null)
+        )
+      } catch {
+        return false
+      } finally {
+        changing.current = false
+      }
+    },
+    [updateSettings]
+  )
+  const setAndroidSdkPath = useCallback(
+    async (path: string | null, expectedRevision?: number): Promise<boolean> => {
+      if (
+        changing.current ||
+        refreshingRef.current ||
+        (expectedRevision !== undefined && expectedRevision !== sdkRevision.current) ||
+        useAppStore.getState().settings?.mobileEmulatorEnabled === false
+      ) {
+        return false
+      }
+      changing.current = true
+      sdkRevision.current += 1
+      try {
+        await updateSettings({ androidSdkPath: path })
+        const refreshed = await refreshAvailability()
+        const persisted = await window.api.settings.get()
+        return refreshed && (persisted.androidSdkPath ?? null) === path
+      } catch {
+        return false
+      } finally {
+        changing.current = false
+      }
+    },
+    [updateSettings, refreshAvailability]
+  )
 
   useEffect(() => {
     void refreshAvailability()
@@ -176,6 +199,38 @@ export function MobileEmulatorSettingsPane({
     )
   }, [devices.length])
 
+  const setDefaultDevice = (id: string | null): Promise<boolean> => {
+    if (
+      !enabled ||
+      (id !== null && !devices.some((device) => device.udid === id && device.isAvailable !== false))
+    ) {
+      return Promise.resolve(false)
+    }
+    return setSetting({ mobileEmulatorDefaultDeviceUdid: id })
+  }
+  useEmulatorSettingsViewer({
+    read: () => ({
+      enabled,
+      skillReady: skill.current?.matches(true) ?? false,
+      availabilityKnown: availability !== null,
+      available: availability?.available === true,
+      refreshing,
+      sdkPathSet: Boolean(settings.androidSdkPath),
+      defaultDeviceSet: Boolean(settings.mobileEmulatorDefaultDeviceUdid),
+      deviceCount: devices.length
+    }),
+    matchesSdk: (path) => (settings.androidSdkPath ?? null) === path,
+    matchesDevice: (id) => (settings.mobileEmulatorDefaultDeviceUdid ?? null) === id,
+    refresh: refreshAvailability,
+    matchesRefresh: () => availability === refreshedAvailability.current,
+    copyExample: copyEmulatorExamplePrompt,
+    sdk: setAndroidSdkPath,
+    enabled: (value) => setSetting({ mobileEmulatorEnabled: value }),
+    device: setDefaultDevice,
+    details: () => details.current,
+    skill: () => skill.current
+  })
+
   return (
     <div className="space-y-4">
       <SearchableSetting
@@ -200,7 +255,7 @@ export function MobileEmulatorSettingsPane({
             'Shows the New Mobile Emulator action and allows agents to attach to the active emulator.'
           )}
           checked={enabled}
-          onChange={() => updateSettings({ mobileEmulatorEnabled: !enabled })}
+          onChange={() => setSetting({ mobileEmulatorEnabled: !enabled })}
         />
 
         <div className="py-2">
@@ -244,12 +299,12 @@ export function MobileEmulatorSettingsPane({
 
           {enabled ? (
             <MobileEmulatorAvailabilityDetails
+              registerSdkActions={registerSdkActions}
+              getSdkRevision={() => sdkRevision.current}
+              getSdkPath={() => useAppStore.getState().settings?.androidSdkPath ?? null}
               availability={availability}
               configuredPath={settings.androidSdkPath ?? null}
-              onSetAndroidSdkPath={async (path) => {
-                await updateSettings({ androidSdkPath: path })
-                await refreshAvailability()
-              }}
+              onSetAndroidSdkPath={setAndroidSdkPath}
             />
           ) : null}
         </div>
@@ -266,9 +321,7 @@ export function MobileEmulatorSettingsPane({
               value={selectValue}
               disabled={!enabled}
               onValueChange={(value) =>
-                updateSettings({
-                  mobileEmulatorDefaultDeviceUdid: value === AUTOMATIC_DEVICE_VALUE ? null : value
-                })
+                setDefaultDevice(value === AUTOMATIC_DEVICE_VALUE ? null : value)
               }
             >
               <SelectTrigger size="sm" className="w-56 max-w-full">
@@ -304,7 +357,7 @@ export function MobileEmulatorSettingsPane({
           )}
           keywords={getMobileEmulatorSearchEntries()[3]?.keywords}
         >
-          <MobileEmulatorAgentControlRow />
+          <MobileEmulatorAgentControlRow registerSkillActions={registerSkillActions} />
         </SearchableSetting>
       ) : null}
     </div>

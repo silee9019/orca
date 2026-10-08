@@ -1,0 +1,660 @@
+// @vitest-environment happy-dom
+import type * as DurableFileWrite from '../../src/main/durable-file-write'
+import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
+import { verifyBrowserSettingsCookies } from './browser-settings-cookie-story.fixture'
+import { cookieFixture } from './browser-settings-cookie.fixture'
+import { RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser } from '../../src/main/runtime/runtime-browser-commands-browser-profile-import-from-browser'
+import { BROWSER_PROFILE_FILE_METHODS } from '../../src/main/runtime/rpc/methods/browser-profile-file'
+import { BROWSER_USE_ENABLED_STORAGE_KEY } from '../../src/renderer/src/lib/browser-use-setup-state'
+import { toast } from 'sonner'
+import { act, createElement } from 'react'
+import { createRoot } from 'react-dom/client'
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createServer, type Socket } from 'node:net'
+import { afterEach, expect, it, vi } from 'vitest'
+import {
+  getBrowserIdentityModeStatus,
+  initializeBrowserIdentityModeStore,
+  resetBrowserIdentityModeStoreForTests,
+  setBrowserIdentityMode
+} from '../../src/main/browser/browser-identity-mode-store'
+import { BROWSER_IDENTITY_MODE_FILE } from '../../src/main/browser/browser-identity-mode-record'
+import type { BrowserUserAgentMode } from '../../src/shared/browser-user-agent-mode'
+import { BROWSER_SESSION_META_FILE_NAME } from '../../src/main/browser/browser-session-meta-store'
+import { browserSessionRegistry } from '../../src/main/browser/browser-session-registry'
+import { Store } from '../../src/main/persistence'
+import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
+import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
+import { RuntimeClient } from '../../src/cli/runtime-client'
+import { parseArgs, validateCommandAndFlags } from '../../src/cli/args'
+import { BROWSER_SETTINGS_VIEWER_SPECS } from '../../src/cli/specs/browser-settings-viewer'
+import { BROWSER_SETTINGS_VIEWER_HANDLERS } from '../../src/cli/handlers/browser-settings-viewer'
+import { BROWSER_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/browser-viewer'
+import { applyBrowserViewerRequest } from '../../src/renderer/src/runtime/browser-viewer-bridge'
+import { TooltipProvider } from '../../src/renderer/src/components/ui/tooltip'
+import {
+  BrowserSettingsNavigationFixture,
+  browserNavigationFixture
+} from './browser-settings-navigation.fixture'
+import { resetSkillDiscoveryCacheForTests } from '../../src/renderer/src/hooks/installed-agent-skill-discovery'
+import { ORCA_CLI_SKILL_NAME } from '../../src/renderer/src/lib/agent-feature-install-commands'
+import type { SkillDiscoveryTarget } from '../../src/shared/skills'
+import { useAppStore } from '../../src/renderer/src/store'
+vi.mock('../../src/renderer/src/hooks/useActiveProjectSkillRuntime', () => ({
+  useActiveProjectSkillRuntime: () => ({
+    installDisabledReason: null,
+    canUseLocalSkillFreshness: false
+  })
+}))
+vi.mock('../../src/renderer/src/components/settings/AgentSkillSetupPanel', () => ({
+  AgentSkillSetupPanel: () => null
+}))
+vi.mock('../../src/cli/runtime/launch', () => ({
+  launchOrcaApp: () => {
+    throw new Error('Fixture refuses app launch')
+  }
+}))
+vi.mock('../../src/main/browser/browser-session-partition-policies', () => ({
+  installBrowserSessionPartitionPolicies: async () => {},
+  forgetBrowserSessionPartitionConfiguration: () => {},
+  retireBrowserSessionUserAgentPolicy: () => {}
+}))
+const identityWriteFixture = vi.hoisted(() => ({ fail: false }))
+vi.mock('../../src/main/durable-file-write', async (importOriginal) => {
+  const actual = await importOriginal<typeof DurableFileWrite>()
+  return {
+    ...actual,
+    writeFileDurableSync: (...args: Parameters<typeof actual.writeFileDurableSync>) => {
+      if (identityWriteFixture.fail) {
+        throw new Error('fixture identity write refused')
+      }
+      return actual.writeFileDurableSync(...args)
+    }
+  }
+})
+const directories: string[] = []
+afterEach(() => {
+  vi.restoreAllMocks()
+  identityWriteFixture.fail = false
+  resetBrowserIdentityModeStoreForTests()
+  for (const path of directories.splice(0)) {
+    rmSync(path, { recursive: true, force: true })
+  }
+})
+it.skipIf(process.platform === 'win32')(
+  'applies settings through CLI, socket, dispatcher, existing bridge, mounted pane and actual UI store',
+  async () => {
+    globalThis.IS_REACT_ACT_ENVIRONMENT = true
+    const directory = mkdtempSync(join(tmpdir(), 'orca-browser-settings-owner-'))
+    directories.push(directory)
+    cookieFixture.directory = directory
+    cookieFixture.jars.clear()
+    localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, '1')
+    const successToast = vi.spyOn(toast, 'success')
+    const settingsErrors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    let settingsWriteIgnored = false
+    let settingsWriteFailure = false
+    let holdPreferenceWrites = false
+    const preferenceWriteReleases: (() => void)[] = []
+    let clipboard = ''
+    const clipboardEvents: string[] = []
+    let clipboardWriteFailure = false
+    let clipboardReadMismatch = false
+    const store = new Store({
+      serializedState: JSON.stringify({
+        repos: [],
+        settings: { browserSshWorkspaceRoutingDisabledTargetIds: ['fixture-ssh-target'] }
+      }),
+      dataFile: join(directory, 'profile.json')
+    })
+    resetBrowserIdentityModeStoreForTests()
+    initializeBrowserIdentityModeStore(directory)
+    const identityWriteGate: { release?: () => void } = {}
+    let holdIdentityWrite = false
+    browserSessionRegistry.configureForOrcaProfile({
+      orcaProfileId: 'fixture-browser-owner',
+      profileDirectory: directory
+    })
+    const runtime = new OrcaRuntimeService(store)
+    resetSkillDiscoveryCacheForTests()
+    const skillScans: (SkillDiscoveryTarget | undefined)[] = []
+    let skillInstalled = true
+    let skillFailure = false
+    Object.assign(window, {
+      api: {
+        settings: {
+          set: async (updates: Parameters<Store['updateSettings']>[0]) => {
+            if (holdPreferenceWrites) {
+              await new Promise<void>((resolve) => preferenceWriteReleases.push(resolve))
+            }
+            if (settingsWriteFailure) {
+              throw new Error('fixture settings write refused')
+            }
+            if (!settingsWriteIgnored) {
+              await store.updateSettings(updates)
+            }
+            return store.getSettings()
+          }
+        },
+        skills: {
+          discover: async (target?: SkillDiscoveryTarget) => {
+            skillScans.push(target)
+            if (skillFailure) {
+              throw new Error('private-fixture-discovery-error')
+            }
+            return {
+              scannedAt: Date.now(),
+              sources: [],
+              skills: skillInstalled
+                ? [
+                    {
+                      id: 'fixture-cli',
+                      name: ORCA_CLI_SKILL_NAME,
+                      description: null,
+                      providers: ['codex'],
+                      sourceKind: 'home',
+                      sourceLabel: 'fixture',
+                      rootPath: directory,
+                      directoryPath: join(directory, ORCA_CLI_SKILL_NAME),
+                      skillFilePath: join(directory, ORCA_CLI_SKILL_NAME, 'SKILL.md'),
+                      installed: true,
+                      updatedAt: 1
+                    }
+                  ]
+                : []
+            }
+          }
+        },
+        runtime: {
+          call: async ({ method, params }: { method: string; params: unknown }) =>
+            dispatcher.dispatch({ id: 'owner-file-import', method, params })
+        },
+        browser: {
+          identityGet: async () => getBrowserIdentityModeStatus(),
+          identitySet: async (mode: BrowserUserAgentMode) => {
+            if (holdIdentityWrite) {
+              await new Promise<void>((resolve) => {
+                identityWriteGate.release = resolve
+              })
+            }
+            return setBrowserIdentityMode(mode)
+          },
+          sessionListProfiles: async () => browserSessionRegistry.listProfiles(),
+          sessionDetectBrowsers: async () => cookieFixture.browsers,
+          sessionDeleteProfile: async ({ profileId }: { profileId: string }) =>
+            browserSessionRegistry.deleteProfile(profileId),
+          sessionClearDefaultCookies: async () =>
+            browserSessionRegistry.clearDefaultSessionCookies(),
+          sessionImportFromBrowser: async (
+            params: Parameters<
+              RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser['browserProfileImportFromBrowser']
+            >[0]
+          ) =>
+            RuntimeBrowserCommandsWithBrowserProfileImportFromBrowser.prototype.browserProfileImportFromBrowser(
+              params
+            ),
+          sessionCreateProfile: async (
+            params: Parameters<OrcaRuntimeService['browserProfileCreate']>[0]
+          ) => {
+            return browserSessionRegistry.createProfile(params.scope, params.label)
+          }
+        },
+        ui: {
+          writeClipboardText: async (text: string) => {
+            clipboardEvents.push('write-start')
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            if (clipboardWriteFailure) {
+              throw new Error('private-clipboard-provider-error')
+            }
+            clipboard = text
+            clipboardEvents.push('write-complete')
+          },
+          readClipboardText: async () => {
+            clipboardEvents.push('read')
+            return clipboardReadMismatch ? '' : clipboard
+          },
+          recordFeatureInteraction: async (id: Parameters<Store['recordFeatureInteraction']>[0]) =>
+            store.recordFeatureInteraction(id),
+          set: async (updates: Parameters<Store['updateUI']>[0]) => {
+            store.updateUI(updates)
+          }
+        }
+      }
+    })
+    useAppStore.setState({
+      runtimeEnvironmentCatalogSettled: true,
+      runtimeEnvironments: [],
+      settings: store.getSettings(),
+      persistedUIReady: true,
+      activeModal: 'none',
+      settingsSearchQuery: '',
+      browserDefaultUrl: null
+    })
+    const container = document.createElement('div')
+    document.body.append(container)
+    const owner = createRoot(container)
+    await act(async () =>
+      owner.render(
+        createElement(
+          TooltipProvider,
+          {},
+          createElement(BrowserSettingsNavigationFixture, { settings: store.getSettings() })
+        )
+      )
+    )
+    runtime.setNotifier({
+      browserViewer: async (command) => ({
+        ...(await applyBrowserViewerRequest({
+          id: 'browser-settings-fixture',
+          expiresAt: Date.now() + 3000,
+          command
+        })),
+        viewerId: 8
+      })
+    })
+    const dispatcher = new RpcDispatcher({
+      runtime,
+      methods: [...BROWSER_VIEWER_METHODS, ...BROWSER_PROFILE_FILE_METHODS]
+    })
+    const sockets = new Set<Socket>()
+    const server = createServer((socket) => {
+      sockets.add(socket)
+      socket.once('close', () => sockets.delete(socket))
+      let pending = ''
+      socket.on('data', (chunk) => {
+        pending += chunk.toString()
+        const boundary = pending.indexOf('\n')
+        if (boundary === -1) {
+          return
+        }
+        const request = JSON.parse(pending.slice(0, boundary))
+        pending = pending.slice(boundary + 1)
+        if (request.authToken !== 'settings-fixture-token') {
+          socket.destroy()
+          return
+        }
+        void dispatcher
+          .dispatch(request)
+          .then((response) => socket.write(`${JSON.stringify(response)}\n`))
+      })
+    })
+    const endpoint = join(directory, 'runtime.sock')
+    await new Promise<void>((resolve) => server.listen(endpoint, resolve))
+    writeFileSync(
+      join(directory, 'orca-runtime.json'),
+      JSON.stringify({
+        runtimeId: runtime.getRuntimeId(),
+        pid: process.pid,
+        transports: [{ kind: 'unix', endpoint }],
+        authToken: 'settings-fixture-token',
+        startedAt: 1
+      })
+    )
+    const client = new RuntimeClient(directory, 5000, null, null)
+    const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+    async function invoke(action: string, flags: string[] = [], host = 'local', pump = true) {
+      const specs = BROWSER_SETTINGS_VIEWER_SPECS
+      const parsed = parseArgs(
+        [
+          'browser',
+          'settings',
+          'viewer',
+          '--viewer',
+          'host',
+          '--action',
+          action,
+          '--host',
+          host,
+          ...flags
+        ],
+        specs.map((spec) => spec.path),
+        specs
+      )
+      validateCommandAndFlags(specs, parsed)
+      const pending = BROWSER_SETTINGS_VIEWER_HANDLERS['browser settings viewer']({
+        client,
+        flags: parsed.flags,
+        cwd: directory,
+        json: true
+      })
+      void pending.catch(() => {})
+      if (!pump) {
+        return pending
+      }
+      let settled = false
+      void pending.then(
+        () => {
+          settled = true
+        },
+        () => {
+          settled = true
+        }
+      )
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        expect(settled).toBe(true)
+      })
+      await pending.catch((error) => {
+        throw new Error(
+          `Action ${action} failed: ${error instanceof Error ? error.message : 'unknown'}`,
+          { cause: error }
+        )
+      })
+    }
+    try {
+      const setPreference = (field: string, value: string, host = 'local') =>
+        invoke('browser-preference-set', ['--preference', field, '--value', value], host)
+      await setPreference('link-routing', 'true')
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      expect(store.getSettings().openLinksInAppPreferencePrompted).toBe(true)
+      expect(
+        container
+          .querySelector('[role="switch"][aria-label="Link Routing"]')
+          ?.getAttribute('aria-checked')
+      ).toBe('true')
+      settingsWriteIgnored = true
+      await expect(setPreference('link-routing', 'false')).rejects.toThrow()
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      settingsWriteIgnored = false
+      settingsWriteFailure = true
+      await expect(setPreference('link-routing', 'false')).rejects.toThrow()
+      expect(settingsErrors).toHaveBeenCalled()
+      expect(store.getSettings().openLinksInApp).toBe(true)
+      settingsWriteFailure = false
+      await setPreference('link-routing', 'false')
+      expect(store.getSettings().openLinksInApp).toBe(false)
+      await expect(setPreference('link-routing', 'true', 'runtime:missing')).rejects.toThrow()
+      expect(store.getSettings().openLinksInApp).toBe(false)
+      await setPreference('link-routing-modifier', 'true')
+      expect(store.getSettings().openLinksInAppModifierInverts).toBe(true)
+      await setPreference('localhost-labels', 'true')
+      expect(store.getSettings().localhostWorktreeLabelsEnabled).toBe(true)
+      await setPreference('client-hosted-remote', 'false')
+      expect(store.getSettings().browserClientHostedRemoteEnabled).toBe(false)
+      await setPreference('ssh-routing', 'false')
+      expect(store.getSettings().browserSshWorkspaceRoutingEnabled).toBe(false)
+      await invoke('browser-ssh-route-restore', ['--value', 'fixture-ssh-target'])
+      expect(store.getSettings().browserSshWorkspaceRoutingDisabledTargetIds).toEqual([])
+      expect(container.textContent).not.toContain('fixture-ssh-target')
+      await expect(
+        invoke('browser-ssh-route-restore', ['--value', 'missing-ssh-target'])
+      ).rejects.toThrow()
+      await store.updateSettings({
+        browserSshWorkspaceRoutingDisabledTargetIds: ['race-a', 'race-b']
+      })
+      await act(async () => useAppStore.setState({ settings: store.getSettings() }))
+      holdPreferenceWrites = true
+      const firstRestore = invoke(
+        'browser-ssh-route-restore',
+        ['--value', 'race-a'],
+        'local',
+        false
+      )
+      const secondRestore = invoke(
+        'browser-ssh-route-restore',
+        ['--value', 'race-b'],
+        'local',
+        false
+      )
+      void firstRestore.catch(() => {})
+      void secondRestore.catch(() => {})
+      await vi.waitFor(() => expect(preferenceWriteReleases).toHaveLength(2))
+      holdPreferenceWrites = false
+      await act(async () => {
+        for (const release of preferenceWriteReleases.splice(0)) {
+          release()
+        }
+      })
+      const restoreResults: boolean[] = []
+      void firstRestore.then(
+        () => (restoreResults[0] = true),
+        () => (restoreResults[0] = false)
+      )
+      void secondRestore.then(
+        () => (restoreResults[1] = true),
+        () => (restoreResults[1] = false)
+      )
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        expect(restoreResults).toHaveLength(2)
+      })
+      expect(restoreResults).toEqual([false, true])
+      expect(store.getSettings().browserSshWorkspaceRoutingDisabledTargetIds).toEqual(['race-a'])
+      await invoke('browser-ssh-route-restore', ['--value', 'race-a'])
+      await setPreference('terminal-url-click', 'actions')
+      expect(store.getSettings().terminalLinkClickBehavior).toBe('actions')
+      await setPreference('terminal-url-middle-click', 'none')
+      expect(store.getSettings().terminalUrlMiddleClickBehavior).toBe('none')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"value": "none"')
+      await expect(setPreference('client-hosted-remote', 'not-a-boolean')).rejects.toThrow()
+      await expect(setPreference('terminal-url-click', 'not-a-behavior')).rejects.toThrow()
+      await invoke('homepage-draft', ['--value', 'https://draft.fixture.invalid'])
+      expect(container.querySelector('input')).toHaveProperty(
+        'value',
+        'https://draft.fixture.invalid'
+      )
+      expect(store.getUI().browserDefaultUrl).not.toBe('https://draft.fixture.invalid')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"persisted": false')
+      await invoke('homepage-save')
+      expect(useAppStore.getState().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      expect(store.getUI().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      expect(successToast).toHaveBeenCalledWith('Home page saved.')
+      await invoke('browser-use-copy-example', ['--value', '0'])
+      expect(clipboard).toBe(
+        'Using Orca CLI, open https://github.com/notifications and click the first unread pull request.'
+      )
+      expect(successToast).toHaveBeenCalledWith('Copied prompt.')
+      expect(clipboardEvents).toEqual(['write-start', 'write-complete', 'read'])
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"clipboardCopied": true')
+      expect(output.mock.calls.at(-1)?.[0]).not.toContain(clipboard)
+      clipboardWriteFailure = true
+      clipboardEvents.length = 0
+      const beforeFailedCopySuccesses = successToast.mock.calls.length
+      await expect(invoke('browser-use-copy-example', ['--value', '1'])).rejects.toThrow()
+      expect(clipboardEvents).toEqual(['write-start'])
+      expect(successToast).toHaveBeenCalledTimes(beforeFailedCopySuccesses)
+      clipboardWriteFailure = false
+      clipboardReadMismatch = true
+      await expect(invoke('browser-use-copy-example', ['--value', '1'])).rejects.toThrow()
+      clipboardReadMismatch = false
+      await expect(invoke('browser-use-copy-example', ['--value', '3'])).rejects.toThrow()
+      const beforeWrongHostCopy = clipboard
+      await expect(
+        invoke('browser-use-copy-example', ['--value', '2'], 'runtime:missing')
+      ).rejects.toThrow()
+      expect(clipboard).toBe(beforeWrongHostCopy)
+      expect(JSON.stringify(output.mock.calls)).not.toContain('private-clipboard-provider-error')
+      const savedToastCount = successToast.mock.calls.filter(
+        ([message]) => message === 'Home page saved.'
+      ).length
+      await invoke('homepage-draft', ['--value', '   '])
+      await invoke('homepage-save')
+      expect(store.getUI().browserDefaultUrl).toBeNull()
+      expect(
+        successToast.mock.calls.filter(([message]) => message === 'Home page saved.')
+      ).toHaveLength(savedToastCount)
+      await invoke('homepage-draft', ['--value', 'orca://blank'])
+      await expect(invoke('homepage-save')).rejects.toThrow()
+      expect(store.getUI().browserDefaultUrl).toBeNull()
+      await invoke('homepage-draft', ['--value', '  https://draft.fixture.invalid  '])
+      await invoke('homepage-save')
+      expect(store.getUI().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      await invoke('search-engine', ['--value', 'kagi'])
+      expect(
+        container.querySelector('input[aria-label="Kagi private session link"]')
+      ).not.toBeNull()
+      expect(store.getUI().browserKagiSessionLink).toBeUndefined()
+      const privateKagiFixtureLink = 'https://kagi.com/search?token=fixture-private-kagi-clear'
+      store.updateUI({ browserKagiSessionLink: privateKagiFixtureLink })
+      await act(async () =>
+        useAppStore.setState({ browserKagiSessionLink: privateKagiFixtureLink })
+      )
+      const kagiInput = container.querySelector('input[aria-label="Kagi private session link"]')
+      expect(kagiInput).toHaveProperty('type', 'password')
+      expect(kagiInput).toHaveProperty('value', privateKagiFixtureLink)
+      await expect(invoke('kagi-clear', ['--value', 'disallowed-link-input'])).rejects.toThrow(
+        'accepts no link or file input'
+      )
+      await expect(invoke('kagi-clear', ['--file', 'disallowed-file-input'])).rejects.toThrow(
+        'accepts no link or file input'
+      )
+      await expect(invoke('kagi-clear', [], 'runtime:missing')).rejects.toThrow()
+      expect(store.getUI().browserKagiSessionLink).toBe(privateKagiFixtureLink)
+      await invoke('kagi-clear')
+      expect(useAppStore.getState().browserKagiSessionLink).toBeNull()
+      expect(store.getUI().browserKagiSessionLink).toBeNull()
+      expect(kagiInput).toHaveProperty('value', '')
+      expect(successToast).toHaveBeenCalledWith('Kagi session link cleared.')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"kagiConfigured": false')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"kagiDraftPresent": false')
+      expect(JSON.stringify(output.mock.calls)).not.toContain(privateKagiFixtureLink)
+      expect(JSON.stringify(output.mock.calls)).not.toContain('fixture-private-kagi-clear')
+      await expect(invoke('kagi-clear')).rejects.toThrow()
+
+      await invoke('search-engine', ['--value', 'google'])
+      expect(store.getUI().browserDefaultSearchEngine).toBeNull()
+      expect(container.querySelector('input[aria-label="Kagi private session link"]')).toBeNull()
+      await expect(invoke('kagi-clear')).rejects.toThrow()
+      await invoke('search-engine', ['--value', 'bing'])
+      expect(useAppStore.getState().browserDefaultSearchEngine).toBe('bing')
+      expect(store.getUI().browserDefaultSearchEngine).toBe('bing')
+      await invoke('profile-dialog-open')
+      await invoke('profile-name', ['--value', 'Fixture Profile'])
+      expect(container.ownerDocument.querySelector('[role="dialog"] input')).toHaveProperty(
+        'value',
+        'Fixture Profile'
+      )
+      await invoke('profile-create')
+      const created = useAppStore
+        .getState()
+        .browserSessionProfiles.find((profile) => profile.label === 'Fixture Profile')
+      expect(created).toBeDefined()
+      if (!created) {
+        throw new Error('Fixture profile missing')
+      }
+      await invoke('profile-select', ['--profile', created.id])
+      expect(useAppStore.getState().defaultBrowserSessionProfileIdByHostId.local).toBe(created.id)
+      await invoke('profile-select', ['--profile', 'default'])
+      expect(useAppStore.getState().defaultBrowserSessionProfileId).toBeNull()
+      await invoke('host-select', ['--value', 'local'])
+      expect(useAppStore.getState().detectedBrowsersLoaded).toBe(true)
+      await expect(
+        invoke('browser-identity-set', ['--value', 'native'], 'runtime:missing')
+      ).rejects.toThrow()
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('clean')
+      await invoke('browser-identity-set', ['--value', 'clean'])
+      holdIdentityWrite = true
+      const changingIdentity = invoke('browser-identity-set', ['--value', 'native'], 'local', false)
+      void changingIdentity.catch(() => {})
+      await vi.waitFor(async () => {
+        await act(async () => {})
+        const nativeRadio = [...container.querySelectorAll('[role="radio"]')].find(
+          (node) => node.textContent === 'Native'
+        )
+        expect(nativeRadio?.getAttribute('aria-disabled')).toBe('true')
+        expect(identityWriteGate.release).toBeTypeOf('function')
+      })
+      await expect(
+        invoke('browser-identity-set', ['--value', 'clean'], 'local', false)
+      ).rejects.toThrow()
+      identityWriteGate.release?.()
+      holdIdentityWrite = false
+      await changingIdentity
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('native')
+      expect(getBrowserIdentityModeStatus().identity.appliedMode).toBe('clean')
+      expect(
+        JSON.parse(readFileSync(join(directory, BROWSER_IDENTITY_MODE_FILE), 'utf8')).mode
+      ).toBe('native')
+      expect(container.textContent).toContain('Restart required')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identityConfiguredMode": "native"')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identityRestartRequired": true')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"identitySaving": false')
+      identityWriteFixture.fail = true
+      await expect(invoke('browser-identity-set', ['--value', 'clean'])).rejects.toThrow()
+      identityWriteFixture.fail = false
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('native')
+      expect(container.textContent).toContain('fixture identity write refused')
+      expect(
+        JSON.parse(readFileSync(join(directory, BROWSER_IDENTITY_MODE_FILE), 'utf8')).mode
+      ).toBe('native')
+      await invoke('browser-identity-set', ['--value', 'clean'])
+      expect(getBrowserIdentityModeStatus().identity.configuredMode).toBe('clean')
+      expect(container.textContent).not.toContain('Restart required')
+      expect(container.textContent).not.toContain('fixture identity write refused')
+      await invoke('zoom', ['--value', '0'])
+      expect(store.getUI().browserDefaultZoomLevel).toBe(0)
+      await expect(
+        invoke('homepage-draft', ['--value', 'wrong-host'], 'runtime:missing')
+      ).rejects.toThrow('browser_settings_action_failed_effect_unknown')
+      expect(useAppStore.getState().browserDefaultUrl).toBe('https://draft.fixture.invalid/')
+      expect(readFileSync(join(directory, BROWSER_SESSION_META_FILE_NAME), 'utf8')).toContain(
+        'Fixture Profile'
+      )
+      await verifyBrowserSettingsCookies(invoke, created, directory, container, store, output)
+      const scroll = vi.fn()
+      const originalScroll = HTMLElement.prototype.scrollIntoView
+      HTMLElement.prototype.scrollIntoView = scroll
+      try {
+        await act(async () => useAppStore.getState().setSettingsSearchQuery('no-cookie-match'))
+        await invoke('cookies-scroll')
+        expect(useAppStore.getState().settingsSearchQuery).toBe('')
+        expect(document.getElementById('browser-session-cookies')).not.toBeNull()
+        expect(scroll).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+        expect(output.mock.calls.at(-1)?.[0]).toContain('"cookiesScrolled": true')
+        await invoke('cookies-configure', ['--profile', 'default', '--surface', 'browser-use'])
+        await invoke('browser-use-configure')
+      } finally {
+        HTMLElement.prototype.scrollIntoView = originalScroll
+      }
+      browserNavigationFixture.allowDiscard = false
+      await expect(invoke('computer-use-open')).rejects.toThrow('effect_unknown')
+      expect(browserNavigationFixture.section).toBe('')
+      expect(browserNavigationFixture.scrollTarget).toBe('')
+      expect(browserNavigationFixture.requestTick).toBe(0)
+      browserNavigationFixture.allowDiscard = true
+      await invoke('computer-use-open')
+      expect(browserNavigationFixture.section).toBe('computer-use')
+      expect(browserNavigationFixture.scrollTarget).toBe('computer-use')
+      expect(browserNavigationFixture.requestTick).toBe(1)
+      await invoke('browser-use-computer')
+      expect(browserNavigationFixture.requestTick).toBe(2)
+      await invoke('browser-use-enabled', ['--value', 'false'])
+      expect(localStorage.getItem(BROWSER_USE_ENABLED_STORAGE_KEY)).toBe('0')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"browserUseEnabled": false')
+      await invoke('browser-use-enabled', ['--value', 'true'])
+      expect(localStorage.getItem(BROWSER_USE_ENABLED_STORAGE_KEY)).toBe('1')
+      expect(store.getUI().featureInteractions?.['agent-browser-setup']?.interactionCount).toBe(1)
+      await invoke('browser-use-install-intent')
+      expect(store.getUI().featureInteractions?.['agent-browser-setup']?.interactionCount).toBe(2)
+      skillInstalled = false
+      await invoke('browser-use-refresh')
+      expect(skillScans.at(-1)?.refresh).toBe(true)
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"skillDetected": false')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"skillLoading": false')
+      skillFailure = true
+      await expect(invoke('browser-use-refresh')).rejects.toThrow(
+        'Browser skill scan did not establish a current result.'
+      )
+      expect(JSON.stringify(output.mock.calls)).not.toContain('private-fixture')
+      await invoke('profile-dialog-open')
+      await invoke('profile-dialog-status')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"dialogOpen": true')
+      expect(output.mock.calls.at(-1)?.[0]).toContain('"creating": false')
+      await invoke('profile-name', ['--value', 'Discarded draft'])
+      await invoke('profile-dialog-close')
+      expect(container.ownerDocument.querySelector('[role="dialog"]')).toBeNull()
+      await expect(invoke('host-select', ['--value', 'runtime:missing'])).rejects.toThrow(
+        'browser_settings_action_failed_effect_unknown'
+      )
+    } finally {
+      await act(async () => owner.unmount())
+      container.remove()
+      for (const socket of sockets) {
+        socket.destroy()
+      }
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
+  }
+)

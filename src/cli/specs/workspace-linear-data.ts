@@ -27,6 +27,7 @@ export const WORKSPACE_LINEAR_DATA_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['linear', 'project', 'get'],
+    aliases: [['linear', 'project', 'show']],
     summary: 'Linear project get on the selected Orca runtime',
     usage: 'orca linear project get --params-file <file|-> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'params-file'],

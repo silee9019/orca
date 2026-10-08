@@ -114,18 +114,14 @@ export async function isIssueCommandIgnoredByGit(
 /** Ensure `.orca` is in `.gitignore` so the per-user directory is never committed. */
 function ensureOrcaDirIgnored(repoPath: string): void {
   const gitignorePath = join(repoPath, '.gitignore')
-  try {
-    if (existsSync(gitignorePath)) {
-      const content = readFileSync(gitignorePath, 'utf-8')
-      if (/^\.orca\/?$/m.test(content)) {
-        return
-      }
-      const separator = content.endsWith('\n') ? '' : '\n'
-      writeFileSync(gitignorePath, `${content}${separator}.orca\n`, 'utf-8')
-    } else {
-      writeFileSync(gitignorePath, '.orca\n', 'utf-8')
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, 'utf-8')
+    if (/^\.orca\/?$/m.test(content)) {
+      return
     }
-  } catch {
-    console.warn('[hooks] Could not update .gitignore to exclude .orca')
+    const separator = content.endsWith('\n') ? '' : '\n'
+    writeFileSync(gitignorePath, `${content}${separator}.orca\n`, 'utf-8')
+  } else {
+    writeFileSync(gitignorePath, '.orca\n', 'utf-8')
   }
 }

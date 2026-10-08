@@ -131,6 +131,8 @@ describe('useIpcEvents browser tab create routing', () => {
     vi.doMock('@/lib/zoom-events', () => ({ dispatchZoomLevelChanged: vi.fn() }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent,
       setTimeout: vi.fn(() => 1),
       clearTimeout: vi.fn(),
@@ -250,7 +252,8 @@ describe('useIpcEvents browser tab create routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     requestTabCreateListenerRef.current?.({

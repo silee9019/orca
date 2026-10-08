@@ -1,3 +1,9 @@
+import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
+import { requireClipboardImageWriteAck } from './clipboard-image-write-ack'
+import type {
+  BrowserViewerRequest,
+  BrowserViewerResponse
+} from '../../shared/browser-viewer-command'
 import { ipcRenderer, webFrame } from 'electron'
 import type {
   RuntimeMobileMarkdownRequest,
@@ -18,6 +24,15 @@ import { subscribeNativeFileDrop } from '../preload-runtime-support'
 import type { PreloadApi } from '../api-types'
 
 export const uiClipboardAndWindowControlsApi = {
+  onBrowserViewerRequest: (callback: (request: BrowserViewerRequest) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, request: BrowserViewerRequest): void =>
+      callback(request)
+    ipcRenderer.on('ui:browserViewerRequest', listener)
+    return () => ipcRenderer.removeListener('ui:browserViewerRequest', listener)
+  },
+  respondBrowserViewer: (response: BrowserViewerResponse): void => {
+    ipcRenderer.send('ui:browserViewerResponse', response)
+  },
   onOpenDiffFromMobile: (
     callback: (data: {
       worktreeId: string
@@ -41,6 +56,15 @@ export const uiClipboardAndWindowControlsApi = {
     ) => callback(data)
     ipcRenderer.on('ui:openDiffFromMobile', listener)
     return () => ipcRenderer.removeListener('ui:openDiffFromMobile', listener)
+  },
+  onProjectFilterRequest: (callback: (request: ProjectFilterRequest) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, request: ProjectFilterRequest): void =>
+      callback(request)
+    ipcRenderer.on('ui:projectFilterRequest', listener)
+    return () => ipcRenderer.removeListener('ui:projectFilterRequest', listener)
+  },
+  respondProjectFilter: (response: ProjectFilterResponse): void => {
+    ipcRenderer.send('ui:projectFilterResponse', response)
   },
   onMobileMarkdownRequest: (
     callback: (request: RuntimeMobileMarkdownRequest) => void
@@ -110,6 +134,10 @@ export const uiClipboardAndWindowControlsApi = {
     ipcRenderer.invoke('clipboard:writeTerminalText', text),
   writeSelectionClipboardText: (text: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:writeSelectionText', text),
+  writeVerifiedClipboardImage: (dataUrl: string): Promise<{ written: true }> =>
+    requireClipboardImageWriteAck(() =>
+      ipcRenderer.invoke('clipboard:writeImage', dataUrl, { requireWrite: true })
+    ),
   writeClipboardImage: (dataUrl: string): Promise<void> =>
     ipcRenderer.invoke('clipboard:writeImage', dataUrl),
   performNativePaste: (options?: { mode?: 'paste' | 'paste-and-match-style' }): void => {

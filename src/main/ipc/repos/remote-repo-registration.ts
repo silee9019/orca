@@ -17,8 +17,10 @@ export async function addRemoteRepoFromPath(
     displayName?: string
     kind?: 'git' | 'folder'
     setupMethod?: Repo['projectHostSetupMethod']
-  }
+  },
+  validateHost?: () => void
 ): Promise<{ repo: Repo; alreadyExisted: boolean } | { error: string }> {
+  validateHost?.()
   const gitProvider = getSshGitProvider(args.connectionId)
   if (!gitProvider) {
     return { error: `SSH connection "${args.connectionId}" not found or not connected` }
@@ -27,6 +29,7 @@ export async function addRemoteRepoFromPath(
   let repoKind: 'git' | 'folder' = args.kind ?? 'git'
   let resolvedPath = await resolveRemoteHomePath(args.connectionId, args.remotePath)
 
+  validateHost?.()
   // Resolve the host: a row stamped only `executionHostId: 'ssh:*'` is the same registration, and
   // missing it here registers a duplicate repo for a path the host already owns.
   const existing = store
@@ -60,6 +63,7 @@ export async function addRemoteRepoFromPath(
     }
   }
 
+  validateHost?.()
   const existingAfterRootResolve = store
     .getRepos()
     .find(
@@ -86,6 +90,7 @@ export async function addRemoteRepoFromPath(
     kind: repoKind,
     executionHostId: toSshExecutionHostId(args.connectionId)
   })
+  validateHost?.()
   const repo: Repo = {
     id: randomUUID(),
     path: resolvedPath,

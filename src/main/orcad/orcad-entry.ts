@@ -11,6 +11,9 @@
  * Chromium proves available at startup.
  */
 import process from 'node:process'
+import { KeybindingService } from '../keybindings/keybinding-service'
+import { createKeybindingFileOperations } from '../keybindings/keybinding-file-operations'
+import { setKeybindingFileOperationsForRpc } from '../runtime/rpc/methods/workspace-keybinding-file'
 import { setAppEnvironment, type AppEnvironment } from '../../shared/app-environment'
 import { setSecretStore, type SecretStore } from '../../shared/secret-store'
 import type { ServeReadiness } from '../server/serve-readiness'
@@ -190,6 +193,22 @@ async function startOrcadRuntime(
   // Why: orcad IS the runtime authority — loading as 'desktop' would classify its
   // own runtime-scheduled automations as ambiguous mirrors and orphan them.
   profileStoreForShutdown = profileStore
+  let keybindings: KeybindingService | null = null
+  setKeybindingFileOperationsForRpc(
+    createKeybindingFileOperations({
+      ensureFile: () => {
+        keybindings ??= new KeybindingService({
+          homePath: getAppEnvironment().getPath('home'),
+          getLegacyOverrides: () => profileStore.getSettings().keybindings,
+          legacyTabSwitchSeed: {
+            isPending: () => profileStore.getSettings().tabSwitchKeybindingSeed === 'pending',
+            markSeeded: () => profileStore.updateSettings({ tabSwitchKeybindingSeed: 'done' })
+          }
+        })
+        return keybindings.ensureFile()
+      }
+    })
+  )
   // Why: every SSH connect consults this sidecar. Left unbound it reports nothing trusted,
   // which is safe but silently discards accept records on every launch.
 

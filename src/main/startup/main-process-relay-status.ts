@@ -14,5 +14,6 @@ export function publishDesktopRelayStatus(
 ): void {
   state.desktopRelayStatus = status
   state.desktopRelayCellUrl = cellUrl
+  state.runtime?.notifyMobileRelayObservation({ status })
   state.mainWindow?.webContents.send('mobile:relayStatusChanged', getDesktopRelayStatus())
 }

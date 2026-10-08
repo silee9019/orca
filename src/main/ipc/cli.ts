@@ -83,73 +83,64 @@ async function hydrateLocalShellPathForCli(force = false): Promise<void> {
   }
 }
 
-export function registerCliHandlers(): void {
+export function createCliInstallOperations() {
   let staleAppImageRepairAttempt: {
     promise: Promise<CliInstallStatus | null>
     retryAfter: number
   } | null = null
+  return {
+    getInstallStatus: async (): Promise<CliInstallStatus> => {
+      await hydrateLocalShellPathForCli()
+      const installer = new CliInstaller()
+      const status = await installer.getStatus()
+      // Why: an AppImage update replaces the outer file while the managed symlink still targets the prior extracted payload.
+      const repairKey = resolveStaleAppImageRepairKey(status)
+      if (!repairKey || installer.isAppImageRegistrationOwnedBySibling(status)) {
+        return status
+      }
 
-  ipcMain.handle('cli:getInstallStatus', async (): Promise<CliInstallStatus> => {
-    await hydrateLocalShellPathForCli()
-    const installer = new CliInstaller()
-    const status = await installer.getStatus()
-    // Why: an AppImage update replaces the outer file while the managed symlink still targets the prior extracted payload.
-    const repairKey = resolveStaleAppImageRepairKey(status)
-    if (!repairKey || installer.isAppImageRegistrationOwnedBySibling(status)) {
-      return status
-    }
-
-    if (!staleAppImageRepairAttempt || Date.now() >= staleAppImageRepairAttempt.retryAfter) {
-      const promise = runLocalCliRegistrationOperation(async () => {
-        const currentInstaller = new CliInstaller()
-        const currentStatus = await currentInstaller.getStatus()
-        return resolveStaleAppImageRepairKey(currentStatus) === repairKey &&
-          !currentInstaller.isAppImageRegistrationOwnedBySibling(currentStatus)
-          ? currentInstaller.install()
-          : currentStatus
-      }).catch((error) => {
-        console.warn(
-          '[cli] Failed to repair stale AppImage registration:',
-          error instanceof Error ? error.message : String(error)
-        )
-        return null
-      })
-      staleAppImageRepairAttempt = { promise, retryAfter: Number.POSITIVE_INFINITY }
-      void promise.then((result) => {
-        if (staleAppImageRepairAttempt?.promise !== promise) {
-          return
-        }
-        staleAppImageRepairAttempt = result
-          ? null
-          : { ...staleAppImageRepairAttempt, retryAfter: Date.now() + APPIMAGE_REPAIR_RETRY_MS }
-      })
-    }
-    return (await staleAppImageRepairAttempt.promise) ?? status
-  })
-
-  ipcMain.handle('cli:install', async (): Promise<CliInstallStatus> => {
-    await hydrateLocalShellPathForCli(true)
-    return runLocalCliRegistrationOperation(() => new CliInstaller().install())
-  })
-
-  ipcMain.handle('cli:remove', async (): Promise<CliInstallStatus> => {
-    await hydrateLocalShellPathForCli()
-    return runLocalCliRegistrationOperation(() => new CliInstaller().remove())
-  })
-
-  ipcMain.handle(
-    'cli:getWslInstallStatus',
-    async (_event, args?: { distro?: string | null }): Promise<CliInstallStatus> => {
+      if (!staleAppImageRepairAttempt || Date.now() >= staleAppImageRepairAttempt.retryAfter) {
+        const promise = runLocalCliRegistrationOperation(async () => {
+          const currentInstaller = new CliInstaller()
+          const currentStatus = await currentInstaller.getStatus()
+          return resolveStaleAppImageRepairKey(currentStatus) === repairKey &&
+            !currentInstaller.isAppImageRegistrationOwnedBySibling(currentStatus)
+            ? currentInstaller.install()
+            : currentStatus
+        }).catch((error) => {
+          console.warn(
+            '[cli] Failed to repair stale AppImage registration:',
+            error instanceof Error ? error.message : String(error)
+          )
+          return null
+        })
+        staleAppImageRepairAttempt = { promise, retryAfter: Number.POSITIVE_INFINITY }
+        void promise.then((result) => {
+          if (staleAppImageRepairAttempt?.promise !== promise) {
+            return
+          }
+          staleAppImageRepairAttempt = result
+            ? null
+            : { ...staleAppImageRepairAttempt, retryAfter: Date.now() + APPIMAGE_REPAIR_RETRY_MS }
+        })
+      }
+      return (await staleAppImageRepairAttempt.promise) ?? status
+    },
+    install: async (): Promise<CliInstallStatus> => {
+      await hydrateLocalShellPathForCli(true)
+      return runLocalCliRegistrationOperation(() => new CliInstaller().install())
+    },
+    remove: async (): Promise<CliInstallStatus> => {
+      await hydrateLocalShellPathForCli()
+      return runLocalCliRegistrationOperation(() => new CliInstaller().remove())
+    },
+    getWslInstallStatus: async (args?: { distro?: string | null }): Promise<CliInstallStatus> => {
       // Why: status is a read-only probe; queuing it behind a long-running
       // repair/install would hang the Settings spinner for its duration, and
       // Settings re-polls, so a rare transient read self-corrects.
       return new WslCliInstaller({ distro: resolveWslCliDistro(args) }).getStatus()
-    }
-  )
-
-  ipcMain.handle(
-    'cli:installWsl',
-    async (_event, args?: { distro?: string | null }): Promise<CliInstallStatus> => {
+    },
+    installWsl: async (args?: { distro?: string | null }): Promise<CliInstallStatus> => {
       const distro = resolveWslCliDistro(args)
       return runWslCliRegistrationOperation(distro, async () => {
         const status = await new WslCliInstaller({ distro }).install()
@@ -161,12 +152,8 @@ export function registerCliHandlers(): void {
         }
         return status
       })
-    }
-  )
-
-  ipcMain.handle(
-    'cli:removeWsl',
-    async (_event, args?: { distro?: string | null }): Promise<CliInstallStatus> => {
+    },
+    removeWsl: async (args?: { distro?: string | null }): Promise<CliInstallStatus> => {
       const distro = resolveWslCliDistro(args)
       return runWslCliRegistrationOperation(distro, async () => {
         const status = await new WslCliInstaller({ distro }).remove()
@@ -179,5 +166,26 @@ export function registerCliHandlers(): void {
         return status
       })
     }
+  }
+}
+
+const cliInstallOperations = createCliInstallOperations()
+export function getCliInstallOperations(): ReturnType<typeof createCliInstallOperations> {
+  return cliInstallOperations
+}
+
+export function registerCliHandlers(): void {
+  const operations = getCliInstallOperations()
+  ipcMain.handle('cli:getInstallStatus', () => operations.getInstallStatus())
+  ipcMain.handle('cli:install', () => operations.install())
+  ipcMain.handle('cli:remove', () => operations.remove())
+  ipcMain.handle('cli:getWslInstallStatus', (_event, args?: { distro?: string | null }) =>
+    operations.getWslInstallStatus(args)
+  )
+  ipcMain.handle('cli:installWsl', (_event, args?: { distro?: string | null }) =>
+    operations.installWsl(args)
+  )
+  ipcMain.handle('cli:removeWsl', (_event, args?: { distro?: string | null }) =>
+    operations.removeWsl(args)
   )
 }

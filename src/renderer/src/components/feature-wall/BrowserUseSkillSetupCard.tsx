@@ -1,3 +1,4 @@
+import { useBrowserFeatureWallOwner } from './use-browser-feature-wall-owner'
 import type { JSX } from 'react'
 import {
   ORCA_CLI_SKILL_INSTALL_COMMAND,
@@ -26,10 +27,21 @@ export function BrowserUseSkillSetupCard(props: {
     ? buildSkillCommandForRuntime(ORCA_CLI_SKILL_UPDATE_COMMAND, activeSkillRuntime.agentRuntime)
     : ORCA_CLI_SKILL_UPDATE_COMMAND
 
-  const handleBeforeOpenTerminal = (): void => {
-    useAppStore.getState().recordFeatureInteraction('agent-browser-setup')
+  const handleBeforeOpenTerminal = (acknowledge = false): void | Promise<void> => {
+    const persisted = useAppStore.getState().recordFeatureInteraction('agent-browser-setup')
     localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, '1')
+    if (acknowledge) {
+      return persisted
+    }
   }
+  useBrowserFeatureWallOwner({
+    skill,
+    installDisabled: Boolean(activeSkillRuntime.installDisabledReason),
+    runtimeIdentity: activeSkillRuntime,
+    installIntent: async () => {
+      await handleBeforeOpenTerminal(true)
+    }
+  })
 
   const setupPanel = (
     <AgentSkillSetupPanel
@@ -64,7 +76,18 @@ export function BrowserUseSkillSetupCard(props: {
   )
 
   if (compact) {
-    return <div className="flex min-h-24 flex-1 items-center justify-center pt-3">{setupPanel}</div>
+    return (
+      <div
+        className="flex min-h-24 flex-1 items-center justify-center pt-3"
+        data-browser-feature-wall-setup
+      >
+        {setupPanel}
+      </div>
+    )
   }
-  return <div className="flex">{setupPanel}</div>
+  return (
+    <div className="flex" data-browser-feature-wall-setup>
+      {setupPanel}
+    </div>
+  )
 }

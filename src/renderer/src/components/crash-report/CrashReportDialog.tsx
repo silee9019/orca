@@ -1,3 +1,4 @@
+import { publishCrashReportOpenSurface } from '@/runtime/crash-report-open-surface'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
 import { useMountedRef } from '@/hooks/useMountedRef'
@@ -19,11 +20,35 @@ export function CrashReportDialog(): React.JSX.Element | null {
   const [open, setOpen] = useState(false)
   const [report, setReport] = useState<CrashReportRecord | null>(null)
   const [loading, setLoading] = useState(false)
-
-  const openCrashReport = useCallback((nextReport: CrashReportRecord): void => {
-    setReport(nextReport)
-    setOpen(true)
+  const [openIdentity, setOpenIdentity] = useState<{
+    epoch: number
+    source: 'help_menu' | 'automatic'
+  }>({ epoch: 0, source: 'automatic' })
+  const identityRef = useRef(openIdentity)
+  const advanceSurface = useCallback((source: 'help_menu' | 'automatic'): number => {
+    const next = { epoch: identityRef.current.epoch + 1, source }
+    identityRef.current = next
+    setOpenIdentity(next)
+    return next.epoch
   }, [])
+  const handleOpenChange = useCallback(
+    (value: boolean): void => {
+      if (!value) {
+        advanceSurface('automatic')
+      }
+      setOpen(value)
+    },
+    [advanceSurface]
+  )
+
+  const openCrashReport = useCallback(
+    (nextReport: CrashReportRecord): void => {
+      advanceSurface('automatic')
+      setReport(nextReport)
+      setOpen(true)
+    },
+    [advanceSurface]
+  )
 
   const loadCrashReport = useCallback(
     async (promptIfPresent: boolean): Promise<void> => {
@@ -49,6 +74,7 @@ export function CrashReportDialog(): React.JSX.Element | null {
         }
         setReport(displayedReport)
         if (nextReport && promptIfPresent) {
+          advanceSurface('automatic')
           setOpen(true)
         }
       } catch (error) {
@@ -59,7 +85,7 @@ export function CrashReportDialog(): React.JSX.Element | null {
         }
       }
     },
-    [mountedRef]
+    [advanceSurface, mountedRef]
   )
 
   useEffect(() => {
@@ -70,13 +96,26 @@ export function CrashReportDialog(): React.JSX.Element | null {
     void loadCrashReport(true)
   }, [loadCrashReport])
 
-  useEffect(() => {
-    return window.api.ui.onOpenCrashReport(() => {
-      setReport(null)
-      setOpen(true)
-      void loadCrashReport(false)
-    })
-  }, [loadCrashReport])
+  const openFromHelp = useCallback((): number => {
+    const epoch = advanceSurface('help_menu')
+    setReport(null)
+    setOpen(true)
+    void loadCrashReport(false)
+    return epoch
+  }, [advanceSurface, loadCrashReport])
+
+  useEffect(() => window.api.ui.onOpenCrashReport(openFromHelp), [openFromHelp])
+  useEffect(
+    () =>
+      publishCrashReportOpenSurface({
+        openFromHelp,
+        isCurrent: (epoch) =>
+          mountedRef.current &&
+          identityRef.current.epoch === epoch &&
+          identityRef.current.source === 'help_menu'
+      }),
+    [mountedRef, openFromHelp]
+  )
 
   useEffect(() => {
     const pendingReport = takePendingReactErrorBoundaryReport()
@@ -108,9 +147,11 @@ export function CrashReportDialog(): React.JSX.Element | null {
     <Suspense fallback={null}>
       <CrashReportDialogSurface
         open={open}
+        openEpoch={openIdentity.epoch}
+        openSource={openIdentity.source}
         report={report}
         loading={loading}
-        onOpenChange={setOpen}
+        onOpenChange={handleOpenChange}
         onReportChange={setReport}
       />
     </Suspense>

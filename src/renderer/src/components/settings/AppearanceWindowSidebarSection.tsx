@@ -1,8 +1,7 @@
+import { recordStatusBarToggleInteraction } from '../status-bar/status-bar-toggle-interaction'
 import type React from 'react'
 
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
-import type { StatusBarItem } from '../../../../shared/ui-chrome-types'
-import type { FeatureInteractionId } from '../../../../shared/feature-interaction-catalog'
 import { SearchableSetting } from './SearchableSetting'
 import { AppearanceAdvancedDisclosure } from './AppearanceAdvancedDisclosure'
 import { useAppStore } from '../../store'
@@ -34,31 +33,6 @@ type AppearanceWindowSidebarSectionProps = {
   settings: GlobalSettings
   updateSettings: (updates: Partial<GlobalSettings>) => void
   forceVisiblePrimary?: boolean
-}
-
-function recordStatusBarToggleInteraction(
-  id: StatusBarItem,
-  recordFeatureInteraction: (feature: FeatureInteractionId) => void
-): void {
-  if (id === 'resource-usage') {
-    recordFeatureInteraction('resource-manager')
-  } else if (id === 'ports') {
-    recordFeatureInteraction('ports')
-  } else if (id === 'ssh') {
-    recordFeatureInteraction('ssh')
-  } else if (
-    id === 'claude' ||
-    id === 'codex' ||
-    id === 'gemini' ||
-    id === 'opencode-go' ||
-    id === 'kimi' ||
-    id === 'antigravity' ||
-    id === 'minimax' ||
-    id === 'grok' ||
-    id === 'cursor'
-  ) {
-    recordFeatureInteraction('usage-tracking')
-  }
 }
 
 export function AppearanceWindowSidebarSection({

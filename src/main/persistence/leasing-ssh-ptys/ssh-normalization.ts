@@ -23,6 +23,8 @@ export function normalizeSshTarget(t: SshTarget): SshTarget {
   const target = { ...(t as LegacySshTarget) }
   const legacySyncEnabled = target.remoteWorkspaceSyncEnabled
   const currentGracePeriodSeconds = target.relayGracePeriodSeconds
+  const explicitGracePeriod =
+    target.relayGracePeriodExplicit === true && typeof currentGracePeriodSeconds === 'number'
   const legacyGracePeriodSeconds = target.remoteWorkspaceSyncGracePeriodSeconds
   const systemSshConnectionReuse = target.systemSshConnectionReuse
   const remoteRuntime = target.remoteRuntime
@@ -33,13 +35,16 @@ export function normalizeSshTarget(t: SshTarget): SshTarget {
   delete target.remoteWorkspaceSyncEnabled
   delete target.remoteWorkspaceSyncGracePeriodSeconds
   delete target.relayGracePeriodSeconds
+  delete target.relayGracePeriodExplicit
   delete target.systemSshConnectionReuse
   delete target.remoteRuntime
   delete target.remoteRuntimeResolution
   delete target.experimentalPtySourceCreditV1
   // Why: prefer the synced grace over stale relayGracePeriodSeconds so a user's "unlimited" (0) survives migration.
   const relayGracePeriodSeconds =
-    legacySyncEnabled === true && typeof legacyGracePeriodSeconds === 'number'
+    !explicitGracePeriod &&
+    legacySyncEnabled === true &&
+    typeof legacyGracePeriodSeconds === 'number'
       ? legacyGracePeriodSeconds
       : currentGracePeriodSeconds
   const normalized: SshTarget = {
@@ -49,9 +54,13 @@ export function normalizeSshTarget(t: SshTarget): SshTarget {
   // Why: old SSH form persisted 10800 even without a user choice; treat that legacy default as the new implicit default.
   if (
     relayGracePeriodSeconds !== undefined &&
-    relayGracePeriodSeconds !== LEGACY_DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS
+    (explicitGracePeriod ||
+      relayGracePeriodSeconds !== LEGACY_DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS)
   ) {
     normalized.relayGracePeriodSeconds = relayGracePeriodSeconds
+    if (explicitGracePeriod) {
+      normalized.relayGracePeriodExplicit = true
+    }
   }
   if (systemSshConnectionReuse === false) {
     normalized.systemSshConnectionReuse = false

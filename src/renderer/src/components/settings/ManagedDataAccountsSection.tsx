@@ -1,3 +1,5 @@
+import { AccountMountedActionError } from '../../../../shared/account-mounted-viewer-command'
+import { useMountedDataRemovalDialogControls } from '../../runtime/use-mounted-account-dialog-controls'
 import { useEffect, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import { callRuntimeRpc, type RuntimeClientTarget } from '@/runtime/runtime-rpc-client'
@@ -30,6 +32,14 @@ export function ManagedDataAccountsSection({
   const [busy, setBusy] = useState(false)
   const [removeId, setRemoveId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  useMountedDataRemovalDialogControls(provider, {
+    set: (id) => {
+      if (id !== null && (busy || !state?.accounts.some((entry) => entry.id === id))) {
+        throw new AccountMountedActionError('unavailable')
+      }
+      setRemoveId(id)
+    }
+  })
   const environmentId = target.kind === 'environment' ? target.environmentId : null
 
   useEffect(() => {

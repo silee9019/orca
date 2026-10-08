@@ -1,5 +1,6 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import { OrcaRuntimeWithAttachRemoteTerminalSourceRangeConsumer } from './orca-runtime-attach-remote-terminal-source-range-consumer'
+import type { MainTerminalBufferSnapshot } from './terminal-main-buffer-snapshot'
 import type { TerminalOscLinkRange } from '../../shared/terminal-osc-link-ranges'
 import type { HeadlessSeedMetadata } from './runtime-terminal-state-records'
 import {
@@ -9,6 +10,10 @@ import {
 } from './terminal-tail-restore-seed'
 
 export class OrcaRuntimeWithSerializeMainTerminalBuffer extends OrcaRuntimeWithAttachRemoteTerminalSourceRangeConsumer {
+  async getConfirmedTerminalForegroundProcess(ptyId: string): Promise<string | null> {
+    return (await this.ptyController?.confirmForegroundProcess?.(ptyId)) ?? null
+  }
+
   serializeMainTerminalBuffer(
     ptyId: string,
     opts: { scrollbackRows?: number } = {}
@@ -28,6 +33,13 @@ export class OrcaRuntimeWithSerializeMainTerminalBuffer extends OrcaRuntimeWithA
     terminalOwner?: 'shell'
   } | null> {
     return this.serializeHeadlessTerminalBuffer(ptyId, { ...opts, includeEmpty: true })
+  }
+
+  async getMainTerminalBufferSnapshot(
+    ptyId: string,
+    opts: { scrollbackRows?: number } = {}
+  ): Promise<MainTerminalBufferSnapshot | null> {
+    return (await this.ptyController?.getMainBufferSnapshot?.(ptyId, opts)) ?? null
   }
 
   async serializeHiddenOutputRecoveryBuffer(
@@ -92,6 +104,13 @@ export class OrcaRuntimeWithSerializeMainTerminalBuffer extends OrcaRuntimeWithA
 
   getTerminalSize(ptyId: string): { cols: number; rows: number } | null {
     return this.ptyController?.getSize?.(ptyId) ?? null
+  }
+
+  async getAppliedTerminalSize(ptyId: string): Promise<{ cols: number; rows: number } | null> {
+    if (this.ptyController?.getAppliedSize) {
+      return this.ptyController.getAppliedSize(ptyId)
+    }
+    return this.getTerminalSize(ptyId)
   }
 
   // Why: a width reflow on a normal-buffer PTY must re-stream the full

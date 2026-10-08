@@ -1,13 +1,10 @@
 // @vitest-environment happy-dom
+import { placement, eligibleInventory } from './skill-freshness-dialog-test-fixture'
 
 import { act, useState, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type {
-  SkillFreshnessInstallation,
-  SkillFreshnessInventory,
-  SkillUpdateRun
-} from '../../../../shared/skill-freshness'
+import type { SkillFreshnessInventory, SkillUpdateRun } from '../../../../shared/skill-freshness'
 import { SkillFreshnessUpdateDialog } from './SkillFreshnessUpdateDialog'
 import {
   consumeSkillFreshnessUpdateDialogRequest,
@@ -91,43 +88,6 @@ const skillsApi = {
   })
 }
 let pushRun: ((run: SkillUpdateRun) => void) | null = null
-
-function placement(
-  name: string,
-  overrides: Partial<SkillFreshnessInstallation> = {}
-): SkillFreshnessInstallation {
-  return {
-    id: `${name}-${overrides.rootId ?? 'home-agents'}`,
-    name,
-    rootId: 'home-agents',
-    providers: ['agent-skills'],
-    sourceKind: 'home',
-    sourceLabel: 'Agent skills home',
-    unresolvedPath: `/home/.agents/skills/${name}`,
-    resolvedPath: `/home/.agents/skills/${name}`,
-    physicalIdentity: `physical-${name}`,
-    topology: 'canonical-copy',
-    status: 'outdated',
-    installedReleaseRevision: 1,
-    installedAppVersion: '1.0.0',
-    currentReleaseRevision: 2,
-    currentPackageDigest: 'current',
-    currentAppVersion: '2.0.0',
-    observedPackageDigest: 'old',
-    errorCategory: null,
-    ...overrides
-  }
-}
-
-function eligibleInventory(): SkillFreshnessInventory {
-  return {
-    schemaVersion: 1,
-    installations: [placement('orca-cli')],
-    eligibleUpdateNames: ['orca-cli'],
-    scanIssues: [],
-    scannedAt: 1
-  }
-}
 
 let root: Root | null = null
 let container: HTMLDivElement | null = null

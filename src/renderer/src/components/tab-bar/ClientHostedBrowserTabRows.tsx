@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import { useClientHostedBrowserRowCommands } from './use-client-hosted-browser-row-commands'
+import { useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '../../store'
@@ -47,6 +48,39 @@ export default function ClientHostedBrowserTabRows({
     [focusGroup, groupActiveTabId, groupId, worktreeId]
   )
 
+  const pendingClose = useRef(new Set<string>())
+  const close = useCallback(
+    async (browserPageId: string) => {
+      if (pendingClose.current.has(browserPageId)) {
+        throw new Error('client_row_busy')
+      }
+      pendingClose.current.add(browserPageId)
+      try {
+        await closeClientHostedBrowserRow({ worktreeId, browserPageId })
+      } catch (error) {
+        toast.error(
+          translate(
+            'browser.clientHosted.hostRowCloseFailed',
+            "Couldn't close this page. The device hosting it may be busy — try again."
+          )
+        )
+        console.error('Failed to close client-hosted browser page:', error)
+        throw error
+      } finally {
+        pendingClose.current.delete(browserPageId)
+      }
+    },
+    [worktreeId]
+  )
+  useClientHostedBrowserRowCommands({
+    rows,
+    worktreeId,
+    groupId,
+    groupActiveTabId,
+    activate,
+    close
+  })
+
   if (rows.length === 0) {
     return null
   }
@@ -62,20 +96,7 @@ export default function ClientHostedBrowserTabRows({
           includeTopTabBorder={includeTopTabBorder}
           onActivate={() => activate(row.browserPageId)}
           onClose={() => {
-            void closeClientHostedBrowserRow({
-              worktreeId,
-              browserPageId: row.browserPageId
-            }).catch((error: unknown) => {
-              // Why a toast: this row is the only handle on a page the host does not render, so a
-              // refusal that only reaches the console leaves it sitting there as a missed click.
-              toast.error(
-                translate(
-                  'browser.clientHosted.hostRowCloseFailed',
-                  "Couldn't close this page. The device hosting it may be busy — try again."
-                )
-              )
-              console.error('Failed to close client-hosted browser page:', error)
-            })
+            void close(row.browserPageId).catch(() => {})
           }}
         />
       ))}

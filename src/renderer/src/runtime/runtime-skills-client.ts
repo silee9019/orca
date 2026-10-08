@@ -115,9 +115,13 @@ export async function previewSkillDeletionOnRuntimeTarget(
 
 export async function deleteSkillsOnRuntimeTarget(
   runtimeTarget: RuntimeClientTarget,
-  request: SkillDeleteRequest
+  request: SkillDeleteRequest,
+  signal?: AbortSignal
 ): Promise<SkillDeleteResult> {
   await assertSkillDeleteSupported(runtimeTarget)
+  if (signal?.aborted) {
+    throw new Error('skill_delete_cancelled')
+  }
   if (runtimeTarget.kind === 'local') {
     return window.api.skills.delete(request)
   }

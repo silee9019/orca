@@ -1,3 +1,4 @@
+import { useWorkspacePortOpenCommands } from './use-workspace-port-open-commands'
 import React, { useCallback, useMemo, useState } from 'react'
 import { RefreshCw, Server } from 'lucide-react'
 import { toast } from 'sonner'
@@ -12,7 +13,8 @@ import {
   refreshWorkspacePortScanAfterStop,
   resolvePortOpenInOrcaBrowser,
   scanWorkspacePortsForTarget,
-  workspacePortRuntimeTargetKey
+  workspacePortRuntimeTargetKey,
+  type PortOpenClickEvent
 } from '@/lib/workspace-port-actions'
 import { resolveLocalhostLabelRouteForPort } from '@/lib/workspace-port-localhost-label-selector'
 import { Button } from '@/components/ui/button'
@@ -142,18 +144,20 @@ export function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }):
   )
 
   const handleOpenPortInBrowser = useCallback(
-    async (port: WorkspacePort, event?: React.MouseEvent<HTMLButtonElement>) => {
+    async (port: WorkspacePort, event?: PortOpenClickEvent, isCurrent?: () => boolean) => {
+      const openInOrcaBrowser = resolvePortOpenInOrcaBrowser({
+        settings,
+        event,
+        isMac: navigator.userAgent.includes('Mac')
+      })
       const result = await openWorkspacePortInBrowser({
         port,
         activeWorktreeId: activeWorktree?.id,
         runtimeTarget,
         createBrowserTab,
         setRemoteBrowserPageHandle,
-        openInOrcaBrowser: resolvePortOpenInOrcaBrowser({
-          settings,
-          event,
-          isMac: navigator.userAgent.includes('Mac')
-        }),
+        openInOrcaBrowser,
+        isCurrent,
         localhostLabelRoute: resolveLocalhostLabelRouteForPort(useAppStore.getState(), port)
       })
       if (!result.ok) {
@@ -165,9 +169,20 @@ export function LocalWorkspacePortsPanel({ isVisible }: { isVisible: boolean }):
           { description: result.reason }
         )
       }
+      return { ...result, external: runtimeTarget?.kind === 'local' && !openInOrcaBrowser }
     },
     [activeWorktree?.id, createBrowserTab, runtimeTarget, setRemoteBrowserPageHandle, settings]
   )
+
+  useWorkspacePortOpenCommands({
+    isVisible: isVisible && Boolean(activeRepo),
+    runtimeTarget,
+    worktreeId: activeWorktree?.id,
+    repoId: activeRepo?.id,
+    scanKey,
+    scan: displayScan,
+    open: handleOpenPortInBrowser
+  })
 
   const { activePorts, otherWorkspacePorts, externalPorts } = useMemo(
     () => getLocalWorkspacePortSections(displayScan, activeRepo?.id, activeWorktree?.id),

@@ -1,3 +1,4 @@
+import { useAppStore } from '@/store'
 import { DeveloperPermissionsPane } from './DeveloperPermissionsPane'
 import { PrivacyPane } from './PrivacyPane'
 import { RuntimeEnvironmentsPane } from './RuntimeEnvironmentsPane'
@@ -30,6 +31,12 @@ export function renderServersSettingsSection(context: SettingsRenderContext): Re
         <RuntimeEnvironmentsPane
           settings={model.settings}
           setActiveRuntimeEnvironmentPreference={model.setActiveRuntimeEnvironmentPreference}
+          setProfileRuntimeEnvironmentPreference={(id) =>
+            useAppStore.getState().setActiveRuntimeEnvironmentPreference(id, { scope: 'profile' })
+          }
+          selectRuntimeEnvironmentForViewer={(id) =>
+            useAppStore.getState().setActiveRuntimeEnvironmentPreference(id, { scope: 'viewer' })
+          }
           canGeneratePairingUrl={!model.isWebClient}
           allowLocalRuntime={!model.isWebClient}
           addServerIntentSignal={model.remoteServerAddIntentSignal}

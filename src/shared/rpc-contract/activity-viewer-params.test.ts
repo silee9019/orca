@@ -1,0 +1,137 @@
+import { expect, it } from 'vitest'
+import { ActivityViewerParams } from './activity-viewer-params'
+it('requires an explicit host and activity surface with existing preference domains', () => {
+  for (const surface of ['sidebar-agents', 'activity-page']) {
+    for (const command of [
+      { operation: 'get' },
+      { operation: 'mark-all-read' },
+      { operation: 'clear-completed' },
+      { operation: 'clear-thread', paneKey: 'tab:one' },
+      { operation: 'clear-threads', paneKeys: ['tab:one', 'tab:two'] },
+      { operation: 'read-toggle', paneKey: 'tab:leaf' },
+      { operation: 'read-toggle-many', paneKeys: ['tab:one', 'tab:two'] },
+      { operation: 'group', by: 'project' },
+      { operation: 'read', filter: 'unread' },
+      { operation: 'compact', enabled: false },
+      { operation: 'children', enabled: true }
+    ]) {
+      expect(ActivityViewerParams.safeParse({ viewer: 'host', surface, ...command }).success).toBe(
+        true
+      )
+    }
+  }
+  for (const command of [
+    { viewer: 'host', operation: 'get' },
+    { viewer: 'host', surface: 'unknown', operation: 'get' },
+    { viewer: 'peer', surface: 'sidebar-agents', operation: 'get' },
+    { viewer: 'host', surface: 'activity-page', operation: 'group', by: 'repo' },
+    { viewer: 'host', surface: 'activity-page', operation: 'compact', enabled: 'true' }
+  ]) {
+    expect(ActivityViewerParams.safeParse(command).success).toBe(false)
+  }
+})
+
+it('keeps Activity scope origins and targets explicit and closed', () => {
+  const target = { viewer: 'host', surface: 'activity-page' }
+  for (const command of [
+    { operation: 'origin', kind: 'cli', hidden: true },
+    { operation: 'origin', kind: 'automation', hidden: false },
+    { operation: 'origin', kind: 'other-client', hidden: true },
+    { operation: 'scope-reset' },
+    { operation: 'host-toggle', host: 'ssh:fixture' },
+    { operation: 'hosts-toggle-all' }
+  ]) {
+    expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(true)
+  }
+  for (const command of [
+    { operation: 'origin', kind: 'unknown', hidden: true },
+    { operation: 'origin', kind: 'cli', hidden: 'true' },
+    { operation: 'host-toggle', host: '' },
+    { operation: 'scope-reset', repo: 'unexpected' },
+    { operation: 'clear-completed', paneKey: 'unexpected' },
+    { operation: 'clear-thread', paneKey: '' },
+    { operation: 'clear-threads', paneKeys: ['one'] },
+    { operation: 'clear-threads', paneKeys: ['one', 'one'] },
+    { operation: 'read-toggle', paneKey: '' },
+    { operation: 'read-toggle-many', paneKeys: ['one'] },
+    { operation: 'read-toggle-many', paneKeys: ['one', 'one'] }
+  ]) {
+    expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(false)
+  }
+})
+
+it('accepts an explicit Activity workspace jump and rejects empty targets', () => {
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: 'tab:leaf'
+    }).success
+  ).toBe(true)
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: ''
+    }).success
+  ).toBe(false)
+})
+
+it('requires an explicit target for select and rejects unsupported modifiers', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'select',
+    paneKey: 'tab:leaf'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, paneKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, ctrlKey: true }).success).toBe(false)
+})
+
+it('requires an explicit group key for a surface-local group toggle', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'group-toggle',
+    groupKey: 'status:done'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, groupKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, collapsed: true }).success).toBe(false)
+})
+
+it('accepts page-only close and rejects sidebar or extra destination fields', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'close' }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, destination: 'terminal' }).success).toBe(
+    false
+  )
+})
+
+it('accepts finite positive page resize and rejects extra or foreign targets', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'resize', width: 1000 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const width of [0, -1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, width }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+})
+
+it('accepts nonnegative finite offsets and rejects viewport selectors or delta fields', () => {
+  const command = { viewer: 'host', surface: 'sidebar-agents', operation: 'scroll', top: 0 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const top of [-1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, top }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...command, delta: 5 }).success).toBe(false)
+})

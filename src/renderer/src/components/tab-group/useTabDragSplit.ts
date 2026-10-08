@@ -30,6 +30,7 @@ import { canDropTabIntoPaneBody, isTabDragData, type TabDragItemData } from './t
 import { useTabDragGestureLifecycle } from './tab-drag-gesture-lifecycle'
 import { useTabDragHoverPreview, type HoveredTabDropTarget } from './tab-drag-hover-preview'
 import { commitTabDragDrop } from './tab-drag-drop-commit'
+import { useBrowserTabDragCancelCommands } from './use-browser-tab-drag-cancel-commands'
 
 export type { HoveredTabInsertion }
 export type { HoveredTabDropTarget }
@@ -104,6 +105,7 @@ export function useTabDragSplit({
   const [activeDrag, setActiveDrag] = useState<TabDragItemData | null>(null)
   const preDragActivationSnapshotRef = useRef<TabDragActivationSnapshot | null>(null)
   const tabDragActiveRef = useRef(false)
+  const gestureEpoch = useRef(0)
   const dragGeometryRef = useRef<TabGroupPanelGeometrySnapshot | null>(null)
   const clearDragStateRef = useRef<() => void>(() => {})
   const tabInsertion = useHoveredTabInsertion(isTabDragData, getDragPointer)
@@ -112,7 +114,8 @@ export function useTabDragSplit({
     installMissedEndFallback,
     releaseMissedEndFallback,
     releaseWebviewDragPassthrough,
-    setDragRootNode
+    setDragRootNode,
+    readGestureResources
   } = useTabDragGestureLifecycle({ clearDragStateRef, tabDragActiveRef })
   const {
     clear: clearHoveredDropTarget,
@@ -201,6 +204,7 @@ export function useTabDragSplit({
         return
       }
 
+      gestureEpoch.current += 1
       setActiveDrag(dragData)
       tabDragActiveRef.current = true
       installMissedEndFallback()
@@ -252,6 +256,18 @@ export function useTabDragSplit({
   const onDragCancel = useCallback(() => {
     finishDrag(true)
   }, [finishDrag])
+
+  useBrowserTabDragCancelCommands({
+    enabled,
+    worktreeId,
+    activeDrag,
+    snapshot: preDragActivationSnapshotRef,
+    active: tabDragActiveRef,
+    epoch: gestureEpoch,
+    hovered: hoveredDropTarget !== null || tabInsertion.hoveredTabInsertion !== null,
+    cancel: onDragCancel,
+    resources: readGestureResources
+  })
 
   return {
     activeDrag,

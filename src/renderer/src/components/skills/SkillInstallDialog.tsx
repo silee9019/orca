@@ -1,3 +1,6 @@
+import { skillInstallViewerHosts } from '@/runtime/skill-install-viewer-hosts'
+import { useSkillInstallViewerController } from '@/runtime/skill-install-viewer-controller'
+import { useSkillsViewerDialog } from '@/runtime/skills-viewer-controller'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -73,15 +76,12 @@ export function SkillInstallDialog({
     () => skillInstallWorkspaceChoices({ environmentId, folderWorkspaces, repos, worktreesByRepo }),
     [environmentId, folderWorkspaces, repos, worktreesByRepo]
   )
-  const sshConnections = useMemo(
-    () =>
-      [...sshTargetLabels.entries()].map(([id, label]) => ({
-        id,
-        label,
-        connected: sshConnectionStates.get(id)?.status === 'connected'
-      })),
-    [sshConnectionStates, sshTargetLabels]
-  )
+  const { sshConnections, ...viewerHosts } = skillInstallViewerHosts({
+    runtimeEnvironments,
+    runtimeStatus,
+    sshTargetLabels,
+    sshConnectionStates
+  })
 
   const resolveLink = useCallback(async (value: string): Promise<void> => {
     const shareId = parseSkillShareId(value)
@@ -268,6 +268,36 @@ export function SkillInstallDialog({
     onOpenChange(false)
   }
 
+  useSkillsViewerDialog('install', open, busy || bundleBusy || resolvingInitialLink, close)
+  const pickerViewerTargets = useSkillInstallViewerController({
+    open,
+    busy: busy || bundleBusy,
+    resolvingInitialLink,
+    link,
+    setLink,
+    inspect,
+    install,
+    cancelInstall,
+    activeOperationId: installProgress.activeOperationId,
+    preview,
+    destinationPreview,
+    clearDestinationPreview: () => setDestinationPreview(null),
+    result,
+    error,
+    environmentId,
+    setEnvironmentId,
+    scope,
+    setScope,
+    workspace,
+    setWorkspace,
+    executionTarget,
+    setExecutionTarget,
+    providers,
+    setProviders: setProviderChoice,
+    availableWorkspaces: workspaceChoices.map((choice) => choice.id),
+    ...viewerHosts
+  })
+
   const bundleVersion = preview && isSkillBundleVersion(preview.version) ? preview.version : null
 
   return (
@@ -327,6 +357,8 @@ export function SkillInstallDialog({
             onDiscard={() => void install(true)}
           >
             <SkillInstallTargetFields
+              agentViewerTarget={pickerViewerTargets.agents}
+              workspaceViewerTarget={pickerViewerTargets.workspace}
               environmentId={environmentId}
               onEnvironmentChange={(value) => {
                 setEnvironmentId(value)

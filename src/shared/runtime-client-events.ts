@@ -1,3 +1,6 @@
+import type { MobileRelayObservation } from './mobile-relay-observation'
+import type { SshPortObservation } from './ssh-port-observation'
+import type { SshCredentialObservation } from './ssh-credential-observation'
 import type { CreateWorktreeResult } from './worktree/create-types'
 import type {
   WorktreeDefaultTabsLaunch,
@@ -10,6 +13,9 @@ import type { RuntimeNativeChatLaunchDraftResolution } from './runtime-types'
 import type { RuntimeNavigationTarget } from './runtime-navigation'
 
 export type RuntimeClientEvent =
+  | { type: 'mobileRelayChanged'; observation: MobileRelayObservation }
+  | { type: 'sshPortsChanged'; observation: SshPortObservation }
+  | { type: 'sshCredentialsChanged'; observation: SshCredentialObservation }
   | { type: 'reposChanged' }
   | { type: 'worktreesChanged'; repoId: string }
   | ({ type: 'nativeChatLaunchDraftResolved' } & RuntimeNativeChatLaunchDraftResolution)
@@ -53,6 +59,9 @@ export type RuntimeClientEvent =
 export type RuntimeClientEventStreamMessage =
   | ({ type: 'ready'; subscriptionId: string } & {
       snapshot?: {
+        mobileRelay?: MobileRelayObservation
+        sshPorts?: SshPortObservation[]
+        sshCredentials?: SshCredentialObservation
         repos?: unknown[]
         sshStates?: { targetId: string; state: SshConnectionState }[]
       }

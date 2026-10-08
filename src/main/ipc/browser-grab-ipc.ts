@@ -1,3 +1,4 @@
+import { registerBrowserGrabCopyPriorityHandler } from './browser-grab-copy-priority-ipc'
 import { ipcMain } from 'electron'
 import { browserManager } from '../browser/browser-manager'
 import { onDocPreviewGrantRevoked } from '../browser/doc-preview-grant-registry'
@@ -67,6 +68,7 @@ function subscribeToPreviewGrantRevocation(): void {
 }
 
 export function registerBrowserGrabHandlers(): void {
+  registerBrowserGrabCopyPriorityHandler()
   subscribeToPreviewGrantRevocation()
   ipcMain.removeHandler('browser:setGrabMode')
   ipcMain.removeHandler('browser:awaitGrabSelection')

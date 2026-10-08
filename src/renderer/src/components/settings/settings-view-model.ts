@@ -7,8 +7,21 @@ import type { SettingsNavigationModel } from './use-settings-navigation-model'
 import { getSettingsNavGroupDefinitionsForSearch } from './settings-navigation-foundations'
 
 export function useSettingsNavigationActions(
-  model: SettingsStoreModel,
-  interactions: SettingsInteractionController
+  model: Pick<
+    SettingsStoreModel,
+    | 'activeSectionId'
+    | 'setActiveSectionId'
+    | 'setPendingNavRequestTick'
+    | 'setSettingsSearchQuery'
+    | 'settingsSearchQuery'
+  >,
+  interactions: Pick<
+    SettingsInteractionController,
+    | 'confirmDiscardSourceControlAiPromptChanges'
+    | 'contentScrollRef'
+    | 'pendingNavSectionRef'
+    | 'pendingScrollTargetRef'
+  >
 ) {
   const {
     activeSectionId,
@@ -50,16 +63,17 @@ export function useSettingsNavigationActions(
 
   const openComputerUseFromBrowser = useCallback(async () => {
     if (!(await confirmDiscardSourceControlAiPromptChanges())) {
-      return
+      return false
     }
     pendingNavSectionRef.current = 'computer-use'
     pendingScrollTargetRef.current = 'computer-use'
     if (settingsSearchQuery !== '') {
       setSettingsSearchQuery('')
-      return
+      return true
     }
     // Why: pending refs don't schedule a render; bump state to rerun the jump effect.
     setPendingNavRequestTick((tick) => tick + 1)
+    return true
   }, [
     confirmDiscardSourceControlAiPromptChanges,
     pendingNavSectionRef,

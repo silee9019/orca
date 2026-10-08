@@ -5,6 +5,7 @@ export type { SparsePresetDraft } from '../sparse/SparseCheckoutPresetDraftForm'
 
 type SparsePresetDraftEditorProps = {
   draft: SparsePresetDraft
+  viewerScope?: { repoId: string; ownerKey: string }
   setDraft: (draft: SparsePresetDraft | null) => void
   nameError: string | null
   parsedDirectories: SparsePresetDirectoryParseResult | null

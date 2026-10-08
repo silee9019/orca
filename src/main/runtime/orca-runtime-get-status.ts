@@ -177,6 +177,22 @@ export class OrcaRuntimeWithGetStatus extends OrcaRuntimeWithGetRuntimeId {
     this.ptyController = controller
   }
 
+  async readPtyDataListenerCount(
+    rendererId: number,
+    timeoutMs: number,
+    signal?: AbortSignal
+  ): Promise<number> {
+    const notifier = this.notifier
+    if (!notifier?.readPtyDataListenerCount) {
+      throw new Error('renderer_listener_count_unavailable')
+    }
+    const count = await notifier.readPtyDataListenerCount(rendererId, timeoutMs, signal)
+    if (this.notifier !== notifier || signal?.aborted) {
+      throw new Error('renderer_listener_count_owner_changed_or_cancelled')
+    }
+    return count
+  }
+
   setNotifier(notifier: RuntimeNotifier | null): void {
     this.notifier = notifier
     if (notifier) {

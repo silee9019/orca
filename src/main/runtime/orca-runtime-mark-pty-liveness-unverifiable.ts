@@ -221,8 +221,13 @@ export class OrcaRuntimeWithMarkPtyLivenessUnverifiable extends OrcaRuntimeWithO
     return this.remoteDesktopFloor.claimViewer(ptyId, subscriptionKey)
   }
 
-  claimRemoteDesktopHost(ptyId: string, cols: number, rows: number): Promise<boolean> {
-    return this.remoteDesktopFloor.claimHost(ptyId, cols, rows)
+  claimRemoteDesktopHost(
+    ptyId: string,
+    cols: number,
+    rows: number,
+    ownerMatches?: () => boolean
+  ): Promise<boolean> {
+    return this.remoteDesktopFloor.claimHost(ptyId, cols, rows, ownerMatches)
   }
 
   unregisterRemoteDesktopViewer(ptyId: string, subscriptionKey: string): Promise<boolean> {

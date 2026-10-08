@@ -1,6 +1,6 @@
 import type { Session } from './session'
 import { SessionNotFoundError } from './types'
-import type { SessionInfo, TakePendingOutputResult, TerminalSnapshot } from './types'
+import type { KillRequest, SessionInfo, TakePendingOutputResult, TerminalSnapshot } from './types'
 import type { CreateOrAttachResult } from './terminal-host-create-contract'
 import type { TerminalHostOptions } from './terminal-host-options'
 import { disposeTerminalHostSessions } from './terminal-host-disposal'
@@ -12,7 +12,10 @@ import type { InternalCreateOrAttachOptions } from './terminal-host-agent-sessio
 import { TerminalHostAgentSessionGenerations } from './terminal-host-agent-session-generations'
 import { resolveTerminalHostSessionCwd } from './terminal-host-session-cwd'
 import { TerminalHostTombstones } from './terminal-host-tombstones'
-import { listLiveTerminalHostSessions } from './terminal-host-session-listing'
+import {
+  hasLiveTerminalHostSessions,
+  listLiveTerminalHostSessions
+} from './terminal-host-session-listing'
 import { createOrAttachTerminalSession } from './terminal-host-session-create'
 import { TerminalAttachCanceledError } from './daemon-errors'
 import { waitForTerminalAttachOperation } from './terminal-attach-cancellation'
@@ -22,6 +25,7 @@ import { inspectTerminalHostProcess } from './terminal-host-process-inspection'
 import type { TerminalHostProcessInspection } from './terminal-host-process-inspection'
 import {
   confirmTerminalHostForegroundProcess,
+  getTerminalHostForegroundProcess,
   confirmTerminalHostShellForeground,
   getSettledTerminalHostSnapshot,
   getTerminalHostAppliedSize,
@@ -173,7 +177,14 @@ export class TerminalHost {
     this.sessions.get(sessionId)?.resumeProducer(source)
   }
 
-  kill(sessionId: string, opts: { immediate?: boolean } = {}): Promise<void> {
+  assertSessionIncarnation(sessionId: string, expectedIncarnationId: string): void {
+    getAliveTerminalHostSession(this.sessions, sessionId, expectedIncarnationId)
+  }
+
+  kill(sessionId: string, opts: Omit<KillRequest['payload'], 'sessionId'> = {}): Promise<void> {
+    if (opts.expectedIncarnationId !== undefined) {
+      this.assertSessionIncarnation(sessionId, opts.expectedIncarnationId)
+    }
     const pending = this.sessionTeardown.get(sessionId)
     if (pending) {
       return Promise.resolve(
@@ -212,18 +223,12 @@ export class TerminalHost {
   }
 
   async getCwd(sessionId: string): Promise<string | null> {
-    return await resolveTerminalHostSessionCwd(
-      getAliveTerminalHostSession(this.sessions, sessionId)
-    )
+    return resolveTerminalHostSessionCwd(getAliveTerminalHostSession(this.sessions, sessionId))
   }
 
   // Why: null-not-throw — fetched for the tab-bar icon, so a vanished pane should quietly yield "no agent".
   getForegroundProcess(sessionId: string): string | null {
-    const session = this.sessions.get(sessionId)
-    if (!session || !session.isAlive) {
-      return null
-    }
-    return session.getForegroundProcess()
+    return getTerminalHostForegroundProcess(this.sessions.get(sessionId))
   }
 
   inspectProcess(
@@ -313,12 +318,7 @@ export class TerminalHost {
   }
 
   hasLiveSessions(): boolean {
-    let hasLive = false
-    // Read every Session, even after a live one, to preserve the inventory's error order.
-    for (const session of this.sessions.values()) {
-      hasLive = session.isAlive || hasLive
-    }
-    return hasLive
+    return hasLiveTerminalHostSessions(this.sessions)
   }
 
   dispose(): Promise<void> {

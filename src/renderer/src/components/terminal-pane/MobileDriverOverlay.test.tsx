@@ -29,6 +29,7 @@ vi.mock('react', async () => {
     useCallback<T extends (...args: never[]) => unknown>(callback: T): T {
       return callback
     },
+    useEffect(): void {},
     useId(): string {
       hookRuntime.id += 1
       return `test-id-${hookRuntime.id}`

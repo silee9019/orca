@@ -1,3 +1,7 @@
+import {
+  useBrowserGrabToastCommands,
+  type BrowserGrabToastOwner
+} from './use-browser-grab-toast-commands'
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import { CircleCheck, Image, OctagonX } from 'lucide-react'
 import {
@@ -11,16 +15,54 @@ import { translate } from '@/i18n/i18n'
 import type { BrowserPageGrabToastState } from '../describe-page/browser-page-types'
 
 export function BrowserPageGrabToast({
+  commandOwner,
   grabToast,
   grabToastTimerRef,
   dismissGrabToast,
   setGrabToast
 }: {
+  commandOwner?: BrowserGrabToastOwner
   grabToast: BrowserPageGrabToastState
   grabToastTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | undefined>
   dismissGrabToast: () => void
   setGrabToast: Dispatch<SetStateAction<BrowserPageGrabToastState | null>>
 }): React.JSX.Element {
+  const feedbackMessage = translate(
+    'auto.components.browser.pane.BrowserPane.f30d2d35a7',
+    'Screenshotted'
+  )
+  const copyScreenshot = async (
+    verified: boolean,
+    stillCurrent: () => boolean
+  ): Promise<boolean> => {
+    const dataUrl = grabToast.payload?.screenshot?.dataUrl
+    if (!dataUrl?.startsWith('data:image/png;base64,') || !stillCurrent()) {
+      return false
+    }
+    if (verified) {
+      const ack = await window.api.ui.writeVerifiedClipboardImage(dataUrl)
+      if (ack.written !== true || !stillCurrent()) {
+        return false
+      }
+    } else {
+      void window.api.ui.writeClipboardImage(dataUrl)
+    }
+    setGrabToast((prev) =>
+      prev && prev.payload === grabToast.payload
+        ? {
+            ...prev,
+            message: feedbackMessage
+          }
+        : prev
+    )
+    return true
+  }
+  useBrowserGrabToastCommands({
+    identity: commandOwner,
+    toast: grabToast,
+    feedbackMessage,
+    copy: copyScreenshot
+  })
   return (
     <div
       className="absolute z-30 flex items-center animate-in fade-in zoom-in-95 duration-150"
@@ -72,21 +114,7 @@ export function BrowserPageGrabToast({
             <DropdownMenuContent align="start" sideOffset={4}>
               <DropdownMenuItem
                 onSelect={() => {
-                  const dataUrl = grabToast.payload?.screenshot?.dataUrl
-                  if (dataUrl?.startsWith('data:image/png;base64,')) {
-                    void window.api.ui.writeClipboardImage(dataUrl)
-                    setGrabToast((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            message: translate(
-                              'auto.components.browser.pane.BrowserPane.f30d2d35a7',
-                              'Screenshotted'
-                            )
-                          }
-                        : null
-                    )
-                  }
+                  void copyScreenshot(false, () => true)
                 }}
               >
                 <Image className="size-3.5" />

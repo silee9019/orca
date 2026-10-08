@@ -15,7 +15,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { BrowserCookieImportDisclosure } from '@/components/BrowserCookieImportDisclosure'
 import { BrowserCookieImportMachineNotice } from '@/components/BrowserCookieImportMachineNotice'
-import { useAppStore } from '@/store'
+import {
+  useBrowserToolbarSettingsCommands,
+  type BrowserToolbarSettingsOwner
+} from './use-browser-toolbar-settings-commands'
 import { BROWSER_FAMILY_LABELS } from '../../../../../shared/constants'
 import type {
   BrowserSessionProfile,
@@ -36,6 +39,7 @@ import {
 } from './browser-chrome-folded-tools'
 
 type BrowserToolbarMenuDropdownProps = {
+  commandOwner?: BrowserToolbarSettingsOwner
   menuOpen: boolean
   onMenuOpenChange: (open: boolean) => void
   allProfiles: BrowserSessionProfile[]
@@ -53,6 +57,7 @@ type BrowserToolbarMenuDropdownProps = {
 }
 
 export function BrowserToolbarMenuDropdown({
+  commandOwner,
   menuOpen,
   onMenuOpenChange,
   allProfiles,
@@ -68,6 +73,7 @@ export function BrowserToolbarMenuDropdown({
   onApplyViewportPreset,
   overflow
 }: BrowserToolbarMenuDropdownProps): React.JSX.Element {
+  const { openSettings, itemRef } = useBrowserToolbarSettingsCommands(commandOwner, menuOpen)
   return (
     <DropdownMenu modal={false} open={menuOpen} onOpenChange={onMenuOpenChange}>
       <DropdownMenuTrigger asChild>
@@ -238,12 +244,7 @@ export function BrowserToolbarMenuDropdown({
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onSelect={() => {
-            useAppStore.getState().openSettingsTarget({ pane: 'browser', repoId: null })
-            useAppStore.getState().openSettingsPage()
-          }}
-        >
+        <DropdownMenuItem ref={itemRef} onSelect={openSettings}>
           <Settings className="mr-2 size-3.5" />
           {translate(
             'auto.components.browser.pane.BrowserToolbarMenu.a771c2b6c8',

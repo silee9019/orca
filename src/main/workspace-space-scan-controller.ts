@@ -129,12 +129,10 @@ export class WorkspaceSpaceScanController {
       repoOffset,
       worktreeOffset,
       limit,
-      repos: repos
-        .slice(repoOffset, repoOffset + limit)
-        .map((repo) => ({
-          ...repo,
-          error: repo.error === null ? null : 'Selected host analysis unavailable.'
-        })),
+      repos: repos.slice(repoOffset, repoOffset + limit).map((repo) => ({
+        ...repo,
+        error: repo.error === null ? null : 'Selected host analysis unavailable.'
+      })),
       worktrees: worktrees
         .slice(worktreeOffset, worktreeOffset + limit)
         .map(({ topLevelItems, ...row }) => ({

@@ -1,17 +1,13 @@
+import { useBrowserContextMenuInspect } from './use-browser-context-menu-inspect'
+import { useBrowserContextMenuLinkTab } from './use-browser-context-menu-link-tab'
+import { useBrowserContextMenuClipboard } from './use-browser-context-menu-clipboard'
+import { useBrowserContextMenuExternalOpen } from './use-browser-context-menu-external-open'
+import { useBrowserContextMenuKeyboard } from './use-browser-context-menu-keyboard'
+import { useBrowserContextMenuCommands } from './use-browser-context-menu-commands'
 import { windowDipToCssPx } from '@/lib/ui-zoom'
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MutableRefObject
-} from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
-import { normalizeExternalBrowserUrl } from '../../../../../shared/browser-url'
-import { resolveBrowserSourceUnifiedTab } from '@/lib/browser-workspace-source-resolution'
 import type { BrowserPageContextMenuState } from '../describe-page/browser-page-types'
 
 // `focus:` rather than `focus-visible:` — items are only ever focused programmatically
@@ -21,6 +17,7 @@ const MENU_ITEM_CLASS =
 
 export function BrowserPageContextMenu({
   browserPageId,
+  isActive,
   worktreeId,
   canGoBack,
   canGoForward,
@@ -28,13 +25,13 @@ export function BrowserPageContextMenu({
   onReload
 }: {
   browserPageId: string
+  isActive: boolean
   worktreeId: string
   canGoBack: boolean
   canGoForward: boolean
-  webviewRef: MutableRefObject<Electron.WebviewTag | null>
+  webviewRef: RefObject<Pick<Electron.WebviewTag, 'focus' | 'goBack' | 'goForward'> | null>
   onReload: () => void
 }): React.JSX.Element | null {
-  const createBrowserTab = useAppStore((s) => s.createBrowserTab)
   const [contextMenu, setContextMenu] = useState<BrowserPageContextMenuState | null>(null)
   const contextMenuRef = useRef<HTMLDivElement>(null)
 
@@ -76,61 +73,22 @@ export function BrowserPageContextMenu({
     }
   }, [webviewRef])
 
-  const menuItems = useCallback((): HTMLButtonElement[] => {
-    const el = contextMenuRef.current
-    if (!el) {
-      return []
-    }
-    return [...el.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')]
-  }, [])
-
-  useEffect(() => {
-    if (!contextMenu) {
-      return
-    }
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        closeMenu()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [closeMenu, contextMenu])
-
-  // Why: role="menu" is unreachable by keyboard unless focus moves in on open.
-  useEffect(() => {
-    if (!contextMenu) {
-      return
-    }
-    menuItems()[0]?.focus()
-  }, [contextMenu, menuItems])
-
-  const handleMenuKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>): void => {
-      const items = menuItems()
-      if (items.length === 0) {
-        return
-      }
-      const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement)
-      let nextIndex: number
-      if (e.key === 'ArrowDown') {
-        nextIndex = (currentIndex + 1) % items.length
-      } else if (e.key === 'ArrowUp') {
-        nextIndex = (currentIndex <= 0 ? items.length : currentIndex) - 1
-      } else if (e.key === 'Home') {
-        nextIndex = 0
-      } else if (e.key === 'End') {
-        nextIndex = items.length - 1
-      } else {
-        return
-      }
-      e.preventDefault()
-      e.stopPropagation()
-      items[nextIndex]?.focus()
-    },
-    [menuItems]
-  )
+  const inspect = useBrowserContextMenuInspect(browserPageId, closeMenu)
+  const openLink = useBrowserContextMenuLinkTab(contextMenu, closeMenu, worktreeId, browserPageId)
+  const copy = useBrowserContextMenuClipboard(contextMenu, closeMenu)
+  const openExternal = useBrowserContextMenuExternalOpen(contextMenu, closeMenu)
+  const handleMenuKeyDown = useBrowserContextMenuKeyboard(contextMenuRef, contextMenu, closeMenu)
+  useBrowserContextMenuCommands({
+    page: browserPageId,
+    active: isActive,
+    menu: contextMenu,
+    ref: contextMenuRef,
+    close: closeMenu,
+    openExternal,
+    copy,
+    openLink,
+    inspect
+  })
 
   // Why: ancestor CSS (transform/backdrop-filter) can shift position:fixed even via a body Portal, so measure/correct before paint; also flip on viewport overflow.
   useLayoutEffect(() => {
@@ -183,26 +141,7 @@ export function BrowserPageContextMenu({
       >
         {contextMenu.linkUrl ? (
           <>
-            <button
-              role="menuitem"
-              className={MENU_ITEM_CLASS}
-              onClick={() => {
-                const sourceUnifiedTab = resolveBrowserSourceUnifiedTab(
-                  useAppStore.getState(),
-                  browserPageId,
-                  worktreeId
-                )
-                createBrowserTab(worktreeId, contextMenu.linkUrl!, {
-                  title: contextMenu.linkUrl!,
-                  activate: false,
-                  ...(sourceUnifiedTab ? { afterTabId: sourceUnifiedTab.id } : {}),
-                  ...(sourceUnifiedTab?.executionHostId
-                    ? { executionHostId: sourceUnifiedTab.executionHostId }
-                    : {})
-                })
-                closeMenu()
-              }}
-            >
+            <button role="menuitem" className={MENU_ITEM_CLASS} onClick={() => openLink()}>
               {translate(
                 'auto.components.browser.pane.BrowserPane.b5b87d6cbb',
                 'Open Link In Orca Browser'
@@ -211,13 +150,7 @@ export function BrowserPageContextMenu({
             <button
               role="menuitem"
               className={MENU_ITEM_CLASS}
-              onClick={() => {
-                const targetUrl = normalizeExternalBrowserUrl(contextMenu.linkUrl!)
-                if (targetUrl) {
-                  void window.api.shell.openUrl(targetUrl)
-                }
-                closeMenu()
-              }}
+              onClick={() => openExternal('link')}
             >
               {translate(
                 'auto.components.browser.pane.BrowserPane.8ce4f6b12e',
@@ -226,11 +159,9 @@ export function BrowserPageContextMenu({
             </button>
             <button
               role="menuitem"
+              data-browser-context-action="copy-link"
               className={MENU_ITEM_CLASS}
-              onClick={() => {
-                void window.api.ui.writeClipboardText(contextMenu.linkUrl ?? '')
-                closeMenu()
-              }}
+              onClick={() => copy('link')}
             >
               {translate(
                 'auto.components.browser.pane.BrowserPane.efb0e8f7f3',
@@ -244,11 +175,9 @@ export function BrowserPageContextMenu({
           <>
             <button
               role="menuitem"
+              data-browser-context-action="copy-selection"
               className={MENU_ITEM_CLASS}
-              onClick={() => {
-                void window.api.ui.writeClipboardText(contextMenu.selectionText)
-                closeMenu()
-              }}
+              onClick={() => copy('selection')}
             >
               {translate('auto.components.browser.pane.BrowserPane.2a4c4b8e1f', 'Copy')}
             </button>
@@ -257,6 +186,7 @@ export function BrowserPageContextMenu({
         ) : null}
         <button
           role="menuitem"
+          data-browser-context-action="back"
           disabled={!canGoBack}
           className={MENU_ITEM_CLASS}
           onClick={() => {
@@ -268,6 +198,7 @@ export function BrowserPageContextMenu({
         </button>
         <button
           role="menuitem"
+          data-browser-context-action="forward"
           disabled={!canGoForward}
           className={MENU_ITEM_CLASS}
           onClick={() => {
@@ -279,6 +210,7 @@ export function BrowserPageContextMenu({
         </button>
         <button
           role="menuitem"
+          data-browser-context-action="reload"
           className={MENU_ITEM_CLASS}
           onClick={() => {
             onReload()
@@ -288,17 +220,7 @@ export function BrowserPageContextMenu({
           {translate('auto.components.browser.pane.BrowserPane.0e080d820e', 'Reload')}
         </button>
         <div className="my-1 h-px bg-border/70" />
-        <button
-          role="menuitem"
-          className={MENU_ITEM_CLASS}
-          onClick={() => {
-            const targetUrl = normalizeExternalBrowserUrl(contextMenu.pageUrl)
-            if (targetUrl) {
-              void window.api.shell.openUrl(targetUrl)
-            }
-            closeMenu()
-          }}
-        >
+        <button role="menuitem" className={MENU_ITEM_CLASS} onClick={() => openExternal('page')}>
           {translate(
             'auto.components.browser.pane.BrowserPane.f7ab83f7ed',
             'Open Page In Default Browser'
@@ -306,11 +228,9 @@ export function BrowserPageContextMenu({
         </button>
         <button
           role="menuitem"
+          data-browser-context-action="copy-page-url"
           className={MENU_ITEM_CLASS}
-          onClick={() => {
-            void window.api.ui.writeClipboardText(contextMenu.pageUrl)
-            closeMenu()
-          }}
+          onClick={() => copy('page')}
         >
           {translate('auto.components.browser.pane.BrowserPane.1b179ab561', 'Copy Page URL')}
         </button>
@@ -319,8 +239,7 @@ export function BrowserPageContextMenu({
           role="menuitem"
           className={MENU_ITEM_CLASS}
           onClick={() => {
-            void window.api.browser.openDevTools({ browserPageId })
-            closeMenu()
+            void inspect()
           }}
         >
           {translate('auto.components.browser.pane.BrowserPane.a8f37f70c3', 'Inspect Page')}

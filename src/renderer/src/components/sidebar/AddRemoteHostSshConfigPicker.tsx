@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 const EMPTY_CONFIG_HOSTS: SshConfigHostSummary[] = []
 
 export function AddRemoteHostSshConfigPicker({
+  query,
+  onQueryDraftChange,
   hosts = EMPTY_CONFIG_HOSTS,
   totalHostCount = 0,
   newHostCount = 0,
@@ -27,6 +29,8 @@ export function AddRemoteHostSshConfigPicker({
   onBack,
   onAddAllToOrca
 }: {
+  query: string
+  onQueryDraftChange: (query: string) => void
   hosts: SshConfigHostSummary[]
   totalHostCount: number
   newHostCount: number
@@ -42,7 +46,7 @@ export function AddRemoteHostSshConfigPicker({
   onBack: () => void
   onAddAllToOrca: () => void
 }): React.JSX.Element {
-  const [query, setQuery] = useState('')
+  const lastDraftQuery = useRef(query)
   const queryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(
     () => () => {
@@ -52,6 +56,13 @@ export function AddRemoteHostSshConfigPicker({
     },
     []
   )
+  useEffect(() => {
+    if (query !== lastDraftQuery.current && queryTimer.current) {
+      clearTimeout(queryTimer.current)
+      queryTimer.current = null
+    }
+    lastDraftQuery.current = query
+  }, [query])
   const isResolving = resolvingAlias != null
   // Why: filtering re-runs against a cached parse, so keep the field usable while a
   // refresh (or a failed load the user can retry) is outstanding.
@@ -81,7 +92,8 @@ export function AddRemoteHostSshConfigPicker({
         value={query}
         onChange={(event) => {
           const value = event.target.value
-          setQuery(value)
+          lastDraftQuery.current = value
+          onQueryDraftChange(value)
           if (queryTimer.current) {
             clearTimeout(queryTimer.current)
           }

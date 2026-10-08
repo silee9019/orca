@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { registerUsageShareActions } from '../../runtime/usage-share-actions'
 import { toPng } from 'html-to-image'
 import { Check, Copy, Share2 } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -18,6 +19,7 @@ function XIcon(): React.JSX.Element {
 }
 
 export function ShareUsageButton(props: ShareUsageButtonProps): React.JSX.Element {
+  const [shareOpen, setShareOpen] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
   const [capturing, setCapturing] = useState(false)
@@ -116,8 +118,23 @@ export function ShareUsageButton(props: ShareUsageButtonProps): React.JSX.Elemen
     await window.api.shell.openUrl(url)
   }, [props])
 
+  useEffect(
+    () =>
+      registerUsageShareActions(props.provider, {
+        open: () => setShareOpen(true),
+        copy: async () => {
+          if (!cardRef.current || capturing) {
+            throw new Error('usage_share_card_unavailable')
+          }
+          await handleCopy()
+        },
+        shareToX: handleShareToX
+      }),
+    [props.provider, capturing, handleCopy, handleShareToX]
+  )
+
   return (
-    <Dialog>
+    <Dialog open={shareOpen} onOpenChange={setShareOpen}>
       <TooltipProvider delayDuration={250}>
         <Tooltip>
           <TooltipTrigger asChild>

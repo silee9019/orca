@@ -54,6 +54,20 @@ function describeSkippedHosts(hosts: readonly AiVaultSearchHostOutcome[]): strin
     : null
 }
 
+export async function enableAiVaultSearchFromPanel(
+  onRetry: () => void,
+  enabled = true
+): Promise<void> {
+  const store = useAppStore.getState()
+  await store.updateSettingsOrThrow({
+    aiVaultSearch: { ...resolveAiVaultSearchSettings(store.settings), enabled }
+  })
+  if (enabled) {
+    store.markFeatureTipsSeen(['agent-session-search'])
+  }
+  onRetry()
+}
+
 export function AiVaultPanelSearch({
   search,
   noAgents,
@@ -70,12 +84,7 @@ export function AiVaultPanelSearch({
     setSaving(true)
     setSaveError(false)
     try {
-      const store = useAppStore.getState()
-      await store.updateSettingsOrThrow({
-        aiVaultSearch: { ...resolveAiVaultSearchSettings(store.settings), enabled: true }
-      })
-      store.markFeatureTipsSeen(['agent-session-search'])
-      onRetry()
+      await enableAiVaultSearchFromPanel(onRetry)
     } catch {
       setSaveError(true)
     } finally {

@@ -1,3 +1,4 @@
+import type { WebRuntimeBrowserCreationObserver } from '@/runtime/web-runtime-browser-creation-receipt'
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../../types'
 import type {
@@ -139,7 +140,10 @@ export type BrowserSlice = {
     url: string,
     options?: CreateBrowserTabOptions
   ) => BrowserWorkspace
-  openNewBrowserTabInActiveWorkspace: (groupId: string) => Promise<void>
+  openNewBrowserTabInActiveWorkspace: (
+    groupId: string,
+    onCreationReceipt?: WebRuntimeBrowserCreationObserver
+  ) => Promise<void>
   /** `profileId: null` uses the workspace default profile. */
   openBrowserProfileTabInActiveWorkspace: (
     url: string,
@@ -227,7 +231,10 @@ export type BrowserSlice = {
     label: string
   ) => Promise<BrowserSessionProfile | null>
   deleteBrowserSessionProfile: (profileId: string) => Promise<boolean>
-  importCookiesToProfile: (profileId: string) => Promise<BrowserCookieImportExecutionResult>
+  importCookiesToProfile: (
+    profileId: string,
+    filePath?: string
+  ) => Promise<BrowserCookieImportExecutionResult>
   clearBrowserSessionImportState: () => void
   detectedBrowsers: {
     family: string

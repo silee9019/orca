@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { registerAccountLoginLinkControls } from '../../runtime/account-login-link-controls'
 import { Check, Copy, ExternalLink } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { useClipboardTextCopyFeedback } from '@/hooks/use-clipboard-text-copy-feedback'
@@ -11,6 +13,17 @@ import { useCodexPendingLoginUrl } from './use-codex-pending-login-url'
 export function CodexLoginLinkNotice(): React.JSX.Element | null {
   const url = useCodexPendingLoginUrl()
   const { copyText, status } = useClipboardTextCopyFeedback(url ?? '')
+  useEffect(() => {
+    if (!url) {
+      return
+    }
+    return registerAccountLoginLinkControls({
+      copy: copyText,
+      open: async () => {
+        await window.api.shell.openUrl(url)
+      }
+    })
+  }, [url, copyText])
   if (!url) {
     return null
   }

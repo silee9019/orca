@@ -1,3 +1,4 @@
+import { useBrowserBannerCommands } from './use-browser-banner-commands'
 import type { Dispatch, SetStateAction } from 'react'
 import { cn } from '@/lib/utils'
 import { CircleCheck, Copy, Crosshair, Send, Trash2 } from 'lucide-react'
@@ -16,6 +17,7 @@ import { preventAgentSendTargetOutsideDismiss } from '../annotate/prevent-agent-
 import type { GrabIntent } from '../describe-page/browser-page-types'
 
 export function BrowserPageChromeBanners({
+  commandOwner,
   resourceNotice,
   setResourceNotice,
   grab,
@@ -34,6 +36,7 @@ export function BrowserPageChromeBanners({
   handleClearBrowserAnnotations,
   setPendingAnnotationPayload
 }: {
+  commandOwner?: { page: string; isActive: boolean }
   resourceNotice: string | null
   setResourceNotice: Dispatch<SetStateAction<string | null>>
   grab: GrabModeHook
@@ -52,6 +55,29 @@ export function BrowserPageChromeBanners({
   handleClearBrowserAnnotations: () => void
   setPendingAnnotationPayload: Dispatch<SetStateAction<BrowserGrabPayload | null>>
 }): React.JSX.Element | null {
+  const cancelAnnotation = (): Promise<boolean> => {
+    setPendingAnnotationPayload(null)
+    const accepted: unknown = grab.cancel()
+    return Promise.resolve(accepted)
+      .then((value) => value === true)
+      .catch(() => false)
+  }
+  useBrowserBannerCommands({
+    identity: commandOwner,
+    worktreeId,
+    resourceNotice,
+    hasPendingAnnotation: pendingAnnotationPayload !== null,
+    grabState: grab.state,
+    sendMenuOpen: annotationBannerSendOpen,
+    canSend:
+      grab.state !== 'idle' &&
+      grabIntent === 'annotate' &&
+      browserAnnotationsLength > 0 &&
+      !!browserAnnotationsPrompt,
+    dismissResource: () => setResourceNotice(null),
+    cancelGrab: cancelAnnotation,
+    setSendOpen: handleAnnotationBannerSendOpenChange
+  })
   if (!resourceNotice && grab.state === 'idle') {
     return null
   }
@@ -207,10 +233,7 @@ export function BrowserPageChromeBanners({
           ) : null}
           <button
             className="ml-auto shrink-0 rounded px-2 py-0.5 text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => {
-              setPendingAnnotationPayload(null)
-              grab.cancel()
-            }}
+            onClick={cancelAnnotation}
           >
             {translate('auto.components.browser.pane.BrowserPane.fa6ea61de3', 'Cancel')}
           </button>

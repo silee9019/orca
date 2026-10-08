@@ -1,3 +1,5 @@
+import { ArtifactViewerParams } from '../../../../shared/artifact-viewer-command'
+import { requestAccountViewerAction } from '../../account-viewer-request'
 import { defineMethod } from '../core'
 import {
   ArtifactsDeleteParams,
@@ -7,6 +9,12 @@ import {
 } from '../../../../shared/rpc-contract/artifacts-params'
 
 export const ARTIFACT_METHODS = [
+  defineMethod({
+    name: 'artifacts.viewerAction',
+    params: ArtifactViewerParams,
+    handler: ({ action }, { signal }) =>
+      requestAccountViewerAction({ domain: 'artifact', action }, signal)
+  }),
   defineMethod({
     name: 'artifacts.list',
     params: ListOptions,
