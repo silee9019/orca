@@ -5,6 +5,24 @@ const REQUEST_FLAGS = [...GLOBAL_FLAGS, 'request-file']
 
 export const TERMINAL_HOST_DETAILS_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['terminal', 'saved-scrollback'],
+    summary: 'Read a saved terminal snapshot from the execution host profile',
+    usage: 'orca terminal saved-scrollback --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires {ref}. Returns private terminal text or null, using the existing replay byte limit.'
+    ]
+  },
+  {
+    path: ['terminal', 'floating-cwd'],
+    summary: 'Resolve a floating terminal directory using execution-host trust policy',
+    usage: 'orca terminal floating-cwd --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Accepts {path?, requireTrusted?}. Paths belong to the execution host. May create its default floating workspace directory.'
+    ]
+  },
+  {
     path: ['terminal', 'confirm-foreground'],
     summary: 'Request fresh foreground-process evidence from the execution provider',
     usage: 'orca terminal confirm-foreground --request-file <path|-> [--json]',

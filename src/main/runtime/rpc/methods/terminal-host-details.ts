@@ -1,6 +1,10 @@
 import { defineMethod } from '../core'
 import type { OrcaRuntimeService } from '../../orca-runtime'
-import { TerminalHostDetailsParams } from '../../../../shared/rpc-contract/terminal-host-details-params'
+import {
+  FloatingTerminalCwdParams,
+  SavedTerminalScrollbackParams,
+  TerminalHostDetailsParams
+} from '../../../../shared/rpc-contract/terminal-host-details-params'
 
 async function resolveLiveTerminalDetailsTarget(
   runtime: OrcaRuntimeService,
@@ -19,6 +23,21 @@ async function resolveLiveTerminalDetailsTarget(
 }
 
 export const TERMINAL_HOST_DETAILS_METHODS = [
+  defineMethod({
+    name: 'session.readTerminalScrollback',
+    params: SavedTerminalScrollbackParams,
+    handler: ({ ref }, { runtime }) => ({ buffer: runtime.readSavedTerminalScrollback(ref) })
+  }),
+  defineMethod({
+    name: 'terminal.floatingCwd',
+    params: FloatingTerminalCwdParams,
+    handler: async (params, { runtime }) => {
+      if (!runtime.resolveFloatingTerminalCwd) {
+        throw new Error('floating_cwd_unavailable')
+      }
+      return { cwd: await runtime.resolveFloatingTerminalCwd(params) }
+    }
+  }),
   defineMethod({
     name: 'terminal.confirmForegroundProcess',
     params: TerminalHostDetailsParams,

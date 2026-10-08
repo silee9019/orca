@@ -1,5 +1,9 @@
 import { TerminalSignalParams } from '../../shared/rpc-contract/terminal-signal-params'
-import { TerminalHostDetailsParams } from '../../shared/rpc-contract/terminal-host-details-params'
+import {
+  FloatingTerminalCwdParams,
+  SavedTerminalScrollbackParams,
+  TerminalHostDetailsParams
+} from '../../shared/rpc-contract/terminal-host-details-params'
 import { TerminalSideEffectSnapshotParams } from '../../shared/rpc-contract/terminal-side-effect-snapshot-params'
 import {
   CreateAgentSessionParams,
@@ -181,6 +185,11 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   ),
   'terminal presence': request('terminal.presence', TerminalHostDetailsParams),
   'terminal size': request('terminal.size', TerminalHostDetailsParams),
+  'terminal saved-scrollback': request(
+    'session.readTerminalScrollback',
+    SavedTerminalScrollbackParams
+  ),
+  'terminal floating-cwd': request('terminal.floatingCwd', FloatingTerminalCwdParams),
   'terminal cwd': request('terminal.cwd', TerminalHostDetailsParams),
   'terminal workspace-hosts': async (ctx) => call(ctx, 'session.listHostIds', {}),
   'terminal fit-overrides': async (ctx) => call(ctx, 'terminal.fitOverrides', {}),
