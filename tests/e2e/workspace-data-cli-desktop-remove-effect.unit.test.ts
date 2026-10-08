@@ -384,7 +384,8 @@ it('refuses wrong/stale/ambiguous owners, save/service/old peers and private err
   await expect(
     invoke('remove-desktop', { ...params, target: { ...target, executionHostId: 'ssh:absent' } })
   ).rejects.toThrow()
-  store.addRepo({ ...store.getRepos()[0], connectionId: 'absent' })
+  store.addRepo({ ...store.getRepos()[0], connectionId: 'absent', executionHostId: 'ssh:absent' })
+  expect(store.getRepos().filter((repo) => repo.id === 'fixture')).toHaveLength(2)
   await expect(invoke('remove-desktop', params)).rejects.toThrow()
   await access(childPath)
   setDesktopWorktreeRemovalForRpc(null)

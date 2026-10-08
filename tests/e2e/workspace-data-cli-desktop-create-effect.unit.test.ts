@@ -303,7 +303,8 @@ it('refuses wrong or ambiguous owners and disconnected SSH without a local check
   await expect(
     invoke({ ...request, expectedRepoHostId: 'ssh:absent' }, 'fixture:ssh:absent:child')
   ).rejects.toThrow()
-  store.addRepo({ ...store.getRepos()[0], connectionId: 'absent' })
+  store.addRepo({ ...store.getRepos()[0], connectionId: 'absent', executionHostId: 'ssh:absent' })
+  expect(store.getRepos().filter((repo) => repo.id === 'fixture')).toHaveLength(2)
   await expect(invoke(request)).rejects.toThrow()
   await expect(
     invoke({ ...request, expectedRepoHostId: 'ssh:absent' }, 'fixture:ssh:absent:child')

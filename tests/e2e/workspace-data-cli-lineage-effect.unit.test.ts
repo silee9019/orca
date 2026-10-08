@@ -208,7 +208,8 @@ it('rejects cycles, wrong host, stale identity and ambiguous repository owners w
       `${child.worktreeId}:${gitRecord.instanceId}`
     )
   ).rejects.toThrow()
-  store.addRepo({ ...store.getRepos()[0], connectionId: 'fixture' })
+  store.addRepo({ ...store.getRepos()[0], connectionId: 'fixture', executionHostId: 'ssh:fixture' })
+  expect(store.getRepos().filter((repo) => repo.id === 'fixture')).toHaveLength(2)
   await expect(invoke({ target: child, noParent: true })).rejects.toThrow()
   expect(store.getWorktreeLineage(child.worktreeId)?.parentWorktreeId).toBe(parent.worktreeId)
 })
