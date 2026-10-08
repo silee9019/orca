@@ -189,6 +189,19 @@ it.each([
   }
 })
 
+const createClaimWindow = () => ({
+  isDestroyed: () => false,
+  isFocused: () => false,
+  isVisible: () => false,
+  isMinimized: () => false,
+  webContents: {
+    id: 421,
+    isDestroyed: () => false,
+    send: vi.fn(),
+    on: vi.fn(),
+    removeListener: vi.fn()
+  }
+})
 const inputFactory = await import('../../src/main/ipc/pty/ipc/write-input')
 const { setPtyHostBindings } = await import('../../src/main/ipc/pty-host-bindings')
 const { installPtyWriteIpcHandlers } = await import('../../src/main/ipc/pty/ipc/write')
@@ -221,7 +234,7 @@ it.each([true, false])(
     ptyIncarnationById.set(id, incarnationId)
     providerMock.write.mockReset()
     try {
-      installPtyWriteIpcHandlers({ runtime })
+      installPtyWriteIpcHandlers({ runtime, mainWindow: createClaimWindow() })
       const listener = on.mock.calls.find((call) => call[0] === 'pty:claimViewport')?.[1]
       expect(listener).toBeTypeOf('function')
       listener(null, { id, cols: 80, rows: 24 })
@@ -285,7 +298,7 @@ it.each(['terminal.writeInput', 'terminal.writeInputAccepted'])(
         finish = resolve
       })
     )
-    installPtyWriteIpcHandlers({ runtime })
+    installPtyWriteIpcHandlers({ runtime, mainWindow: createClaimWindow() })
     on.mock.calls.find((call) => call[0] === 'pty:claimViewport')?.[1](null, {
       id,
       cols: 80,
