@@ -1,3 +1,4 @@
+import { DesktopDocumentFileCopy } from '../../shared/rpc-contract/workspace-shell-copy-params'
 import type { CommandHandler } from '../dispatch'
 import {
   DesktopShellOpenFile,
@@ -9,6 +10,12 @@ import { readWorkspaceCommandInput, confirmWorkspaceCommand } from '../workspace
 import { printWorkspaceCommandResult } from '../workspace-command-result'
 
 export const WORKSPACE_SHELL_ACTION_HANDLERS: Record<string, CommandHandler> = {
+  'shell copy-document-file': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, DesktopDocumentFileCopy)
+    confirmWorkspaceCommand(ctx, params.destPath)
+    const response = await ctx.client.call('shell.copyDesktopDocumentFile', params)
+    printWorkspaceCommandResult(response, ctx.json, (value) => JSON.stringify(value))
+  },
   'shell open-file': async (ctx) => {
     const params = await readWorkspaceCommandInput(ctx, DesktopShellOpenFile)
     confirmWorkspaceCommand(ctx, params.path)

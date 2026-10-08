@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+import { DesktopDocumentFileCopy } from '../../../../shared/rpc-contract/workspace-shell-copy-params'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
@@ -13,6 +15,7 @@ import { defineMethod } from '../core'
 import { parseDesktopFileUri } from '../../../shell-file-uri'
 
 type DesktopShellActions = {
+  copyDocumentFile: (params: z.infer<typeof DesktopDocumentFileCopy>) => Promise<void>
   openFile: (path: string) => Promise<boolean>
   reveal: (path: string) => Promise<ShellOpenLocalPathResult>
   openEditor: (request: ShellOpenExternalEditorRequest) => Promise<ShellOpenExternalEditorResult>
@@ -37,6 +40,19 @@ async function openDesktopFile(path: string): Promise<{ opened: true }> {
   throw new Error('Desktop file open failed.')
 }
 export const WORKSPACE_SHELL_ACTION_METHODS = [
+  defineMethod({
+    name: 'shell.copyDesktopDocumentFile',
+    params: DesktopDocumentFileCopy,
+    handler: async (params) => {
+      const actions = requireDesktopShellActions()
+      try {
+        await actions.copyDocumentFile(params)
+        return { copied: true as const }
+      } catch {
+        throw new Error('Desktop document file copy failed.')
+      }
+    }
+  }),
   defineMethod({
     name: 'shell.openDesktopFile',
     params: DesktopShellOpenFile,

@@ -23,7 +23,13 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'workspace-shell-actions',
-    keys: ['shell reveal', 'shell open-editor', 'shell open-file', 'shell open-file-uri'],
+    keys: [
+      'shell reveal',
+      'shell open-editor',
+      'shell open-file',
+      'shell open-file-uri',
+      'shell copy-document-file'
+    ],
     load: async () =>
       (await import('./handlers/workspace-shell-actions.js')).WORKSPACE_SHELL_ACTION_HANDLERS
   },

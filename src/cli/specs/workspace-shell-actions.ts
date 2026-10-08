@@ -2,6 +2,17 @@ import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 export const WORKSPACE_SHELL_ACTION_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['shell', 'copy-document-file'],
+    summary: 'Copy a user-named file into an authorized document folder without overwriting',
+    usage: 'orca shell copy-document-file --params-file <file|-> --confirm <destPath> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
+    notes: [
+      'JSON: {srcPath, destPath, documentPath, expectedExecutionHostId:"local"}. Confirm the exact destination. All paths belong to the selected desktop host. Source and document must be regular user-named files.',
+      'Reuses the existing destination-parent policy: an authorized desktop root or the named document folder, including its realpath/symlink restrictions. Then invokes the original absolute-path and COPYFILE_EXCL operation. Does not overwrite an existing file or modify the source/document.',
+      'This command supplies the document-attachment copy context; it does not grant unrestricted writes outside authorized roots/folders. Native desktop only; no client or SSH fallback. Missing service, old peer, permission and copy failures produce no success acknowledgement. No native picker is opened.'
+    ]
+  },
+  {
     path: ['shell', 'open-file'],
     summary: 'Open an existing file with the desktop default application',
     usage: 'orca shell open-file --params-file <file|-> --confirm <path> [--json]',
