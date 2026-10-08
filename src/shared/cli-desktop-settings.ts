@@ -13,6 +13,7 @@ export const CliDesktopSettingsUpdate = z
     experimentalSidekick: z.boolean().optional(),
     nestWorkspaces: z.boolean().optional(),
     refreshLocalBaseRefOnWorktreeCreate: z.boolean().optional(),
+    localBaseRefSuggestionDismissed: z.boolean().optional(),
     autoRenameBranchFromWork: z.boolean().optional(),
     branchPrefix: z.enum(['git-username', 'custom', 'none']).optional(),
     branchPrefixCustom: z.string().optional(),

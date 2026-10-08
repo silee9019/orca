@@ -7,6 +7,7 @@ describe('desktop settings CLI boundary', () => {
   it('projects complete default settings without credentials or launch commands', () => {
     const settings = createGlobalSettingsFixture({
       httpProxyUrl: 'http://user:proxy-canary@example.test',
+      localBaseRefSuggestionDismissed: true,
       opencodeSessionCookie: 'cookie-canary',
       agentDefaultEnv: { codex: { KEY: 'env-canary' } },
       agentCmdOverrides: { codex: 'command-canary' },
@@ -20,7 +21,8 @@ describe('desktop settings CLI boundary', () => {
     const result = projectCliDesktopSettings(settings)
     expect(result).toMatchObject({
       theme: settings.theme,
-      terminalFontSize: settings.terminalFontSize
+      terminalFontSize: settings.terminalFontSize,
+      localBaseRefSuggestionDismissed: true
     })
     expect(JSON.stringify(result)).not.toContain('canary')
   })
@@ -62,13 +64,18 @@ describe('desktop settings CLI boundary', () => {
   it('validates nested preferences and keeps secret input for the trusted apply path', () => {
     const result = CliDesktopSettingsUpdate.parse({
       theme: 'dark',
+      localBaseRefSuggestionDismissed: true,
       terminalFontSize: 18,
       opencodeSessionCookie: 'input-canary',
       nativeChatAppearance: { fontSize: 16, width: 'wide' },
       terminalCustomThemes: [],
       agentDefaultEnv: { codex: { KEY: 'env-canary' } }
     })
-    expect(result).toMatchObject({ theme: 'dark', opencodeSessionCookie: 'input-canary' })
+    expect(result).toMatchObject({
+      theme: 'dark',
+      localBaseRefSuggestionDismissed: true,
+      opencodeSessionCookie: 'input-canary'
+    })
     expect(result.nativeChatAppearance).toEqual({ fontSize: 16, width: 'wide' })
   })
 

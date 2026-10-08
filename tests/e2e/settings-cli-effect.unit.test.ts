@@ -120,20 +120,28 @@ it('runs the CLI through an isolated socket and reads back profile and shortcut 
     }
     await writeFile(
       join(home, 'update.json'),
-      JSON.stringify({ theme: 'dark', opencodeSessionCookie: 'secret-canary' })
+      JSON.stringify({
+        theme: 'dark',
+        localBaseRefSuggestionDismissed: true,
+        opencodeSessionCookie: 'secret-canary'
+      })
     )
     const desktop = await invoke(['desktop', 'update', '--file', 'update.json'])
     expect(desktop.result).toMatchObject({
-      settings: { theme: 'dark' },
+      settings: { theme: 'dark', localBaseRefSuggestionDismissed: true },
       persisted: true,
       rendered: false
     })
     expect(JSON.stringify(desktop)).not.toContain('canary')
     expect(JSON.parse(await readFile(profile, 'utf8'))).toMatchObject({
       theme: 'dark',
+      localBaseRefSuggestionDismissed: true,
       opencodeSessionCookie: 'secret-canary'
     })
-    expect((await invoke(['desktop', 'get'])).result.settings.theme).toBe('dark')
+    expect((await invoke(['desktop', 'get'])).result.settings).toMatchObject({
+      theme: 'dark',
+      localBaseRefSuggestionDismissed: true
+    })
     await writeFile(join(home, 'update.json'), JSON.stringify({ machineName: 'updated-fixture' }))
     expect((await invoke(['update', '--file', 'update.json'])).result.settings.machineName).toBe(
       'updated-fixture'
