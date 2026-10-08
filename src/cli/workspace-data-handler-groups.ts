@@ -22,6 +22,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-work-item-notify',
+    keys: ['github notify-work-item-mutated'],
+    load: async () =>
+      (await import('./handlers/workspace-work-item-notify.js')).WORKSPACE_WORK_ITEM_NOTIFY_HANDLERS
+  },
+  {
     name: 'workspace-file-watch',
     keys: ['file watch-start', 'file watch-status', 'file watch-stop'],
     load: async () =>

@@ -24,8 +24,9 @@ vi.mock('../../src/main/git/runner', async (importOriginal) => {
 })
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
+  webContents: { fromId: vi.fn() },
   BrowserWindow: class {
-    webContents = { send: vi.fn() }
+    webContents = { send: vi.fn(), isDestroyed: () => false }
     isDestroyed() {
       return false
     }

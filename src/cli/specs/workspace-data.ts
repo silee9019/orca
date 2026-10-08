@@ -1,3 +1,4 @@
+import { WORKSPACE_WORK_ITEM_NOTIFY_SPECS } from './workspace-work-item-notify'
 import { WORKSPACE_FILE_WATCH_SPECS } from './workspace-file-watch'
 import { WORKSPACE_JIRA_READ_SPECS } from './workspace-jira-reads'
 import { WORKSPACE_DOWNLOAD_SESSION_COMMAND_SPECS } from './workspace-download-session'
@@ -69,6 +70,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_WORK_ITEM_NOTIFY_SPECS,
   ...WORKSPACE_FILE_WATCH_SPECS,
   ...WORKSPACE_JIRA_READ_SPECS,
   ...WORKSPACE_DOWNLOAD_SESSION_COMMAND_SPECS,
