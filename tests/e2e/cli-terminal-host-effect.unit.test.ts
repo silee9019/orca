@@ -343,7 +343,26 @@ it('reads foreground and child-process facts from the addressed host provider', 
     inspection.result.process
   )
   expect(runtime.getPtyLivenessVerdict('pty-1')?.status).toBe('unverifiable')
+  const inspectProcess = vi.fn(async () => ({
+    foregroundProcess: 'fixture-modern-agent',
+    hasChildProcesses: true
+  }))
+  runtime.setPtyController({
+    write: () => true,
+    kill: () => {},
+    getForegroundProcess: foreground,
+    hasChildProcesses: children,
+    getSize: () => null,
+    inspectProcess
+  })
+  await writeFile(file, JSON.stringify({ terminal: handle, scanChildProcesses: true }))
+  expect((await command('inspect-process', '--request-file', file)).result.process).toEqual({
+    foregroundProcess: 'fixture-modern-agent',
+    hasChildProcesses: true
+  })
+  expect(inspectProcess).toHaveBeenCalledExactlyOnceWith('pty-1', { scanChildProcesses: true })
   await runtime.onPtyExit('pty-1', 0)
+  inspectProcess.mockClear()
   foreground.mockClear()
   children.mockClear()
   vi.mocked(console.log).mockClear()
@@ -354,4 +373,5 @@ it('reads foreground and child-process facts from the addressed host provider', 
   expect(JSON.parse(String(output))).toMatchObject({ ok: false, error: { code: 'terminal_gone' } })
   expect(foreground).not.toHaveBeenCalled()
   expect(children).not.toHaveBeenCalled()
+  expect(inspectProcess).not.toHaveBeenCalled()
 })
