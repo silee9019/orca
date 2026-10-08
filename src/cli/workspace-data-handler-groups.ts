@@ -3,6 +3,13 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-visible-worktrees',
+    keys: ['worktree list-visible', 'worktree list-all-visible'],
+    load: async () =>
+      (await import('./handlers/workspace-visible-worktrees.js'))
+        .WORKSPACE_VISIBLE_WORKTREE_HANDLERS
+  },
+  {
     name: 'workspace-host-path',
     keys: ['file mkdir-host-path', 'file host-path-exists'],
     load: async () =>
