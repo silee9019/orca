@@ -3,6 +3,17 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const WORKSPACE_JIRA_COMMAND_SPECS_2: CommandSpec[] = [
   {
+    path: ['jira', 'list-project-assignable-users'],
+    summary: 'List assignable Jira users before an issue exists',
+    usage: 'orca jira list-project-assignable-users --params-file <file|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file'],
+    notes: [
+      'Input: projectIdOrKey, query (optional), siteId (optional). Use a regular JSON file or --params-file - for stdin.',
+      'The selected runtime owns Jira credentials and site selection. The existing project query preserves Cloud and Server/DC filtering; it does not use an issue key.',
+      'Old hosts fail without retrying on a different host. An empty result preserves the existing provider contract and does not prove connectivity.'
+    ]
+  },
+  {
     path: ['jira', 'issue-comments'],
     summary: 'Jira issue comments on the selected Orca runtime',
     usage: 'orca jira issue-comments --params-file <file|-> [--json]',

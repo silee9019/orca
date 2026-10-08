@@ -1,6 +1,7 @@
 import type { CommandHandler } from '../dispatch'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
 import { readWorkspaceCommandInput } from '../workspace-command-input'
+import { JiraProjectAssignableUsers } from '../../shared/rpc-contract/workspace-jira-project-users-params'
 import {
   AssignableUsers,
   CreateIssue,
@@ -17,6 +18,11 @@ import {
 } from '../../shared/rpc-contract/jira-params'
 
 export const WORKSPACE_JIRA_HANDLERS: Record<string, CommandHandler> = {
+  'jira list-project-assignable-users': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, JiraProjectAssignableUsers)
+    const result = await ctx.client.call('jira.listAssignableUsersForProject', params)
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
   'jira status': async (ctx) => {
     const result = await ctx.client.call('jira.status')
     printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))

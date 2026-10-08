@@ -135,6 +135,7 @@ export const WORKSPACE_PROVIDER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'jira list-create-fields',
       'jira list-priorities',
       'jira list-assignable-users',
+      'jira list-project-assignable-users',
       'jira search-users',
       'jira list-transitions',
       'jira get-project-status-order'
