@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-git-ignore',
+    keys: ['git ignore-candidates', 'git ignore-folder'],
+    load: async () =>
+      (await import('./handlers/workspace-git-ignore.js')).WORKSPACE_GIT_IGNORE_HANDLERS
+  },
+  {
     name: 'workspace-git-generation',
     keys: [
       'git generate-commit-message',
