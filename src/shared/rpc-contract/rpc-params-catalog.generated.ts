@@ -35,6 +35,7 @@ import {
   EmulatorSessionViewParams,
   EmulatorWheelParams
 } from '../emulator-frame-command'
+import { ExtensionsSidebarParams } from '../extensions-sidebar-command'
 import {
   PairingGetEndpointsParamsSchema,
   PairingProvisionRelayParamsSchema
@@ -820,6 +821,7 @@ import {
   SkillUploadCommitRequestSchema
 } from '../skill-upload-session-contract'
 import { SkillsViewerParams } from '../skills-viewer-command'
+import { SparsePresetViewerParams } from '../sparse-preset-viewer-command'
 import { VoiceViewerParams } from '../voice-viewer'
 
 // Why: the host parses params with these schemas, so a client that matches this map
@@ -1163,6 +1165,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'environment.management.resolve': EnvironmentSelector,
   'environment.management.status': null,
   'environment.management.verifyAndAdd': EnvironmentPairing,
+  'extensions.sidebarAction': ExtensionsSidebarParams,
   'files.browseServerDir': ServerDirectoryBrowse,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
@@ -1676,6 +1679,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'skills.startUpdateRun': SkillUpdateStartParams,
   'skills.uploadChunk': SkillUploadChunkRequestSchema,
   'skills.viewerAction': SkillsViewerParams,
+  'sparsePreset.viewerAction': SparsePresetViewerParams,
   'speech.dictation.cancel': DictationHandle,
   'speech.dictation.chunk': DictationChunk,
   'speech.dictation.finish': DictationHandle,

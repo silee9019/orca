@@ -1,6 +1,8 @@
+import { applyExtensionsSidebarAction } from './extensions-sidebar-controller'
+import { applySparsePresetViewerAction } from './sparse-preset-viewer-controller'
 import { applySkillsViewerRequest } from './skills-viewer-request'
 import { applyPluginSettingsViewerAction } from './plugin-settings-viewer-controller'
-import { applyAutomationViewerAction } from './automation-viewer-controller'
+import { applyAutomationViewerRequest } from './automation-viewer-request'
 import { applyArtifactViewerAction } from './artifact-viewer-controller'
 import type { AccountViewerApi } from '../../../shared/account-viewer-contract'
 import { applyResourceManagerViewerAction } from './resource-manager-viewer-actions'
@@ -12,12 +14,16 @@ export function registerAccountViewerBridge(api: AccountViewerApi, unsubs: (() =
     api.onRequest((request) => {
       const apply = async (): Promise<unknown> => {
         switch (request.command.domain) {
+          case 'extensions-sidebar':
+            return applyExtensionsSidebarAction(request.command.action)
+          case 'sparse-preset':
+            return applySparsePresetViewerAction(request.command.action)
           case 'plugin-settings':
             return applyPluginSettingsViewerAction(request.command.action)
           case 'skills':
             return applySkillsViewerRequest(request.command.action)
           case 'automation':
-            return applyAutomationViewerAction(request.command.action)
+            return applyAutomationViewerRequest(request.command.action)
           case 'artifact':
             return applyArtifactViewerAction(request.command.action)
           case 'resource':

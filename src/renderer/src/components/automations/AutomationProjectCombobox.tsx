@@ -1,24 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React from 'react'
+import { useAutomationProjectCombobox } from './use-automation-project-combobox'
 import { Check, ChevronRight, ChevronsUpDown, FolderPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Command, CommandInput, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
-import { useAppStore } from '@/store'
-import { isGitRepoKind } from '../../../../shared/repo-kind'
 import { getRepoExecutionHostId } from '../../../../shared/execution-host'
-import { isRepoSearchQueryTooLarge, searchRepos } from '@/lib/repo-search'
 import { cn } from '@/lib/utils'
-import { useMountedRef } from '@/hooks/useMountedRef'
 import { translate } from '@/i18n/i18n'
 import type { Repo } from '../../../../shared/repo-types'
 import {
-  getAutomationProjectGroupForRepo,
-  getAutomationProjectGroups,
+  hasMultipleHostsInGroup,
   getAutomationProjectSelectedSource
 } from './automation-project-groups'
 
-type AutomationProjectComboboxProps = {
+export type AutomationProjectComboboxProps = {
   repos: readonly Repo[]
   value: string
   onValueChange: (repoId: string) => void
@@ -33,21 +29,6 @@ function getRepoDetail(repo: Repo, hostLabel?: string | null): string {
   return label ? `${label} · ${repo.path}` : repo.path
 }
 
-function hasMultipleHosts(repos: readonly Repo[]): boolean {
-  const hostIds = new Set<string>()
-  for (const repo of repos) {
-    hostIds.add(getRepoExecutionHostId(repo))
-    if (hostIds.size > 1) {
-      return true
-    }
-  }
-  return false
-}
-
-function hasMultipleHostsInGroup(sources: readonly Repo[]): boolean {
-  return hasMultipleHosts(sources)
-}
-
 export default function AutomationProjectCombobox({
   repos,
   value,
@@ -57,153 +38,25 @@ export default function AutomationProjectCombobox({
   getRepoHostLabel,
   allowAddProject = true
 }: AutomationProjectComboboxProps): React.JSX.Element {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [commandValue, setCommandValue] = useState('')
-  const [hostMenuProjectKey, setHostMenuProjectKey] = useState<string | null>(null)
-  const hostMenuCloseTimerRef = useRef<number | null>(null)
-  const hostMenuHoverRef = useRef<{
-    projectKey: string | null
-    row: boolean
-    content: boolean
-  }>({ projectKey: null, row: false, content: false })
-  const addRepo = useAppStore((s) => s.addRepo)
-  const fetchWorktrees = useAppStore((s) => s.fetchWorktrees)
-  const [isAdding, setIsAdding] = useState(false)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-  const focusFrameRef = useRef<number | null>(null)
-  const mountedRef = useMountedRef()
-
-  const groups = useMemo(() => getAutomationProjectGroups(repos, value), [repos, value])
-  const selectedGroup = useMemo(
-    () => getAutomationProjectGroupForRepo(groups, value),
-    [groups, value]
-  )
-  const selectedRepo = selectedGroup
-    ? getAutomationProjectSelectedSource(selectedGroup, value)
-    : null
-  const showHostLabels = useMemo(() => hasMultipleHosts(repos), [repos])
-  const filteredGroups = useMemo(() => {
-    if (isRepoSearchQueryTooLarge(query)) {
-      return []
-    }
-    const trimmed = query.trim()
-    if (!trimmed) {
-      return groups
-    }
-    return groups.filter((group) => searchRepos(group.sources, trimmed).length > 0)
-  }, [groups, query])
-
-  const cancelFocusFrame = useCallback((): void => {
-    if (focusFrameRef.current !== null) {
-      cancelAnimationFrame(focusFrameRef.current)
-      focusFrameRef.current = null
-    }
-  }, [])
-
-  const setInputNode = useCallback(
-    (node: HTMLInputElement | null): void => {
-      if (node === null) {
-        cancelFocusFrame()
-      }
-      inputRef.current = node
-    },
-    [cancelFocusFrame]
-  )
-
-  const focusSearchInput = useCallback(() => {
-    cancelFocusFrame()
-    focusFrameRef.current = requestAnimationFrame(() => {
-      focusFrameRef.current = null
-      inputRef.current?.focus()
-    })
-  }, [cancelFocusFrame])
-
-  const clearHostMenuCloseTimer = useCallback(() => {
-    if (hostMenuCloseTimerRef.current !== null) {
-      window.clearTimeout(hostMenuCloseTimerRef.current)
-      hostMenuCloseTimerRef.current = null
-    }
-  }, [])
-
-  const resetHostMenuHover = useCallback(() => {
-    hostMenuHoverRef.current = { projectKey: null, row: false, content: false }
-  }, [])
-
-  const setHostMenuHover = useCallback(
-    (projectKey: string, region: 'row' | 'content', hovered: boolean) => {
-      clearHostMenuCloseTimer()
-      if (hostMenuHoverRef.current.projectKey !== projectKey) {
-        hostMenuHoverRef.current = { projectKey, row: false, content: false }
-      }
-      hostMenuHoverRef.current[region] = hovered
-      if (hovered) {
-        setHostMenuProjectKey(projectKey)
-        return
-      }
-      hostMenuCloseTimerRef.current = window.setTimeout(() => {
-        const hover = hostMenuHoverRef.current
-        if (hover.projectKey === projectKey && !hover.row && !hover.content) {
-          setHostMenuProjectKey((current) => (current === projectKey ? null : current))
-          resetHostMenuHover()
-        }
-        hostMenuCloseTimerRef.current = null
-      }, 100)
-    },
-    [clearHostMenuCloseTimer, resetHostMenuHover]
-  )
-
-  useEffect(() => clearHostMenuCloseTimer, [clearHostMenuCloseTimer])
-
-  const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      setOpen(nextOpen)
-      if (nextOpen) {
-        setCommandValue(value)
-        return
-      }
-      cancelFocusFrame()
-      setQuery('')
-      setHostMenuProjectKey(null)
-      resetHostMenuHover()
-    },
-    [cancelFocusFrame, resetHostMenuHover, value]
-  )
-
-  const handleSelect = useCallback(
-    (repoId: string) => {
-      onValueChange(repoId)
-      setOpen(false)
-      setQuery('')
-      setHostMenuProjectKey(null)
-      resetHostMenuHover()
-    },
-    [onValueChange, resetHostMenuHover]
-  )
-
-  const handleAddFolder = useCallback(async () => {
-    if (isAdding) {
-      return
-    }
-    setIsAdding(true)
-    try {
-      const repo = await addRepo()
-      if (repo) {
-        if (isGitRepoKind(repo)) {
-          await fetchWorktrees(repo.id)
-        }
-        if (!mountedRef.current) {
-          return
-        }
-        handleSelect(repo.id)
-      }
-    } finally {
-      if (mountedRef.current) {
-        setIsAdding(false)
-      }
-    }
-  }, [addRepo, fetchWorktrees, handleSelect, isAdding, mountedRef])
-
+  const {
+    open,
+    query,
+    commandValue,
+    hostMenuProjectKey,
+    isAdding,
+    selectedRepo,
+    showHostLabels,
+    filteredGroups,
+    handleOpenChange,
+    handleSelect,
+    handleAddFolder,
+    focusSearchInput,
+    setInputNode,
+    setQuery,
+    setCommandValue,
+    setHostMenuHover,
+    setHostMenuProjectKey
+  } = useAutomationProjectCombobox({ repos, value, onValueChange, allowAddProject })
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
@@ -272,12 +125,12 @@ export default function AutomationProjectCombobox({
                   onMouseEnter={() => {
                     setCommandValue(group.repo.id)
                     if (hasHostMenu) {
-                      setHostMenuHover(group.projectKey, 'row', true)
+                      void setHostMenuHover(group.projectKey, 'row', true)
                     }
                   }}
                   onMouseLeave={() => {
                     if (hasHostMenu) {
-                      setHostMenuHover(group.projectKey, 'row', false)
+                      void setHostMenuHover(group.projectKey, 'row', false)
                     }
                   }}
                   className={cn(
@@ -335,8 +188,12 @@ export default function AutomationProjectCombobox({
                         align="start"
                         sideOffset={6}
                         className="w-[min(260px,calc(100vw-1rem))] p-1"
-                        onMouseEnter={() => setHostMenuHover(group.projectKey, 'content', true)}
-                        onMouseLeave={() => setHostMenuHover(group.projectKey, 'content', false)}
+                        onMouseEnter={() =>
+                          void setHostMenuHover(group.projectKey, 'content', true)
+                        }
+                        onMouseLeave={() =>
+                          void setHostMenuHover(group.projectKey, 'content', false)
+                        }
                       >
                         <div className="py-1">
                           {group.sources.map((source) => {

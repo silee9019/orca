@@ -1,3 +1,6 @@
+import { LinearSkillPromptActionSchema } from './linear-skill-prompt-command'
+import { OrchestrationCommandDialogActionSchema } from './orchestration-command-dialog-command'
+import { AgentSkillSetupViewerActionSchema } from './agent-skill-setup-viewer-command'
 import { SkillLinksViewerActionSchema } from './skill-links-viewer-command'
 import { SkillFreshnessViewerActionSchema } from './skill-freshness-viewer-command'
 import { SkillListViewerActionSchema } from './skill-list-viewer-command'
@@ -33,6 +36,12 @@ export const SkillsDeleteConfirmationSchema = z
   })
   .strict()
 export const SkillsViewerActionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('linear-prompt-form'), action: LinearSkillPromptActionSchema }),
+  z.strictObject({
+    kind: z.literal('command-dialog-form'),
+    action: OrchestrationCommandDialogActionSchema
+  }),
+  z.strictObject({ kind: z.literal('setup-form'), action: AgentSkillSetupViewerActionSchema }),
   z.object({ kind: z.literal('get') }).strict(),
   z.object({ kind: z.literal('close') }).strict(),
   z.object({ kind: z.literal('delete-selected') }).strict(),
@@ -78,6 +87,21 @@ export const SkillsViewerActionSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('refresh') }).strict()
 ])
 export type SkillsViewerAction = z.infer<typeof SkillsViewerActionSchema>
+export type SkillsPageAction = Exclude<
+  SkillsViewerAction,
+  { kind: 'setup-form' | 'command-dialog-form' | 'linear-prompt-form' }
+>
+export function parseSkillsPageAction(action: SkillsViewerAction): SkillsPageAction {
+  const parsed = SkillsViewerActionSchema.parse(action)
+  if (
+    parsed.kind === 'setup-form' ||
+    parsed.kind === 'command-dialog-form' ||
+    parsed.kind === 'linear-prompt-form'
+  ) {
+    throw new Error('skill_setup_requires_routed_viewer')
+  }
+  return parsed
+}
 export const SkillsViewerParams = z
   .object({ viewer: z.literal('desktop'), action: SkillsViewerActionSchema })
   .strict()

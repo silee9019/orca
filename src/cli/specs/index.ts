@@ -15,6 +15,7 @@ import { ACCOUNT_CREDENTIAL_COMMAND_SPECS } from './account-credentials'
 import { ACCOUNT_LOGIN_COMMAND_SPECS } from './account-login'
 import { OS_PERMISSION_COMMAND_SPECS } from './os-permissions'
 import { USAGE_COMMAND_SPECS, RATE_LIMIT_COMMAND_SPECS } from './usage'
+import { EXTENSIONS_SIDEBAR_COMMAND_SPECS } from './extensions-sidebar'
 import { SKILL_LIFECYCLE_COMMAND_SPECS } from './skills-lifecycle'
 import { SKILL_CLOUD_COMMAND_SPECS } from './skills-cloud'
 import { MANAGED_PROFILE_COMMAND_SPECS } from './profiles-managed'
@@ -144,6 +145,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...ACCOUNT_CREDENTIAL_COMMAND_SPECS,
   ...ACCOUNT_LOGIN_COMMAND_SPECS,
   ...OS_PERMISSION_COMMAND_SPECS,
+  ...EXTENSIONS_SIDEBAR_COMMAND_SPECS,
   ...MANAGED_PROFILE_COMMAND_SPECS,
   ...SPARSE_PRESET_COMMAND_SPECS,
   ...AUTOMATION_EXTENSION_COMMAND_SPECS,

@@ -1,3 +1,9 @@
+import {
+  type SkillBundleViewerForm as Form,
+  skillBundleViewerSnapshot as snapshot,
+  skillBundleWorkspacePickerTarget
+} from './skill-bundle-viewer-state'
+import { applySkillInstallWorkspaceViewerAction } from './skill-install-workspace-viewer-controller'
 import { updatedSkillSelection } from '../components/skills/skill-share-selection'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
@@ -5,53 +11,16 @@ import {
   type SkillBundleViewerAction
 } from '../../../shared/skill-bundle-viewer-command'
 import { SkillInstallTargetViewerActionSchema } from '../../../shared/skill-install-viewer-command'
-import type {
-  SkillBundleInstallPreview,
-  SkillBundleInstallResult
-} from '../../../shared/skill-bundle-install-contract'
 import {
   applySkillInstallViewerTarget,
-  validateSkillInstallViewerTarget,
-  type SkillInstallViewerTarget
+  validateSkillInstallViewerTarget
 } from './skill-install-viewer-target'
 
-type Form = SkillInstallViewerTarget & {
-  identity: string
-  skillIds: readonly string[]
-  selectedSkillIds: ReadonlySet<string>
-  replaceSkillIds: ReadonlySet<string>
-  setSelectedSkillIds: (value: Set<string>) => void
-  setReplaceSkillIds: (value: Set<string>) => void
-  destinationPreview: SkillBundleInstallPreview | null
-  result: SkillBundleInstallResult | null
-  retryIds: ReadonlySet<string>
-  busy: boolean
-  error: string | null
-  activeOperationId: string | null
-  install: (requestedIds?: ReadonlySet<string>, reusePreview?: boolean) => Promise<void>
-  cancelInstall: () => Promise<void>
-  close: () => void
-}
-function snapshot(form: Form, closed = false) {
-  return {
-    viewer: 'desktop' as const,
-    committed: true as const,
-    closed,
-    skillIds: form.skillIds,
-    selectedSkillIds: [...form.selectedSkillIds],
-    replaceSkillIds: [...form.replaceSkillIds],
-    destinationPreview: form.destinationPreview,
-    result: form.result,
-    busy: form.busy,
-    error: form.error,
-    activeOperationId: form.activeOperationId,
-    environmentId: form.environmentId,
-    scope: form.scope,
-    workspace: form.workspace,
-    executionTarget: form.executionTarget,
-    providers: [...form.providers]
-  }
-}
+import {
+  applySkillInstallAgentViewerAction,
+  skillInstallAgentViewerTarget
+} from './skill-install-agent-viewer-controller'
+
 export type SkillBundleViewerState = ReturnType<typeof snapshot>
 type Control = (action: SkillBundleViewerAction) => Promise<SkillBundleViewerState>
 const mountedForms = new Set<Control>()
@@ -68,7 +37,7 @@ export async function applySkillBundleViewerAction(
   }
   return control(parsed)
 }
-export function useSkillBundleViewerController(form: Form): void {
+export function useSkillBundleViewerController(form: Form): { agents: string; workspace: string } {
   const latest = useRef(form)
   useLayoutEffect(() => {
     latest.current = form
@@ -160,6 +129,20 @@ export function useSkillBundleViewerController(form: Form): void {
       if (action.kind === 'get') {
         return snapshot(current)
       }
+      if (action.kind === 'agents-form' && action.action.kind === 'get') {
+        await applySkillInstallAgentViewerAction(
+          skillInstallAgentViewerTarget(current, current.identity),
+          action.action
+        )
+        return snapshot(latest.current)
+      }
+      if (action.kind === 'workspace-form' && action.action.kind === 'get') {
+        await applySkillInstallWorkspaceViewerAction(
+          skillBundleWorkspacePickerTarget(current),
+          action.action
+        )
+        return snapshot(latest.current)
+      }
       if (action.kind === 'cancel') {
         if (cancellation.current) {
           throw new Error('viewer_busy')
@@ -186,6 +169,22 @@ export function useSkillBundleViewerController(form: Form): void {
       }
       if (current.result) {
         throw new Error('skill_bundle_input_unavailable')
+      }
+      if (action.kind === 'workspace-form') {
+        return begin(async () => {
+          await applySkillInstallWorkspaceViewerAction(
+            skillBundleWorkspacePickerTarget(current),
+            action.action
+          )
+        })
+      }
+      if (action.kind === 'agents-form') {
+        return begin(async () => {
+          await applySkillInstallAgentViewerAction(
+            skillInstallAgentViewerTarget(current, current.identity),
+            action.action
+          )
+        })
       }
       if (action.kind === 'select' && !current.skillIds.includes(action.id)) {
         throw new Error('skill_not_in_bundle')
@@ -274,4 +273,8 @@ export function useSkillBundleViewerController(form: Form): void {
       }
     }
   }, [])
+  return {
+    agents: skillInstallAgentViewerTarget(form, form.identity),
+    workspace: skillBundleWorkspacePickerTarget(form)
+  }
 }

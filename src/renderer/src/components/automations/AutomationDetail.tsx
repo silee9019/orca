@@ -320,6 +320,7 @@ export function AutomationDetail({
       <AutomationPromptDisclosure
         key={`${automation.id}:${automation.prompt}`}
         prompt={automation.prompt}
+        ownerKey={JSON.stringify(automation)}
       />
     </div>
   )

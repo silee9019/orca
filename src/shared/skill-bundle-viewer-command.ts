@@ -1,7 +1,15 @@
 import { z } from 'zod'
+import { SkillInstallWorkspaceViewerActionSchema } from './skill-install-workspace-viewer-command'
+import { SkillInstallAgentViewerActionSchema } from './skill-install-agent-viewer-command'
 import { SKILL_INSTALL_TARGET_VIEWER_SCHEMAS } from './skill-install-viewer-command'
 
 export const SkillBundleViewerActionSchema = z.discriminatedUnion('kind', [
+  z
+    .object({ kind: z.literal('workspace-form'), action: SkillInstallWorkspaceViewerActionSchema })
+    .strict(),
+  z
+    .object({ kind: z.literal('agents-form'), action: SkillInstallAgentViewerActionSchema })
+    .strict(),
   ...SKILL_INSTALL_TARGET_VIEWER_SCHEMAS,
   z.object({ kind: z.literal('get') }).strict(),
   z

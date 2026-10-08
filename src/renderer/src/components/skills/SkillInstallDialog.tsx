@@ -269,7 +269,7 @@ export function SkillInstallDialog({
   }
 
   useSkillsViewerDialog('install', open, busy || bundleBusy || resolvingInitialLink, close)
-  useSkillInstallViewerController({
+  const pickerViewerTargets = useSkillInstallViewerController({
     open,
     busy: busy || bundleBusy,
     resolvingInitialLink,
@@ -357,6 +357,8 @@ export function SkillInstallDialog({
             onDiscard={() => void install(true)}
           >
             <SkillInstallTargetFields
+              agentViewerTarget={pickerViewerTargets.agents}
+              workspaceViewerTarget={pickerViewerTargets.workspace}
               environmentId={environmentId}
               onEnvironmentChange={(value) => {
                 setEnvironmentId(value)

@@ -11,11 +11,15 @@ import {
 import { getAutomationRunViewState } from './automation-run-view-state'
 import type { AutomationsPageActionContext } from './automations-page-action-context'
 
+export type AutomationRunWorkspaceOutcome =
+  | { status: 'opened'; workspaceId: string; tabId: string | null }
+  | { status: 'unavailable' }
+
 /** Opens the original run terminal when its host-qualified workspace is alive. */
 export function createAutomationRunWorkspaceAction({ store, list }: AutomationsPageActionContext) {
   const { repoForRow, worktreeForRow } = store
   const { selectedRow } = list
-  return function openRunWorkspace(run: AutomationRun): void {
+  return function openRunWorkspace(run: AutomationRun): AutomationRunWorkspaceOutcome {
     const runWorktree =
       run.workspaceId && selectedRow
         ? (worktreeForRow(selectedRow, repoForRow(selectedRow), run.workspaceId) ?? null)
@@ -38,11 +42,11 @@ export function createAutomationRunWorkspaceAction({ store, list }: AutomationsP
     })
     if (!run.workspaceId || !runWorktree || !runViewState.canOpen) {
       toast.error(runViewState.statusLabel)
-      return
+      return { status: 'unavailable' }
     }
     if (runViewState.availability === 'terminal' && !terminalTarget) {
       toast.error(runViewState.statusLabel)
-      return
+      return { status: 'unavailable' }
     }
     if (terminalTarget && currentLayout) {
       appStore.setTabLayout(
@@ -52,7 +56,7 @@ export function createAutomationRunWorkspaceAction({ store, list }: AutomationsP
       if (activateAndRevealWorktree(run.workspaceId)) {
         appStore.setActiveTab(terminalTarget.tabId)
         appStore.setActiveTabType('terminal', run.workspaceId)
-        return
+        return { status: 'opened', workspaceId: run.workspaceId, tabId: terminalTarget.tabId }
       }
     }
     if (!activateAndRevealWorktree(run.workspaceId)) {
@@ -62,9 +66,10 @@ export function createAutomationRunWorkspaceAction({ store, list }: AutomationsP
           'Workspace is not available.'
         )
       )
-      return
+      return { status: 'unavailable' }
     }
     toast.message(runViewState.statusLabel)
+    return { status: 'opened', workspaceId: run.workspaceId, tabId: null }
   }
 }
 

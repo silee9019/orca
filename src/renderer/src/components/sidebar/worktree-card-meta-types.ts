@@ -1,4 +1,5 @@
 import type { IssueInfo } from '../../../../shared/github/pull-request-types'
+import type { WorkspaceAutomationNavigationTarget } from '../../../../shared/workspace-automation-viewer-command'
 import type {
   AutomationWorkspaceProvenance,
   CliWorkspaceProvenance
@@ -64,7 +65,8 @@ export type WorktreeCardDetailsHoverProps = WorktreeCardMetaBadgesProps & {
   onOpenReviewInOrca?: (event: React.MouseEvent) => void
   onOpenReviewInBrowser?: (url: string) => void | Promise<boolean>
   onUnlinkReview?: () => void
-  onOpenAutomation?: (event: React.MouseEvent) => void
-  onOpenAutomationRun?: (event: React.MouseEvent) => void
+  automationNavigationTarget?: WorkspaceAutomationNavigationTarget
+  onOpenAutomation?: (event?: React.MouseEvent) => void
+  onOpenAutomationRun?: (event?: React.MouseEvent) => void
   hoverControl?: WorktreeCardDetailsHoverControl
 }

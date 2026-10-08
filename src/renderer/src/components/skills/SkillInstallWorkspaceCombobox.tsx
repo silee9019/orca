@@ -1,3 +1,4 @@
+import { useSkillInstallWorkspaceViewerController } from '../../runtime/skill-install-workspace-viewer-controller'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import type { SkillInstallWorkspaceChoice } from './skill-install-workspace-choi
 
 export type SkillInstallWorkspaceComboboxProps = {
   id?: string
+  viewerTarget?: string
   value: string
   onValueChange: (value: string) => void
   choices: readonly SkillInstallWorkspaceChoice[]
@@ -48,7 +50,8 @@ export function SkillInstallWorkspaceCombobox({
   choices,
   disabled = false,
   placeholder,
-  triggerClassName
+  triggerClassName,
+  viewerTarget
 }: SkillInstallWorkspaceComboboxProps): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -117,7 +120,12 @@ export function SkillInstallWorkspaceCombobox({
   )
 
   const handleTriggerKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    (
+      event: Pick<
+        React.KeyboardEvent<HTMLButtonElement>,
+        'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'preventDefault'
+      >
+    ) => {
       if (open) {
         return
       }
@@ -139,6 +147,25 @@ export function SkillInstallWorkspaceCombobox({
     },
     [open, value]
   )
+
+  useSkillInstallWorkspaceViewerController({
+    target: viewerTarget,
+    open,
+    disabled,
+    value,
+    query,
+    commandValue,
+    choices,
+    filteredChoices,
+    input: () => inputRef.current,
+    handleOpenChange,
+    setQuery,
+    setCommandValue,
+    handleSelect,
+    handleTriggerKeyDown,
+    focusSearchInput,
+    cancelFocus: cancelFocusFrame
+  })
 
   const defaultPlaceholder = translate(
     'auto.components.skills.SkillInstallTargetFields.5845cfe543',

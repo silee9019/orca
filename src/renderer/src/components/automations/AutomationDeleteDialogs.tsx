@@ -1,4 +1,5 @@
 import React from 'react'
+import { focusAutomationDeleteConfirm } from './automation-delete-dialog-actions'
 import { Check, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,7 +42,7 @@ export function AutomationDeleteDialog({
         className="max-w-md"
         onOpenAutoFocus={(event) => {
           event.preventDefault()
-          confirmButtonRef.current?.focus()
+          focusAutomationDeleteConfirm(confirmButtonRef)
         }}
       >
         <DialogHeader>
@@ -130,7 +131,7 @@ export function ExternalAutomationDeleteDialog({
         className="max-w-md"
         onOpenAutoFocus={(event) => {
           event.preventDefault()
-          confirmButtonRef.current?.focus()
+          focusAutomationDeleteConfirm(confirmButtonRef)
         }}
       >
         <DialogHeader>

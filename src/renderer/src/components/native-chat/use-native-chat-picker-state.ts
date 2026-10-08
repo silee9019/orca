@@ -24,6 +24,7 @@ import {
   type NativeChatSendClassification
 } from './native-chat-composer-state'
 import { useNativeChatSkills } from './use-native-chat-skills'
+import { useNativeChatSkillRetryViewer } from './use-native-chat-skill-retry-viewer'
 import {
   emitNativeChatPickerItemAccepted,
   emitNativeChatPickerOpened,
@@ -99,6 +100,14 @@ export function useNativeChatPickerState(args: {
       sessionSkillNames
     ]
   )
+
+  useNativeChatSkillRetryViewer({
+    discovery,
+    autocomplete,
+    agent,
+    tab: terminalTabId,
+    pane: draftScopeKey
+  })
 
   useEffect(() => {
     // Why: suppression is per-trigger-occurrence AND per-context. The composer

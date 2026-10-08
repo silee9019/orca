@@ -1,3 +1,9 @@
+export {
+  shouldShowAutomationsButton,
+  shouldShowSkillsButton,
+  shouldShowArtifactsButton
+} from './sidebar-extension-controls'
+import { useSidebarExtensionControls } from './sidebar-extension-controls'
 import React from 'react'
 import { BookOpen, CalendarClock, EyeOff, Files, Search, Smartphone } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -26,24 +32,6 @@ export function shouldShowMobileButton(
   return settings?.showMobileButton !== false
 }
 
-export function shouldShowAutomationsButton(
-  settings: Partial<Pick<GlobalSettings, 'showAutomationsButton'>> | null | undefined
-): boolean {
-  return settings?.showAutomationsButton !== false
-}
-
-export function shouldShowArtifactsButton(
-  settings: Partial<Pick<GlobalSettings, 'showArtifactsButton'>> | null | undefined
-): boolean {
-  return settings?.showArtifactsButton === true
-}
-
-export function shouldShowSkillsButton(
-  settings: Partial<Pick<GlobalSettings, 'showSkillsButton'>> | null | undefined
-): boolean {
-  return settings?.showSkillsButton === true
-}
-
 export function shouldShowAgentDashboardButton(
   settings: Partial<Pick<GlobalSettings, 'experimentalAgentDashboardPopout'>> | null | undefined
 ): boolean {
@@ -57,34 +45,30 @@ const SidebarNav = React.memo(function SidebarNav() {
   // translate() preserves Orca's pseudo-localization behavior.
   useTranslation()
   const worktreePaletteShortcutCombos = useShortcutKeyComboDetails('worktree.palette')
-  const openAutomationsPage = useAppStore((s) => s.openAutomationsPage)
+  const {
+    openAutomationsPage,
+    openSkillsPage,
+    openArtifactsPage,
+    showAutomationsButton,
+    showSkillsButton,
+    showArtifactsButton,
+    hideAutomationsButton,
+    hideSkillsButton,
+    hideArtifactsButton
+  } = useSidebarExtensionControls()
   const openMobilePage = useAppStore((s) => s.openMobilePage)
-  const openArtifactsPage = useAppStore((s) => s.openArtifactsPage)
-  const openSkillsPage = useAppStore((s) => s.openSkillsPage)
   const openModal = useAppStore((s) => s.openModal)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const activeView = useAppStore((s) => s.activeView)
   const showAgentDashboardButton = useAppStore((s) => shouldShowAgentDashboardButton(s.settings))
-  const showAutomationsButton = useAppStore((s) => shouldShowAutomationsButton(s.settings))
   const showMobileButton = useAppStore((s) => shouldShowMobileButton(s.settings))
-  const showArtifactsButton = useAppStore((s) => shouldShowArtifactsButton(s.settings))
-  const showSkillsButton = useAppStore((s) => shouldShowSkillsButton(s.settings))
   const automationsActive = activeView === 'automations'
   const mobileActive = activeView === 'mobile'
   const artifactsActive = activeView === 'artifacts'
   const skillsActive = activeView === 'skills'
   const mobileOnboardingBadge = useMobileSidebarOnboardingBadge(showMobileButton)
-  const hideAutomationsButton = React.useCallback(() => {
-    void updateSettings({ showAutomationsButton: false })
-  }, [updateSettings])
   const hideMobileButton = React.useCallback(async () => {
     await updateSettings({ showMobileButton: false })
-  }, [updateSettings])
-  const hideArtifactsButton = React.useCallback(() => {
-    void updateSettings({ showArtifactsButton: false })
-  }, [updateSettings])
-  const hideSkillsButton = React.useCallback(() => {
-    void updateSettings({ showSkillsButton: false })
   }, [updateSettings])
 
   useMobileNavigationViewer({

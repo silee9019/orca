@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { SkillInstallWorkspaceViewerActionSchema } from './skill-install-workspace-viewer-command'
+import { SkillInstallAgentViewerActionSchema } from './skill-install-agent-viewer-command'
 import { isSkillInstallProviderId, type SkillInstallProviderId } from './skill-install-providers'
 
 export const SKILL_INSTALL_TARGET_VIEWER_SCHEMAS = [
@@ -34,6 +36,12 @@ export const SkillInstallTargetViewerActionSchema = z.discriminatedUnion(
 export type SkillInstallTargetViewerAction = z.infer<typeof SkillInstallTargetViewerActionSchema>
 
 export const SkillInstallViewerActionSchema = z.discriminatedUnion('kind', [
+  z
+    .object({ kind: z.literal('workspace-form'), action: SkillInstallWorkspaceViewerActionSchema })
+    .strict(),
+  z
+    .object({ kind: z.literal('agents-form'), action: SkillInstallAgentViewerActionSchema })
+    .strict(),
   z.object({ kind: z.literal('get') }).strict(),
   z.object({ kind: z.literal('link'), value: z.string().max(8192) }).strict(),
   z.object({ kind: z.literal('inspect') }).strict(),

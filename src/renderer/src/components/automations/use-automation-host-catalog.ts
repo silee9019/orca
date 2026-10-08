@@ -62,9 +62,12 @@ export type AutomationHostCatalogView = {
   loadCounts: AutomationHostLoadCounts
   selectHost: (filter: AutomationHostFilter) => void
   /** Runs the recovery verb the notice or empty state offered for a host. */
-  recover: (action: AutomationHostRecoveryAction, entry?: AutomationHostCatalogEntry | null) => void
+  recover: (
+    action: AutomationHostRecoveryAction,
+    entry?: AutomationHostCatalogEntry | null
+  ) => Promise<'settled' | 'failed'>
   /** Manual refresh of every host in view, bypassing TTL where reachable. */
-  refreshHosts: () => void
+  refreshHosts: () => Promise<void>
   /**
    * Invalidates the host a local write just landed on, without waiting for the
    * authority's own event. The event still arrives and is harmless; what this
@@ -239,13 +242,13 @@ export function useAutomationHostCatalog(
   const recoveryDeps = useMemo(
     (): AutomationHostRecoveryDeps => ({
       retry: (entry) => {
-        void controller.scheduler.retry(automationHostFetchTarget(entry, pairingRevision))
+        return controller.scheduler.retry(automationHostFetchTarget(entry, pairingRevision))
       },
       connectSshTarget: (targetId) => {
-        void window.api.ssh.connect({ targetId })
+        return window.api.ssh.connect({ targetId })
       },
       connectRuntimeEnvironment: (environmentId) => {
-        void window.api.runtimeEnvironments.connect({ selector: environmentId })
+        return window.api.runtimeEnvironments.connect({ selector: environmentId })
       },
       openSettings: (target) => {
         openSettingsTarget(target)
@@ -256,13 +259,25 @@ export function useAutomationHostCatalog(
   )
 
   const recover = useCallback(
-    (action: AutomationHostRecoveryAction, entry?: AutomationHostCatalogEntry | null) => {
-      runAutomationHostRecovery(action, entry ?? resolution.entry, recoveryDeps)
+    async (
+      action: AutomationHostRecoveryAction,
+      entry?: AutomationHostCatalogEntry | null
+    ): Promise<'settled' | 'failed'> => {
+      const target = entry ?? resolution.entry
+      if (!target) {
+        return 'failed'
+      }
+      try {
+        await runAutomationHostRecovery(action, target, recoveryDeps)
+        return 'settled'
+      } catch {
+        return 'failed'
+      }
     },
     [recoveryDeps, resolution.entry]
   )
   const refreshHosts = useCallback(() => {
-    void controller.applyCatalog(queryCatalog, { selectedStableKey, force: true })
+    return controller.applyCatalog(queryCatalog, { selectedStableKey, force: true })
   }, [controller, queryCatalog, selectedStableKey])
 
   return {

@@ -1,3 +1,22 @@
+import { getAutomationTemplates } from '../components/automations/automation-templates'
+import {
+  applyAutomationViewerChildAction,
+  isAutomationViewerChildAction
+} from './automation-page-viewer-child-action'
+import {
+  isAutomationSettingsHandoff,
+  startAutomationViewerSettingsHandoff,
+  releaseAutomationViewerRequest
+} from './automation-viewer-settings-handoff'
+import {
+  automationViewerRecoveryTarget,
+  performAutomationViewerAsyncAction
+} from './automation-page-viewer-async'
+import {
+  didAutomationViewerTargetChange,
+  automationViewerHostScope,
+  type AutomationViewerRequest
+} from './automation-page-viewer-commit'
 import {
   automationViewerSnapshot as snapshot,
   type AutomationViewerPage as Page,
@@ -6,19 +25,22 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { AutomationViewerAction } from '../../../shared/automation-viewer-command'
 import { AutomationViewerActionSchema } from '../../../shared/automation-viewer-command'
-import { applyAutomationEditorViewerAction } from './automation-editor-viewer-controller'
 import {
   EMPTY_AUTOMATION_LIST_FILTER,
   nextAutomationListSort
 } from '../components/automations/automation-list-view'
 
-type Control = (action: AutomationViewerAction) => Promise<ViewerState>
+type PageAction = Exclude<AutomationViewerAction, { kind: 'workspace-provenance-form' }>
+type Control = (action: PageAction) => Promise<ViewerState>
 const mountedViewers = new Set<Control>()
 
 export async function applyAutomationViewerAction(
   action: AutomationViewerAction
 ): Promise<ViewerState> {
   const parsed = AutomationViewerActionSchema.parse(action)
+  if (parsed.kind === 'workspace-provenance-form') {
+    throw new Error('workspace_automation_requires_routed_viewer')
+  }
   if (mountedViewers.size !== 1) {
     throw new Error(mountedViewers.size ? 'viewer_ambiguous' : 'viewer_unavailable')
   }
@@ -35,12 +57,7 @@ export function useAutomationViewerController(page: Page): void {
   useLayoutEffect(() => {
     latest.current = page
   })
-  const pending = useRef<{
-    action: AutomationViewerAction
-    ready: boolean
-    resolve: (state: ViewerState) => void
-    reject: (error: Error) => void
-  } | null>(null)
+  const pending = useRef<AutomationViewerRequest | null>(null)
   useEffect(() => {
     const request = pending.current
     if (!request || !request.ready || !page.list.searchSettled) {
@@ -57,27 +74,13 @@ export function useAutomationViewerController(page: Page): void {
     pending.current = null
     const action = request.action
     if (
-      ((action.kind === 'editor-create' || action.kind === 'editor-edit') && !state.editor.open) ||
-      (action.kind === 'editor-edit' &&
-        action.source === 'local' &&
-        state.editor.rowKey !== action.rowKey) ||
-      (action.kind === 'editor-edit' &&
-        action.source === 'external' &&
-        !page.list.filteredExternalAutomationEntries.some(
-          (entry) =>
-            entry.key === action.rowKey &&
-            entry.job === page.local.editingExternalTarget?.job &&
-            entry.manager === page.local.editingExternalTarget?.manager &&
-            entry.scope === page.local.editingExternalTarget?.scope
-        )) ||
-      (action.kind === 'query' && state.query !== action.value) ||
-      (action.kind === 'select' &&
-        (action.source === 'local' ? state.selectedRowKey : state.selectedExternalKey) !==
-          action.rowKey)
+      didAutomationViewerTargetChange(page, action, state) ||
+      ((action.kind === 'refresh' || action.kind === 'host-recover') &&
+        request.hostScope !== automationViewerHostScope(page))
     ) {
       request.reject(new Error('viewer_target_changed'))
     } else {
-      request.resolve(state)
+      request.resolve({ ...state, ...request.outcome })
     }
   })
   useEffect(() => {
@@ -86,15 +89,16 @@ export function useAutomationViewerController(page: Page): void {
       if (action.kind === 'get') {
         return snapshot(latest.current)
       }
-      if (action.kind === 'editor-form') {
-        if (pending.current) {
-          throw new Error('viewer_busy')
-        }
-        if (!local.createOpen || local.deleteTarget || local.externalDeleteTarget) {
+      const child = applyAutomationViewerChildAction(
+        () => latest.current,
+        action,
+        Boolean(pending.current)
+      )
+      if (isAutomationViewerChildAction(action)) {
+        if (!child) {
           throw new Error('viewer_unavailable')
         }
-        const editorForm = await applyAutomationEditorViewerAction(action.action)
-        return { ...snapshot(latest.current), editorForm }
+        return child
       }
       if (local.createOpen || local.deleteTarget || local.externalDeleteTarget) {
         throw new Error('viewer_modal_open')
@@ -107,6 +111,13 @@ export function useAutomationViewerController(page: Page): void {
       }
       if (action.kind === 'editor-create' && !destination.canCreateAutomation) {
         throw new Error('automation_create_unavailable')
+      }
+      if (
+        action.kind === 'host-select' &&
+        action.stableKey !== null &&
+        !list.hostCatalog.entries.some((entry) => entry.stableKey === action.stableKey)
+      ) {
+        throw new Error('automation_host_not_loaded')
       }
       if (
         action.kind === 'filter' &&
@@ -143,28 +154,57 @@ export function useAutomationViewerController(page: Page): void {
       ) {
         throw new Error('automation_edit_unavailable')
       }
+      const template =
+        action.kind === 'editor-create' && action.templateId
+          ? getAutomationTemplates().find((entry) => entry.id === action.templateId)
+          : undefined
+      if (action.kind === 'editor-create' && action.templateId && !template) {
+        throw new Error('automation_template_unavailable')
+      }
+      if (action.kind === 'host-recover') {
+        automationViewerRecoveryTarget(latest.current, action)
+        if (isAutomationSettingsHandoff(action)) {
+          return startAutomationViewerSettingsHandoff(latest.current, action, pending)
+        }
+      }
       return new Promise((resolve, reject) => {
-        const request = { action, resolve, reject, ready: action.kind !== 'editor-edit' }
+        const request: AutomationViewerRequest = {
+          action,
+          resolve,
+          reject,
+          ready: !['editor-edit', 'refresh', 'host-recover'].includes(action.kind),
+          hostScope:
+            action.kind === 'refresh' || action.kind === 'host-recover'
+              ? automationViewerHostScope(latest.current)
+              : undefined
+        }
         pending.current = request
         switch (action.kind) {
-          case 'editor-create':
-            editorActions.openCreateDialog()
+          case 'host-select': {
+            const entry = list.hostCatalog.entries.find(
+              (host) => host.stableKey === action.stableKey
+            )
+            list.hostCatalog.selectHost(
+              entry ? { kind: 'host', host: entry.stableRef } : { kind: 'all' }
+            )
             break
+          }
+          case 'editor-create':
+            if (template) {
+              editorActions.openCreateDialog(template)
+            } else {
+              editorActions.openCreateDialog()
+            }
+            break
+          case 'refresh':
+          case 'host-recover':
           case 'editor-edit': {
-            const operation = editRow
-              ? editorActions.openEditDialog(editRow)
-              : editExternal
-                ? editorActions.openEditExternalDialog(
-                    editExternal.manager,
-                    editExternal.job,
-                    editExternal.scope
-                  )
-                : undefined
-            void Promise.resolve(operation).then(
-              () => {
+            void performAutomationViewerAsyncAction(latest.current, action).then(
+              (result) => {
                 if (pending.current !== request) {
                   return
                 }
+                request.outcome = result
                 request.ready = true
                 setRevision((value) => value + 1)
               },
@@ -237,8 +277,7 @@ export function useAutomationViewerController(page: Page): void {
     mountedViewers.add(control)
     return () => {
       mountedViewers.delete(control)
-      pending.current?.reject(new Error('viewer_unmounted'))
-      pending.current = null
+      releaseAutomationViewerRequest(pending)
     }
   }, [])
 }

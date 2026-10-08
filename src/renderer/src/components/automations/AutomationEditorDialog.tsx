@@ -81,6 +81,7 @@ type AutomationEditorDialogProps = {
   editDestination?: AutomationCreateDestinationControl
   /** Why a save was refused. Belongs here rather than on the page: this dialog covers it. */
   notice?: AutomationActionNotice | null
+  noticeOwnerKey?: string
   onNoticeRecover?: (action: AutomationHostRecoveryAction) => void
   onNoticeDismiss?: () => void
   onProjectChange: (projectId: string) => void
@@ -112,6 +113,7 @@ export function AutomationEditorDialog({
   createDestination,
   editDestination,
   notice,
+  noticeOwnerKey,
   onNoticeRecover,
   onNoticeDismiss,
   onProjectChange,
@@ -150,6 +152,10 @@ export function AutomationEditorDialog({
   useAutomationEditorViewerController({
     open,
     isSaving,
+    notice,
+    noticeOwnerKey,
+    onNoticeDismiss,
+    onNoticeRecover,
     draft,
     onDraftChange,
     onOpenChange,

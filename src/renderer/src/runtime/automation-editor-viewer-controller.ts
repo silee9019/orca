@@ -1,16 +1,9 @@
 import {
-  applyAutomationSetupViewerAction,
-  type AutomationSetupViewerState
-} from './automation-setup-viewer-controller'
-import type { TuiAgent } from '../../../shared/tui-agent'
-import {
-  applyAutomationWorkspaceViewerAction,
-  type AutomationWorkspaceViewerState
-} from './automation-workspace-viewer-controller'
-import {
-  applyAutomationTimeViewerAction,
-  type AutomationTimeViewerState
-} from './automation-time-viewer-controller'
+  completeAutomationEditorRequest,
+  type AutomationEditorPendingRequest
+} from './automation-editor-request-completion'
+import { useAppStore } from '@/store'
+import { applyAutomationEditorChildForm } from './automation-editor-child-form'
 import {
   setAutomationSchedulePresetDraft,
   setAutomationScheduleWeekdayDraft,
@@ -29,54 +22,18 @@ import {
   AutomationEditorViewerActionSchema,
   type AutomationEditorViewerAction
 } from '../../../shared/automation-editor-viewer-command'
-import type {
-  AutomationCreateTarget,
-  AutomationDraft
-} from '../components/automations/AutomationEditorDialog'
-import type { AutomationTemplate } from '../components/automations/automation-templates'
+import {
+  automationEditorViewerSnapshot as snapshot,
+  type AutomationEditorViewerForm as Form,
+  type AutomationEditorViewerState
+} from './automation-editor-viewer-state'
+export type { AutomationEditorViewerState } from './automation-editor-viewer-state'
 
-type Form = {
-  open: boolean
-  reviewedTarget: string
-  isSaving: boolean
-  draft: AutomationDraft
-  isCreateMode: boolean
-  createTarget: AutomationCreateTarget
-  templateOpen: boolean
-  templates: readonly AutomationTemplate[]
-  agentIds: readonly TuiAgent[]
-  projectIds: readonly string[]
-  onProjectChange: (projectId: string) => void
-  onTemplateOpenChange: (open: boolean) => void
-  onApplyTemplate: (template: AutomationTemplate) => void
-  onCreateTargetChange: (target: AutomationCreateTarget) => void
-  onDraftChange: (updater: (draft: AutomationDraft) => AutomationDraft) => void
-  onOpenChange: (open: boolean) => void
-}
-function snapshot(form: Form) {
-  return {
-    viewer: 'desktop' as const,
-    committed: true as const,
-    open: form.open,
-    reviewedTarget: form.reviewedTarget,
-    isSaving: form.isSaving,
-    name: form.draft.name,
-    prompt: form.draft.prompt,
-    draft: form.draft,
-    createTarget: form.createTarget,
-    projectIds: form.projectIds,
-    agentIds: form.createTarget === 'hermes' ? [] : form.agentIds,
-    templateOpen: form.templateOpen,
-    templates: form.isCreateMode ? form.templates : []
-  }
-}
-export type AutomationEditorViewerState = ReturnType<typeof snapshot> & {
-  time?: AutomationTimeViewerState
-  workspace?: AutomationWorkspaceViewerState
-  setup?: AutomationSetupViewerState
-}
 type Control = (action: AutomationEditorViewerAction) => Promise<AutomationEditorViewerState>
-const mountedEditors = new Set<Control>()
+const mountedEditors = new Map<Control, () => boolean>()
+export function isAutomationEditorViewerBusy(): boolean {
+  return [...mountedEditors.values()].some((getBusy) => getBusy())
+}
 export async function applyAutomationEditorViewerAction(
   action: AutomationEditorViewerAction
 ): Promise<AutomationEditorViewerState> {
@@ -84,78 +41,62 @@ export async function applyAutomationEditorViewerAction(
   if (mountedEditors.size !== 1) {
     throw new Error(mountedEditors.size ? 'viewer_ambiguous' : 'viewer_unavailable')
   }
-  const control = mountedEditors.values().next().value
+  const control = mountedEditors.keys().next().value
   if (!control) {
     throw new Error('viewer_unavailable')
   }
   return control(parsed)
 }
-export function useAutomationEditorViewerController(form: Omit<Form, 'reviewedTarget'>): void {
+export function useAutomationEditorViewerController(
+  form: Omit<Form, 'reviewedTarget' | 'noticeReviewedTarget'>
+): void {
+  const profile = useAppStore((state) => state.activeOrcaProfileId)
   const target = useRef({ open: form.open, token: createBrowserUuid() })
-  const latest = useRef<Form>({ ...form, reviewedTarget: target.current.token })
+  const noticeTarget = useRef({
+    profile,
+    notice: form.notice,
+    owner: form.noticeOwnerKey,
+    open: form.open,
+    token: createBrowserUuid()
+  })
+  const latest = useRef<Form>({
+    ...form,
+    reviewedTarget: target.current.token,
+    noticeReviewedTarget: noticeTarget.current.token
+  })
   const [, setRevision] = useState(0)
   const childBusy = useRef(false)
-  const pending = useRef<{
-    action: Exclude<
-      AutomationEditorViewerAction,
-      { kind: 'get' | 'time-form' | 'workspace-form' | 'setup-form' }
-    >
-    resolve: (state: AutomationEditorViewerState) => void
-    reject: (error: Error) => void
-  } | null>(null)
+  const pending = useRef<AutomationEditorPendingRequest | null>(null)
   useLayoutEffect(() => {
     if (target.current.open !== form.open) {
       target.current = { open: form.open, token: createBrowserUuid() }
     }
-    const current = { ...form, reviewedTarget: target.current.token }
+    if (
+      noticeTarget.current.profile !== profile ||
+      noticeTarget.current.notice !== form.notice ||
+      noticeTarget.current.owner !== form.noticeOwnerKey ||
+      noticeTarget.current.open !== form.open
+    ) {
+      noticeTarget.current = {
+        profile,
+        notice: form.notice,
+        owner: form.noticeOwnerKey,
+        open: form.open,
+        token: createBrowserUuid()
+      }
+    }
+    const current = {
+      ...form,
+      reviewedTarget: target.current.token,
+      noticeReviewedTarget: noticeTarget.current.token
+    }
     latest.current = current
     const request = pending.current
     if (!request) {
       return
     }
-    const action = request.action
-    if (action.kind === 'close') {
-      if (!form.open) {
-        pending.current = null
-        request.resolve(snapshot(current))
-      } else if (current.reviewedTarget !== action.reviewedTarget) {
-        pending.current = null
-        request.reject(new Error('viewer_target_changed'))
-      }
-      return
-    }
-    pending.current = null
-    if (
-      !form.open ||
-      current.reviewedTarget !== action.reviewedTarget ||
-      (action.kind === 'project' && form.draft.projectId !== action.projectId) ||
-      (action.kind === 'agent' && form.draft.agentId !== action.value) ||
-      ((action.kind === 'name' || action.kind === 'prompt') &&
-        form.draft[action.kind] !== action.value) ||
-      (action.kind === 'session' &&
-        (form.draft.reuseSession !== (action.value === 'reuse') ||
-          (action.value === 'reuse' && form.draft.workspaceMode !== 'existing'))) ||
-      (action.kind === 'missed-run-grace' && form.draft.missedRunGraceMinutes !== action.value) ||
-      (action.kind === 'precheck-command' && form.draft.precheckCommand !== action.value) ||
-      (action.kind === 'precheck-timeout' && form.draft.precheckTimeoutSeconds !== action.value) ||
-      (action.kind === 'schedule-preset' &&
-        (form.draft.preset !== action.value || form.draft.scheduleWarning !== null)) ||
-      (action.kind === 'schedule-weekday' &&
-        (form.draft.dayOfWeek !== action.value || form.draft.scheduleWarning !== null)) ||
-      (action.kind === 'schedule-cron' &&
-        (form.draft.customSchedule !== action.value || form.draft.scheduleWarning !== null)) ||
-      (action.kind === 'template-open' && form.templateOpen !== action.value) ||
-      (action.kind === 'create-target' && form.createTarget !== action.value) ||
-      (action.kind === 'template-apply' &&
-        (form.templateOpen ||
-          form.draft.name !==
-            form.templates.find((template) => template.id === action.templateId)?.name ||
-          form.draft.prompt !==
-            form.templates.find((template) => template.id === action.templateId)?.prompt))
-    ) {
-      request.reject(new Error('viewer_target_changed'))
-    } else {
-      request.resolve(snapshot(current))
+    if (completeAutomationEditorRequest(current, request, profile)) {
+      pending.current = null
     }
   })
   useEffect(() => {
@@ -176,22 +117,33 @@ export function useAutomationEditorViewerController(form: Omit<Form, 'reviewedTa
       if (action.reviewedTarget !== current.reviewedTarget) {
         throw new Error('viewer_target_changed')
       }
+      if (action.kind === 'notice-dismiss' || action.kind === 'notice-recover') {
+        if (action.reviewedNotice !== current.noticeReviewedTarget) {
+          throw new Error('viewer_target_changed')
+        }
+        if (
+          !current.notice ||
+          (action.kind === 'notice-dismiss'
+            ? !current.onNoticeDismiss
+            : !current.onNoticeRecover || current.notice.recovery !== action.action)
+        ) {
+          throw new Error('automation_notice_unavailable')
+        }
+      }
       if (
+        action.kind === 'text-form' ||
+        action.kind === 'destination-form' ||
         action.kind === 'time-form' ||
         action.kind === 'workspace-form' ||
-        action.kind === 'setup-form'
+        action.kind === 'setup-form' ||
+        action.kind === 'project-form'
       ) {
         if (action.kind === 'time-form' && current.draft.preset === 'custom') {
           throw new Error('automation_time_unavailable')
         }
         childBusy.current = true
         try {
-          const state =
-            action.kind === 'time-form'
-              ? { time: await applyAutomationTimeViewerAction(action.action) }
-              : action.kind === 'workspace-form'
-                ? { workspace: await applyAutomationWorkspaceViewerAction(action.action) }
-                : { setup: await applyAutomationSetupViewerAction(action.action) }
+          const state = await applyAutomationEditorChildForm(action)
           if (!latest.current.open || latest.current.reviewedTarget !== action.reviewedTarget) {
             throw new Error('viewer_target_changed')
           }
@@ -240,9 +192,25 @@ export function useAutomationEditorViewerController(form: Omit<Form, 'reviewedTa
         throw new Error('automation_template_unavailable')
       }
       return new Promise((resolve, reject) => {
-        pending.current = { action, resolve, reject }
+        pending.current = {
+          action,
+          resolve,
+          reject,
+          noticeOwnerKey: current.noticeOwnerKey,
+          noticeProfile: noticeTarget.current.profile
+        }
         if (action.kind === 'close') {
           current.onOpenChange(false)
+        } else if (action.kind === 'notice-recover') {
+          try {
+            current.onNoticeRecover?.(action.action)
+          } catch (error) {
+            pending.current = null
+            reject(error instanceof Error ? error : new Error('automation_notice_recovery_failed'))
+            return
+          }
+        } else if (action.kind === 'notice-dismiss') {
+          current.onNoticeDismiss?.()
         } else if (action.kind === 'project') {
           current.onProjectChange(action.projectId)
         } else if (action.kind === 'name') {
@@ -275,7 +243,7 @@ export function useAutomationEditorViewerController(form: Omit<Form, 'reviewedTa
         setRevision((value) => value + 1)
       })
     }
-    mountedEditors.add(control)
+    mountedEditors.set(control, () => Boolean(pending.current || childBusy.current))
     return () => {
       mountedEditors.delete(control)
       pending.current?.reject(new Error('viewer_unmounted'))

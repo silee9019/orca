@@ -21,7 +21,7 @@ afterEach(() => {
   fixture.trusted = true
   ipc.removeAllListeners()
 })
-it.each(['artifact', 'automation', 'skills'] as const)(
+it.each(['artifact', 'automation', 'skills', 'extensions-sidebar'] as const)(
   'requires the selected renderer and matching request id for %s',
   async (domain) => {
     const result = requestAccountViewerAction({

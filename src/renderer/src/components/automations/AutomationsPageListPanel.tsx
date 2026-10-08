@@ -17,7 +17,6 @@ export function AutomationsPageListPanel({
     list,
     destination,
     sourceAvailability,
-    pageRefresh,
     runActions,
     editorActions,
     managementActions,
@@ -69,10 +68,7 @@ export function AutomationsPageListPanel({
       externalManagersUncheckedNotice={list.externalManagersUncheckedNotice}
       onSelectHost={hostCatalog.selectHost}
       onRecoverHost={(action, entry) => {
-        hostCatalog.recover(action, entry)
-        if (action === 'retry') {
-          void pageRefresh.refresh()
-        }
+        void controller.recoverListHost(action, entry)
       }}
       sortedListItems={list.sortedListItems}
       listSort={local.listSort}
@@ -107,10 +103,7 @@ export function AutomationsPageListPanel({
       openCreateDialog={editorActions.openCreateDialog}
       canCreateAutomation={destination.canCreateAutomation}
       onOpenDetail={onOpenDetail}
-      onRefresh={() => {
-        hostCatalog.refreshHosts()
-        void pageRefresh.refresh()
-      }}
+      onRefresh={() => void controller.refreshList()}
       isRefreshing={isLoading}
       onOpenRuns={() => {
         hostCatalog.selectHost({ kind: 'all' })

@@ -83,6 +83,7 @@ export function WorktreeCardDetailsHover({
   onUnlinkReview,
   onOpenAutomation,
   onOpenAutomationRun,
+  automationNavigationTarget,
   hoverControl
 }: WorktreeCardDetailsHoverProps): React.JSX.Element {
   const internalHoverControl = useWorktreeCardDetailsHoverControl()
@@ -135,6 +136,20 @@ export function WorktreeCardDetailsHover({
       handler?.(event)
     },
     [closeHover]
+  )
+  const dismissAndOpenAutomation = React.useCallback(
+    (event?: React.MouseEvent) => {
+      closeHover()
+      onOpenAutomation?.(event)
+    },
+    [closeHover, onOpenAutomation]
+  )
+  const dismissAndOpenAutomationRun = React.useCallback(
+    (event?: React.MouseEvent) => {
+      closeHover()
+      onOpenAutomationRun?.(event)
+    },
+    [closeHover, onOpenAutomationRun]
   )
   const copyLinkedWorkItemLink = React.useCallback(async (url: string, label: string) => {
     try {
@@ -347,9 +362,12 @@ export function WorktreeCardDetailsHover({
           {automationProvenance && (
             <WorktreeCardAutomationDetailSection
               provenance={automationProvenance}
-              onOpenAutomation={onOpenAutomation ? dismissAndRun(onOpenAutomation) : undefined}
-              onOpenAutomationRun={
-                onOpenAutomationRun ? dismissAndRun(onOpenAutomationRun) : undefined
+              automationNavigationTarget={automationNavigationTarget}
+              onOpenAutomation={onOpenAutomation ? dismissAndOpenAutomation : undefined}
+              onOpenAutomationRun={onOpenAutomationRun ? dismissAndOpenAutomationRun : undefined}
+              onNavigateAutomation={onOpenAutomation ? dismissAndOpenAutomation : undefined}
+              onNavigateAutomationRun={
+                onOpenAutomationRun ? dismissAndOpenAutomationRun : undefined
               }
             />
           )}

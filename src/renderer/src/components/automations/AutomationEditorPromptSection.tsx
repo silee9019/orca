@@ -1,3 +1,4 @@
+import { useAutomationTextViewer } from '../../runtime/automation-text-viewer'
 import { ImeTextarea } from '@/lib/ime-text-field'
 import React from 'react'
 import { Pencil } from 'lucide-react'
@@ -19,6 +20,12 @@ export function AutomationEditorPromptSection({
   onDismiss
 }: AutomationEditorPromptSectionProps): React.JSX.Element {
   const titleRef = React.useRef<HTMLTextAreaElement>(null)
+  const focusName = (): boolean => {
+    const title = titleRef.current
+    title?.focus()
+    return Boolean(title?.isConnected && title.ownerDocument.activeElement === title)
+  }
+  useAutomationTextViewer({ ownerKey: JSON.stringify(draft), focusName })
   const namePlaceholder = translate(
     'auto.components.automations.AutomationEditorDialogHeader.1d9826933e',
     'Weekday repo audit'
@@ -63,7 +70,7 @@ export function AutomationEditorPromptSection({
               variant="ghost"
               size="icon-xs"
               aria-label={editNameLabel}
-              onClick={() => titleRef.current?.focus()}
+              onClick={focusName}
               className="mt-1 shrink-0 text-muted-foreground can-hover:opacity-0 transition-opacity group-hover/title:opacity-100 group-focus-within/title:opacity-100 focus-visible:opacity-100"
             >
               <Pencil className="size-4" />

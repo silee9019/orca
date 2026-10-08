@@ -34,7 +34,7 @@ export function AutomationsPageSurface({
     managementActions,
     runActions,
     externalActions,
-    openRunWorkspace
+    runPageControls
   } = controller
   const {
     projectHostSetups,
@@ -54,14 +54,6 @@ export function AutomationsPageSurface({
     automationYamlHooksByRepoKey,
     draft,
     setCreateOpen,
-    deleteTarget,
-    dontAskDeleteAgain,
-    deleteConfirmButtonRef,
-    setDeleteTarget,
-    setDontAskDeleteAgain,
-    externalDeleteTarget,
-    externalDeleteConfirmButtonRef,
-    setExternalDeleteTarget,
     relativeNow,
     externalActionKey,
     activePaneTab,
@@ -130,6 +122,7 @@ export function AutomationsPageSurface({
         selectedAutomationName={selected?.name}
         runPageOrigin={runPageOrigin}
         ownerNotice={ownerAction?.notice ?? null}
+        ownerNoticeKey={JSON.stringify(ownerAction?.host ?? null)}
         recoverOwnerAction={recoverOwnerAction}
         dismissOwnerAction={() => setOwnerAction(null)}
         showAutomationsList={showAutomationsList}
@@ -148,6 +141,12 @@ export function AutomationsPageSurface({
           destinationForm.isOrcaForm ? destinationForm.editDestinationControl : undefined
         }
         notice={editorNotice}
+        noticeOwnerKey={JSON.stringify([
+          editorNoticeHost,
+          destination.editorRecoveryHost,
+          destinationForm.editHostResolution,
+          destination.createDestination.control.resolution
+        ])}
         onNoticeRecover={(action) => {
           const host = editorNoticeHost ?? destination.editorRecoveryHost
           setEditorNotice(null)
@@ -193,20 +192,7 @@ export function AutomationsPageSurface({
         onApplyTemplate={draftEffects.applyTemplateToDraft}
         onSave={() => void saveAutomation()}
       />
-      <AutomationsPageDeleteDialogs
-        deleteTarget={deleteTarget?.automation ?? null}
-        dontAskDeleteAgain={dontAskDeleteAgain}
-        deleteConfirmButtonRef={deleteConfirmButtonRef}
-        setDeleteTarget={setDeleteTarget}
-        setDontAskDeleteAgain={setDontAskDeleteAgain}
-        confirmDeleteAutomation={() => void managementActions.confirmDeleteAutomation()}
-        externalDeleteTarget={externalDeleteTarget}
-        externalDeleteConfirmButtonRef={externalDeleteConfirmButtonRef}
-        setExternalDeleteTarget={setExternalDeleteTarget}
-        confirmDeleteExternalAutomation={() =>
-          void externalActions.confirmDeleteExternalAutomation()
-        }
-      />
+      <AutomationsPageDeleteDialogs controller={controller} />
       {pageView === 'runs' ? (
         <AutomationRunsDashboardSurface
           rows={list.visibleRows}
@@ -215,6 +201,7 @@ export function AutomationsPageSurface({
           loading={runsDashboard.loading}
           hasMore={runsDashboard.hasMore}
           onLoadMore={runsDashboard.loadMore}
+          request={runsDashboard.request}
           now={relativeNow}
           onRefresh={() => setRunHistoryReloadToken((token) => token + 1)}
           setPageView={setPageView}
@@ -232,13 +219,7 @@ export function AutomationsPageSurface({
           viewState={runPage.selectedAutomationRunPageViewState}
           canRerun={runPage.canRerunSelectedAutomationRunPage}
           isRerunPending={runPage.isSelectedAutomationRunPageRerunPending}
-          onRerun={() =>
-            runSelectedRowAction((row) =>
-              runActions.rerunAutomationRun(row, selectedAutomationRunPage)
-            )
-          }
-          onOpenWorkspace={() => openRunWorkspace(selectedAutomationRunPage)}
-          onBack={runPageOrigin === 'automation' ? showAutomationDetails : showRunsDashboard}
+          {...runPageControls}
         />
       ) : pageView === 'run' ? (
         <AutomationsPageSkeleton />
@@ -250,6 +231,7 @@ export function AutomationsPageSurface({
           selectedExternal={selectedExternal}
           selectedExternalRunPage={selectedExternalRunPage}
           selectedRuns={setup.selectedRuns}
+          runHistoryOwnerKey={controller.runOwnerKeys.get(selectedRow?.key ?? '') ?? null}
           selectedRunsNotice={setup.selectedRunsNotice}
           selectedHostEntry={destination.rowRecoveryHost(selectedRow?.key ?? null)}
           recoverSelectedRuns={(action) => {

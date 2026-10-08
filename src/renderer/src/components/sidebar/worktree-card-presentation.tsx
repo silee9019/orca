@@ -63,6 +63,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     handleOpenReviewInBrowser,
     handleOpenAutomation,
     handleOpenAutomationRun,
+    automationNavigationTarget,
     canUnlinkReview,
     handleUnlinkReview,
     detailsHoverControl,
@@ -183,6 +184,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
                 : undefined
             }
             onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
+            automationNavigationTarget={automationNavigationTarget}
             onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
             onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
             // Why: compact mode hides the metadata badge row, so title hover carries the review affordance.
@@ -249,6 +251,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
           metaReview?.url && metaReview.provider === 'github' ? handleOpenReviewInOrca : undefined
         }
         onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
+        automationNavigationTarget={automationNavigationTarget}
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
         onUnlinkReview={!affiliateListMode && canUnlinkReview ? handleUnlinkReview : undefined}

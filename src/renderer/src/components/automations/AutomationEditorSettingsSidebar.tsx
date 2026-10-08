@@ -230,6 +230,7 @@ export function AutomationEditorSettingsSidebar({
         </div>
         <AutomationSetupDecisionField
           createTarget={isHermesTarget ? 'hermes' : 'orca'}
+          ownerKey={JSON.stringify(destination?.resolution)}
           draft={draft}
           repos={repos}
           projectHostSetups={projectHostSetups}

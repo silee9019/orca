@@ -1,3 +1,4 @@
+import { useAutomationDestinationViewer } from '../../runtime/automation-destination-viewer'
 import React from 'react'
 import {
   Select,
@@ -30,6 +31,7 @@ export function AutomationDestinationField({
   control: AutomationCreateDestinationControl
   labelClassName?: string
 }): React.JSX.Element {
+  useAutomationDestinationViewer(control)
   const selected = control.resolution.status === 'ready' ? control.resolution.entry : null
   // Ineligible hosts stay listed but disabled: hiding them read as the host
   // being gone, and it hid every connected host on a pre-host-scoping server.

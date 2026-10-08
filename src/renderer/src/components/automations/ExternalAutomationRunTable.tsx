@@ -1,5 +1,5 @@
-/* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: run rows are fetched from the external automation store; the loading state tracks that async request lifecycle. */
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React from 'react'
+import { useExternalAutomationRunTable } from './use-external-automation-run-table'
 import { AlertCircle, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,21 +11,12 @@ import type {
   ExternalAutomationRun
 } from '../../../../shared/automations-types'
 import type { ExternalAutomationScope } from './external-automation-scope-client'
-import { externalAutomationScopeKey } from './external-automation-scope-keys'
 import {
   formatExternalDate,
   getExternalRunStatusLabel,
   getExternalRunStatusVariant
 } from './external-automation-display'
-import {
-  createExternalAutomationRunTableState,
-  resolveExternalAutomationFetchedRuns,
-  resolveExternalAutomationRunTableState,
-  updateExternalAutomationRunTablePage
-} from './external-automation-run-table-state'
 import { translate } from '@/i18n/i18n'
-
-const PAGE_SIZE = 8
 
 export type ExternalAutomationRunPage = {
   runs: ExternalAutomationRun[]
@@ -41,7 +32,7 @@ export type FetchExternalAutomationRuns = (input: {
   pageSize: number
 }) => Promise<ExternalAutomationRun[] | ExternalAutomationRunPage>
 
-type ExternalAutomationRunTableProps = {
+export type ExternalAutomationRunTableProps = {
   scope: ExternalAutomationScope
   manager: ExternalAutomationManager
   job: ExternalAutomationJob
@@ -54,15 +45,6 @@ function getRunSummary(run: ExternalAutomationRun): string {
   return run.error ?? run.outputPreview ?? 'No output preview'
 }
 
-function normalizeRunPage(
-  result: ExternalAutomationRun[] | ExternalAutomationRunPage
-): ExternalAutomationRunPage {
-  if (Array.isArray(result)) {
-    return { runs: result }
-  }
-  return result
-}
-
 export function ExternalAutomationRunTable({
   scope,
   manager,
@@ -71,94 +53,20 @@ export function ExternalAutomationRunTable({
   onFetchRuns,
   onOpenRun
 }: ExternalAutomationRunTableProps): React.JSX.Element {
-  const [tableState, setTableState] = useState(() => createExternalAutomationRunTableState(job))
-  const [isLoading, setIsLoading] = useState(false)
-  const scopeRef = useRef(scope)
-  const managerRef = useRef(manager)
-  const jobRef = useRef(job)
-
-  scopeRef.current = scope
-  managerRef.current = manager
-  jobRef.current = job
-  // Refetch when the host changes, not just the job: the same manager and job ID
-  // can be a different machine's cron entry.
-  const scopeKey = externalAutomationScopeKey(scope)
-
-  const resolvedTableState = resolveExternalAutomationRunTableState(tableState, job)
-  if (resolvedTableState !== tableState) {
-    // Why: manager rows can switch jobs while the table stays mounted; reset
-    // before paint so stale fetched rows/selection never flash for the new job.
-    setTableState(resolvedTableState)
-  }
-  const { page, selectedRunId, fetchedRuns, fetchedTotalCount, fetchError } = resolvedTableState
-
-  useEffect(() => {
-    if (!onFetchRuns) {
-      return
-    }
-    let cancelled = false
-    setIsLoading(true)
-    setTableState((current) => ({
-      ...resolveExternalAutomationRunTableState(current, jobRef.current),
-      fetchError: null
-    }))
-    void onFetchRuns({
-      scope: scopeRef.current,
-      manager: managerRef.current,
-      job: jobRef.current,
-      page,
-      pageSize: PAGE_SIZE
-    })
-      .then((result) => {
-        if (cancelled) {
-          return
-        }
-        const nextPage = normalizeRunPage(result)
-        setTableState((current) =>
-          resolveExternalAutomationFetchedRuns(current, jobRef.current, nextPage)
-        )
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setTableState((current) => ({
-            ...resolveExternalAutomationRunTableState(current, jobRef.current),
-            fetchedRuns: null,
-            fetchedTotalCount: null,
-            fetchError: error instanceof Error ? error.message : 'Failed to load runs.'
-          }))
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [job.id, manager.id, onFetchRuns, page, scopeKey])
-
-  const fallbackRuns = job.runs
-  const visibleRuns = onFetchRuns
-    ? (fetchedRuns ?? fallbackRuns.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE))
-    : fallbackRuns.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE)
-  const totalCount = onFetchRuns ? (fetchedTotalCount ?? job.runCount) : job.runCount
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
-  const selectedRun = useMemo(
-    () =>
-      visibleRuns.find((run) => run.id === selectedRunId) ??
-      fallbackRuns.find((run) => run.id === selectedRunId) ??
-      visibleRuns[0] ??
-      null,
-    [fallbackRuns, selectedRunId, visibleRuns]
-  )
-  const hasVisibleRuns = visibleRuns.length > 0
-  const pageStart = totalCount === 0 || !hasVisibleRuns ? 0 : page * PAGE_SIZE + 1
-  const pageEnd = Math.min(totalCount, page * PAGE_SIZE + visibleRuns.length)
-
-  const handlePageChange = (nextPage: number): void => {
-    setTableState((current) => updateExternalAutomationRunTablePage(current, job, nextPage))
-  }
+  const {
+    visibleRuns,
+    totalCount,
+    totalPages,
+    selectedRun,
+    hasVisibleRuns,
+    pageStart,
+    pageEnd,
+    page,
+    isLoading,
+    fetchError,
+    handlePageChange,
+    handleRunSelect
+  } = useExternalAutomationRunTable({ scope, manager, job, now, onFetchRuns, onOpenRun })
 
   return (
     <div className="mt-2 rounded-md border border-border/50 bg-background/50">
@@ -219,13 +127,8 @@ export function ExternalAutomationRunTable({
                   key={run.id}
                   type="button"
                   data-current={selectedRun?.id === run.id}
-                  onClick={() => {
-                    setTableState((current) => ({
-                      ...resolveExternalAutomationRunTableState(current, job),
-                      selectedRunId: run.id
-                    }))
-                    onOpenRun?.(run)
-                  }}
+                  disabled={isLoading}
+                  onClick={() => handleRunSelect(run)}
                   className={cn(
                     'grid w-full grid-cols-[minmax(7.5rem,.45fr)_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                     selectedRun?.id === run.id && 'bg-accent text-accent-foreground'

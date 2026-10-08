@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type {
   Automation,
   ExternalAutomationJob,
@@ -11,7 +11,7 @@ import { AUTOMATION_DEFAULT_TIME } from './automation-draft-model'
 import type { AutomationActionNotice } from './automation-row-action-dispatch'
 import type { AutomationHostCatalogEntry } from './automation-host-catalog-types'
 import type { AutomationCreateDestination } from './automation-create-destination'
-import type { AutomationListRow } from './automation-list-row-identity'
+import type { AutomationDeleteTarget } from './automation-delete-target'
 import {
   EMPTY_AUTOMATION_LIST_FILTER,
   type AutomationListFilter,
@@ -56,6 +56,8 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [deleteOperationCount, setDeleteOperationCount] = useState(0)
+  const deleteOperationCountRef = useRef(0)
   const [listSearchQuery, setListSearchQuery] = useState('')
   const [listFilter, setListFilter] = useState<AutomationListFilter>(EMPTY_AUTOMATION_LIST_FILTER)
   const [listSort, setListSort] = useState<AutomationListSort | null>(null)
@@ -77,6 +79,10 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
     null
   )
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null)
+  const selectedRowKeyRef = useRef<string | null>(null)
+  useLayoutEffect(() => {
+    selectedRowKeyRef.current = selectedRowKey
+  }, [selectedRowKey])
   const [selectedExternalKey, setSelectedExternalKey] = useState<string | null>(null)
   const [selectedExternalRunPage, setSelectedExternalRunPage] =
     useState<SelectedExternalRunPage | null>(null)
@@ -99,7 +105,7 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
     setSelectedExternalKey(externalKey)
   }, [])
   const [draftAtOpen, setDraftAtOpen] = useState<AutomationDraft | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<AutomationListRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AutomationDeleteTarget | null>(null)
   const [externalDeleteTarget, setExternalDeleteTarget] = useState<{
     manager: ExternalAutomationManager
     job: ExternalAutomationJob
@@ -201,6 +207,9 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
     setIsLoading,
     isSaving,
     setIsSaving,
+    deleteOperationCount,
+    setDeleteOperationCount,
+    deleteOperationCountRef,
     listSearchQuery,
     setListSearchQuery,
     listFilter,
@@ -231,6 +240,7 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
     selectedAutomationRunPageId,
     setSelectedAutomationRunPageId,
     selectedRowKey,
+    selectedRowKeyRef,
     setSelectedRowKey,
     selectedExternalKey,
     setSelectedExternalKey,

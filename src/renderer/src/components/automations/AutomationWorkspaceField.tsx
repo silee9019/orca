@@ -1,3 +1,6 @@
+import { useAppStore } from '@/store'
+import { getRuntimeEnvironmentIdForRepo } from '@/lib/repo-runtime-owner'
+import { isAutomationBaseBranchChoice } from './automation-base-branch-choice'
 import { Info } from 'lucide-react'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -37,6 +40,10 @@ export function AutomationWorkspaceField({
   segmentedItemClassName,
   onDraftChange
 }: AutomationWorkspaceFieldProps): React.JSX.Element {
+  const runtimeId = useAppStore((state) => getRuntimeEnvironmentIdForRepo(state, draft.projectId))
+  const repo = repoMap.get(draft.projectId)
+  const selectBaseBranch = (baseBranch: string): void =>
+    onDraftChange((current) => ({ ...current, baseBranch }))
   const selectWorkspace = (workspaceId: string): void =>
     onDraftChange((current) => setAutomationWorkspaceDraft(current, workspaceId))
   const selectWorkspaceMode = (workspaceMode: string): void => {
@@ -50,7 +57,10 @@ export function AutomationWorkspaceField({
     worktrees,
     ownerKey,
     selectWorkspace,
-    selectWorkspaceMode
+    selectWorkspaceMode,
+    branchOwnerKey: JSON.stringify([runtimeId, repo]),
+    selectBaseBranch,
+    validateBaseBranch: (value) => isAutomationBaseBranchChoice(value, repo, worktrees, runtimeId)
   })
   return (
     <Field
@@ -83,6 +93,7 @@ export function AutomationWorkspaceField({
     >
       {isHermesTarget ? (
         <WorkspaceCombobox
+          ownerKey={JSON.stringify([ownerKey, draft.projectId, isHermesTarget])}
           worktrees={worktrees}
           value={draft.workspaceId}
           triggerClassName={pickerTriggerClassName}
@@ -113,6 +124,7 @@ export function AutomationWorkspaceField({
           </ToggleGroup>
           {draft.workspaceMode === 'existing' ? (
             <WorkspaceCombobox
+              ownerKey={JSON.stringify([ownerKey, draft.projectId, isHermesTarget])}
               worktrees={worktrees}
               value={draft.workspaceId}
               triggerClassName={`min-w-0 ${pickerTriggerClassName}`}
@@ -128,9 +140,7 @@ export function AutomationWorkspaceField({
               worktrees={worktrees}
               value={draft.baseBranch}
               triggerClassName={`min-w-0 ${pickerTriggerClassName}`}
-              onValueChange={(baseBranch) =>
-                onDraftChange((current) => ({ ...current, baseBranch }))
-              }
+              onValueChange={selectBaseBranch}
             />
           )}
         </div>

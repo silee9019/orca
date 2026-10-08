@@ -10,8 +10,8 @@ import {
 } from './skills-child-viewer-actions'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { DiscoveredSkill } from '../../../shared/skills'
-import type { SkillsViewerAction } from '../../../shared/skills-viewer-command'
-import { NO_SKILL_FILTERS, SkillsViewerActionSchema } from '../../../shared/skills-viewer-command'
+import type { SkillsViewerAction, SkillsPageAction } from '../../../shared/skills-viewer-command'
+import { NO_SKILL_FILTERS, parseSkillsPageAction } from '../../../shared/skills-viewer-command'
 import type { RuntimeClientTarget } from './runtime-client-target'
 import {
   skillsViewerSnapshot as snapshot,
@@ -19,10 +19,10 @@ import {
 } from './skills-page-viewer-state'
 
 type ViewerState = ReturnType<typeof snapshot> & SkillsChildViewerState
-type Control = (action: SkillsViewerAction) => Promise<ViewerState>
+type Control = (action: SkillsPageAction) => Promise<ViewerState>
 const mountedViewers = new Set<Control>()
 export async function applySkillsViewerAction(action: SkillsViewerAction): Promise<ViewerState> {
-  const parsed = SkillsViewerActionSchema.parse(action)
+  const parsed = parseSkillsPageAction(action)
   if (mountedViewers.size !== 1) {
     throw new Error(mountedViewers.size ? 'viewer_ambiguous' : 'viewer_unavailable')
   }

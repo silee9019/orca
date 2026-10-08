@@ -76,6 +76,21 @@ it('uses the actual project callback and chooses only workspaces owned by its di
     if (!editor) {
       throw new Error('missing editor')
     }
+    expect(editor.project?.open).toBe(false)
+    let pickerRequest: ReturnType<typeof apply> | undefined
+    await act(async () => {
+      pickerRequest = apply(
+        schema.parse({
+          kind: 'editor-form',
+          action: {
+            kind: 'project-form',
+            reviewedTarget: editor.reviewedTarget,
+            action: { kind: 'open', reviewedTarget: editor.project?.reviewedTarget, value: true }
+          }
+        })
+      )
+    })
+    await expect(pickerRequest).resolves.toMatchObject({ editorForm: { project: { open: true } } })
     await expect(
       apply(
         schema.parse({

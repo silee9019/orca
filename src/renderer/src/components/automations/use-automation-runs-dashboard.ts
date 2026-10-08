@@ -26,6 +26,7 @@ const FETCH_CONCURRENCY = 4
 const RUNS_PAGE_SIZE = 100
 
 type DashboardState = {
+  settledRevision: number
   entries: ReturnType<typeof buildAutomationRunsDashboardEntries>
   failures: AutomationRunsDashboardFailure[]
   loading: boolean
@@ -35,6 +36,7 @@ type DashboardState = {
 }
 
 const EMPTY_STATE: DashboardState = {
+  settledRevision: 0,
   entries: [],
   failures: [],
   loading: false,
@@ -57,7 +59,7 @@ export function useAutomationRunsDashboard({
   legacyTarget: (row: AutomationListRow) => AutomationHostTarget | null
   authorityForRow: (row: AutomationListRow) => AutomationAuthorityRef
   reloadToken: number
-}): DashboardState {
+}): DashboardState & { request: { ownerKey: string; settledRevision: number } } {
   const inputRef = useRef({ rows, context, legacyTarget, authorityForRow })
   useEffect(() => {
     inputRef.current = { rows, context, legacyTarget, authorityForRow }
@@ -120,7 +122,9 @@ export function useAutomationRunsDashboard({
     }
     const nextCursors = new Map<string, string>()
     setState((current) =>
-      loadingMore ? { ...current, loading: true } : { ...EMPTY_STATE, loading: true, loadMore }
+      loadingMore
+        ? { ...current, loading: true }
+        : { ...EMPTY_STATE, settledRevision: current.settledRevision, loading: true, loadMore }
     )
     const failures: AutomationRunsDashboardFailure[] = loadingMore
       ? [...stateRef.current.failures]
@@ -172,14 +176,15 @@ export function useAutomationRunsDashboard({
       Array.from({ length: Math.min(FETCH_CONCURRENCY, input.rows.length) }, fetchNext)
     ).then(() => {
       if (!cancelled) {
-        setState({
+        setState((current) => ({
+          settledRevision: current.settledRevision + 1,
           entries: buildAutomationRunsDashboardEntries(input.rows, runsByRowKey),
           failures,
           loading: false,
           nextCursors,
           hasMore: nextCursors.size > 0,
           loadMore
-        })
+        }))
       }
     })
     return () => {
@@ -187,5 +192,9 @@ export function useAutomationRunsDashboard({
     }
   }, [enabled, loadMore, loadMoreToken, queryKey, reloadToken])
 
-  return enabled ? { ...state, loadMore } : { ...EMPTY_STATE, loadMore }
+  return {
+    ...(enabled ? state : EMPTY_STATE),
+    loadMore,
+    request: { ownerKey: queryKey, settledRevision: state.settledRevision }
+  }
 }

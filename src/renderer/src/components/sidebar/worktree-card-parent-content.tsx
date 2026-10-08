@@ -51,6 +51,7 @@ export function WorktreeCardParentContent({
     handleOpenReviewInBrowser,
     handleOpenAutomation,
     handleOpenAutomationRun,
+    automationNavigationTarget,
     canUnlinkReview,
     handleUnlinkReview
   } = card
@@ -110,6 +111,7 @@ export function WorktreeCardParentContent({
           hoverReview?.url && hoverReview.provider === 'github' ? handleOpenReviewInOrca : undefined
         }
         onOpenReviewInBrowser={hoverReview?.url ? handleOpenReviewInBrowser : undefined}
+        automationNavigationTarget={automationNavigationTarget}
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
         onUnlinkReview={!affiliateListMode && canUnlinkReview ? handleUnlinkReview : undefined}

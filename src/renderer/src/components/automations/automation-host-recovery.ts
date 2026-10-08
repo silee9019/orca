@@ -14,14 +14,14 @@ import type { AutomationHostRecoveryAction } from './automation-host-status-desc
 
 export type AutomationHostRecoveryDeps = {
   /** Forces one fresh query for this host, bypassing TTL and retry cooldown. */
-  retry: (entry: AutomationHostCatalogEntry) => void
-  connectSshTarget: (targetId: string) => void
-  connectRuntimeEnvironment: (environmentId: string) => void
+  retry: (entry: AutomationHostCatalogEntry) => void | Promise<unknown>
+  connectSshTarget: (targetId: string) => void | Promise<unknown>
+  connectRuntimeEnvironment: (environmentId: string) => void | Promise<unknown>
   openSettings: (target: SettingsNavigationTarget) => void
 }
 
 /** The Remote Orca Servers pane owns each runtime's version status and update action. */
-function versionSettingsTarget(entry: AutomationHostCatalogEntry): SettingsNavigationTarget {
+export function versionSettingsTarget(entry: AutomationHostCatalogEntry): SettingsNavigationTarget {
   if (entry.stableRef.authority.kind === 'runtime') {
     return {
       pane: 'servers',
@@ -34,40 +34,38 @@ function versionSettingsTarget(entry: AutomationHostCatalogEntry): SettingsNavig
   return { pane: entry.stableRef.selector.kind === 'ssh' ? 'ssh' : 'automations', repoId: null }
 }
 
-function reconnect(entry: AutomationHostCatalogEntry, deps: AutomationHostRecoveryDeps): void {
+function reconnect(
+  entry: AutomationHostCatalogEntry,
+  deps: AutomationHostRecoveryDeps
+): void | Promise<unknown> {
   const authority = entry.stableRef.authority
   // Authority first: an unreachable server cannot be asked to dial its own targets.
   if (authority.kind === 'runtime' && entry.authorityHealth === 'unavailable') {
-    deps.connectRuntimeEnvironment(authority.environmentId)
-    return
+    return deps.connectRuntimeEnvironment(authority.environmentId)
   }
   if (entry.stableRef.selector.kind === 'ssh') {
-    deps.connectSshTarget(entry.stableRef.selector.targetId)
-    return
+    return deps.connectSshTarget(entry.stableRef.selector.targetId)
   }
   if (authority.kind === 'runtime') {
-    deps.connectRuntimeEnvironment(authority.environmentId)
-    return
+    return deps.connectRuntimeEnvironment(authority.environmentId)
   }
   // Desktop Self has no transport to dial, so the only honest fallback is to re-ask.
-  deps.retry(entry)
+  return deps.retry(entry)
 }
 
 export function runAutomationHostRecovery(
   action: AutomationHostRecoveryAction,
   entry: AutomationHostCatalogEntry | null,
   deps: AutomationHostRecoveryDeps
-): void {
+): void | Promise<unknown> {
   if (!entry) {
     return
   }
   switch (action) {
     case 'retry':
-      deps.retry(entry)
-      return
+      return deps.retry(entry)
     case 'reconnect':
-      reconnect(entry, deps)
-      return
+      return reconnect(entry, deps)
     case 'update-server':
       deps.openSettings(versionSettingsTarget(entry))
   }

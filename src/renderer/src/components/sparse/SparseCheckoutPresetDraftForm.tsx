@@ -1,3 +1,4 @@
+import { useSparsePresetDraftViewer } from '../../runtime/sparse-preset-draft-viewer'
 import { useId, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,7 @@ export type SparsePresetDraft = {
 
 type SparseCheckoutPresetDraftFormProps = {
   draft: SparsePresetDraft
+  viewerScope?: { repoId: string; ownerKey: string }
   parsedDirectories: SparsePresetDirectoryParseResult | null
   nameError: string | null
   submitting: boolean
@@ -44,7 +46,8 @@ export function SparseCheckoutPresetDraftForm({
   onSave,
   operationError,
   repoRootPath,
-  repoConnectionId
+  repoConnectionId,
+  viewerScope
 }: SparseCheckoutPresetDraftFormProps): React.JSX.Element {
   const id = useId()
   const [nameTouched, setNameTouched] = useState(false)
@@ -61,6 +64,15 @@ export function SparseCheckoutPresetDraftForm({
   const removeDirectory = (directory: string): void => {
     setDirectories(selectedDirectories.filter((entry) => entry !== directory))
   }
+  useSparsePresetDraftViewer({
+    scope: viewerScope,
+    directoriesText: draft.directoriesText,
+    nameTouched,
+    submitting,
+    setNameTouched,
+    addDirectories,
+    removeDirectory
+  })
   return (
     <form
       className="space-y-3"

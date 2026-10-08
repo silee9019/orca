@@ -1,3 +1,8 @@
+import {
+  automationSaveOutcome,
+  type AutomationSaveOutcome,
+  type AutomationSaveProgress
+} from './automation-save-outcome'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -5,12 +10,10 @@ import { buildHermesCronSchedule } from './automation-draft-model'
 import { externalAutomationJobKey } from './external-automation-scope-keys'
 import type { AutomationSaveContext } from './automation-save-context'
 
-export async function saveHermesAutomation({
-  store,
-  local,
-  list,
-  pageRefresh
-}: AutomationSaveContext): Promise<void> {
+export async function saveHermesAutomation(
+  { store, local, list, pageRefresh }: AutomationSaveContext,
+  progress: AutomationSaveProgress
+): Promise<AutomationSaveOutcome> {
   const { repoMap, worktreeMap } = store
   const {
     draft,
@@ -28,7 +31,7 @@ export async function saveHermesAutomation({
         'Choose an available workspace before saving.'
       )
     )
-    return
+    return { status: 'blocked', reason: 'workspace-unavailable' }
   }
   const scopedExternal = list.scopedExternal
   const scope =
@@ -45,7 +48,7 @@ export async function saveHermesAutomation({
         'Choose a workspace on the same host as this Hermes automation.'
       )
     )
-    return
+    return { status: 'blocked', reason: 'host-unavailable' }
   }
   const schedule = buildHermesCronSchedule(draft)
   const fields = {
@@ -64,11 +67,18 @@ export async function saveHermesAutomation({
     },
     editingExternalTarget?.job.id ?? null
   )
+  progress.write = {
+    provider: 'hermes',
+    operation: editingExternalTarget ? 'update' : 'create',
+    automationId: editingExternalTarget?.job.id ?? null,
+    originalRemoved: null
+  }
   if (!editingExternalTarget) {
     useAppStore.getState().recordFeatureInteraction('automation-created')
   }
-  await pageRefresh.refresh()
+  progress.pageRead = (await pageRefresh.refresh()) ? 'completed' : 'failed'
   setCreateOpen(false)
+  progress.closeRequested = true
   setEditingExternalTarget(null)
   selectExternalKey(
     editingExternalTarget
@@ -86,4 +96,5 @@ export async function saveHermesAutomation({
           'Hermes automation created.'
         )
   )
+  return automationSaveOutcome(progress)
 }

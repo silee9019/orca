@@ -1,3 +1,5 @@
+import { ExtensionsSidebarActionSchema } from './extensions-sidebar-command'
+import { SparsePresetViewerRequestSchema } from './sparse-preset-viewer-command'
 import { PluginSettingsViewerActionSchema } from './plugin-settings-viewer-command'
 import { SkillsViewerActionSchema } from './skills-viewer-command'
 import { AutomationViewerActionSchema } from './automation-viewer-command'
@@ -10,6 +12,11 @@ import { AccountsViewerActionSchema } from './accounts-viewer-command'
 export const ACCOUNT_VIEWER_REQUEST_CHANNEL = 'accounts:viewerRequest'
 export const ACCOUNT_VIEWER_RESPONSE_CHANNEL = 'accounts:viewerResponse'
 export const AccountViewerCommandSchema = z.discriminatedUnion('domain', [
+  z.strictObject({
+    domain: z.literal('extensions-sidebar'),
+    action: ExtensionsSidebarActionSchema
+  }),
+  z.strictObject({ domain: z.literal('sparse-preset'), action: SparsePresetViewerRequestSchema }),
   z
     .object({ domain: z.literal('plugin-settings'), action: PluginSettingsViewerActionSchema })
     .strict(),

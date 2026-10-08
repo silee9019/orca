@@ -246,7 +246,7 @@ export function SkillBundleInstallFlow(props: {
   }
 
   const retryIds = retryableSkillIds(result)
-  useSkillBundleViewerController({
+  const pickerViewerTargets = useSkillBundleViewerController({
     identity: JSON.stringify([
       props.shareId,
       props.version.packageId,
@@ -329,6 +329,8 @@ export function SkillBundleInstallFlow(props: {
           }
         >
           <SkillInstallTargetFields
+            agentViewerTarget={pickerViewerTargets.agents}
+            workspaceViewerTarget={pickerViewerTargets.workspace}
             environmentId={environmentId}
             onEnvironmentChange={(value) => {
               setEnvironmentId(value)

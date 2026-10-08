@@ -1,3 +1,6 @@
+import { AutomationTextViewerActionSchema } from './automation-text-viewer-command'
+import { AutomationDestinationViewerActionSchema } from './automation-destination-viewer-command'
+import { AutomationProjectViewerActionSchema } from './automation-project-viewer-command'
 import { AutomationSetupViewerActionSchema } from './automation-setup-viewer-command'
 import { isTuiAgent } from './tui-agent-config'
 import { AutomationWorkspaceViewerActionSchema } from './automation-workspace-viewer-command'
@@ -5,7 +8,37 @@ import { AutomationTimeViewerActionSchema } from './automation-time-viewer-comma
 import { z } from 'zod'
 
 export const AutomationEditorViewerActionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('text-form'),
+    reviewedTarget: z.uuid(),
+    action: AutomationTextViewerActionSchema
+  }),
+  z.strictObject({
+    kind: z.literal('destination-form'),
+    reviewedTarget: z.uuid(),
+    action: AutomationDestinationViewerActionSchema
+  }),
+  z.strictObject({
+    kind: z.literal('notice-recover'),
+    reviewedTarget: z.uuid(),
+    reviewedNotice: z.uuid(),
+    action: z.enum(['retry', 'reconnect', 'update-server'])
+  }),
   z.object({ kind: z.literal('get') }).strict(),
+  z
+    .object({
+      kind: z.literal('project-form'),
+      reviewedTarget: z.uuid(),
+      action: AutomationProjectViewerActionSchema
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('notice-dismiss'),
+      reviewedTarget: z.uuid(),
+      reviewedNotice: z.uuid()
+    })
+    .strict(),
   z
     .object({
       kind: z.literal('project'),

@@ -1,7 +1,13 @@
 import {
+  type SkillInstallViewerForm as Form,
+  skillInstallViewerSnapshot as snapshot,
+  skillInstallWorkspacePickerTarget,
+  skillInstallAgentPickerTarget as agentPickerTarget
+} from './skill-install-viewer-state'
+import { applySkillInstallWorkspaceViewerAction } from './skill-install-workspace-viewer-controller'
+import {
   applySkillInstallViewerTarget,
-  validateSkillInstallViewerTarget,
-  type SkillInstallViewerTarget
+  validateSkillInstallViewerTarget
 } from './skill-install-viewer-target'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
@@ -9,48 +15,10 @@ import {
   SkillInstallTargetViewerActionSchema,
   type SkillInstallViewerAction
 } from '../../../shared/skill-install-viewer-command'
-import type {
-  SkillInstallPreview,
-  SkillInstallResult
-} from '../../../shared/skill-install-contract'
-import {
-  isSkillBundleVersion,
-  type ResolvedSkillShare
-} from '../components/skills/skill-share-version-summary'
+import { isSkillBundleVersion } from '../components/skills/skill-share-version-summary'
 
-type Form = SkillInstallViewerTarget & {
-  open: boolean
-  busy: boolean
-  resolvingInitialLink: boolean
-  link: string
-  setLink: (value: string) => void
-  inspect: () => Promise<void>
-  install: (discardLocal: boolean) => Promise<void>
-  cancelInstall: () => Promise<void>
-  activeOperationId: string | null
-  preview: ResolvedSkillShare | null
-  destinationPreview: SkillInstallPreview | null
-  result: SkillInstallResult | null
-  error: string | null
-}
-function snapshot(form: Form) {
-  return {
-    viewer: 'desktop' as const,
-    committed: true as const,
-    link: form.link,
-    preview: form.preview,
-    destinationPreview: form.destinationPreview,
-    result: form.result,
-    error: form.error,
-    busy: form.busy,
-    activeOperationId: form.activeOperationId,
-    environmentId: form.environmentId,
-    scope: form.scope,
-    workspace: form.workspace,
-    executionTarget: form.executionTarget,
-    providers: [...form.providers]
-  }
-}
+import { applySkillInstallAgentViewerAction } from './skill-install-agent-viewer-controller'
+
 export type SkillInstallViewerState = ReturnType<typeof snapshot>
 type Control = (action: SkillInstallViewerAction) => Promise<SkillInstallViewerState>
 const mountedForms = new Set<Control>()
@@ -67,7 +35,7 @@ export async function applySkillInstallViewerAction(
   }
   return control(parsed)
 }
-export function useSkillInstallViewerController(form: Form): void {
+export function useSkillInstallViewerController(form: Form): { agents: string; workspace: string } {
   const latest = useRef(form)
   useLayoutEffect(() => {
     latest.current = form
@@ -153,6 +121,17 @@ export function useSkillInstallViewerController(form: Form): void {
       if (action.kind === 'get') {
         return snapshot(current)
       }
+      if (action.kind === 'agents-form' && action.action.kind === 'get') {
+        await applySkillInstallAgentViewerAction(agentPickerTarget(current), action.action)
+        return snapshot(latest.current)
+      }
+      if (action.kind === 'workspace-form' && action.action.kind === 'get') {
+        await applySkillInstallWorkspaceViewerAction(
+          skillInstallWorkspacePickerTarget(current),
+          action.action
+        )
+        return snapshot(latest.current)
+      }
       if (action.kind === 'cancel') {
         if (cancellation.current) {
           throw new Error('viewer_busy')
@@ -176,6 +155,19 @@ export function useSkillInstallViewerController(form: Form): void {
           !['conflict', 'partial', 'failed', 'cancelled'].includes(current.result.status))
       ) {
         throw new Error('skill_target_input_unavailable')
+      }
+      if (action.kind === 'workspace-form') {
+        return begin(async () => {
+          await applySkillInstallWorkspaceViewerAction(
+            skillInstallWorkspacePickerTarget(current),
+            action.action
+          )
+        })
+      }
+      if (action.kind === 'agents-form') {
+        return begin(async () => {
+          await applySkillInstallAgentViewerAction(agentPickerTarget(current), action.action)
+        })
       }
       if (action.kind === 'inspect' && !current.link.trim()) {
         throw new Error('skill_link_input_unavailable')
@@ -256,4 +248,5 @@ export function useSkillInstallViewerController(form: Form): void {
       }
     }
   }, [form.open])
+  return { agents: agentPickerTarget(form), workspace: skillInstallWorkspacePickerTarget(form) }
 }

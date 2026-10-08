@@ -12,6 +12,7 @@ import { USAGE_VIEWER_METHODS } from './usage-viewer'
 import { ACCOUNT_CREDENTIAL_METHODS } from './account-credentials'
 import { ACCOUNT_LOGIN_METHODS } from './account-login'
 import { OS_PERMISSION_METHODS } from './os-permissions'
+import { EXTENSIONS_SIDEBAR_METHODS } from './extensions-sidebar'
 import { ORCA_PROFILE_METHODS } from './orca-profiles'
 import { SPARSE_PRESET_METHODS } from './sparse-presets'
 import { DESKTOP_FEEDBACK_METHODS } from './desktop-feedback'
@@ -74,6 +75,7 @@ export const DESKTOP_CONTROL_RPC_METHODS = [
   ...ACCOUNT_CREDENTIAL_METHODS,
   ...ACCOUNT_LOGIN_METHODS,
   ...OS_PERMISSION_METHODS,
+  ...EXTENSIONS_SIDEBAR_METHODS,
   ...ORCA_PROFILE_METHODS,
   ...SPARSE_PRESET_METHODS,
   ...DESKTOP_FEEDBACK_METHODS,

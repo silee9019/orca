@@ -15,6 +15,8 @@ import type { SkillInstallWorkspaceChoice } from './skill-install-workspace-choi
 import { translate } from '@/i18n/i18n'
 
 export function SkillInstallTargetFields(props: {
+  agentViewerTarget?: string
+  workspaceViewerTarget?: string
   environmentId: string
   onEnvironmentChange(value: string): void
   scope: 'global' | 'workspace'
@@ -200,6 +202,7 @@ export function SkillInstallTargetFields(props: {
           </Label>
           <SkillInstallWorkspaceCombobox
             id={`${fieldId}-workspace`}
+            viewerTarget={props.workspaceViewerTarget}
             value={props.workspace}
             onValueChange={props.onWorkspaceChange}
             choices={props.workspaceChoices}
@@ -218,6 +221,7 @@ export function SkillInstallTargetFields(props: {
 
       <SkillInstallAgentPicker
         id={`${fieldId}-agents`}
+        viewerTarget={props.agentViewerTarget}
         scope={props.scope}
         selected={props.providers}
         detectedAgents={props.detectedAgents}

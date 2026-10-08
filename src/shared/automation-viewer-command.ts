@@ -1,8 +1,14 @@
+import { WorkspaceAutomationViewerActionSchema } from './workspace-automation-viewer-command'
+import { ExternalAutomationRunsViewerActionSchema } from './external-automation-runs-viewer-command'
+import { AutomationRunPageViewerActionSchema } from './automation-run-page-viewer-command'
+import { AutomationRowViewerActionSchema } from './automation-row-viewer-command'
+import { AutomationRunsViewerActionSchema } from './automation-runs-viewer-command'
 import { z } from 'zod'
 import type { TuiAgent } from './tui-agent'
 import { isTuiAgent } from './tui-agent-config'
 import { isAutomationListSearchQueryTooLarge } from './automation-list-search-query'
 import { AutomationEditorViewerActionSchema } from './automation-editor-viewer-command'
+import { AutomationDeleteViewerActionSchema } from './automation-delete-viewer-command'
 
 export const AutomationViewerFilterSchema = z
   .object({
@@ -14,9 +20,71 @@ export const AutomationViewerFilterSchema = z
   .strict()
 const sortField = z.enum(['name', 'lastRun'])
 export const AutomationViewerActionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('workspace-provenance-form'),
+    action: WorkspaceAutomationViewerActionSchema
+  }),
+  z.strictObject({
+    kind: z.literal('content-disclosure'),
+    expanded: z.boolean(),
+    reviewedTarget: z.uuid()
+  }),
+  z.strictObject({ kind: z.literal('owner-notice-dismiss'), reviewedTarget: z.uuid() }),
+  z.strictObject({
+    kind: z.literal('owner-notice-recover'),
+    action: z.enum(['retry', 'reconnect', 'update-server']),
+    reviewedTarget: z.uuid()
+  }),
+  z.strictObject({
+    kind: z.literal('history-recover'),
+    action: z.enum(['retry', 'reconnect', 'update-server']),
+    reviewedTarget: z.uuid()
+  }),
+  z.strictObject({
+    kind: z.literal('history-open'),
+    runId: z.string().min(1).max(8192),
+    reviewedTarget: z.uuid()
+  }),
+  z.strictObject({
+    kind: z.literal('external-runs-form'),
+    tableKey: z.string().min(1).max(8192),
+    action: ExternalAutomationRunsViewerActionSchema
+  }),
+  z.strictObject({ kind: z.literal('run-page-form'), action: AutomationRunPageViewerActionSchema }),
   z.object({ kind: z.literal('get') }).strict(),
+  z.object({ kind: z.literal('refresh') }).strict(),
+  z
+    .object({
+      kind: z.literal('editor-save'),
+      reviewedTarget: z.string().uuid(),
+      reviewedDraft: z.string().uuid()
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('runs-open'),
+      entryKey: z.string().min(1).max(8192),
+      reviewedTarget: z.string().uuid()
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('host-recover'),
+      stableKey: z.string().min(1).max(2048),
+      reviewedOwner: z.string().min(1).max(8192),
+      action: z.enum(['retry', 'reconnect', 'update-server'])
+    })
+    .strict(),
+  z
+    .object({ kind: z.literal('host-select'), stableKey: z.string().min(1).max(2048).nullable() })
+    .strict(),
+  z.object({ kind: z.literal('row-form'), action: AutomationRowViewerActionSchema }).strict(),
+  z.object({ kind: z.literal('runs-form'), action: AutomationRunsViewerActionSchema }).strict(),
+  z.object({ kind: z.literal('delete-form'), action: AutomationDeleteViewerActionSchema }).strict(),
   z.object({ kind: z.literal('editor-form'), action: AutomationEditorViewerActionSchema }).strict(),
-  z.object({ kind: z.literal('editor-create') }).strict(),
+  z
+    .object({ kind: z.literal('editor-create'), templateId: z.string().min(1).max(256).optional() })
+    .strict(),
   z
     .object({
       kind: z.literal('editor-edit'),

@@ -1,3 +1,6 @@
+import { applyLinearSkillPrompt } from './linear-skill-prompt-viewer'
+import { applyOrchestrationCommandDialog } from './orchestration-command-dialog-viewer'
+import { applyAgentSkillSetup } from './agent-skill-setup-viewer'
 import {
   SkillsViewerActionSchema,
   type SkillsViewerAction
@@ -7,6 +10,15 @@ import { applySkillsViewerAction } from './skills-viewer-controller'
 
 export async function applySkillsViewerRequest(action: SkillsViewerAction) {
   const parsed = SkillsViewerActionSchema.parse(action)
+  if (parsed.kind === 'linear-prompt-form') {
+    return applyLinearSkillPrompt(parsed.action)
+  }
+  if (parsed.kind === 'command-dialog-form') {
+    return applyOrchestrationCommandDialog(parsed.action)
+  }
+  if (parsed.kind === 'setup-form') {
+    return applyAgentSkillSetup(parsed.action)
+  }
   if (parsed.kind === 'freshness-form') {
     try {
       await applySkillsViewerAction({ kind: 'get' })

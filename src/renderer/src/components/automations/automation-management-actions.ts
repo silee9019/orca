@@ -6,6 +6,14 @@ import {
 import { persistSkipDeleteAutomationConfirm } from './automation-delete-confirm-preference'
 import type { AutomationListRow } from './automation-list-row-identity'
 import type { AutomationsPageActionContext } from './automations-page-action-context'
+import {
+  captureAutomationDeleteTarget,
+  type AutomationDeleteTarget
+} from './automation-delete-target'
+import {
+  finishAutomationMutation,
+  type AutomationMutationOutcome
+} from './automation-mutation-outcome'
 
 /** Fenced toggle/delete handlers and the confirmation preference flow. */
 export function createAutomationManagementActions({
@@ -17,23 +25,26 @@ export function createAutomationManagementActions({
   const { updateSettings, openSettingsPage, openSettingsTarget, settings } = store
   const {
     selectAutomationId,
-    selectedRowKey,
+    selectedRowKeyRef,
     setSelectedAutomationRunPageId,
     setActivePaneTab,
     setIsDetailOpen,
     setDontAskDeleteAgain,
     setDeleteTarget,
     deleteTarget,
-    dontAskDeleteAgain
+    dontAskDeleteAgain,
+    deleteOperationCountRef,
+    setDeleteOperationCount
   } = local
   const {
     automationHostTargetFor,
+    automationAuthorityForRow,
     automationDispatchContext,
     reportOwnerAction,
     invalidateRowHost
   } = destination
 
-  const toggleAutomation = async (row: AutomationListRow): Promise<void> => {
+  const toggleAutomation = async (row: AutomationListRow): Promise<AutomationMutationOutcome> => {
     const result = await dispatchAutomationUpdate(
       automationDispatchContext,
       { rowKey: row.key, automationId: row.automation.id },
@@ -49,43 +60,65 @@ export function createAutomationManagementActions({
     if (result.ok) {
       invalidateRowHost(row.key, 'definition')
     }
-    await pageRefresh.refresh()
+    return finishAutomationMutation(result, pageRefresh.refresh)
   }
 
-  const deleteAutomation = async (row: AutomationListRow): Promise<void> => {
-    const result = await dispatchAutomationDelete(
-      automationDispatchContext,
-      { rowKey: row.key, automationId: row.automation.id },
-      () => deleteAutomationForTarget(row.automation, automationHostTargetFor(row))
-    )
-    reportOwnerAction(row.key, result.ok ? null : result.notice)
-    if (result.ok) {
-      if (selectedRowKey === row.key) {
-        selectAutomationId(null)
-        setIsDetailOpen(false)
-        setSelectedAutomationRunPageId(null)
-        setActivePaneTab('overview')
+  const deleteAutomation = async (
+    row: AutomationListRow,
+    captured?: AutomationDeleteTarget['deletionCapture']
+  ): Promise<AutomationMutationOutcome> => {
+    deleteOperationCountRef.current += 1
+    setDeleteOperationCount(deleteOperationCountRef.current)
+    try {
+      const result = await dispatchAutomationDelete(
+        captured ? captured.context : automationDispatchContext,
+        { rowKey: row.key, automationId: row.automation.id },
+        () =>
+          deleteAutomationForTarget(
+            row.automation,
+            captured ? captured.legacyTarget : automationHostTargetFor(row)
+          )
+      )
+      reportOwnerAction(row.key, result.ok ? null : result.notice)
+      if (result.ok) {
+        if (selectedRowKeyRef.current === row.key) {
+          selectAutomationId(null)
+          setIsDetailOpen(false)
+          setSelectedAutomationRunPageId(null)
+          setActivePaneTab('overview')
+        }
+        invalidateRowHost(row.key, 'definition')
       }
-      invalidateRowHost(row.key, 'definition')
+      return await finishAutomationMutation(result, pageRefresh.refresh)
+    } finally {
+      deleteOperationCountRef.current -= 1
+      setDeleteOperationCount(deleteOperationCountRef.current)
     }
-    await pageRefresh.refresh()
   }
 
   const persistDeleteAutomationPreference = (): void => {
     persistSkipDeleteAutomationConfirm({ updateSettings, openSettingsPage, openSettingsTarget })
   }
 
-  const requestDeleteAutomation = (row: AutomationListRow): void => {
+  const requestDeleteAutomation = (
+    row: AutomationListRow
+  ): Promise<AutomationMutationOutcome> | null => {
+    const target = captureAutomationDeleteTarget(
+      row,
+      automationDispatchContext,
+      automationAuthorityForRow(row),
+      automationHostTargetFor(row)
+    )
     if (settings?.skipDeleteAutomationConfirm) {
-      void deleteAutomation(row)
-      return
+      return deleteAutomation(target, target.deletionCapture)
     }
     setDontAskDeleteAgain(false)
-    setDeleteTarget(row)
+    setDeleteTarget(target)
+    return null
   }
-  const confirmDeleteAutomation = async (): Promise<void> => {
+  const confirmDeleteAutomation = async (): Promise<AutomationMutationOutcome | null> => {
     if (!deleteTarget) {
-      return
+      return null
     }
     if (dontAskDeleteAgain) {
       persistDeleteAutomationPreference()
@@ -93,7 +126,7 @@ export function createAutomationManagementActions({
     const target = deleteTarget
     setDeleteTarget(null)
     setDontAskDeleteAgain(false)
-    await deleteAutomation(target)
+    return await deleteAutomation(target, target.deletionCapture)
   }
 
   return { toggleAutomation, deleteAutomation, requestDeleteAutomation, confirmDeleteAutomation }

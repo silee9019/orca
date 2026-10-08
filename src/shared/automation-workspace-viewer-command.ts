@@ -1,6 +1,17 @@
+import { AutomationWorkspacePickerActionSchema } from './automation-workspace-picker-command'
 import { z } from 'zod'
 
 export const AutomationWorkspaceViewerActionSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('base-branch'),
+    reviewedTarget: z.uuid(),
+    value: z.string().max(2048)
+  }),
+  z.strictObject({
+    kind: z.literal('picker-form'),
+    reviewedTarget: z.uuid(),
+    action: AutomationWorkspacePickerActionSchema
+  }),
   z.object({ kind: z.literal('get') }).strict(),
   z
     .object({

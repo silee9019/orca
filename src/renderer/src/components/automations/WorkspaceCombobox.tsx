@@ -1,3 +1,4 @@
+import { useAutomationWorkspacePickerViewer } from '../../runtime/automation-workspace-picker-viewer'
 import React from 'react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -16,11 +17,13 @@ import { translate } from '@/i18n/i18n'
 export function WorkspaceCombobox({
   worktrees,
   value,
+  ownerKey = 'standalone',
   triggerClassName,
   onValueChange
 }: {
   worktrees: Worktree[]
   value: string
+  ownerKey?: string
   triggerClassName?: string
   onValueChange: (workspaceId: string) => void
 }): React.JSX.Element {
@@ -64,6 +67,21 @@ export function WorkspaceCombobox({
     [cancelFocusFrame]
   )
 
+  const selectWorkspace = (workspaceId: string): void => {
+    onValueChange(workspaceId)
+    handleOpenChange(false)
+  }
+  useAutomationWorkspacePickerViewer({
+    workspaceIds: worktrees.map((tree) => tree.id),
+    ownerKey,
+    value,
+    open,
+    onOpenChange: handleOpenChange,
+    focusSearch: focusSearchInput,
+    searchFocused: () => inputRef.current !== null && document.activeElement === inputRef.current,
+    onSelect: selectWorkspace
+  })
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
@@ -71,6 +89,10 @@ export function WorkspaceCombobox({
           type="button"
           variant="outline"
           role="combobox"
+          aria-label={translate(
+            'auto.components.automations.AutomationEditorDialog.b28b140eaf',
+            'Workspace'
+          )}
           aria-expanded={open}
           className={cn('h-9 w-full justify-between px-3 text-sm font-normal', triggerClassName)}
         >
@@ -111,10 +133,7 @@ export function WorkspaceCombobox({
               <CommandItem
                 key={worktree.id}
                 value={worktree.displayName}
-                onSelect={() => {
-                  onValueChange(worktree.id)
-                  setOpen(false)
-                }}
+                onSelect={() => selectWorkspace(worktree.id)}
               >
                 <Check
                   className={cn('size-4', value === worktree.id ? 'opacity-100' : 'opacity-0')}

@@ -1,3 +1,8 @@
+import {
+  automationSaveOutcome,
+  type AutomationSaveOutcome,
+  type AutomationSaveProgress
+} from './automation-save-outcome'
 import { toast } from 'sonner'
 import { isTuiAgentEnabled } from '../../../../shared/tui-agent-selection'
 import {
@@ -13,7 +18,7 @@ import type { AutomationSaveContext } from './automation-save-context'
 
 /** Validates editor input then delegates the provider-specific save transaction. */
 export function createAutomationSaveAction(context: AutomationSaveContext) {
-  return async function saveAutomation(now = Date.now()): Promise<void> {
+  return async function saveAutomation(now = Date.now()): Promise<AutomationSaveOutcome> {
     const { store, local, destinationForm, destination } = context
     const { settings } = store
     const {
@@ -38,7 +43,7 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
           'Choose a run location and enter a prompt before saving.'
         )
       )
-      return
+      return { status: 'blocked', reason: 'location-or-prompt' }
     }
     if (draft.scheduleWarning) {
       toast.error(
@@ -47,7 +52,7 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
           'Pick a supported schedule before saving.'
         )
       )
-      return
+      return { status: 'blocked', reason: 'schedule-warning' }
     }
     const validateAdvancedSchedule = isHermesSave
       ? isValidAutomationCronSchedule
@@ -66,7 +71,7 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
           'Enter a valid advanced schedule before saving.'
         )
       )
-      return
+      return { status: 'blocked', reason: 'schedule-invalid' }
     }
     if (
       editingAutomationId === null &&
@@ -79,15 +84,16 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
           'Choose an enabled agent before saving.'
         )
       )
-      return
+      return { status: 'blocked', reason: 'agent-disabled' }
     }
+    const progress: AutomationSaveProgress = { write: null, pageRead: null, closeRequested: false }
     setIsSaving(true)
     try {
       if (!isHermesSave && editingAutomationId === null) {
         const checked = destination.createDestination.check(draft.projectId)
         if (!checked.ok) {
           setEditorNotice(checked.notice)
-          return
+          return { status: 'blocked', reason: 'destination-unavailable' }
         }
       }
       const selectedWorkspaceExists =
@@ -100,11 +106,11 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
             'Choose an available workspace before saving.'
           )
         )
-        return
+        return { status: 'blocked', reason: 'workspace-unavailable' }
       }
-      await (isHermesSave
-        ? saveHermesAutomation(context)
-        : saveOrcaAutomation(context, { hour, minute, now }))
+      return await (isHermesSave
+        ? saveHermesAutomation(context, progress)
+        : saveOrcaAutomation(context, { hour, minute, now }, progress))
     } catch (error) {
       if (isHermesSave) {
         await context.pageRefresh.refresh().catch(() => undefined)
@@ -117,6 +123,7 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
               'Failed to save automation.'
             )
       )
+      return automationSaveOutcome(progress)
     } finally {
       setIsSaving(false)
     }

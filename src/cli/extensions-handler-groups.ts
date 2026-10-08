@@ -2,6 +2,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'extensions-sidebar',
+    keys: ['extensions sidebar'],
+    load: async () => (await import('./handlers/extensions-sidebar.js')).EXTENSIONS_SIDEBAR_HANDLERS
+  },
+  {
     name: 'plugins',
     keys: [
       'plugins panel-read',
@@ -93,7 +98,12 @@ export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'sparse-presets',
-    keys: ['sparse-presets list', 'sparse-presets save', 'sparse-presets remove'],
+    keys: [
+      'sparse-presets viewer',
+      'sparse-presets list',
+      'sparse-presets save',
+      'sparse-presets remove'
+    ],
     load: async () => (await import('./handlers/sparse-presets.js')).SPARSE_PRESET_HANDLERS
   },
   {
