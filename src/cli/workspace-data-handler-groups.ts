@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-shell-actions',
+    keys: ['shell reveal', 'shell open-editor'],
+    load: async () =>
+      (await import('./handlers/workspace-shell-actions.js')).WORKSPACE_SHELL_ACTION_HANDLERS
+  },
+  {
     name: 'workspace-import-previews',
     keys: ['settings preview-ghostty-import', 'settings preview-warp-auto'],
     load: async () =>
