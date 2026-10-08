@@ -1,6 +1,7 @@
 import type { CommandHandler } from '../dispatch'
 import { RuntimeClientError } from '../runtime-client'
 import {
+  RepoHostRefSearch,
   RepoHostRemoval,
   RepoHostReorder
 } from '../../shared/rpc-contract/workspace-repo-host-params'
@@ -15,6 +16,11 @@ import {
 } from '../../shared/rpc-contract/repo-params'
 
 export const WORKSPACE_REPO_DATA_HANDLERS: Record<string, CommandHandler> = {
+  'repo search-base-refs': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, RepoHostRefSearch)
+    const result = await ctx.client.call('repo.searchRefsForHost', params)
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
   'repo default-project-parent': async (ctx) => {
     const result = await ctx.client.call('repo.defaultProjectParent')
     printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))

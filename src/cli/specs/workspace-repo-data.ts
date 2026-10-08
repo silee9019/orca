@@ -3,6 +3,17 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const WORKSPACE_REPO_DATA_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['repo', 'search-base-refs'],
+    summary: 'Search base refs and their local branch names on an explicit host',
+    usage: 'orca repo search-base-refs --params-file <file|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file'],
+    notes: [
+      'JSON: {repoId, hostId, query, limit?}. Empty query is allowed. Uses the desktop default limit and existing bounded Git search service.',
+      'Returns refs, optional refDetails and truncated. Host selection preserves duplicate repo IDs; folder workspaces return empty results without Git.',
+      'Qualified ref projection and host-specific Git capability fallback retain the existing runtime contract. Empty results alone do not prove host contact. Old hosts fail without searching locally.'
+    ]
+  },
+  {
     path: ['repo', 'default-project-parent'],
     summary: 'Read the selected runtime native project creation directory',
     usage: 'orca repo default-project-parent [--json]',

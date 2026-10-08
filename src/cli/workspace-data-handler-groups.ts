@@ -3,6 +3,19 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-git-startup',
+    keys: ['git await-environment'],
+    load: async () =>
+      (await import('./handlers/workspace-git-startup.js')).WORKSPACE_GIT_STARTUP_HANDLERS
+  },
+  {
+    name: 'workspace-cleanup-dismissals',
+    keys: ['workspace-cleanup dismiss', 'workspace-cleanup clear-dismissals'],
+    load: async () =>
+      (await import('./handlers/workspace-cleanup-dismissals.js'))
+        .WORKSPACE_CLEANUP_DISMISSAL_HANDLERS
+  },
+  {
     name: 'workspace-cached-scans',
     keys: ['workspace-cleanup cached-scan', 'workspace-space cached-analysis'],
     load: async () =>
@@ -35,7 +48,12 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'workspace-keybinding-file',
-    keys: ['keybindings ensure-file', 'keybindings open-file', 'keybindings reveal-file'],
+    keys: [
+      'keybindings mac-captured-digit-row',
+      'keybindings ensure-file',
+      'keybindings open-file',
+      'keybindings reveal-file'
+    ],
     load: async () =>
       (await import('./handlers/workspace-keybinding-file.js')).WORKSPACE_KEYBINDING_FILE_HANDLERS
   },
@@ -147,6 +165,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'workspace-repo-data',
     keys: [
+      'repo search-base-refs',
       'repo sparse-presets',
       'repo save-sparse-preset',
       'repo create',

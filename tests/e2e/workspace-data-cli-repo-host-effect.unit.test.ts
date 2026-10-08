@@ -17,7 +17,15 @@ import { WORKSPACE_REPO_DATA_HANDLERS } from '../../src/cli/handlers/workspace-r
 import { REPO_HANDLERS } from '../../src/cli/handlers/repo'
 import { getDefaultWorkspaceDir } from '../../src/shared/constants'
 import * as usernames from '../../src/main/repo-git-username-enrichment'
+import type * as SshGitDispatch from '../../src/main/providers/ssh-git-dispatch'
+import * as repoGit from '../../src/main/git/repo'
 import * as identities from '../../src/main/repo-git-remote-identity-enrichment'
+
+const { refProvider } = vi.hoisted(() => ({ refProvider: vi.fn() }))
+vi.mock('../../src/main/providers/ssh-git-dispatch', async (original) => ({
+  ...(await original<typeof SshGitDispatch>()),
+  getSshGitProvider: refProvider
+}))
 
 vi.mock('../../src/main/telemetry/client', () => ({ track: vi.fn() }))
 vi.mock('../../src/main/ssh/ssh-config-parser', () => ({
@@ -197,4 +205,54 @@ it('reorders and forgets only the named host while preserving the same repo ID e
     code: 'method_not_found'
   })
   expect(ctx.client.call).toHaveBeenCalledTimes(beforeInvalid + 1)
+})
+
+it('searches refs on the explicit host with blank queries and preserves ref details and folder boundaries', async () => {
+  store.updateRepo('shared', { kind: 'git' })
+  store.updateRepo('shared', { kind: 'git' }, 'ssh:fixture')
+  const native = vi
+    .spyOn(repoGit, 'searchBaseRefDetails')
+    .mockResolvedValue([{ refName: 'main', localBranchName: 'main' }])
+  const exec = vi.fn(async (args: string[], path: string) => {
+    await writeFile(join(directory, 'ref-query.json'), JSON.stringify({ args, path }))
+    return {
+      stdout: args[0] === 'remote' ? 'origin\n' : 'refs/remotes/origin/feature\0origin/feature\n',
+      stderr: ''
+    }
+  })
+  refProvider.mockReturnValue({ exec })
+  dispatcher = new RpcDispatcher({
+    runtime,
+    methods: (await import('../../src/main/runtime/rpc/methods/workspace-repo-host'))
+      .WORKSPACE_REPO_HOST_METHODS
+  })
+  const input = join(directory, 'input.json')
+  await writeFile(input, JSON.stringify({ repoId: 'shared', hostId: 'ssh:fixture', query: '' }))
+  await WORKSPACE_REPO_DATA_HANDLERS['repo search-base-refs'](ctx)
+  expect(JSON.parse(vi.mocked(console.log).mock.calls.at(-1)?.[0]).result).toMatchObject({
+    refs: ['origin/feature'],
+    refDetails: [{ refName: 'origin/feature', localBranchName: 'feature' }],
+    truncated: false
+  })
+  expect(exec).toHaveBeenCalledWith(expect.arrayContaining(['for-each-ref']), '/remote/folder')
+  expect(native).not.toHaveBeenCalled()
+  await writeFile(input, JSON.stringify({ repoId: 'shared', hostId: 'local', query: '' }))
+  await WORKSPACE_REPO_DATA_HANDLERS['repo search-base-refs'](ctx)
+  expect(native).toHaveBeenCalledWith(join(directory, 'folder'), '', expect.any(Number), true)
+  exec.mockClear()
+  native.mockClear()
+  await writeFile(input, JSON.stringify({ repoId: 'remote-2', hostId: 'ssh:fixture', query: '' }))
+  await WORKSPACE_REPO_DATA_HANDLERS['repo search-base-refs'](ctx)
+  expect(JSON.parse(vi.mocked(console.log).mock.calls.at(-1)?.[0]).result).toMatchObject({
+    refs: [],
+    truncated: false
+  })
+  expect(exec).not.toHaveBeenCalled()
+  expect(native).not.toHaveBeenCalled()
+  await writeFile(input, JSON.stringify({ repoId: 'shared', hostId: 'ssh:missing', query: '' }))
+  await expect(WORKSPACE_REPO_DATA_HANDLERS['repo search-base-refs'](ctx)).rejects.toBeInstanceOf(
+    RuntimeClientError
+  )
+  expect(exec).not.toHaveBeenCalled()
+  expect(native).not.toHaveBeenCalled()
 })
