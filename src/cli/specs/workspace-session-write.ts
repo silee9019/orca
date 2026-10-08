@@ -2,6 +2,17 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const WORKSPACE_SESSION_WRITE_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['terminal', 'checkpoint-session'],
+    summary: 'Wait for a guarded full workspace session checkpoint to become durable',
+    usage: 'orca terminal checkpoint-session --request-file <path|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'request-file'],
+    destructive: true,
+    notes: [
+      'Uses the same lossless {hostId,expected,next,confirm:true} request and canonical durable replacement as set-session. The command waits for storage before acknowledging. Stale, repaired, unknown or indeterminate writes fail explicitly.',
+      'Returns only applied/durable/normalized receipt fields. Session contents remain private input, and the checkpoint does not prove rendered viewer application.'
+    ]
+  },
+  {
     path: ['terminal', 'patch-session'],
     summary: 'Patch selected session fields after comparing the complete observed session',
     usage: 'orca terminal patch-session --request-file <path|-> [--json]',

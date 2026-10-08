@@ -241,3 +241,24 @@ it('validates partial fields against the lossless full session before RPC', asyn
   ).toMatchObject({ ok: false })
   expect(mocks.call).not.toHaveBeenCalled()
 })
+
+it('acknowledges a requested checkpoint only after its full session is durable', async () => {
+  const baseline = request()
+  store.setWorkspaceSession(baseline.next, baseline.hostId)
+  await store.flushPendingOrThrowAsync({ drainToStableGeneration: false })
+  const legacyCheckpoint = readProfileStateDomain(databasePath, profileId, 'workspaceSession')
+  store.setWorkspaceSession(baseline.expected, baseline.hostId)
+  await store.flushPendingOrThrowAsync()
+
+  expect(await command('checkpoint-session', request())).toMatchObject({
+    ok: true,
+    result: { applied: true, durable: true }
+  })
+  expect(readProfileStateDomain(databasePath, profileId, 'workspaceSession')).toEqual(
+    legacyCheckpoint
+  )
+  expect(readProfileStateDomain(databasePath, profileId, 'workspaceSession')).toMatchObject({
+    kind: 'value',
+    value: { activeWorktreeId: 'folder:private-next' }
+  })
+})

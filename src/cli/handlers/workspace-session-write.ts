@@ -11,6 +11,22 @@ import {
   WorkspaceSessionPatchParams
 } from '../../shared/rpc-contract/workspace-session-write-params'
 
+const replaceSession: CommandHandler = async (ctx) => {
+  const params = await readAgentSessionRequest(ctx, WorkspaceSessionWriteParams)
+  try {
+    requireLosslessWorkspaceSession(params.expected)
+    requireLosslessWorkspaceSession(params.next)
+  } catch {
+    throw new RuntimeClientError(
+      'invalid_argument',
+      'Session input requires repair, drops fields or has invalid values.'
+    )
+  }
+  printResult(await ctx.client.call('session.replaceState', params), ctx.json, (value) =>
+    JSON.stringify(value)
+  )
+}
+
 export const WORKSPACE_SESSION_WRITE_HANDLERS: Record<string, CommandHandler> = {
   'terminal patch-session': async (ctx) => {
     const params = await readAgentSessionRequest(ctx, WorkspaceSessionPatchParams)
@@ -29,19 +45,6 @@ export const WORKSPACE_SESSION_WRITE_HANDLERS: Record<string, CommandHandler> = 
       JSON.stringify(value)
     )
   },
-  'terminal set-session': async (ctx) => {
-    const params = await readAgentSessionRequest(ctx, WorkspaceSessionWriteParams)
-    try {
-      requireLosslessWorkspaceSession(params.expected)
-      requireLosslessWorkspaceSession(params.next)
-    } catch {
-      throw new RuntimeClientError(
-        'invalid_argument',
-        'Session input requires repair, drops fields or has invalid values.'
-      )
-    }
-    printResult(await ctx.client.call('session.replaceState', params), ctx.json, (value) =>
-      JSON.stringify(value)
-    )
-  }
+  'terminal set-session': replaceSession,
+  'terminal checkpoint-session': replaceSession
 }
