@@ -2,8 +2,20 @@ import { z } from 'zod'
 import type { GlobalSettings } from './global-settings-types'
 import { CliSettingsUpdate } from './cli-runtime-settings'
 import { DesktopStructuredSettings } from './cli-desktop-settings-structured'
+import { isNativeChatShellEnvironmentName } from './native-chat-shell-environment'
+import {
+  MAX_TERMINAL_CONTRAST_RATIO,
+  MIN_TERMINAL_CONTRAST_RATIO
+} from './terminal-minimum-contrast-settings'
+import { MAX_TERMINAL_LINE_HEIGHT, MIN_TERMINAL_LINE_HEIGHT } from './terminal-line-height-settings'
+import { TERMINAL_FONT_WEIGHT_MAX, TERMINAL_FONT_WEIGHT_MIN } from './terminal-fonts'
+import {
+  DESKTOP_TERMINAL_SCROLLBACK_ROWS_MAX,
+  DESKTOP_TERMINAL_SCROLLBACK_ROWS_MIN
+} from './terminal-scrollback-policy'
 
-export const CliDesktopSettingsUpdate = z
+// Read-side shape: lenient on numbers so profiles written by older builds still project.
+export const CliDesktopSettingsFields = z
   .object({
     ...DesktopStructuredSettings,
     workspaceDir: z.string().optional(),
@@ -182,4 +194,55 @@ export const CliDesktopSettingsUpdate = z
     experimentalEphemeralVms: z.boolean().optional(),
     compactWorktreeCards: z.boolean().optional()
   })
-  .strict() satisfies z.ZodType<Partial<GlobalSettings>>
+  .strip()
+
+// Each range is the one the Settings control that writes the key enforces.
+const UiRangeSettings = {
+  terminalFontSize: z.number().int().min(10).max(24).optional(),
+  terminalFontWeight: z
+    .number()
+    .min(TERMINAL_FONT_WEIGHT_MIN)
+    .max(TERMINAL_FONT_WEIGHT_MAX)
+    .optional(),
+  terminalFontWeightBold: z
+    .number()
+    .min(TERMINAL_FONT_WEIGHT_MIN)
+    .max(TERMINAL_FONT_WEIGHT_MAX)
+    .optional(),
+  terminalLineHeight: z
+    .number()
+    .min(MIN_TERMINAL_LINE_HEIGHT)
+    .max(MAX_TERMINAL_LINE_HEIGHT)
+    .optional(),
+  terminalMinimumContrastRatio: z
+    .number()
+    .min(MIN_TERMINAL_CONTRAST_RATIO)
+    .max(MAX_TERMINAL_CONTRAST_RATIO)
+    .optional(),
+  terminalScrollSensitivity: z.number().min(0.5).max(3).optional(),
+  terminalFastScrollSensitivity: z.number().min(1).max(10).optional(),
+  terminalTuiScrollSensitivity: z.number().int().min(1).max(10).optional(),
+  terminalDividerThicknessPx: z.number().min(1).max(32).optional(),
+  terminalPaddingX: z.number().min(0).max(512).optional(),
+  terminalPaddingY: z.number().min(0).max(512).optional(),
+  terminalScrollbackRows: z
+    .number()
+    .int()
+    .min(DESKTOP_TERMINAL_SCROLLBACK_ROWS_MIN)
+    .max(DESKTOP_TERMINAL_SCROLLBACK_ROWS_MAX)
+    .optional(),
+  nativeChatAppearance: DesktopStructuredSettings.nativeChatAppearance
+    .unwrap()
+    .extend({
+      fontSize: z.number().int().min(12).max(20).optional(),
+      codeFontSize: z.number().int().min(10).max(18).optional()
+    })
+    .optional(),
+  nativeChatShellEnvironmentVariables: z
+    .array(z.string().refine(isNativeChatShellEnvironmentName))
+    .optional()
+}
+
+export const CliDesktopSettingsUpdate = CliDesktopSettingsFields.extend(
+  UiRangeSettings
+).strict() satisfies z.ZodType<Partial<GlobalSettings>>

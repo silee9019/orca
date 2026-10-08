@@ -52,6 +52,7 @@ export const SETTINGS_COMMAND_SPECS: CommandSpec[] = [
     notes: [
       'Targets the answering host desktop profile. Uses its Settings writer for normalization, proxy application, menus, app icon, language, awake assertions and change notifications.',
       'JSON comes only from a file or stdin (--file -), never a command-line value. Secret values and launch commands are not returned.',
+      'Numeric values and environment variable names are limited to what the Settings controls accept; out-of-range input is rejected rather than clamped.',
       'Authority grants, confirmation bypasses, account records, plugin consent, migration markers and active connection selection require their dedicated controls.',
       'Success is returned after the profile flush. rendered:false explicitly means no viewer application acknowledgement was collected. Settings changes are broadcast to that host desktop viewers.',
       'A runtime without desktop settings services returns settings_viewer_unavailable. Process-wide options may still require a separately approved restart.'
