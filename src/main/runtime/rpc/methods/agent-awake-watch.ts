@@ -6,7 +6,7 @@ export const AGENT_AWAKE_WATCH_METHODS = [
   defineStreamingMethod({
     name: 'agentAwake.subscribe',
     params: AgentAwakeSubscriptionParams,
-    handler: (params, context, emit) => {
+    handler: async (params, context, emit) => {
       const { runtime } = context
       const assertOwner = () => {
         if (!runtime.getAgentAwakeStatus()) {
