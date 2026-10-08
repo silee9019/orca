@@ -235,6 +235,7 @@ export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['agent', 'history', 'delete'],
+    aliases: [['agent', 'history', 'rm']],
     destructive: true,
     summary: 'Trash one host-local transcript and its provider companions',
     usage: 'orca agent history delete --request-file <path|-> [--json]',
