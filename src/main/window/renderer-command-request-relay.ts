@@ -22,7 +22,8 @@ export function requestRendererCommand<T extends { viewerId: number }>(
     | 'statusBarViewer'
     | 'workspaceListViewer'
     | 'activityViewer'
-    | 'featureTourViewer',
+    | 'featureTourViewer'
+    | 'setupGuideViewer',
   command: unknown,
   resultSchema: z.ZodType<T>,
   timeoutError: 'renderer_timeout_persistence_unknown' | 'renderer_timeout_applied_unknown'

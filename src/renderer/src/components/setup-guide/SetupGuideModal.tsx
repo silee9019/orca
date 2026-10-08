@@ -135,6 +135,10 @@ function SetupGuideModalContent({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        data-setup-guide-dialog="true"
+        data-setup-guide-open={open ? 'true' : 'false'}
+        data-setup-guide-source={telemetrySource}
+        data-setup-guide-step={activeStep?.id}
         className="grid h-[min(780px,calc(100vh-2rem))] w-[min(1080px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 p-0 sm:max-w-none"
         tabIndex={-1}
       >

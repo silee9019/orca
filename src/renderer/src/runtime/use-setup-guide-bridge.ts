@@ -1,33 +1,33 @@
 import { attachHelpModalRequestQueue } from './help-modal-request-queue'
 import { useEffect, useRef } from 'react'
-import type { FeatureTourRequest, FeatureTourResponse } from '../../../shared/feature-tour-command'
-import { applyFeatureTourRequest } from './feature-tour-command'
-export type FeatureTourBridgeApi = {
-  onFeatureTourRequest?: (callback: (request: FeatureTourRequest) => void) => () => void
-  respondFeatureTour?: (response: FeatureTourResponse) => void
+import type { SetupGuideRequest, SetupGuideResponse } from '../../../shared/setup-guide-command'
+import { applySetupGuideRequest } from './setup-guide-command'
+export type SetupGuideBridgeApi = {
+  onSetupGuideRequest?: (callback: (request: SetupGuideRequest) => void) => () => void
+  respondSetupGuide?: (response: SetupGuideResponse) => void
 }
-export function attachFeatureTourBridge(
-  api: FeatureTourBridgeApi,
+export function attachSetupGuideBridge(
+  api: SetupGuideBridgeApi,
   rootAvailable: () => boolean,
   rootGeneration: () => number = () => 0
 ): () => void {
   return attachHelpModalRequestQueue(
-    api.onFeatureTourRequest,
-    api.respondFeatureTour,
-    applyFeatureTourRequest,
+    api.onSetupGuideRequest,
+    api.respondSetupGuide,
+    applySetupGuideRequest,
     rootAvailable,
     rootGeneration
   )
 }
 
-export function useFeatureTourBridge(available: boolean): void {
+export function useSetupGuideBridge(available: boolean): void {
   const ready = useRef({ available, generation: 0 })
   if (ready.current.available !== available) {
     ready.current = { available, generation: ready.current.generation + 1 }
   }
   useEffect(
     () =>
-      attachFeatureTourBridge(
+      attachSetupGuideBridge(
         window.api.ui,
         () => ready.current.available,
         () => ready.current.generation

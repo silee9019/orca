@@ -1,3 +1,4 @@
+import { openSetupGuideFromHelp } from '@/runtime/setup-guide-open'
 import { openFeatureTourFromHelp } from '@/runtime/feature-tour-open'
 import { canShowRightSidebarForView } from '@/lib/right-sidebar-visibility'
 import { showTerminalShortcutCaptureNotification } from '@/lib/terminal-shortcut-capture-notification'
@@ -52,11 +53,7 @@ export function registerSettingsAndSidebarIpcBridge(unsubs: (() => void)[]): voi
       .catch(() => {})
   }
 
-  unsubs.push(
-    window.api.ui.onOpenSetupGuide?.(() => {
-      useAppStore.getState().openModal('setup-guide', { telemetrySource: 'help_menu' })
-    }) ?? (() => {})
-  )
+  unsubs.push(window.api.ui.onOpenSetupGuide?.(openSetupGuideFromHelp) ?? (() => {}))
 
   // Why: a phone stuck in a silent 4001 auth loop (lost device registry) reads as
   // "phone won't connect" with no clue on either end; main throttles to once per session.
