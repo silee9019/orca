@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-desktop-meta',
+    keys: ['worktree update-desktop-meta'],
+    load: async () =>
+      (await import('./handlers/workspace-desktop-meta.js')).WORKSPACE_DESKTOP_META_HANDLERS
+  },
+  {
     name: 'workspace-visible-worktrees',
     keys: ['worktree list-visible', 'worktree list-all-visible'],
     load: async () =>

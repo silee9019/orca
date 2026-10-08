@@ -1,3 +1,4 @@
+import { WORKSPACE_DESKTOP_META_COMMAND_SPECS } from './workspace-desktop-meta'
 import { WORKSPACE_VISIBLE_WORKTREE_COMMAND_SPECS } from './workspace-visible-worktrees'
 import { WORKSPACE_HOST_PATH_COMMAND_SPECS } from './workspace-host-path'
 import { WORKSPACE_CRASH_REPORT_COMMAND_SPECS } from './workspace-crash-reports'
@@ -39,6 +40,7 @@ import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
   ...WORKSPACE_VISIBLE_WORKTREE_COMMAND_SPECS,
+  ...WORKSPACE_DESKTOP_META_COMMAND_SPECS,
   ...WORKSPACE_HOST_PATH_COMMAND_SPECS,
   ...WORKSPACE_CRASH_REPORT_COMMAND_SPECS,
   ...WORKSPACE_GIT_STARTUP_COMMAND_SPECS,
