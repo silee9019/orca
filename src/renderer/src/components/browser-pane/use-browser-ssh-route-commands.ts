@@ -95,6 +95,18 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
       ) {
         finish()
       }
+    } else if (target.action === 'prepare') {
+      if (owner.attempt > task.attempt) {
+        if (owner.state.kind === 'ready') {
+          finish(
+            typeof owner.state.partition === 'string' && owner.state.partition.length > 0
+              ? undefined
+              : new Error('browser_ssh_route_partition_unacknowledged_effect_unknown')
+          )
+        } else if (owner.state.kind === 'error') {
+          finish(new Error('browser_ssh_route_prepare_failed_effect_unknown'))
+        }
+      }
     } else if (
       owner.attempt > task.attempt &&
       (target.action !== 'try-without-probe' ||
@@ -115,17 +127,23 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
         }
         const page = findPage(useAppStore.getState().browserPagesByWorkspace, event.command.page)
         const recheck = event.command.action === 'recheck'
-        const correctState = recheck
-          ? before.state.kind === 'ready' &&
-            before.recheck !== null &&
-            page?.loadError?.code === event.command.errorCode &&
-            page?.loadError?.validatedUrl === event.command.expectedUrl &&
-            useAppStore
-              .getState()
-              .settings?.browserSshWorkspaceRoutingProbeSkippedTargetIds?.includes(
-                event.command.targetId
-              ) === true
-          : before.state.kind === 'error' && before.state.errorKind === event.command.errorKind
+        const correctState =
+          event.command.action === 'prepare'
+            ? before.state.kind !== 'unrouted' &&
+              (event.command.errorKind === undefined ||
+                (before.state.kind === 'error' &&
+                  before.state.errorKind === event.command.errorKind))
+            : recheck
+              ? before.state.kind === 'ready' &&
+                before.recheck !== null &&
+                page?.loadError?.code === event.command.errorCode &&
+                page?.loadError?.validatedUrl === event.command.expectedUrl &&
+                useAppStore
+                  .getState()
+                  .settings?.browserSshWorkspaceRoutingProbeSkippedTargetIds?.includes(
+                    event.command.targetId
+                  ) === true
+              : before.state.kind === 'error' && before.state.errorKind === event.command.errorKind
         if (Date.now() >= event.expiresAt || !matches(before, event) || !correctState) {
           return Promise.reject(new Error('browser_ssh_route_state_changed'))
         }
@@ -152,7 +170,7 @@ export function useBrowserSshRouteCommands(owner: Owner): void {
               void before
                 .recheck?.()
                 .catch(() => finish(new Error('browser_ssh_route_callback_failed_effect_unknown')))
-            } else if (event.command.action === 'retry') {
+            } else if (event.command.action === 'retry' || event.command.action === 'prepare') {
               before.retry()
             } else if (event.command.action === 'try-without-probe') {
               before.tryWithoutProbe()

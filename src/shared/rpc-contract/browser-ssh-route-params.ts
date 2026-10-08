@@ -8,12 +8,14 @@ const BrowserSshRouteIdentity = z.object({
   errorKind: z.enum(['forwarding-blocked', 'ssh-unavailable', 'unknown']).optional(),
   errorCode: z.number().int().optional(),
   expectedUrl: z.string().min(1).optional(),
-  action: z.enum(['retry', 'try-without-probe', 'browse-local', 'recheck'])
+  action: z.enum(['retry', 'try-without-probe', 'browse-local', 'recheck', 'prepare'])
 })
 function validTarget(target: z.infer<typeof BrowserSshRouteIdentity>): boolean {
-  return target.action === 'recheck'
-    ? target.errorCode !== undefined && target.expectedUrl !== undefined
-    : target.errorKind !== undefined
+  return target.action === 'prepare'
+    ? true
+    : target.action === 'recheck'
+      ? target.errorCode !== undefined && target.expectedUrl !== undefined
+      : target.errorKind !== undefined
 }
 export const BrowserSshRouteTarget = BrowserSshRouteIdentity.refine(validTarget, {
   message: 'Specify the current routing error, or the exact failed page for recheck.'

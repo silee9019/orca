@@ -187,3 +187,91 @@ it('does not acknowledge a probe policy callback without committed settings and 
     vi.useRealTimers()
   }
 })
+
+it('waits for the original partition preparation to become ready instead of acknowledging the attempt', async () => {
+  await mount()
+  let resolvePrepare: (value: { partition: string }) => void = () => {
+    throw new Error('prepare has not started')
+  }
+  provider.prepare.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolvePrepare = resolve
+      })
+  )
+  let result: ReturnType<typeof requestBrowserSshRoute> | undefined
+  const settled = vi.fn()
+  await act(async () => {
+    result = requestBrowserSshRoute({ ...target, action: 'prepare' }, Date.now() + 5000)
+    void result.then(settled, settled)
+  })
+  expect(provider.prepare).toHaveBeenCalledTimes(2)
+  expect(settled).not.toHaveBeenCalled()
+  await act(async () => resolvePrepare({ partition: 'persist:private-partition' }))
+  await expect(result).resolves.toMatchObject({
+    action: 'prepare',
+    attempt: 1,
+    routeState: 'ready'
+  })
+  expect(screen.getByTestId('routed-page').textContent).toBe('persist:private-partition')
+  expect(await result).not.toHaveProperty('partition')
+  provider.prepare.mockResolvedValueOnce({ partition: 'persist:prepared-again' })
+  await act(async () => {
+    result = requestBrowserSshRoute(
+      { ...target, action: 'prepare', errorKind: undefined },
+      Date.now() + 5000
+    )
+    void result.catch(() => {})
+  })
+  await expect(result).resolves.toMatchObject({
+    action: 'prepare',
+    attempt: 2,
+    routeState: 'ready'
+  })
+  expect(screen.getByTestId('routed-page').textContent).toBe('persist:prepared-again')
+})
+
+it('refuses failed partition preparation and does not mistake a new attempt for completion', async () => {
+  await mount()
+  let result: ReturnType<typeof requestBrowserSshRoute> | undefined
+  await act(async () => {
+    result = requestBrowserSshRoute({ ...target, action: 'prepare' }, Date.now() + 5000)
+    void result.catch(() => {})
+  })
+  await expect(result).rejects.toThrow('prepare_failed_effect_unknown')
+  expect(provider.prepare).toHaveBeenCalledTimes(2)
+})
+
+it('rejects a partition preparation when the exact viewer owner changes while the provider waits', async () => {
+  await mount()
+  let resolvePrepare: (value: { partition: string }) => void = () => {
+    throw new Error('prepare has not started')
+  }
+  provider.prepare.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolvePrepare = resolve
+      })
+  )
+  let result: ReturnType<typeof requestBrowserSshRoute> | undefined
+  await act(async () => {
+    result = requestBrowserSshRoute({ ...target, action: 'prepare' }, Date.now() + 5000)
+    void result.catch(() => {})
+  })
+  await act(async () => {
+    useAppStore.setState({ activeModal: 'add-repo' })
+    resolvePrepare({ partition: 'persist:stale-partition' })
+  })
+  await expect(result).rejects.toThrow('owner_changed_effect_unknown')
+})
+
+it('refuses a ready state without an actual prepared partition', async () => {
+  await mount()
+  provider.prepare.mockResolvedValueOnce({ partition: '' })
+  let result: ReturnType<typeof requestBrowserSshRoute> | undefined
+  await act(async () => {
+    result = requestBrowserSshRoute({ ...target, action: 'prepare' }, Date.now() + 5000)
+    void result.catch(() => {})
+  })
+  await expect(result).rejects.toThrow('partition_unacknowledged_effect_unknown')
+})

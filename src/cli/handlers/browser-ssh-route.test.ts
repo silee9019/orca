@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, expect, it, vi } from 'vitest'
 import { parseArgs, validateCommandAndFlags } from '../args'
-import { RuntimeClient } from '../runtime-client'
+import { RuntimeClient, RuntimeRpcFailureError } from '../runtime-client'
 import { BROWSER_SSH_ROUTE_COMMAND_SPECS } from '../specs/browser-ssh-route'
 import { BROWSER_SSH_ROUTE_HANDLERS } from './browser-ssh-route'
 const client = new RuntimeClient(join(tmpdir(), 'ssh-route-fixture'), 60_000, null, null)
@@ -164,4 +164,78 @@ it('routes confirmed recheck with the exact failed URL and code, without a routi
     })
   ).rejects.toMatchObject({ code: 'invalid_argument' })
   expect(call).toHaveBeenCalledOnce()
+})
+
+it('requires ready preparation and projects only public receipt fields', async () => {
+  const meta = { runtimeId: 'fixture', private: 'PRIVATE_META' }
+  const call = vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: meta,
+    result: {
+      applied: true,
+      private: 'PRIVATE_RESULT',
+      sshRoute: {
+        ...target,
+        action: 'prepare',
+        accepted: true,
+        attempt: 1,
+        routeState: 'preparing',
+        partition: 'PRIVATE_PARTITION'
+      }
+    }
+  })
+  const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+  await expect(run('prepare', true)).rejects.toMatchObject({ code: 'runtime_error' })
+  expect(output).not.toHaveBeenCalled()
+  call.mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    _meta: meta,
+    result: {
+      applied: true,
+      private: 'PRIVATE_RESULT',
+      sshRoute: {
+        ...target,
+        action: 'prepare',
+        accepted: true,
+        attempt: 1,
+        routeState: 'ready',
+        partition: 'PRIVATE_PARTITION'
+      }
+    }
+  })
+  await run('prepare', true)
+  expect(output.mock.lastCall?.[0]).toContain('"routeState": "ready"')
+  expect(output.mock.lastCall?.[0]).not.toContain('PRIVATE')
+})
+
+it.each([undefined, null, {}])(
+  'refuses malformed SSH route result %j without output',
+  async (result) => {
+    vi.spyOn(client, 'call').mockResolvedValue({
+      id: 'fixture',
+      ok: true,
+      _meta: { runtimeId: 'fixture' },
+      result
+    })
+    const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+    await expect(run()).rejects.toMatchObject({ code: 'runtime_error' })
+    expect(output).not.toHaveBeenCalled()
+  }
+)
+
+it('requires confirmation before preparing and reports old peers explicitly', async () => {
+  const call = vi.spyOn(client, 'call').mockRejectedValue(
+    new RuntimeRpcFailureError({
+      id: 'fixture',
+      ok: false,
+      error: { code: 'invalid_params', message: 'old peer' }
+    })
+  )
+  const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+  await expect(run('prepare')).rejects.toMatchObject({ code: 'invalid_argument' })
+  expect(call).not.toHaveBeenCalled()
+  await expect(run('prepare', true)).rejects.toMatchObject({ code: 'incompatible_runtime' })
+  expect(output).not.toHaveBeenCalled()
 })
