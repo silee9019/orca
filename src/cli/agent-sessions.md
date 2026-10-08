@@ -71,3 +71,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `orca terminal fit-overrides --json`은 실행 호스트의 현재 fit 크기를 읽고, `orca terminal drivers --json`은 입력·크기 제어권 소유자를 읽습니다. 두 조회는 터미널 크기나 제어권을 변경하지 않습니다.
 
 `terminal side-effects --request-file <path|->`는 `{terminal}` 대상의 현재 제목 snapshot을 실행 호스트에서 읽습니다. 과거 벨·알림은 재생하지 않으며 종료가 확인된 대상은 거부합니다.
+
+`terminal workspace-hosts`는 지정한 실행 호스트의 영속화 Store에서 workspace session partition의 host ID를 읽습니다. Git 저장소가 없는 SSH folder partition도 포함하며 연결 상태를 뜻하지 않습니다. Store가 없는 호스트는 오류로 응답합니다.

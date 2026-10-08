@@ -3,6 +3,11 @@ import { TerminalHostInventoryParams } from '../../../../shared/rpc-contract/ter
 
 export const TERMINAL_HOST_INVENTORY_METHODS = [
   defineMethod({
+    name: 'session.listHostIds',
+    params: TerminalHostInventoryParams,
+    handler: (_params, { runtime }) => ({ hostIds: runtime.getWorkspaceSessionHostIds() })
+  }),
+  defineMethod({
     name: 'terminal.fitOverrides',
     params: TerminalHostInventoryParams,
     handler: (_params, { runtime }) => ({

@@ -1,3 +1,6 @@
+import { Store } from '../../src/main/persistence/loading-store/store'
+import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
+import { getDefaultWorkspaceSession } from '../../src/shared/constants'
 import { TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS } from '../../src/main/runtime/rpc/methods/terminal-side-effect-snapshot'
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -100,7 +103,7 @@ it('reads canonical fit and driver snapshots without changing geometry or owners
 
 it('fails against an older host without changing fit or control state', async () => {
   rpc = new RpcDispatcher({ runtime, methods: TERMINAL_METHODS })
-  for (const name of ['fit-overrides', 'drivers']) {
+  for (const name of ['fit-overrides', 'drivers', 'workspace-hosts']) {
     state.call.mockClear()
     vi.mocked(console.log).mockClear()
     await main(['terminal', name, '--json'], root)
@@ -149,5 +152,46 @@ it('reads only the current title side effect without replaying attention and rej
   expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
     ok: false,
     error: { code: 'terminal_gone' }
+  })
+})
+
+it('enumerates persisted SSH and paired host partitions without a repository catalog or session content', async () => {
+  const session = getDefaultWorkspaceSession()
+  const store = new Store({
+    dataFile: join(root, 'isolated-profile.json'),
+    serializedState: JSON.stringify({
+      workspaceSession: session,
+      workspaceSessionsByHostId: {
+        'ssh:folder-only': session,
+        'runtime:peer-only': session,
+        invalid: session
+      }
+    })
+  })
+  runtime = new OrcaRuntimeService(store)
+  rpc = new RpcDispatcher({
+    runtime,
+    methods: [
+      ...TERMINAL_METHODS,
+      ...TERMINAL_HOST_INVENTORY_METHODS,
+      ...TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS
+    ]
+  })
+  const before = store.getWorkspaceSessionHostIds()
+  expect(before).toEqual(['local', 'ssh:folder-only', 'runtime:peer-only'])
+  expect(store.getRepos()).toEqual([])
+  expect(await command('workspace-hosts')).toEqual({ hostIds: before })
+  expect(store.getWorkspaceSessionHostIds()).toEqual(before)
+  expect(store.getWorkspaceSession('ssh:folder-only')).toEqual(session)
+})
+
+it('refuses a host census when the addressed runtime has no persistence store', async () => {
+  runtime = new OrcaRuntimeService()
+  rpc = new RpcDispatcher({ runtime, methods: TERMINAL_HOST_INVENTORY_METHODS })
+  await main(['terminal', 'workspace-hosts', '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
+    ok: false,
+    error: { code: 'runtime_unavailable' }
   })
 })

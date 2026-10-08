@@ -20,6 +20,15 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['terminal', 'workspace-hosts'],
+    summary: 'List execution host IDs with persisted workspace session partitions',
+    usage: 'orca terminal workspace-hosts [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: [
+      'Reads the addressed host’s persistence store, including folder-only SSH hosts. These IDs do not prove a host is connected.'
+    ]
+  },
+  {
     path: ['terminal', 'side-effects'],
     summary: 'Read the terminal’s current title without replaying past notifications',
     usage: 'orca terminal side-effects --request-file <path|-> [--json]',
