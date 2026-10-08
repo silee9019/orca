@@ -3,6 +3,8 @@ import {
   EnsureAgentSessionParams
 } from '../../shared/rpc-contract/agent-session-params'
 import { AgentStatusDismissParams } from '../../shared/rpc-contract/agent-status-cli-params'
+import { RepoSelector } from '../../shared/rpc-contract/github-repo-target-params'
+import { RepoIssueCommandWrite } from '../../shared/rpc-contract/repo-params'
 import {
   DaemonManagementStopManyParams,
   DaemonManagementStopParams
@@ -67,6 +69,15 @@ const refusal = z.object({
 
 async function call(ctx: HandlerContext, method: string, params: unknown): Promise<void> {
   const response = await ctx.client.call<unknown>(method, params)
+  if (
+    method === 'repo.hooksCheck' &&
+    !z.object({ status: z.literal('ok') }).safeParse(response.result).success
+  ) {
+    throw new RuntimeClientError(
+      'hook_check_failed',
+      'The execution host could not inspect workspace hooks.'
+    )
+  }
   if (method === 'daemon.sessions.stop' || method === 'daemon.sessions.stopMany') {
     const stopped = z.object({ verdict: z.object({ status: z.literal('exited') }) })
     const complete =
@@ -122,6 +133,10 @@ function sessionRead(method: string): CommandHandler {
 }
 
 export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
+  'agent hooks workspace-check': request('repo.hooksCheck', RepoSelector.strict()),
+  'agent hooks setup-imports': request('repo.setupScriptImports', RepoSelector.strict()),
+  'agent hooks issue-read': request('repo.issueCommandRead', RepoSelector.strict()),
+  'agent hooks issue-write': request('repo.issueCommandWrite', RepoIssueCommandWrite.strict()),
   'terminal daemon list': async (ctx) => call(ctx, 'daemon.sessions.list', {}),
   'terminal daemon stop': request('daemon.sessions.stop', DaemonManagementStopParams),
   'terminal daemon stop-many': request('daemon.sessions.stopMany', DaemonManagementStopManyParams),

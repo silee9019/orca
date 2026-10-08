@@ -20,6 +20,39 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['agent', 'hooks', 'workspace-check'],
+    summary: 'Inspect repository hooks on their execution host',
+    usage: 'orca agent hooks workspace-check --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires {repo}. Inspection errors fail; a folder workspace has no Git repository hooks.'
+    ]
+  },
+  {
+    path: ['agent', 'hooks', 'setup-imports'],
+    summary: 'Inspect setup scripts that the execution host can import',
+    usage: 'orca agent hooks setup-imports --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: ['Requires {repo}. Reads existing configurations; no script is executed.']
+  },
+  {
+    path: ['agent', 'hooks', 'issue-read'],
+    summary: 'Read the private and shared issue commands on their execution host',
+    usage: 'orca agent hooks issue-read --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: ['Requires {repo}. The output contains the requested command text.']
+  },
+  {
+    path: ['agent', 'hooks', 'issue-write'],
+    destructive: true,
+    summary: 'Save a private issue command override without executing it',
+    usage: 'orca agent hooks issue-write --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires {repo, content}. Use a client-local UTF-8 file or piped stdin for private content; blank content restores the shared command. Git repository workspaces only.'
+    ]
+  },
+  {
     path: ['terminal', 'daemon', 'list'],
     summary: 'List daemon-owned sessions and preserve unreachable daemon observations',
     usage: 'orca terminal daemon list [--json]',

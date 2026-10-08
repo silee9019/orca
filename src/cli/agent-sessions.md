@@ -55,3 +55,7 @@
 `terminal daemon stop --request-file <path|->`는 조회한 `{sessionId, incarnationId, protocolVersion, confirm:true}`를 받습니다. 해당 daemon이 생성 식별값 검증 기능을 협상하지 않았거나 식별값이 바뀌었으면 거부하며 다른 daemon으로 대체하지 않습니다. 종료 후 소유 daemon을 다시 조회해 `live`·`unverifiable`·`exited`를 구분합니다. `exited`가 아니면 종료 코드 1과 error.data에 판정 근거를 반환합니다.
 
 `terminal daemon stop-many --request-file <path|->`는 `{targets: [...]}`로 1–256개의 명시적 종료 대상을 받습니다. 각 대상에 같은 식별값과 확인 필드가 필요합니다. 새로 생긴 세션은 자동으로 추가하지 않습니다. 일부 거부나 연락 두절이 있어도 각 대상의 판정을 보존하고 전체 성공으로 출력하지 않습니다. 이 명령들은 daemon 자체를 재시작하지 않습니다.
+
+작업공간의 hook은 `agent hooks workspace-check`·`setup-imports`로 조회하며 `--request-file`에 `{repo}`를 전달합니다. 검사 실패는 오류로 반환하고 스크립트를 실행하지 않습니다. folder workspace에는 Git repository hook이 없습니다. `agent hooks issue-read`는 같은 요청으로 private override와 shared command를 읽습니다. 이 조회의 출력에는 요청한 명령 본문이 포함됩니다.
+
+`agent hooks issue-write`는 `{repo, content}`를 파일이나 stdin으로 받아 실행 호스트의 private override를 저장합니다. 빈 content는 override를 지워 shared command를 다시 적용합니다. 이 명령은 스크립트를 실행하거나 저장한 본문을 출력하지 않습니다. Git repository workspace에서만 지원하며 SSH filesystem이 없거나 private override의 ignore 보호를 저장할 수 없으면 실패합니다.
