@@ -332,7 +332,7 @@ describe('registerPtyHandlers', () => {
 
       claimListener?.(mainWindowIpcEvent, { id: 'pty-1', cols: 125, rows: 48 })
 
-      expect(claimRemoteDesktopHost).toHaveBeenCalledWith('pty-1', 125, 48)
+      expect(claimRemoteDesktopHost).toHaveBeenCalledWith('pty-1', 125, 48, expect.any(Function))
     })
     it('does not forward host input when viewport reclaim fails', async () => {
       const write = setupProviderWithAppliedSize({ applied: { cols: 80, rows: 24 } })

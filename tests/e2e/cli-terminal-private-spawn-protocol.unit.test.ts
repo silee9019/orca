@@ -10,6 +10,7 @@ import {
 } from '../../src/shared/rpc-contract/terminal-private-spawn-params'
 import {
   assertTerminalSpawnLaunchScope,
+  resolveTerminalCreateInitialSize,
   resolveTerminalSpawnInitialSize
 } from '../../src/main/runtime/terminal-spawn-launch-scope'
 const params = {
@@ -40,6 +41,22 @@ it('preserves the default size and validates explicit grids', () => {
   expect(() => resolveTerminalSpawnInitialSize({ cols: 0, rows: 29 })).toThrow(
     'terminal_spawn_invalid_initial_size'
   )
+})
+it('lets only a background workspace terminal pin its initial grid', () => {
+  const grid = { cols: 97, rows: 29 }
+  expect(resolveTerminalCreateInitialSize({}, undefined)).toEqual({ cols: 120, rows: 40 })
+  expect(
+    resolveTerminalCreateInitialSize({ initialSize: grid, presentation: 'background' }, 'workspace')
+  ).toEqual(grid)
+  for (const [opts, selector] of [
+    [{ initialSize: grid, presentation: 'background' }, undefined],
+    [{ initialSize: grid }, 'workspace'],
+    [{ initialSize: grid, presentation: 'background', rendererBacked: true }, 'workspace']
+  ] as const) {
+    expect(() => resolveTerminalCreateInitialSize(opts, selector)).toThrow(
+      'terminal_spawn_initial_size_requires_background_workspace'
+    )
+  }
 })
 it('pins execution host and exact folder/worktree identity without local fallback', () => {
   const scope = {

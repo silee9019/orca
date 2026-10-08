@@ -6,6 +6,10 @@ import type {
   OrchestrationWorkerServer
 } from './orchestration/environment-transport'
 import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-envelope'
+import type {
+  RendererPtyStopOptions,
+  RendererPtyStopReceipt
+} from '../ipc/pty/runtime/renderer-pty-stop'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import {
   LOCAL_EXECUTION_HOST_ID,
@@ -30,10 +34,6 @@ import { createWorkspaceIssueCommandRunner } from './runtime-issue-command-runne
 import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
 import { resolveSetupRunnerShell } from '../worktree-runner-script'
 import type { WorktreeSetupLaunch } from '../../shared/worktree/launch-types'
-import type {
-  RendererPtyStopOptions,
-  RendererPtyStopReceipt
-} from '../ipc/pty/runtime/renderer-pty-stop'
 
 export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity {
   getCodexPaneSharedServerCommands(): CodexPaneSharedServerCommands | null {
