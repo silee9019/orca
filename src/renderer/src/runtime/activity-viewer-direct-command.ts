@@ -1,3 +1,4 @@
+import { applyActivityThreadIssueMenuRequest } from './activity-thread-issue-menu-command'
 import { applyActivityThreadPreviewEditRequest } from './activity-thread-preview-edit-command'
 import { applyActivityThreadPreviewRequest } from './activity-thread-preview-command'
 import { applyActivityThreadCopyRequest } from './activity-thread-copy-command'
@@ -16,6 +17,9 @@ export function applyActivityViewerDirectRequest(
   request: ActivityViewerRequest,
   command: ActivityViewerCommand
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> | null {
+  if (command.operation === 'preview-issue-menu') {
+    return applyActivityThreadIssueMenuRequest(request, command)
+  }
   if (command.operation === 'preview-edit') {
     return applyActivityThreadPreviewEditRequest(request, command)
   }

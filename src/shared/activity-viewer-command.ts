@@ -56,6 +56,10 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    issueMenuAction: z
+      .object({ paneKey: z.string(), enabled: z.boolean(), visible: z.boolean().nullable() })
+      .strip()
+      .optional(),
     editAction: z
       .object({
         paneKey: z.string(),

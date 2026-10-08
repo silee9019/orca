@@ -5,7 +5,7 @@ import type { captureActivityThreadCommandTarget } from './activity-thread-comma
 
 export function captureActivityThreadPreviewAction(
   context: ReturnType<typeof captureActivityThreadCommandTarget>,
-  field: 'copy-path' | 'issue' | 'comment'
+  field: 'copy-path' | 'issue' | 'comment' | 'issue-menu'
 ): {
   action: HTMLButtonElement
   portal: HTMLElement
@@ -27,9 +27,14 @@ export function captureActivityThreadPreviewAction(
   const label =
     field === 'copy-path'
       ? translate('auto.components.activity.ActivityThreadHoverCard.copyPath', 'Copy path')
-      : field === 'issue'
-        ? translate('auto.components.sidebar.WorktreeCardMeta.807b13b9ec', 'Edit issue')
-        : translate('auto.components.sidebar.WorktreeCardMeta.c7fa72ead0', 'Edit notes')
+      : field === 'issue-menu'
+        ? translate(
+            'auto.components.sidebar.WorktreeCardMeta.moreIssueActions',
+            'More issue actions'
+          )
+        : field === 'issue'
+          ? translate('auto.components.sidebar.WorktreeCardMeta.807b13b9ec', 'Edit issue')
+          : translate('auto.components.sidebar.WorktreeCardMeta.c7fa72ead0', 'Edit notes')
   const actions = [...(portal?.querySelectorAll<HTMLButtonElement>('button') ?? [])].filter(
     (node) => node.getAttribute('aria-label') === label
   )
@@ -75,7 +80,9 @@ export function captureActivityThreadPreviewAction(
     throw new Error(
       field === 'copy-path'
         ? 'activity_preview_copy_unavailable'
-        : 'activity_preview_edit_unavailable'
+        : field === 'issue-menu'
+          ? 'activity_preview_issue_menu_unavailable'
+          : 'activity_preview_edit_unavailable'
     )
   }
   const recordChanges = (records: MutationRecord[]): void => {

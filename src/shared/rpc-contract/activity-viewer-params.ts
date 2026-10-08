@@ -10,6 +10,14 @@ export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z
     .object({
       ...target,
+      operation: z.literal('preview-issue-menu'),
+      paneKey: z.string().min(1),
+      enabled: z.boolean()
+    })
+    .strict(),
+  z
+    .object({
+      ...target,
       operation: z.literal('preview-edit'),
       paneKey: z.string().min(1),
       field: z.enum(['issue', 'comment'])

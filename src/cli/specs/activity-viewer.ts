@@ -4,6 +4,7 @@ function options(operation: string): { flags: string[]; usage: string } {
   switch (operation) {
     case 'preview-edit':
       return { flags: ['pane', 'field'], usage: ' --pane <pane-key> --field <issue|comment>' }
+    case 'preview-issue-menu':
     case 'preview':
       return { flags: ['pane', 'enabled'], usage: ' --pane <pane-key> --enabled <true|false>' }
     case 'copy':
@@ -50,6 +51,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'preview-copy-path',
   'preview',
   'preview-edit',
+  'preview-issue-menu',
   'close',
   'resize',
   'scroll',
@@ -79,6 +81,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Preview-issue-menu uses the original visible more-actions trigger and local pending-hover-close policy. Applied confirms its exact menu portal or its removal. It never opens a preview implicitly, selects a menu item, or acknowledges remote work.',
     'Preview-edit clicks the original visible issue or notes action once and never overwrites an open modal. Applied confirms the resolved local dialog owner, committed original seed and requested input focus (or its original disabled state). It does not save, close the preview explicitly, or acknowledge remote writes.',
     'Preview-copy-path requires the exact open preview and its visible path action. It preserves the original path-only gate and success/error toast. Its clipboard acknowledgement/read-back has the same timeout limits as Copy; it never opens the preview implicitly.',
     'Preview sends one mouse enter or leave through the original visible thread trigger and waits for its exact portal. Original delays, context-menu suppression, and pending menu close are preserved. This confirms only the local preview shell, not metadata readiness or remote acknowledgement.',
