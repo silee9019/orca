@@ -99,3 +99,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `agent session respond-question`의 성공 출력은 itemId·revision·resolution.state와 실행 fence·cursor·replay 여부만 담습니다. 자유 입력과 packed option ID는 재출력하지 않습니다. 제출한 답변을 읽으려면 명시적으로 history를 조회합니다. 호스트의 비정상 receipt도 원문을 출력하지 않고 실패합니다.
 
 `agent codex-server status --request-file <path|->`는 `{terminal, expectedIncarnationId?}`로 기존 local non-WSL pane의 공유 서버 참여 여부를 조회합니다. `joined:false`는 서버 부재의 증거가 아닙니다. `disable-auto-start`와 `stop`에는 `confirm:true`가 추가로 필요하며 그 pane의 CODEX_HOME을 공유하는 모든 클라이언트에 영향을 줍니다. 자동 시작 해제는 기존 설정 읽기 확인 뒤 성공하고, 중지는 기존 probe가 absent를 확인한 경우만 성공합니다. 접촉 불명은 실패로 반환하므로 재시도 전에 상태를 확인합니다. SSH·WSL pane은 기존 local 경계에서 거부하며 다른 호스트나 사용자의 default home으로 대체하지 않습니다.
+
+`terminal remote-capabilities --request-file <path|->`는 `{connectionId}`로 실행 호스트에 이미 연결된 SSH multiplexer의 Windows terminal capability를 조회합니다. 연결 ID는 CLI를 실행하는 컴퓨터가 아니라 지정한 Orca 실행 호스트의 것입니다. 연결을 새로 열거나 설치하지 않습니다. `hostPlatform:null`은 플랫폼 증거가 없다는 뜻이므로 함께 반환된 false를 기능 부재로 해석하지 않습니다.
