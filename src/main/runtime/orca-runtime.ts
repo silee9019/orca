@@ -17,6 +17,11 @@ import {
   SshCredentialObservationSchema,
   type SshCredentialObservation
 } from '../../shared/ssh-credential-observation'
+import { readMacCapturedDigitRowChords } from '../macos-keyboard-probes'
+import { getRepoForExecutionHost } from '../repo-execution-host-selection'
+import { RuntimeRepositoryRefQueries } from './runtime-repository-ref-queries'
+import { REPO_SEARCH_REFS_DEFAULT_LIMIT } from '../../shared/repo-search-limits'
+import type { RepoHostRefSearchArgs } from '../../shared/rpc-contract/workspace-repo-host-params'
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
 import { OrcaRuntimeWithResolveWaiter } from './orca-runtime-resolve-waiter'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
@@ -25,6 +30,14 @@ import { registerDetectedWorktreeScanInvalidation } from '../ipc/worktrees/listi
 import type { RuntimeSettingsActions } from './runtime-settings-actions'
 import type { KeybindingActionId } from '../../shared/keybindings'
 import type { GlobalSettings } from '../../shared/global-settings-types'
+import { readWorkspaceCleanupScanSnapshot } from '../workspace-cleanup-scan-snapshot'
+import { readWorkspaceSpaceAnalysisSnapshot } from '../workspace-space-analysis-snapshot'
+import type { ExecutionHostId } from '../../shared/execution-host'
+import { invalidateAuthorizedRootsCache } from '../ipc/filesystem-auth'
+import { getDefaultProjectParent } from '../project-default-parent'
+import { mergeWorkspaceCleanupDismissals } from '../workspace-cleanup-dismissals'
+import type { WorkspaceCleanupDismissArgs } from '../../shared/workspace-cleanup'
+import { enrichRepoGitUsernames } from '../repo-git-username-enrichment'
 
 class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
   private readonly settingsActions: RuntimeSettingsActions | undefined
@@ -82,6 +95,80 @@ class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
     if (parsed.success) {
       this.emitClientEvent({ type: 'mobileRelayChanged', observation: parsed.data })
     }
+  }
+
+  getMacCapturedDigitRowChords() {
+    return readMacCapturedDigitRowChords()
+  }
+
+  async searchRepoRefsForHost(params: RepoHostRefSearchArgs, includeQualifiedRefs = true) {
+    const repo = getRepoForExecutionHost(this.requireStore(), params.repoId, params.hostId)
+    if (!repo) {
+      throw new Error('repo_not_found')
+    }
+    return new RuntimeRepositoryRefQueries({ resolveRepo: async () => repo }).search(
+      params.repoId,
+      params.query,
+      params.limit ?? REPO_SEARCH_REFS_DEFAULT_LIMIT,
+      includeQualifiedRefs
+    )
+  }
+
+  async dismissWorkspaceCleanup(args?: WorkspaceCleanupDismissArgs): Promise<{
+    ok: true
+    dismissalCount: number
+  }> {
+    const store = this.requireStore()
+    const dismissals = args
+      ? mergeWorkspaceCleanupDismissals(store.getUI().workspaceCleanup?.dismissals, args)
+      : {}
+    store.updateUI({ workspaceCleanup: { dismissals } })
+    await store.flushPendingOrThrowAsync()
+    return { ok: true, dismissalCount: Object.keys(dismissals).length }
+  }
+
+  getDefaultCreateProjectParent(): string {
+    return getDefaultProjectParent(this.requireStore().getSettings())
+  }
+
+  enrichRepoGitUsernames(): void {
+    if (!this.store) {
+      return
+    }
+    enrichRepoGitUsernames(this.requireStore(), {
+      onChanged: () => {
+        this.invalidateResolvedWorktreeCache()
+        this.notifyReposChanged()
+      }
+    })
+  }
+
+  removeProjectForHost(repoId: string, hostId: ExecutionHostId): { ok: true } {
+    this.requireStore().removeProjectForHost(repoId, hostId)
+    invalidateAuthorizedRootsCache()
+    this.invalidateWorktreeCatalog(repoId)
+    this.notifyReposChanged()
+    return { ok: true }
+  }
+
+  reorderReposForHost(
+    orderedIds: string[],
+    hostId: ExecutionHostId
+  ): { ok: boolean; status: 'applied' | 'rejected' } {
+    const applied = this.requireStore().reorderReposForHost(orderedIds, hostId)
+    if (applied) {
+      this.invalidateResolvedWorktreeCache()
+      this.notifyReposChanged()
+    }
+    return { ok: applied, status: applied ? 'applied' : 'rejected' }
+  }
+
+  getCachedWorkspaceCleanupScan() {
+    return readWorkspaceCleanupScanSnapshot(this.requireStore().getProfileStorageDirectory())
+  }
+
+  getCachedWorkspaceSpaceAnalysis() {
+    return readWorkspaceSpaceAnalysisSnapshot(this.requireStore().getProfileStorageDirectory())
   }
 
   constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithResolveWaiter>) {

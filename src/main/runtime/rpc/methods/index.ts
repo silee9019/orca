@@ -41,6 +41,14 @@ import { TERMINAL_HOST_INVENTORY_METHODS } from './terminal-host-inventory'
 import { DAEMON_MANAGEMENT_METHODS } from './daemon-management'
 import { AGENT_STATUS_CLI_METHODS } from './agent-status-cli'
 import { AI_VAULT_SESSION_ACTION_METHODS } from './ai-vault-session-actions'
+import { WORKSPACE_VISIBLE_WORKTREE_METHODS } from './workspace-visible-worktrees'
+import { WORKSPACE_HOST_PATH_METHODS } from './workspace-host-path'
+import { WORKSPACE_CRASH_REPORT_METHODS } from './workspace-crash-reports'
+import { WORKSPACE_MACOS_HOTKEY_METHODS } from './workspace-macos-hotkeys'
+import { WORKSPACE_GIT_STARTUP_METHODS } from './workspace-git-startup'
+import { WORKSPACE_CLEANUP_DISMISSAL_METHODS } from './workspace-cleanup-dismissals'
+import { WORKSPACE_REPO_HOST_METHODS } from './workspace-repo-host'
+import { WORKSPACE_CACHED_SCAN_METHODS } from './workspace-cached-scans'
 import { WORKSPACE_JIRA_PROJECT_USER_METHODS } from './workspace-jira-project-users'
 import { WORKSPACE_LINEAR_ISSUE_FIELD_METHODS } from './workspace-linear-issue-fields'
 import { WORKSPACE_GITHUB_ACCOUNT_METHODS } from './workspace-github-account'
@@ -150,10 +158,18 @@ export const ALL_RPC_METHODS = [
   ...NETWORK_CONNECTION_METHODS,
   ...MOBILE_NETWORK_HUMAN_METHODS,
 
+  ...WORKSPACE_MACOS_HOTKEY_METHODS,
+  ...WORKSPACE_VISIBLE_WORKTREE_METHODS,
+  ...WORKSPACE_HOST_PATH_METHODS,
+  ...WORKSPACE_CRASH_REPORT_METHODS,
+  ...WORKSPACE_GIT_STARTUP_METHODS,
   ...WORKSPACE_GIT_IGNORE_METHODS,
   ...WORKSPACE_KEYBINDING_FILE_METHODS,
   ...WORKSPACE_LINEAR_ISSUE_FIELD_METHODS,
   ...WORKSPACE_JIRA_PROJECT_USER_METHODS,
+  ...WORKSPACE_CACHED_SCAN_METHODS,
+  ...WORKSPACE_CLEANUP_DISMISSAL_METHODS,
+  ...WORKSPACE_REPO_HOST_METHODS,
   ...WORKSPACE_GITHUB_ACCOUNT_METHODS,
   ...WORKSPACE_GITLAB_INSPECTION_METHODS,
   ...WORKSPACE_BITBUCKET_METHODS,

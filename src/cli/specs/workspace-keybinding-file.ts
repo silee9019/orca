@@ -3,6 +3,17 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['keybindings', 'mac-captured-digit-row'],
+    summary: 'Read macOS captured digit-row chords on the selected runtime host',
+    usage: 'orca keybindings mac-captured-digit-row [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: [
+      'Uses the desktop live-preference probe, 500ms deadline and physical-key parser on the selected runtime host. Does not read the CLI client preferences or change OS settings.',
+      'Returns [] on non-macOS hosts and on probe failure, matching the desktop API. An empty result does not prove that the OS has no shortcut conflicts.',
+      'Only parsed chords are returned, never raw preferences. Old hosts fail without a client-side probe; no viewer or Git workspace is required.'
+    ]
+  },
+  {
     path: ['keybindings', 'ensure-file'],
     summary: 'Create and reload the keybindings file on the selected runtime host',
     usage: 'orca keybindings ensure-file [--json]',

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { readMacKeyboardCommandStdout as readCommandStdout } from '../macos-keyboard-probes'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -31,7 +31,6 @@ import {
 } from './app-restart'
 export { requestDesktopAppRestart } from './app-restart'
 
-const KEYBOARD_INPUT_SOURCE_TIMEOUT_MS = 500
 const MAC_HITOOLBOX_DOMAIN = 'com.apple.HIToolbox'
 // Why: defaults export reads live prefs (on-disk plist lags cfprefsd); xml1 dodges plutil's json abort on macOS 15 input-source arrays; absolute paths so a minimal PATH can't shadow the tools.
 const MAC_SELECTED_INPUT_SOURCES_JSON_COMMAND = [
@@ -109,77 +108,6 @@ function resolveDevFeatureWallAssetDir(): string {
 
   // Why: E2E launches out/main, so app.getAppPath() can point there while dev resources live at the repo root.
   return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
-}
-
-function readCommandStdout(
-  command: string,
-  args: string[],
-  timeoutMessage: string
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let settled = false
-    let child: ReturnType<typeof spawn> | undefined
-
-    // Why: killing only the shell orphans pipeline stages; detached spawn lets one negative-pid SIGKILL reap the whole group.
-    const killTree = (): void => {
-      if (!child?.pid) {
-        return
-      }
-      try {
-        process.kill(-child.pid, 'SIGKILL')
-      } catch {
-        child.kill()
-      }
-    }
-
-    // Why: short timeout so a wedged macOS probe never hangs; this timer owns the process-group kill.
-    const timer = setTimeout(() => {
-      if (settled) {
-        return
-      }
-      settled = true
-      killTree()
-      reject(new Error(timeoutMessage))
-    }, KEYBOARD_INPUT_SOURCE_TIMEOUT_MS)
-
-    const settle = (callback: () => void): void => {
-      if (settled) {
-        return
-      }
-      settled = true
-      clearTimeout(timer)
-      callback()
-    }
-
-    try {
-      child = spawn(command, args, { detached: true, stdio: ['ignore', 'pipe', 'ignore'] })
-      let stdout = ''
-      child.stdout?.setEncoding('utf8')
-      child.stdout?.on('data', (chunk: string) => {
-        stdout += chunk
-      })
-      const failWith = (error: Error): void => {
-        killTree()
-        settle(() => reject(error))
-      }
-      // Why: an unhandled Readable 'error' would crash the main process; treat stdout errors like spawn errors.
-      child.stdout?.on('error', failWith)
-      child.on('error', failWith)
-      child.on('close', (code, signal) => {
-        settle(() =>
-          code === 0
-            ? resolve(stdout)
-            : reject(
-                new Error(
-                  `${command} exited with ${signal ? `signal ${signal}` : `code ${code ?? 'unknown'}`}`
-                )
-              )
-        )
-      })
-    } catch (error) {
-      settle(() => reject(error))
-    }
-  })
 }
 
 type SelectedKeyboardInputSource = { kind: 'inputSource'; id: string } | { kind: 'keyboardLayout' }

@@ -1,6 +1,9 @@
 // Kept import-free for main/CLI project isolation; a parity test prevents drift.
 export const CLI_COMMAND_NAMES = [
+  'crash-report',
   'keybindings',
+  'workspace-cleanup',
+  'workspace-space',
   'bitbucket',
   'review',
   'folder-workspace',

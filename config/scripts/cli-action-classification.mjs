@@ -146,7 +146,9 @@ function describeSource(source) {
   let domain = ACTION_DOMAINS.find((item) => item.pattern.test(domainText))
   if (
     kind === 'command' &&
-    /^src\/cli\/specs\/workspace-(?:folder|ports|repo-data)\.ts$/.test(source.file)
+    /^src\/cli\/specs\/workspace-(?:folder|ports|repo-data|cached-scans|cleanup-dismissals|git-startup|crash-reports|host-path|visible-worktrees)\.ts$/.test(
+      source.file
+    )
   ) {
     domain = ACTION_DOMAINS.find((item) => item.id === 'workspace-data')
   }

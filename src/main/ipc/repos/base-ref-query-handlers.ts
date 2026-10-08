@@ -1,13 +1,14 @@
 import { ipcMain } from 'electron'
 import type { Store } from '../../persistence'
-import type { BaseRefDefaultResult, BaseRefSearchResult, Repo } from '../../../shared/repo-types'
+import type { BaseRefDefaultResult, BaseRefSearchResult } from '../../../shared/repo-types'
 import {
   clampRepoSearchRefsLimit,
   REPO_SEARCH_REFS_DEFAULT_LIMIT,
   isRepoSearchRefsRequestLimit
 } from '../../../shared/repo-search-limits'
 import { isFolderRepo } from '../../../shared/repo-kind'
-import { getRepoExecutionHostId, type ExecutionHostId } from '../../../shared/execution-host'
+import type { ExecutionHostId } from '../../../shared/execution-host'
+import { getRepoForExecutionHost } from '../../repo-execution-host-selection'
 import {
   getBaseRefDefault,
   getRemoteCount,
@@ -185,20 +186,4 @@ async function searchBaseRefDetailsForRepo(
     }
   }
   return searchBaseRefDetails(repo.path, args.query, limit)
-}
-
-function getRepoForExecutionHost(
-  store: Store,
-  repoId: string,
-  hostId?: ExecutionHostId
-): Repo | null {
-  if (!hostId) {
-    return store.getRepo(repoId) ?? null
-  }
-  // Why: repo ids can collide across local and SSH hosts; read must use the same host the Settings pane selected for the write.
-  return (
-    store
-      .getRepos()
-      .find((repo) => repo.id === repoId && getRepoExecutionHostId(repo) === hostId) ?? null
-  )
 }

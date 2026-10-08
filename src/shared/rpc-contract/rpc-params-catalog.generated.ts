@@ -733,6 +733,12 @@ import {
   UsageViewerParams
 } from './usage-params'
 import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
+import { WorkspaceCleanupDismiss } from './workspace-cleanup-dismissal-params'
+import {
+  WorkspaceCrashReportCopy,
+  WorkspaceCrashReportDismiss,
+  WorkspaceCrashReportSubmit
+} from './workspace-crash-report-params'
 import { WorkspaceFilterParams } from './workspace-filter-params'
 import { GitHubAccountDiagnostic, GitHubStarRequest } from './workspace-github-account-params'
 import {
@@ -740,9 +746,12 @@ import {
   GitLabIssueLookup,
   GitLabMergeRequestLookup
 } from './workspace-gitlab-inspection-params'
+import { DesktopDirectoryCreate, DesktopHostPathExists } from './workspace-host-path-params'
 import { JiraProjectAssignableUsers } from './workspace-jira-project-users-params'
 import { WorkspaceListViewerParams } from './workspace-list-viewer-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
+import { RepoHostRefSearch, RepoHostRemoval, RepoHostReorder } from './workspace-repo-host-params'
+import { DesktopVisibleWorktrees } from './workspace-visible-worktree-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
   WorktreeActivate,
@@ -1019,6 +1028,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'computer.setValue': SetValue,
   'computer.typeText': TypeText,
   'connections.viewer.apply': ConnectionsViewerParams,
+  'crashReports.copyLatestDiagnostics': WorkspaceCrashReportCopy,
+  'crashReports.dismiss': WorkspaceCrashReportDismiss,
+  'crashReports.getLatestPending': null,
+  'crashReports.getLatestReport': null,
+  'crashReports.submit': WorkspaceCrashReportSubmit,
   'daemon.sessions.list': DaemonManagementListParams,
   'daemon.sessions.stop': DaemonManagementStopParams,
   'daemon.sessions.stopMany': DaemonManagementStopManyParams,
@@ -1109,10 +1123,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.browseServerDir': ServerDirectoryBrowse,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
+  'files.createDesktopDirectory': DesktopDirectoryCreate,
   'files.createDir': FileMutationOpen,
   'files.createDirNoClobber': FileMutationOpen,
   'files.createFile': FileMutationOpen,
   'files.delete': FileDelete,
+  'files.desktopPathExists': DesktopHostPathExists,
   'files.list': WorktreeSelector,
   'files.listAll': FileListAll,
   'files.listMarkdownDocuments': WorktreeSelector,
@@ -1145,6 +1161,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'git.abortMerge': WorktreeSelectorOfGitParams,
   'git.abortRebase': WorktreeSelectorOfGitParams,
   'git.appendGitignore': GitAppendGitignore,
+  'git.awaitEnvironmentStartupBarrier': null,
   'git.branchCompare': GitBranchCompare,
   'git.branchDiff': GitBranchDiff,
   'git.bulkDiscard': GitBulkPaths,
@@ -1298,6 +1315,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.updateIssue': IssueUpdate,
   'keybindings.ensureFile': null,
   'keybindings.get': null,
+  'keybindings.macCapturedDigitRowChords': null,
   'keybindings.openFile': null,
   'keybindings.reload': null,
   'keybindings.revealFile': null,
@@ -1512,17 +1530,21 @@ export const RPC_PARAMS_BY_METHOD = {
   'repo.baseRefDefault': RepoSelector,
   'repo.clone': RepoClone,
   'repo.create': RepoCreate,
+  'repo.defaultProjectParent': null,
   'repo.gitAvailable': null,
   'repo.hooks': RepoSelector,
   'repo.hooksCheck': RepoSelector,
   'repo.issueCommandRead': RepoSelector,
   'repo.issueCommandWrite': RepoIssueCommandWrite,
   'repo.list': null,
+  'repo.removeForHost': RepoHostRemoval,
   'repo.removeSparsePreset': SparsePresetRemoveParams,
   'repo.reorder': RepoReorder,
+  'repo.reorderForHost': RepoHostReorder,
   'repo.rm': RepoSelector,
   'repo.saveSparsePreset': RepoSparsePresetSave,
   'repo.searchRefs': RepoSearchRefs,
+  'repo.searchRefsForHost': RepoHostRefSearch,
   'repo.setBaseRef': RepoSetBaseRef,
   'repo.setupScriptImports': RepoSelector,
   'repo.show': RepoSelector,
@@ -1721,15 +1743,21 @@ export const RPC_PARAMS_BY_METHOD = {
   'vm.runtimes.list': null,
   'vm.suspend': VmWorkspace,
   'voice.viewer': VoiceViewerParams,
+  'workspaceCleanup.clearDismissals': null,
+  'workspaceCleanup.dismiss': WorkspaceCleanupDismiss,
+  'workspaceCleanup.getCachedScan': null,
   'workspacePorts.kill': WorkspacePortKillParams,
   'workspacePorts.scan': WorkspacePortScanParams,
+  'workspaceSpace.getCachedAnalysis': null,
   'worktree.activate': WorktreeActivate,
   'worktree.create': WorktreeCreate,
   'worktree.detectedList': WorktreeDetectedListParams,
   'worktree.forceDeleteBranch': WorktreeForceDeleteBranch,
   'worktree.lineageList': null,
   'worktree.list': WorktreeListParams,
+  'worktree.listAllVisible': null,
   'worktree.listRetiredNames': WorktreeDetectedListParams,
+  'worktree.listVisible': DesktopVisibleWorktrees,
   'worktree.persistSortOrder': WorktreeSortOrder,
   'worktree.prefetchCreateBase': WorktreePrefetchCreateBase,
   'worktree.ps': WorktreePsParams,

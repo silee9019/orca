@@ -3,6 +3,50 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-visible-worktrees',
+    keys: ['worktree list-visible', 'worktree list-all-visible'],
+    load: async () =>
+      (await import('./handlers/workspace-visible-worktrees.js'))
+        .WORKSPACE_VISIBLE_WORKTREE_HANDLERS
+  },
+  {
+    name: 'workspace-host-path',
+    keys: ['file mkdir-host-path', 'file host-path-exists'],
+    load: async () =>
+      (await import('./handlers/workspace-host-path.js')).WORKSPACE_HOST_PATH_HANDLERS
+  },
+  {
+    name: 'workspace-crash-reports',
+    keys: [
+      'crash-report latest-pending',
+      'crash-report latest',
+      'crash-report dismiss',
+      'crash-report copy-diagnostics',
+      'crash-report submit'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-crash-reports.js')).WORKSPACE_CRASH_REPORT_HANDLERS
+  },
+  {
+    name: 'workspace-git-startup',
+    keys: ['git await-environment'],
+    load: async () =>
+      (await import('./handlers/workspace-git-startup.js')).WORKSPACE_GIT_STARTUP_HANDLERS
+  },
+  {
+    name: 'workspace-cleanup-dismissals',
+    keys: ['workspace-cleanup dismiss', 'workspace-cleanup clear-dismissals'],
+    load: async () =>
+      (await import('./handlers/workspace-cleanup-dismissals.js'))
+        .WORKSPACE_CLEANUP_DISMISSAL_HANDLERS
+  },
+  {
+    name: 'workspace-cached-scans',
+    keys: ['workspace-cleanup cached-scan', 'workspace-space cached-analysis'],
+    load: async () =>
+      (await import('./handlers/workspace-cached-scans.js')).WORKSPACE_CACHED_SCAN_HANDLERS
+  },
+  {
     name: 'workspace-github-account',
     keys: [
       'github viewer',
@@ -29,7 +73,12 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'workspace-keybinding-file',
-    keys: ['keybindings ensure-file', 'keybindings open-file', 'keybindings reveal-file'],
+    keys: [
+      'keybindings mac-captured-digit-row',
+      'keybindings ensure-file',
+      'keybindings open-file',
+      'keybindings reveal-file'
+    ],
     load: async () =>
       (await import('./handlers/workspace-keybinding-file.js')).WORKSPACE_KEYBINDING_FILE_HANDLERS
   },
@@ -141,6 +190,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'workspace-repo-data',
     keys: [
+      'repo search-base-refs',
       'repo sparse-presets',
       'repo save-sparse-preset',
       'repo create',
@@ -148,6 +198,9 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'repo clone',
       'repo rm',
       'repo reorder',
+      'repo default-project-parent',
+      'repo remove-for-host',
+      'repo reorder-for-host',
       'repo base-ref-default'
     ],
     load: async () =>

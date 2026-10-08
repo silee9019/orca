@@ -1,4 +1,10 @@
+import { WORKSPACE_VISIBLE_WORKTREE_COMMAND_SPECS } from './workspace-visible-worktrees'
+import { WORKSPACE_HOST_PATH_COMMAND_SPECS } from './workspace-host-path'
+import { WORKSPACE_CRASH_REPORT_COMMAND_SPECS } from './workspace-crash-reports'
+import { WORKSPACE_GIT_STARTUP_COMMAND_SPECS } from './workspace-git-startup'
+import { WORKSPACE_CLEANUP_DISMISSAL_COMMAND_SPECS } from './workspace-cleanup-dismissals'
 import { WORKSPACE_LINEAR_ISSUE_COMMAND_SPECS } from './workspace-linear-issues'
+import { WORKSPACE_CACHED_SCAN_COMMAND_SPECS } from './workspace-cached-scans'
 import { WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS } from './workspace-github-account'
 import { WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS } from './workspace-gitlab-inspection'
 import { WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS } from './workspace-keybinding-file'
@@ -32,7 +38,13 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_VISIBLE_WORKTREE_COMMAND_SPECS,
+  ...WORKSPACE_HOST_PATH_COMMAND_SPECS,
+  ...WORKSPACE_CRASH_REPORT_COMMAND_SPECS,
+  ...WORKSPACE_GIT_STARTUP_COMMAND_SPECS,
   ...WORKSPACE_LINEAR_ISSUE_COMMAND_SPECS,
+  ...WORKSPACE_CACHED_SCAN_COMMAND_SPECS,
+  ...WORKSPACE_CLEANUP_DISMISSAL_COMMAND_SPECS,
   ...WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS,
   ...WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS,
   ...WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS,

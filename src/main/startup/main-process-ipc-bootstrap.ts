@@ -1,3 +1,4 @@
+import { setGitEnvironmentStartupBarrierForRpc } from '../runtime/rpc/methods/workspace-git-startup'
 import { ipcMain } from 'electron'
 import { recoverLegacyWorkerTerminalsForRendererStartup } from './legacy-worker-renderer-recovery'
 import { logStartupMilestone } from './startup-diagnostics'
@@ -19,9 +20,11 @@ export function registerMainProcessIpcHandlers(): void {
   // generation and the managed WSL CLI registration, not a daemon PTY provider
   // or a hook-server bind. Bundling them made worktree hydration wait on a
   // terminal service it never calls.
-  ipcMain.handle('app:awaitGitEnvironmentStartupBarrier', async () => {
+  const awaitGitEnvironmentStartupBarrier = async (): Promise<void> => {
     await Promise.all([state.shellPathReady, state.managedWslCliStartupBarrierReady])
-  })
+  }
+  setGitEnvironmentStartupBarrierForRpc(awaitGitEnvironmentStartupBarrier)
+  ipcMain.handle('app:awaitGitEnvironmentStartupBarrier', awaitGitEnvironmentStartupBarrier)
   ipcMain.handle('app:prepareTerminalStartupRestoration', async () => {
     await Promise.all([
       state.firstWindowStartupServicesReady,

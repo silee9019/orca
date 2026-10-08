@@ -18366,10 +18366,10 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "권한·동의·확인 생략·계정 또는 내부 상태입니다. 기존 전용 서비스/정책 및 정당한 internal 부모 매핑을 감독과 연결해야 하며 bulk writer로 확대하지 않습니다.",
+      "gap": "기존 KeybindingService의 action 단위 파일 writer로 부모 효과를 연결했습니다. 실제 renderer 반영 ACK는 viewer-ui의 별도 UI 행동에서 증거가 필요합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "support": "implemented",
+      "evidence": "partial",
       "sources": [
         {
           "id": "setting:keybindings",
@@ -18377,7 +18377,13 @@
         }
       ],
       "rule": "setting",
-      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal."
+      "rationale": "GlobalSettings.keybindings는 legacy migration 입력이며 새 쓰기는 keybindings 파일이 정본입니다. CLI keybindings 명령이 같은 KeybindingService writer를 사용합니다.",
+      "parent": "api.keybindings.setAction",
+      "command": "settings keybindings set",
+      "evidencePaths": [
+        "tests/e2e/settings-cli-effect.unit.test.ts",
+        "src/cli/handlers/settings.test.ts"
+      ]
     },
     {
       "id": "setting.leftSidebarAppearanceMode",

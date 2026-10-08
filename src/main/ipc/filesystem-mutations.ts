@@ -1,3 +1,5 @@
+import { createDesktopDirectory } from '../desktop-filesystem-path-commands'
+import { setDesktopDirectoryCreateForRpc } from '../runtime/rpc/methods/workspace-host-path'
 import { app, ipcMain } from 'electron'
 import { constants } from 'node:fs'
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
@@ -15,7 +17,7 @@ import { importExternalPathsSsh } from './filesystem-import-ssh'
 import type { SshMutationExpectation } from '../../shared/ssh-types'
 import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
 import { renameLocalPathSerializedByDestination } from '../destination-serialized-local-rename'
-import { assertNotExists, rethrowWithUserMessage } from './filesystem-create-path-guards'
+import { rethrowWithUserMessage } from './filesystem-create-path-guards'
 import type {
   ImportItemResult,
   ImportSkipReason,
@@ -38,6 +40,7 @@ import { resolveEnvironment } from '../../shared/runtime-environment-store'
  * Deletion is handled separately via `fs:deletePath` (shell.trashItem).
  */
 export function registerFilesystemMutationHandlers(store: Store): void {
+  setDesktopDirectoryCreateForRpc((args) => createDesktopDirectory(store, args))
   ipcMain.handle(
     'fs:createFile',
     async (
@@ -71,19 +74,7 @@ export function registerFilesystemMutationHandlers(store: Store): void {
       _event,
       args: { dirPath: string; connectionId?: string } & SshMutationExpectation
     ): Promise<void> => {
-      assertSshMutationExpectation(
-        args.connectionId,
-        args.expectedSshTargetId,
-        args.expectedSshConnectionGeneration,
-        args.expectedExecutionHostId
-      )
-      if (args.connectionId) {
-        const provider = requireSshFilesystemProvider(args.connectionId)
-        return provider.createDir(args.dirPath)
-      }
-      const dirPath = await resolveDesktopAuthorizedPath(args.dirPath, store)
-      await assertNotExists(dirPath)
-      await mkdir(dirPath, { recursive: true })
+      return createDesktopDirectory(store, args)
     }
   )
 

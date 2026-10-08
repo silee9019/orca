@@ -1,15 +1,14 @@
 import { ipcMain } from 'electron'
 import type { Store } from '../persistence'
-import {
-  WORKSPACE_CLEANUP_CLASSIFIER_VERSION,
-  type WorkspaceCleanupDismissArgs,
-  type WorkspaceCleanupScanArgs,
-  type WorkspaceCleanupScanResult,
-  type WorkspaceCleanupSnapshotPruneBatchArgs,
-  type WorkspaceCleanupSnapshotPruneRecordArgs
+import type {
+  WorkspaceCleanupDismissArgs,
+  WorkspaceCleanupScanArgs,
+  WorkspaceCleanupScanResult,
+  WorkspaceCleanupSnapshotPruneBatchArgs,
+  WorkspaceCleanupSnapshotPruneRecordArgs
 } from '../../shared/workspace-cleanup'
 import { parseExecutionHostId } from '../../shared/execution-host'
-import { getWorkspaceCleanupHostIdentity } from '../../shared/workspace-cleanup-host-identity'
+import { mergeWorkspaceCleanupDismissals } from '../workspace-cleanup-dismissals'
 import { scanWorkspaceCleanup } from './workspace-cleanup-scan'
 import { hasTargetedWorkspaceCleanupScan } from './workspace-cleanup-scan-targets'
 import {
@@ -117,28 +116,7 @@ export function registerWorkspaceCleanupHandlers(store: Store): void {
   )
 
   ipcMain.handle('workspaceCleanup:dismiss', (_event, args: WorkspaceCleanupDismissArgs) => {
-    const next = { ...store.getUI().workspaceCleanup?.dismissals }
-    for (const worktreeId of args.removedWorktreeIds ?? []) {
-      for (const [identity, dismissal] of Object.entries(next)) {
-        if (dismissal.worktreeId === worktreeId) {
-          delete next[identity]
-        }
-      }
-    }
-    for (const dismissal of args.dismissals ?? []) {
-      if (
-        dismissal &&
-        dismissal.classifierVersion === WORKSPACE_CLEANUP_CLASSIFIER_VERSION &&
-        typeof dismissal.worktreeId === 'string' &&
-        typeof dismissal.fingerprint === 'string' &&
-        (dismissal.executionHostId === undefined || parseExecutionHostId(dismissal.executionHostId))
-      ) {
-        const identity = dismissal.executionHostId
-          ? getWorkspaceCleanupHostIdentity(dismissal.executionHostId, dismissal.worktreeId)
-          : dismissal.worktreeId
-        next[identity] = dismissal
-      }
-    }
+    const next = mergeWorkspaceCleanupDismissals(store.getUI().workspaceCleanup?.dismissals, args)
     store.updateUI({ workspaceCleanup: { dismissals: next } })
   })
 

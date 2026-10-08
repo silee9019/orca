@@ -3,6 +3,10 @@ import { confirmWorkspaceCommand } from '../workspace-command-input'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
 
 export const WORKSPACE_KEYBINDING_FILE_HANDLERS: Record<string, CommandHandler> = {
+  'keybindings mac-captured-digit-row': async (ctx) => {
+    const result = await ctx.client.call('keybindings.macCapturedDigitRowChords')
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
   'keybindings ensure-file': async (ctx) => {
     const result = await ctx.client.call('keybindings.ensureFile')
     printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))

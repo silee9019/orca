@@ -1,3 +1,5 @@
+import { desktopPathExists } from '../../desktop-filesystem-path-commands'
+import { setDesktopPathExistsForRpc } from '../../runtime/rpc/methods/workspace-host-path'
 import { listFilesystemMarkdownDocuments } from '../../providers/filesystem-markdown-listing'
 import { classifyFilesystemDirectoryEntries } from '../filesystem-symlink-directory-entries'
 import { markdownDocumentsFromRelativePaths } from '../../../shared/markdown-document-paths'
@@ -33,6 +35,7 @@ import {
 export function registerFilesystemReadHandlers(context: FilesystemHandlerContext): void {
   registerFilesystemChunkReadHandler(context)
   const { store } = context
+  setDesktopPathExistsForRpc((args) => desktopPathExists(store, args))
 
   ipcMain.handle(
     'fs:readDir',
@@ -181,21 +184,7 @@ export function registerFilesystemReadHandlers(context: FilesystemHandlerContext
       _event,
       args: { filePath: string; connectionId?: string; access?: LocalFileAccess }
     ): Promise<boolean> => {
-      try {
-        if (args.connectionId) {
-          const provider = requireSshFilesystemProvider(args.connectionId)
-          await provider.stat(args.filePath)
-          return true
-        }
-        const filePath = await resolveLocalFileRequestPath(args.filePath, args.access, store)
-        await stat(filePath)
-        return true
-      } catch (error) {
-        if (isENOENT(error)) {
-          return false
-        }
-        throw error
-      }
+      return desktopPathExists(store, args)
     }
   )
 }
