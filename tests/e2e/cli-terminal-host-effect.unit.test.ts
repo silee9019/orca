@@ -312,3 +312,46 @@ it('returns a worktree stop receipt after the provider exit is observed', async 
   const exited = await command('wait', '--terminal', handle, '--for', 'exit', '--timeout-ms', '100')
   expect(exited.result.wait).toMatchObject({ satisfied: true, status: 'exited', exitCode: 0 })
 })
+
+it('reads foreground and child-process facts from the addressed host provider', async () => {
+  const foreground = vi.fn(async () => 'fixture-agent')
+  const children = vi.fn(async () => true)
+  runtime.setPtyController({
+    write: () => true,
+    kill: () => {
+      throw new Error('Unexpected kill')
+    },
+    getForegroundProcess: foreground,
+    hasChildProcesses: children,
+    getSize: () => ({ cols: 80, rows: 24 })
+  })
+  const inventory = await command('list')
+  const handle = inventory.result.terminals[0].handle
+  foreground.mockClear()
+  children.mockClear()
+  const file = join(root, 'inspect.json')
+  await writeFile(file, JSON.stringify({ terminal: handle }))
+  const inspection = await command('inspect-process', '--request-file', file)
+  expect(inspection.result.process).toEqual({
+    foregroundProcess: 'fixture-agent',
+    hasChildProcesses: true
+  })
+  expect(foreground).toHaveBeenCalledExactlyOnceWith('pty-1')
+  expect(children).toHaveBeenCalledExactlyOnceWith('pty-1')
+  runtime.markPtyLivenessUnverifiable('pty-1', 'Fixture host contact is unverifiable')
+  expect((await command('inspect-process', '--request-file', file)).result.process).toEqual(
+    inspection.result.process
+  )
+  expect(runtime.getPtyLivenessVerdict('pty-1')?.status).toBe('unverifiable')
+  await runtime.onPtyExit('pty-1', 0)
+  foreground.mockClear()
+  children.mockClear()
+  vi.mocked(console.log).mockClear()
+  await main(['terminal', 'inspect-process', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  const output = vi.mocked(console.log).mock.calls.at(-1)?.[0]
+  expect(typeof output).toBe('string')
+  expect(JSON.parse(String(output))).toMatchObject({ ok: false, error: { code: 'terminal_gone' } })
+  expect(foreground).not.toHaveBeenCalled()
+  expect(children).not.toHaveBeenCalled()
+})
