@@ -68,7 +68,8 @@ export default function SidebarAgentsList({
     effectiveSelectedPaneKey,
     visibleThreads,
     markAllReadThreads,
-    visibleThreadGroups
+    visibleThreadGroups,
+    querySettled
   } = useAgentPaneThreads({ query, readFilter, groupBy, selectedPaneKey, showChildAgents })
 
   useEffect(() => {
@@ -138,6 +139,8 @@ export default function SidebarAgentsList({
         </div>
       ) : null}
       <ActivityThreadListPane
+        viewerSurface="sidebar-agents"
+        querySettled={querySettled}
         activityFilterInputRef={activityFilterInputRef}
         query={query}
         onQueryChange={setQuery}

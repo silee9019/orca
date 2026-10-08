@@ -7,6 +7,9 @@ import {
   type Range
 } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
+import type { ActivityViewerSurface } from '../../../../shared/rpc-contract/activity-viewer-params'
+import { useActivityViewerPublication } from '@/runtime/use-activity-viewer-publication'
+import { useActivityThreadDensity } from './use-activity-thread-density'
 import { translate } from '@/i18n/i18n'
 import { ActivityThreadListToolbar } from './activity-thread-list-toolbar'
 import {
@@ -43,6 +46,8 @@ const observeActivityListRect: typeof observeElementRect = (instance, cb) =>
 const DEFERRED_SCROLL_RESTORE_WINDOW_MS = 3000
 
 export function ActivityThreadListPane({
+  viewerSurface,
+  querySettled = true,
   threadListRef,
   threadListWidth,
   activityFilterInputRef,
@@ -81,6 +86,8 @@ export function ActivityThreadListPane({
   onToggleGroupCollapse,
   scrollTopRef
 }: {
+  viewerSurface?: ActivityViewerSurface
+  querySettled?: boolean
   threadListRef?: React.RefObject<HTMLDivElement | null>
   threadListWidth?: number
   activityFilterInputRef: React.RefObject<HTMLInputElement | null>
@@ -173,6 +180,14 @@ export function ActivityThreadListPane({
       }),
     [visibleThreadGroups, groupBy, effectiveCollapsedGroupKeys]
   )
+  useActivityViewerPublication(viewerSurface, virtualItems, {
+    groupBy,
+    readFilter,
+    compact: compactMode,
+    showChildAgents: showChildAgents ?? false,
+    querySettled,
+    selectedPaneKey
+  })
   const headerItemIndexes = useMemo(
     () => getActivityHeaderItemIndexes(virtualItems),
     [virtualItems]
@@ -246,15 +261,7 @@ export function ActivityThreadListPane({
     useFlushSync: false
   })
 
-  // Row heights differ between densities; drop stale measurements on toggle (not on mount).
-  const measuredCompactModeRef = useRef(compactMode)
-  useEffect(() => {
-    if (measuredCompactModeRef.current === compactMode) {
-      return
-    }
-    measuredCompactModeRef.current = compactMode
-    virtualizer.measure()
-  }, [virtualizer, compactMode])
+  useActivityThreadDensity(virtualizer, scrollContainerRef, compactMode)
 
   // Restore only once the (estimated) content can contain the saved offset, so a
   // pre-hydration mount doesn't clamp the restore to 0.
@@ -302,6 +309,7 @@ export function ActivityThreadListPane({
   return (
     <aside
       ref={threadListRef}
+      data-activity-viewer={viewerSurface}
       className={cn(
         'relative flex min-h-0 flex-col',
         resizable ? 'shrink-0 border-r border-border' : 'min-w-0 flex-1'
@@ -352,6 +360,9 @@ export function ActivityThreadListPane({
                   key={virtualRow.key}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
+                  data-activity-viewer-thread={
+                    item.type === 'thread' ? getActivityVirtualItemKey(item) : undefined
+                  }
                   data-activity-sticky-header={item.type === 'header' ? '' : undefined}
                   data-activity-sticky-header-active={isActiveSticky ? '' : undefined}
                   className={cn(

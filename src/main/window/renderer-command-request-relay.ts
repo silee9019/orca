@@ -20,7 +20,8 @@ export function requestRendererCommand<T extends { viewerId: number }>(
     | 'sidebarViewer'
     | 'cardViewer'
     | 'statusBarViewer'
-    | 'workspaceListViewer',
+    | 'workspaceListViewer'
+    | 'activityViewer',
   command: unknown,
   resultSchema: z.ZodType<T>,
   timeoutError: 'renderer_timeout_persistence_unknown' | 'renderer_timeout_applied_unknown'

@@ -66,7 +66,8 @@ export default function ActivityPrototypePage(): React.JSX.Element {
     effectiveSelectedPaneKey,
     visibleThreads,
     markAllReadThreads,
-    visibleThreadGroups
+    visibleThreadGroups,
+    querySettled
   } = useAgentPaneThreads({ query, readFilter, groupBy, selectedPaneKey, showChildAgents })
   if (!selectedPaneKeyIsLive) {
     // Why: rows disappear when agent retention or tab state changes; clear stale selection before detail/portal rendering targets it.
@@ -315,6 +316,8 @@ export default function ActivityPrototypePage(): React.JSX.Element {
     <div ref={setActivityPageRef} className="flex h-full min-h-0 flex-col bg-background pb-3">
       <main className="flex min-h-0 flex-1 overflow-hidden">
         <ActivityThreadListPane
+          viewerSurface="activity-page"
+          querySettled={querySettled}
           threadListRef={threadListRef}
           threadListWidth={threadListWidth}
           activityFilterInputRef={activityFilterInputRef}
