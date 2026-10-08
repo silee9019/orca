@@ -19,7 +19,7 @@ export function createBrowserProfileImportActions(
   'importCookiesToProfile' | 'clearBrowserSessionImportState' | 'fetchDetectedBrowsers'
 > {
   return {
-    importCookiesToProfile: async (profileId) => {
+    importCookiesToProfile: async (profileId, filePath) => {
       const initialState = get()
       const hostId = getBrowserSettingsHostId(initialState)
       const executionHostLabel = selectExecutionHostDisplayLabel(initialState, hostId)
@@ -52,9 +52,13 @@ export function createBrowserProfileImportActions(
         })
       )
       try {
-        const result = (await window.api.browser.sessionImportCookies({
-          profileId
-        })) as BrowserCookieImportResult
+        const result = filePath
+          ? await callRuntimeRpc<BrowserCookieImportResult>(
+              { kind: 'local' },
+              'browser.profileImportFile',
+              { profileId, filePath }
+            )
+          : await window.api.browser.sessionImportCookies({ profileId })
         if (result.ok) {
           get().recordFeatureInteraction?.('cookie-import')
           set((state) =>

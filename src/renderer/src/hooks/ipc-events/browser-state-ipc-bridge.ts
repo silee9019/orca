@@ -1,3 +1,4 @@
+import { attachBrowserObservationOwner } from '@/runtime/browser-observation-request'
 import { rememberLiveBrowserUrl } from '@/components/browser-pane/describe-page/live-browser-url-registry'
 import { getRuntimeEnvironmentIdForWorktree } from '@/lib/worktree-runtime-owner'
 import { resolveBrowserSourceUnifiedTab } from '@/lib/browser-workspace-source-resolution'
@@ -25,6 +26,7 @@ export function registerBrowserStateIpcBridge(
   unsubs: (() => void)[],
   isRuntimeEnvironmentActive: () => boolean
 ): void {
+  unsubs.push(attachBrowserObservationOwner('visibility', isRuntimeEnvironmentActive))
   unsubs.push(
     window.api.ui.onFullscreenChanged((isFullScreen) => {
       useAppStore.getState().setIsFullScreen(isFullScreen)

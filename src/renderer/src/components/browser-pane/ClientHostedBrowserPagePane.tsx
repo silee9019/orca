@@ -1,3 +1,7 @@
+import {
+  createBrowserFailureOwner as createFailureOwner,
+  openBrowserFailureExternalUrl
+} from './navigate/use-browser-failure-commands'
 import { useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import { BrowserPageZoomIndicator } from './assemble-chrome/browser-page-zoom-indicator'
 import { useAppStore } from '@/store'
@@ -91,9 +95,7 @@ export function ClientHostedBrowserPagePane({
   const setUrlFromGuest = useEffectEvent(onSetUrl)
   const addBrowserHistoryEntry = useAppStore((s) => s.addBrowserHistoryEntry)
   const recordHistoryFromGuest = useEffectEvent(addBrowserHistoryEntry)
-  const certificateFailure = useAppStore(
-    (s) => s.browserCertificateFailuresByPageId[browserTab.id] ?? null
-  )
+  const challenge = useAppStore((s) => s.browserCertificateFailuresByPageId[browserTab.id] ?? null)
   const browserHostClientId = placement?.browserHostClientId ?? null
   const browserHostGeneration = placement?.browserHostGeneration ?? null
   const pageHostGeneration = placement?.pageHostGeneration ?? null
@@ -336,6 +338,7 @@ export function ClientHostedBrowserPagePane({
     <div className="relative flex h-full min-h-0 flex-1 flex-col bg-background">
       {/* IPC-driven context menu in a Portal so position:fixed escapes ancestor transform/backdrop-filter containing blocks. */}
       <BrowserPageContextMenu
+        isActive={isActive}
         browserPageId={browserTab.id}
         worktreeId={worktreeId}
         canGoBack={browserTab.canGoBack}
@@ -387,6 +390,8 @@ export function ClientHostedBrowserPagePane({
           percent={zoom.browserZoomPercent}
         />
         <BrowserFind
+          browserPageId={browserTab.id}
+          onOpen={() => setFindOpen(true)}
           isOpen={findOpen}
           onClose={() => setFindOpen(false)}
           webviewRef={webviewRef}
@@ -394,15 +399,16 @@ export function ClientHostedBrowserPagePane({
         />
         {showFailureOverlay && browserTab.loadError ? (
           <BrowserLoadFailureOverlay
+            commandOwner={createFailureOwner(browserTab, runtimeEnvironmentId, isActive, placement)}
             loadError={browserTab.loadError}
             currentUrl={toDisplayUrl(failedNavigationUrl)}
             httpsRecoveryUrl={toHttpsRecoveryUrl(failedNavigationUrl)}
             onRetry={() => reload.runReloadTrigger('reload')}
             onTryHttps={navigateToUrl}
-            onCopy={(url) => void window.api.ui.writeClipboardText(url)}
-            onOpenExternal={(url) => void window.api.shell.openUrl(url)}
+            onCopy={(url) => window.api.ui.writeClipboardText(url)}
+            onOpenExternal={openBrowserFailureExternalUrl}
             externalUrl={getOpenableExternalUrl(failedNavigationUrl)}
-            certificateFailure={certificateFailure}
+            certificateFailure={challenge}
             expectedBrowserPageId={browserTab.id}
             // Why: the guest is a local Electron webview on this desktop, so its certificate
             // decision is a local session decision — the same IPC the local pane proceeds through.

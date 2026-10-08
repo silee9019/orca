@@ -43,7 +43,7 @@ export function VoiceDictationTipDialog({
       visual={<VoiceDictationFeatureTipVisual />}
     >
       <DialogHeader className="gap-4 text-left">
-        <div>
+        <div data-voice-tip>
           <FeatureTipEyebrow label={tip.eyebrow} />
           <DialogTitle className="text-2xl font-semibold leading-tight tracking-tight md:text-[1.75rem]">
             {tip.title}
@@ -90,7 +90,7 @@ export function VoiceDictationTipDialog({
         </div>
       </DialogHeader>
 
-      <DialogFooter className="mt-8 flex sm:justify-stretch">
+      <DialogFooter data-voice-tip-actions className="mt-8 flex sm:justify-stretch">
         <FeatureTipActions
           currentTip={tip}
           primaryBusy={primaryBusy}

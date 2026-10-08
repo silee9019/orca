@@ -6,21 +6,31 @@ import type { ClientCreationActionAvailability } from '@/lib/client-creation-act
 import { useTerminalCreateActions } from './use-terminal-create-actions'
 import type { TerminalColdActivationController } from './terminal-cold-activation'
 
-const mocks = vi.hoisted(() => ({
-  browserAvailability: {
-    state: 'enabled',
-    provider: 'local-client'
-  } as ClientCreationActionAvailability,
-  simulatorAvailability: {
-    state: 'enabled',
-    provider: 'local-client'
-  } as ClientCreationActionAvailability,
-  state: {} as Record<string, unknown>,
-  toastError: vi.fn(),
-  createBrowserTab: vi.fn(),
-  openNewBrowserTabInActiveWorkspace: vi.fn(),
-  openMobileEmulatorTab: vi.fn()
-}))
+const mocks = vi.hoisted(() => {
+  let runtimeEnvironmentId: string | null = null
+  return {
+    browserAvailability: {
+      state: 'enabled',
+      provider: 'local-client'
+    } as ClientCreationActionAvailability,
+    simulatorAvailability: {
+      state: 'enabled',
+      provider: 'local-client'
+    } as ClientCreationActionAvailability,
+    state: {} as Record<string, unknown>,
+    toastError: vi.fn(),
+    createBrowserTab: vi.fn(),
+    openNewBrowserTabInActiveWorkspace: vi.fn(),
+    openMobileEmulatorTab: vi.fn(),
+    get runtimeEnvironmentId() {
+      return runtimeEnvironmentId
+    },
+    set runtimeEnvironmentId(value: string | null) {
+      runtimeEnvironmentId = value
+    },
+    createPairedBrowserTab: vi.fn()
+  }
+})
 
 vi.mock('../store', () => ({ useAppStore: { getState: () => mocks.state } }))
 vi.mock('sonner', () => ({
@@ -34,7 +44,7 @@ vi.mock('@/lib/client-creation-action-policy', () => ({
 }))
 vi.mock('@/lib/focus-terminal-tab-surface', () => ({ focusTerminalTabSurface: vi.fn() }))
 vi.mock('@/runtime/web-runtime-session', () => ({
-  createWebRuntimeSessionBrowserTab: vi.fn(),
+  createWebRuntimeSessionBrowserTab: (...args: unknown[]) => mocks.createPairedBrowserTab(...args),
   createWebRuntimeSessionTerminal: vi.fn(),
   isWebRuntimeSessionActive: () => false
 }))
@@ -51,7 +61,7 @@ vi.mock('@/runtime/remote-browser-tab-ownership', () => ({
 vi.mock('./tab-bar/tab-create-entry-action', () => ({ openTabBarEntry: vi.fn() }))
 vi.mock('@/i18n/i18n', () => ({ translate: (_key: string, fallback: string) => fallback }))
 vi.mock('./terminal-workspace-model', () => ({
-  getActiveWorktreeRuntimeEnvironmentId: () => null
+  getActiveWorktreeRuntimeEnvironmentId: () => mocks.runtimeEnvironmentId
 }))
 
 const WORKTREE_ID = 'repo-1::/repo/worktree'
@@ -74,6 +84,7 @@ function renderActions() {
 describe('useTerminalCreateActions creation gates', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.runtimeEnvironmentId = null
     mocks.browserAvailability = { state: 'enabled', provider: 'local-client' }
     mocks.simulatorAvailability = { state: 'enabled', provider: 'local-client' }
     mocks.state = {
@@ -115,5 +126,18 @@ describe('useTerminalCreateActions creation gates', () => {
     renderActions().handleNewSimulatorTab()
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(mocks.toastError).toHaveBeenCalledWith('emulator says no')
+  })
+  it('preserves the original no-group paired callback and never falls back to local creation', async () => {
+    mocks.browserAvailability = { state: 'enabled', provider: 'paired-runtime' }
+    mocks.runtimeEnvironmentId = 'paired:environment'
+    mocks.createPairedBrowserTab.mockResolvedValue(false)
+    renderActions().handleNewBrowserTab()
+    await Promise.resolve()
+    expect(mocks.createPairedBrowserTab).toHaveBeenCalledWith({
+      worktreeId: WORKTREE_ID,
+      environmentId: 'paired:environment',
+      url: 'about:blank'
+    })
+    expect(mocks.createBrowserTab).not.toHaveBeenCalled()
   })
 })

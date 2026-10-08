@@ -145,30 +145,33 @@ export function useWorktreeCardSecondaryDetails({
     [hoverReview, openTaskPage, repo]
   )
   const openLinkedUrlInBrowser = useCallback(
-    (url: string): void => {
-      void openWorkspaceBrowserTab({
+    (url: string): Promise<boolean> => {
+      return openWorkspaceBrowserTab({
         workspaceId: worktree.id,
         url,
         intent: { kind: 'url' }
-      }).catch((error: unknown) => {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : translate('auto.lib.workspace.browser.tab.open.urlFailed', 'Unable to open URL.')
-        )
       })
+        .then(() => true)
+        .catch((error: unknown) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : translate('auto.lib.workspace.browser.tab.open.urlFailed', 'Unable to open URL.')
+          )
+          return false
+        })
     },
     [worktree.id]
   )
   const handleOpenIssueInBrowser = useCallback(
-    (url: string): void => {
-      openLinkedUrlInBrowser(url)
+    (url: string): Promise<boolean> => {
+      return openLinkedUrlInBrowser(url)
     },
     [openLinkedUrlInBrowser]
   )
   const handleOpenReviewInBrowser = useCallback(
-    (url: string): void => {
-      openLinkedUrlInBrowser(url)
+    (url: string): Promise<boolean> => {
+      return openLinkedUrlInBrowser(url)
     },
     [openLinkedUrlInBrowser]
   )

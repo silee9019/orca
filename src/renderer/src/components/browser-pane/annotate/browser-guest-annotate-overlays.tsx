@@ -1,3 +1,4 @@
+import { useBrowserAnnotationTrayCommands } from './use-browser-annotation-tray-commands'
 import { createPortal } from 'react-dom'
 import type { MutableRefObject, RefObject } from 'react'
 import { Copy, Image } from 'lucide-react'
@@ -53,6 +54,7 @@ export function BrowserGuestAnnotateOverlays({
   worktreeId: string
   currentUrl?: string
 }): React.JSX.Element {
+  useBrowserAnnotationTrayCommands(markup.commandOwner, annotationSend)
   const {
     pendingAnnotationPayload,
     handleAddBrowserAnnotation,
@@ -88,6 +90,8 @@ export function BrowserGuestAnnotateOverlays({
       {markup.isActive && markup.baseImage && markupTarget
         ? createPortal(
             <MarkupOverlay
+              commandOwner={markup.commandOwner}
+              onCompleteVerified={markup.completeVerified}
               baseImage={markup.baseImage}
               busy={markup.state === 'composing'}
               onComplete={(input) => void markup.complete(input)}
@@ -112,6 +116,7 @@ export function BrowserGuestAnnotateOverlays({
       ) : null}
       {browserAnnotations.length > 0 && browserAnnotationTrayOpen ? (
         <BrowserPageAnnotationTray
+          commandOwner={markup.commandOwner}
           browserAnnotations={browserAnnotations}
           currentUrl={currentUrl}
           annotationTraySendOpen={annotationTraySendOpen}

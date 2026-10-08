@@ -59,7 +59,8 @@ export function useRemoteBrowserPageNavigation({
   scheduleRemoteTabInfoRefresh: (token: RemoteBrowserOperationToken, delayMs?: number) => void
   runRemoteNavigation: (
     method: 'browser.goto' | 'browser.back' | 'browser.forward' | 'browser.reload',
-    url?: string
+    url?: string,
+    isCurrentRequest?: () => boolean
   ) => Promise<void>
   navigateToUrl: (url: string) => void
   submitAddressBar: () => void
@@ -101,17 +102,25 @@ export function useRemoteBrowserPageNavigation({
   const runRemoteNavigation = useCallback(
     async (
       method: 'browser.goto' | 'browser.back' | 'browser.forward' | 'browser.reload',
-      url?: string
+      url?: string,
+      isCurrentRequest?: () => boolean
     ) => {
+      const unavailable = (): void => {
+        if (isCurrentRequest) {
+          throw new Error('remote_browser_navigation_unavailable')
+        }
+      }
+      if (isCurrentRequest && !isCurrentRequest()) {
+        throw new Error('remote_browser_navigation_cancelled')
+      }
       const target = runtimeTarget()
       if (!target) {
+        unavailable()
         return
       }
       if (stagedPage) {
-        // Why: the runtime has no page under this id yet, so ensureRemotePage's browser.tabShow
-        // answers browser_tab_not_found — which reads as "the page is gone" and closes the tab the
-        // user is typing in. A goto is parked for whichever pane owns the page once it lands;
-        // history and reload have nothing to replay against a page with no history yet.
+        unavailable()
+        // A staged page parks goto until its host page exists; history has no replay target yet.
         if (method === 'browser.goto' && url) {
           deferBrowserPageNavigation(browserTab.id, url)
           onUpdatePageState(browserTab.id, { loading: true, loadError: null })
@@ -120,14 +129,17 @@ export function useRemoteBrowserPageNavigation({
       }
       const operationToken = createRemoteOperationToken()
       if (!operationToken) {
+        unavailable()
         return
       }
       const pageId = await lifecycle.session.ensureRemotePage(operationToken)
       if (!pageId) {
+        unavailable()
         return
       }
       const pageToken = { ...operationToken, remotePageId: pageId }
-      if (!isCurrentRemoteOperationToken(pageToken)) {
+      if (!isCurrentRemoteOperationToken(pageToken) || (isCurrentRequest && !isCurrentRequest())) {
+        unavailable()
         return
       }
       setPaneBusy(true)
@@ -141,28 +153,42 @@ export function useRemoteBrowserPageNavigation({
         const result = await callRuntimeRpc<
           BrowserGotoResult | BrowserBackResult | BrowserReloadResult
         >(target, method, params, { timeoutMs: 30_000, suppressFeatureInteraction: true })
+        if (
+          isCurrentRequest &&
+          (!isCurrentRequest() || !isCurrentRemoteOperationToken(pageToken))
+        ) {
+          throw new Error('remote_browser_navigation_cancelled_effect_unknown')
+        }
         if (isCurrentRemoteOperationToken(pageToken)) {
           applyRemoteTabInfo(result)
         }
       } catch (error) {
         if (!isCurrentRemoteOperationToken(pageToken)) {
+          if (isCurrentRequest) {
+            throw error
+          }
           return
         }
         if (isRemoteBrowserPageMissingError(error)) {
           closeMissingRemotePage(pageId)
+          if (isCurrentRequest) {
+            throw error
+          }
           return
         }
         const message = error instanceof Error ? error.message : 'Remote browser command failed.'
         setPaneNotice({ kind: 'consequence', text: message })
         onUpdatePageState(browserTab.id, {
           loading: false,
-          // Why: validatedUrl is persisted, so redact the Kagi session token like the main-process failure path does.
           loadError: {
             code: 0,
             description: message,
             validatedUrl: redactKagiSessionToken(url ?? browserTab.url)
           }
         })
+        if (isCurrentRequest) {
+          throw error
+        }
       } finally {
         if (isCurrentRemoteOperationToken(pageToken)) {
           setPaneBusy(false)

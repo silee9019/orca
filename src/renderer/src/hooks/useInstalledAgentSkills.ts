@@ -1,8 +1,13 @@
+import type { InstalledAgentSkillState } from './installed-agent-skill-state'
+import {
+  useInstalledSkillRefreshReceipt,
+  useSkillRefreshWithReceipt,
+  type ScanReceiptReady
+} from './use-installed-skill-refresh-receipt'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   DiscoveredSkill,
   SkillDiscoveryResult,
-  SkillDiscoverySource,
   SkillDiscoveryTarget,
   SkillSourceKind
 } from '../../../shared/skills'
@@ -45,19 +50,7 @@ type InstalledAgentSkillMatchOptions = {
   sourceKinds?: readonly SkillSourceKind[]
 }
 
-export type InstalledAgentSkillState = {
-  installed: boolean
-  loading: boolean
-  // Why: a forced rescan keeps the previous result, so only the first scan per
-  // runtime-scoped target is genuinely unknown.
-  settled: boolean
-  // A negative this scan cannot vouch for: render it as unknown, not as undone.
-  installedUnverifiable: boolean
-  error: string | null
-  skills: readonly DiscoveredSkill[]
-  sources: readonly SkillDiscoverySource[]
-  refresh: () => Promise<boolean>
-}
+export type { InstalledAgentSkillState } from './installed-agent-skill-state'
 
 function normalizeSkillName(value: string): string {
   return value.trim().toLowerCase()
@@ -190,8 +183,16 @@ export function useInstalledAgentSkillNames(
     setError(null)
   }
 
+  const scanReceipt = useInstalledSkillRefreshReceipt({
+    result: resultForRender,
+    runtimeTarget,
+    targetKey: currentDiscoveryTargetKeyRef,
+    generation: refreshGenerationRef,
+    mounted: mountedRef
+  })
+
   const refresh = useCallback(
-    async (force = true, showLoading = true): Promise<boolean> => {
+    async (force = true, showLoading = true, onSuccess?: ScanReceiptReady) => {
       const requestDiscoveryTargetKey = discoveryTargetKey
       const requestGeneration = ++refreshGenerationRef.current
       const writeIfCurrent = (write: () => void): void => {
@@ -235,6 +236,9 @@ export function useInstalledAgentSkillNames(
         writeIfCurrent(() => {
           setResult(next)
           setError(null)
+          onSuccess?.(
+            scanReceipt(next, requestGeneration, requestDiscoveryTargetKey, runtimeTarget)
+          )
         })
       } catch (refreshError) {
         writeIfCurrent(() => {
@@ -256,6 +260,7 @@ export function useInstalledAgentSkillNames(
     },
     [
       candidateSkillNames,
+      scanReceipt,
       discoveryTargetKey,
       enabled,
       mountedRef,
@@ -330,6 +335,7 @@ export function useInstalledAgentSkillNames(
   }, [candidateSkillNames, installed])
 
   const forceRefresh = useCallback(() => refresh(true), [refresh])
+  const refreshWithReceipt = useSkillRefreshWithReceipt(refresh)
 
   return {
     installed,
@@ -338,6 +344,7 @@ export function useInstalledAgentSkillNames(
     ...getInstalledAgentSkillVerdict(scan),
     skills,
     sources,
-    refresh: forceRefresh
+    refresh: forceRefresh,
+    refreshWithReceipt
   }
 }

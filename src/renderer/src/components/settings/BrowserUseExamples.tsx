@@ -1,3 +1,8 @@
+import { useRef } from 'react'
+import { writeVerifiedClipboardText } from '@/runtime/clipboard-text-write'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { useAppStore } from '../../store'
+import { getBrowserSettingsHostId } from '@/store/slices/browser/browser-host-state'
 import { Copy, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '../ui/button'
@@ -10,24 +15,51 @@ const EXAMPLE_PROMPTS: string[] = [
   'With Orca CLI, go to our staging app, log in (my cookies are imported), and verify the checkout flow works.'
 ]
 
-async function handleCopyText(text: string, label: string): Promise<void> {
+async function handleCopyText(text: string, label: string, verify = false): Promise<boolean> {
   try {
-    await window.api.ui.writeClipboardText(text)
+    if (verify) {
+      if (!(await writeVerifiedClipboardText(text))) {
+        throw new Error('browser_example_copy_readback_unknown')
+      }
+    } else {
+      await window.api.ui.writeClipboardText(text)
+    }
     toast.success(
       translate('auto.components.settings.BrowserUseExamples.a602d43069', 'Copied {{value0}}.', {
         value0: label
       })
     )
+    return true
   } catch (error) {
     toast.error(
       error instanceof Error
         ? error.message
         : translate('auto.components.settings.BrowserUseExamples.5ec620ccc4', 'Failed to copy.')
     )
+    return false
   }
 }
 
 export function BrowserUseExamples(): React.JSX.Element {
+  const clipboardCopied = useRef(false)
+  useBrowserSettingsRequest({
+    accepts: (command) => command.action === 'browser-use-copy-example',
+    apply: async (command) => {
+      if (command.action !== 'browser-use-copy-example') {
+        return
+      }
+      clipboardCopied.current = false
+      const prompt = EXAMPLE_PROMPTS[command.index]
+      if (!prompt || !(await handleCopyText(prompt, 'prompt', true))) {
+        throw new Error('browser_example_copy_failed')
+      }
+      clipboardCopied.current = true
+    },
+    read: () => ({
+      hostId: getBrowserSettingsHostId(useAppStore.getState()),
+      clipboardCopied: clipboardCopied.current
+    })
+  })
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-4">
       <div className="flex items-center gap-2">

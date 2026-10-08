@@ -1,3 +1,5 @@
+import { SkillsViewerParams } from '../../shared/skills-viewer-command'
+import { rejectRemoteSelectionFlags } from '../remote-selection-flag-rejection'
 import { SKILL_DELETE_CAPABILITY } from '../../shared/skill-install-capability'
 import {
   SkillAuthorizedShareInstallParams,
@@ -52,6 +54,22 @@ function request(method: string, schema: z.ZodType): CommandHandler {
 }
 
 export const MANAGED_SKILL_HANDLERS: Record<string, CommandHandler> = {
+  'skills viewer': async (ctx) => {
+    rejectRemoteSelectionFlags(ctx.flags, 'desktop skills viewer actions')
+    const parsed = SkillsViewerParams.safeParse({
+      viewer: ctx.flags.get('viewer'),
+      action: await readJsonInput(ctx)
+    })
+    if (!parsed.success) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'A desktop viewer and valid skills action JSON are required.'
+      )
+    }
+    printResult(await ctx.client.call('skills.viewerAction', parsed.data), ctx.json, (value) =>
+      JSON.stringify(value, null, 2)
+    )
+  },
   'skills delete-supported': async (ctx) => {
     const status = await ctx.client.call<{ capabilities?: string[] }>('status.get')
     printResult(

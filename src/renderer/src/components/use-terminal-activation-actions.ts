@@ -9,7 +9,12 @@ import { browserWorkspaceHasRemoteOwner } from '@/runtime/remote-browser-tab-own
 import { getActiveWorktreeRuntimeEnvironmentId } from './terminal-workspace-model'
 import type { TerminalBulkCloseController } from './use-terminal-bulk-close-actions'
 
-export function useTerminalActivationActions(controller: TerminalBulkCloseController) {
+export function useTerminalActivationActions(
+  controller: Pick<
+    TerminalBulkCloseController,
+    'activeWorktreeId' | 'setActiveBrowserTab' | 'setActiveTab' | 'setActiveTabType'
+  >
+) {
   const { activeWorktreeId, setActiveBrowserTab, setActiveTab, setActiveTabType } = controller
   const handleActivateTab = useCallback(
     (tabId: string) => {

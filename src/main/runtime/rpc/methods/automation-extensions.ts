@@ -1,3 +1,6 @@
+import { AutomationViewerParams } from '../../../../shared/automation-viewer-command'
+import { requestAccountViewerAction } from '../../account-viewer-request'
+import { AutomationRuns } from '../../../../shared/rpc-contract/automation-params'
 import { defineMethod } from '../core'
 import type { ScopedExternalAutomations } from '../../../automations/external-manager'
 import type { AutomationService } from '../../../automations/service'
@@ -28,6 +31,23 @@ function requireServices(): AutomationExtensionServices {
   return services
 }
 export const AUTOMATION_EXTENSION_METHODS = [
+  defineMethod({
+    name: 'automation.viewerAction',
+    params: AutomationViewerParams,
+    handler: ({ action }, { signal }) =>
+      requestAccountViewerAction({ domain: 'automation', action }, signal)
+  }),
+  defineMethod({
+    name: 'automation.runsPage',
+    params: AutomationRuns,
+    handler: (params, { runtime }) =>
+      runtime.listAutomationRunsPage(
+        params.automationId,
+        params.expectedOwner,
+        params.limit,
+        params.cursor
+      )
+  }),
   defineMethod({
     name: 'automation.externalList',
     params: ExternalAutomationListParams,

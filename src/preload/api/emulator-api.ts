@@ -1,4 +1,5 @@
-export type EmulatorApi = {
+import type { EmulatorFocusApi } from '../../shared/emulator-focus'
+export type EmulatorApi = Partial<EmulatorFocusApi> & {
   onPaneFocus: (callback: (data: { worktreeId: string }) => void) => () => void
   onAutoAttach: (
     callback: (data: {

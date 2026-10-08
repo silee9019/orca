@@ -72,6 +72,7 @@ export function EmulatorScreenSurface({
         aspectRatio: frameLayout ? undefined : `${screenAspectRatio}`,
         borderRadius: frameLayout ? `${frameLayout.innerRadius}px` : '44px'
       }}
+      data-emulator-screen
       onPointerCancel={onPointerCancel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

@@ -228,4 +228,27 @@ describe('ArtifactCollection', () => {
     expect(screen.getByText(/in \d+ days/)).toBeInTheDocument()
     expect(screen.queryByText('https://share.onorca.dev/a/first')).not.toBeInTheDocument()
   })
+  it('reflects a committed external query through the same list filtering as the search field', () => {
+    const items = [artifact('first', 'First artifact'), artifact('second', 'Second artifact')]
+    render(
+      <TooltipProvider>
+        <ArtifactCollection
+          artifacts={items}
+          deletingId={null}
+          selectedSlug={null}
+          selectArtifact={vi.fn()}
+          deleteArtifact={vi.fn()}
+          hasMore={false}
+          loadingMore={false}
+          loadMore={vi.fn()}
+          onRefresh={vi.fn()}
+          isRefreshing={false}
+          search={{ query: 'second', onChange: vi.fn() }}
+        />
+      </TooltipProvider>
+    )
+    expect(screen.getByPlaceholderText('Search...')).toHaveValue('second')
+    expect(screen.queryByRole('button', { name: /First artifact/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Second artifact/ })).toBeInTheDocument()
+  })
 })

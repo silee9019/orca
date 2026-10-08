@@ -131,6 +131,8 @@ describe('useIpcEvents browser tab create routing', () => {
     vi.doMock('@/lib/zoom-events', () => ({ dispatchZoomLevelChanged: vi.fn() }))
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent,
       setTimeout: vi.fn(() => 1),
       clearTimeout: vi.fn(),

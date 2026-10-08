@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { createWorkspaceBrowserShortcut } from './workspace-browser-shortcut-creation'
 import { toast } from 'sonner'
 import type { TuiAgent } from '../../../shared/tui-agent'
 import { useAppStore } from '../store'
@@ -20,7 +21,19 @@ import { translate } from '@/i18n/i18n'
 import { getActiveWorktreeRuntimeEnvironmentId } from './terminal-workspace-model'
 import type { TerminalColdActivationController } from './terminal-cold-activation'
 
-export function useTerminalCreateActions(controller: TerminalColdActivationController) {
+export function useTerminalCreateActions(
+  controller: Pick<
+    TerminalColdActivationController,
+    | 'activeWorktreeId'
+    | 'createBrowserTab'
+    | 'createTab'
+    | 'openNewBrowserTabInActiveWorkspace'
+    | 'openNewMarkdownInActiveWorkspace'
+    | 'openNewTerminalTabInActiveWorkspace'
+    | 'setActiveTabType'
+    | 'setTabBarOrder'
+  >
+) {
   const {
     activeWorktreeId,
     createBrowserTab,
@@ -133,36 +146,18 @@ export function useTerminalCreateActions(controller: TerminalColdActivationContr
     if (!activeWorktreeId) {
       return
     }
-    const targetGroupId =
-      useAppStore.getState().activeGroupIdByWorktree[activeWorktreeId] ??
-      useAppStore.getState().groupsByWorktree[activeWorktreeId]?.[0]?.id
-    if (targetGroupId) {
-      void openNewBrowserTabInActiveWorkspace(targetGroupId).catch(showClientCreationActionError)
-      return
-    }
-    const state = useAppStore.getState()
-    const browserAvailability = getClientCreationActionPolicy(state, activeWorktreeId)[
-      'managed-browser'
-    ]
-    if (browserAvailability.state !== 'enabled') {
-      toast.error(browserAvailability.reason)
-      return
-    }
-    const defaultUrl = state.browserDefaultUrl ?? 'about:blank'
-    const runtimeEnvironmentId = getActiveWorktreeRuntimeEnvironmentId(activeWorktreeId)
-    if (browserAvailability.provider === 'paired-runtime' && runtimeEnvironmentId) {
-      void createWebRuntimeSessionBrowserTab({
+    try {
+      const created = createWorkspaceBrowserShortcut({
         worktreeId: activeWorktreeId,
-        environmentId: runtimeEnvironmentId,
-        url: defaultUrl
-      }).catch(showClientCreationActionError)
-      return
+        createBrowserTab,
+        openNewBrowserTabInActiveWorkspace
+      })
+      if (created) {
+        void created.catch(showClientCreationActionError)
+      }
+    } catch (error) {
+      showClientCreationActionError(error)
     }
-    createBrowserTab(activeWorktreeId, defaultUrl, {
-      title: translate('auto.components.Terminal.37da0d736f', 'New Browser Tab'),
-      focusAddressBar: true,
-      ...(runtimeEnvironmentId ? { browserRuntimeEnvironmentId: null } : {})
-    })
   }, [activeWorktreeId, createBrowserTab, openNewBrowserTabInActiveWorkspace])
 
   const handleOpenEntry = useCallback(async (args: TabCreateEntryArgs) => {

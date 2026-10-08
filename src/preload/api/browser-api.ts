@@ -1,3 +1,4 @@
+import type { BrowserGrabCopyPriority } from '../../shared/browser-grab-copy-priority'
 import type { BrowserSetAnnotationViewportBridgeArgs } from '../../shared/browser-annotation-viewport-bridge'
 import type {
   BrowserIdentityModeSetResult,
@@ -50,6 +51,9 @@ import type {
 } from '../../shared/browser-client-page-renderer-protocol'
 
 export type BrowserApi = {
+  getGrabCopyShortcutPriority?: (args: {
+    browserPageId: string
+  }) => Promise<BrowserGrabCopyPriority>
   /** Absent wherever this client hosts no guests of its own, which is how the web client reads. */
   readClientHostId?: () => string | null
   onClientPageRendererRequest?: (

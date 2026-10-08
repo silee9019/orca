@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { syncGuestAnnotationViewportBridge } from '@/components/browser-pane/annotate/guest-annotation-viewport-bridge'
@@ -9,20 +9,15 @@ import { useGrabMode } from '@/components/browser-pane/annotate/useGrabMode'
 import type { BrowserOverlayViewport } from '@/components/browser-pane/describe-page/browser-annotation-geometry'
 import type { BrowserChromeElementTools } from '@/components/browser-pane/assemble-chrome/browser-chrome-toolbar'
 
-/**
- * The preview's half of the browser tool cluster: the in-guest element picker, the annotation
- * store and the markup canvas, wired exactly as the browsing pane wires them — including the id,
- * which is the browser page for both the stored annotations and the tool target. A re-mint
- * replaces the guest under that page rather than renaming the surface, so nothing here has to
- * track which grant is currently on screen.
- */
+// Stored annotations keep the page ID; typed markup requests also retain the current grant and guest.
 export function useDocPreviewGuestTools({
   previewId,
   worktreeId,
   grantId,
   webviewRef,
   containerRef,
-  toolsReady
+  toolsReady,
+  isActive = true
 }: {
   previewId: string
   worktreeId: string
@@ -30,6 +25,7 @@ export function useDocPreviewGuestTools({
   webviewRef: MutableRefObject<Electron.WebviewTag | null>
   containerRef: MutableRefObject<HTMLDivElement | null>
   toolsReady: boolean
+  isActive?: boolean
 }): {
   grab: ReturnType<typeof useGrabMode>
   markup: ReturnType<typeof useBrowserPageMarkupCapture>
@@ -51,7 +47,25 @@ export function useDocPreviewGuestTools({
 
   const grabElementShortcut = useShortcutLabel('browser.grabElement')
   const grab = useGrabMode(toolTargetId)
-  const markup = useBrowserPageMarkupCapture(webviewRef)
+  const guest = webviewRef.current
+  const binding = useMemo(
+    () => ({ grantId, guest, toolsReady, isActive }),
+    [grantId, guest, toolsReady, isActive]
+  )
+  const current = useRef(binding)
+  useLayoutEffect(() => {
+    current.current = binding
+  })
+  const markup = useBrowserPageMarkupCapture(webviewRef, {
+    page: toolTargetId,
+    active: grantId !== null && toolsReady && isActive && grab.state === 'idle',
+    isCurrent: () =>
+      grantId !== null &&
+      current.current === binding &&
+      webviewRef.current === guest &&
+      current.current.toolsReady &&
+      current.current.isActive
+  })
   const annotationSend = useBrowserPageAnnotationSend({ browserTabId: previewId, worktreeId })
   const grabAnnotations = useBrowserPageGrabAnnotations({
     browserTabId: previewId,

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { DocPreviewFileFailure } from '../../../../../shared/doc-preview-scheme'
@@ -41,7 +41,8 @@ export function useDocPreviewDirectoryAccess({
   offer: (failure: DocPreviewFileFailure) => void
   reset: () => void
   dismiss: () => void
-  allow: () => Promise<void>
+  allow: () => Promise<boolean>
+  getPendingPaths: () => string[]
 } {
   // Why a ref plus a version tick and not state alone: dismiss must fence the directory against
   // an offer landing in the same event batch, which a state updater sees one render too late.
@@ -49,6 +50,16 @@ export function useDocPreviewDirectoryAccess({
   const [, setRequestsVersion] = useState(0)
   const [busy, setBusy] = useState(false)
   const dismissedDirectoriesRef = useRef(new Set<string>())
+  const generationRef = useRef(0)
+  const busyRef = useRef(false)
+  const grantRef = useRef(grantId)
+  grantRef.current = grantId
+  useEffect(
+    () => () => {
+      generationRef.current += 1
+    },
+    []
+  )
   const offer = useCallback((failure: DocPreviewFileFailure) => {
     const directory = requestedDirectory(failure.relativePath)
     if (
@@ -61,47 +72,77 @@ export function useDocPreviewDirectoryAccess({
     setRequestsVersion((version) => version + 1)
   }, [])
   const reset = useCallback(() => {
+    generationRef.current += 1
+    busyRef.current = false
     requestsByDirectoryRef.current = new Map()
     dismissedDirectoriesRef.current.clear()
     setBusy(false)
     setRequestsVersion((version) => version + 1)
   }, [])
   const dismiss = useCallback(() => {
+    generationRef.current += 1
     for (const directory of requestsByDirectoryRef.current.keys()) {
       dismissedDirectoriesRef.current.add(directory)
     }
     requestsByDirectoryRef.current = new Map()
     setRequestsVersion((version) => version + 1)
   }, [])
-  const allow = useCallback(async () => {
-    const pending = [...requestsByDirectoryRef.current.values()]
-    if (pending.length === 0 || !grantId || busy) {
-      return
+  const allow = useCallback(async (): Promise<boolean> => {
+    const pending = [...requestsByDirectoryRef.current.entries()]
+    if (pending.length === 0 || !grantId || busyRef.current) {
+      return false
     }
+    const generation = generationRef.current
+    const current = (): boolean =>
+      generationRef.current === generation && grantRef.current === grantId
+    busyRef.current = true
     setBusy(true)
     try {
-      for (const failure of pending) {
-        if (!(await window.api.docPreview.authorizeDirectory(grantId, failure.relativePath))) {
+      for (const [, failure] of pending) {
+        if (!current()) {
+          return false
+        }
+        const accepted = await window.api.docPreview.authorizeDirectory(
+          grantId,
+          failure.relativePath
+        )
+        if (!current()) {
+          return false
+        }
+        if (!accepted) {
           reportAuthorizationFailure()
-          return
+          return false
         }
       }
-      requestsByDirectoryRef.current = new Map()
+      for (const [directory, failure] of pending) {
+        if (requestsByDirectoryRef.current.get(directory) === failure) {
+          requestsByDirectoryRef.current.delete(directory)
+        }
+      }
       setRequestsVersion((version) => version + 1)
       reloadRef.current?.()
+      return true
     } catch {
-      reportAuthorizationFailure()
+      if (current()) {
+        reportAuthorizationFailure()
+      }
+      return false
     } finally {
-      setBusy(false)
+      if (current()) {
+        busyRef.current = false
+        setBusy(false)
+      }
     }
-  }, [busy, grantId, reloadRef])
+  }, [grantId, reloadRef])
   return {
     requests: [...requestsByDirectoryRef.current.values()],
     busy,
     offer,
     reset,
     dismiss,
-    allow
+    allow,
+    getPendingPaths: () =>
+      [...requestsByDirectoryRef.current.values()].map((item) => item.relativePath)
   }
 }
 
@@ -143,7 +184,7 @@ export function DocPreviewDirectoryAccessBanner({
   busy: boolean
   worktreeRoot: string | null
   onDismiss: () => void
-  onAllow: () => Promise<void>
+  onAllow: () => Promise<unknown>
 }): React.JSX.Element {
   const labels = requests.map((request) =>
     requestedDirectoryLabel(request.relativePath, worktreeRoot)

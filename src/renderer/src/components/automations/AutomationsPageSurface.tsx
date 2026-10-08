@@ -82,6 +82,9 @@ export function AutomationsPageSurface({
     isLoading,
     pageView,
     setPageView,
+    showAutomationsList,
+    showRunsDashboard,
+    showAutomationDetails,
     runPageOrigin,
     setRunPageOrigin
   } = local
@@ -118,24 +121,6 @@ export function AutomationsPageSurface({
     externalActions.openAutomationRunPage(run)
     setRunPageOrigin('automation')
     setPageView('run')
-  }
-  const showAutomationsList = (): void => {
-    setPageView('automations')
-    setSelectedAutomationRunPageId(null)
-    setIsDetailOpen(false)
-    setActivePaneTab('overview')
-  }
-  const showRunsDashboard = (): void => {
-    setPageView('runs')
-    setSelectedAutomationRunPageId(null)
-    setIsDetailOpen(false)
-    setActivePaneTab('overview')
-  }
-  const showAutomationDetails = (): void => {
-    setPageView('automations')
-    setSelectedAutomationRunPageId(null)
-    setIsDetailOpen(true)
-    setActivePaneTab('runs')
   }
   return (
     <main className="relative flex h-full min-h-0 flex-col bg-background pt-5 text-foreground md:pt-6">

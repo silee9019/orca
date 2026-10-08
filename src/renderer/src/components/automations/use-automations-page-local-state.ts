@@ -155,7 +155,28 @@ export function useAutomationsPageLocalState(store: AutomationsPageStoreState) {
   // react-doctor-disable-next-line react-doctor/no-ref-current-in-render
   draftRef.current = draft
 
+  const showAutomationsList = (): void => {
+    setPageView('automations')
+    setSelectedAutomationRunPageId(null)
+    setIsDetailOpen(false)
+    setActivePaneTab('overview')
+  }
+  const showRunsDashboard = (): void => {
+    setPageView('runs')
+    setSelectedAutomationRunPageId(null)
+    setIsDetailOpen(false)
+    setActivePaneTab('overview')
+  }
+  const showAutomationDetails = (): void => {
+    setPageView('automations')
+    setSelectedAutomationRunPageId(null)
+    setIsDetailOpen(true)
+    setActivePaneTab('runs')
+  }
   return {
+    showAutomationsList,
+    showRunsDashboard,
+    showAutomationDetails,
     automations,
     setAutomations,
     automationHostTargetKey,

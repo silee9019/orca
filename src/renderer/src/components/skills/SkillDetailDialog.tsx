@@ -1,5 +1,5 @@
+import { copySkillPath, revealSkillFile } from './skill-file-actions'
 import { ClipboardCopy, FolderOpen, Share2, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -76,19 +76,8 @@ export function SkillDetailDialog({
     return null
   }
 
-  const copyPath = async (): Promise<void> => {
-    await window.api.ui.writeClipboardText(skill.skillFilePath)
-    toast.success(translate('auto.components.skills.SkillRow.pathCopied', 'Path copied'))
-  }
-
-  const revealSkill = async (): Promise<void> => {
-    const result = await window.api.shell.openInFileManager(skill.skillFilePath)
-    if (!result.ok) {
-      toast.error(
-        translate('auto.components.skills.SkillsPage.995fde8337', 'Could not reveal skill file')
-      )
-    }
-  }
+  const copyPath = (): Promise<void> => copySkillPath(skill.skillFilePath)
+  const revealSkill = () => revealSkillFile(skill.skillFilePath)
 
   const agents = agentNames(skill, agentByRootPath)
 

@@ -1,4 +1,7 @@
 import { requestProjectFilterFromRenderer } from './project-filter-request-relay'
+import { requestBrowserViewerFromRenderer } from './browser-viewer-request-relay'
+import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
+import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
 import { randomUUID } from 'node:crypto'
 
 import { ipcMain } from 'electron'
@@ -38,6 +41,9 @@ export function registerRuntimeWindowLifecycle(
   const send = rendererNotifications.send
   runtime.setNotifier({
     projectFilter: (command) => requestProjectFilterFromRenderer(mainWindow, command),
+    browserViewer: (command) => requestBrowserViewerFromRenderer(mainWindow, command),
+    voiceViewer: (command) => requestVoiceViewerFromRenderer(mainWindow, command),
+    searchSettingsViewer: (command) => requestSearchSettingsViewerFromRenderer(mainWindow, command),
     worktreesChanged: (repoId, renamed) => {
       // Why: clear scan caches before the renderer handles this event, so it can't read stale TTL entries after a mutation.
       runWorktreeChangeInvalidators(repoId)

@@ -108,3 +108,61 @@ describe('app lifecycle CLI', () => {
     expect(call).not.toHaveBeenCalled()
   })
 })
+
+it('validates fixed surface actions and normalizes project colors before RPC', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'orca-surface-cli-'))
+  const input = join(dir, 'action.json')
+  const output = vi.spyOn(console, 'log').mockImplementation(() => {})
+  call.mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    result: { state: 'acknowledged' },
+    _meta: { runtimeId: 'fixture' }
+  })
+  try {
+    await writeFile(input, JSON.stringify({ kind: 'vault', action: 'status' }))
+    await invoke([
+      'app',
+      'view',
+      'control',
+      '--viewer',
+      '7',
+      '--confirm-target',
+      'exact',
+      '--input-file',
+      input
+    ])
+    expect(call).toHaveBeenLastCalledWith('app.surfaceControl', {
+      viewer: 7,
+      confirmTarget: 'exact',
+      action: { kind: 'vault', action: 'status' }
+    })
+    call.mockClear()
+    await writeFile(input, JSON.stringify({ kind: 'vault', action: 'eval', script: 'never' }))
+    await expect(
+      invoke([
+        'app',
+        'view',
+        'control',
+        '--viewer',
+        '7',
+        '--confirm-target',
+        'exact',
+        '--input-file',
+        input
+      ])
+    ).rejects.toThrow()
+    expect(call).not.toHaveBeenCalled()
+    await invoke(['app', 'repo-color', '--repo', 'folder-project', '--color', ' ABCDEF '])
+    expect(call).toHaveBeenLastCalledWith('repo.update', {
+      repo: 'folder-project',
+      updates: { badgeColor: '#abcdef' }
+    })
+    await expect(
+      invoke(['app', 'repo-color', '--repo', 'folder-project', '--color', 'bad'])
+    ).rejects.toThrow('complete')
+  } finally {
+    output.mockRestore()
+    await rm(dir, { recursive: true, force: true })
+  }
+})

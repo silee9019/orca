@@ -8,6 +8,7 @@ import { unavailableSessionSearchStatus } from '../../../../shared/ai-vault-sear
 import type { AiVaultSearchStatus } from '../../../../shared/ai-vault-search-types'
 import { ConfirmationDialogContext } from '@/components/confirmation-dialog-context'
 import { SessionHistorySettingsPane } from './SessionHistorySettingsPane'
+import { requestSearchSettings } from '@/runtime/search-settings-request'
 
 const mocks = vi.hoisted(() => {
   const environments: { id: string; name: string }[] = []
@@ -154,6 +155,117 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.unstubAllGlobals()
+})
+
+it('routes viewer consent through the existing save and feature-tip owner', async () => {
+  let saved = getDefaultSettings('/synthetic')
+  const save = vi.fn(async (updates: Partial<ReturnType<typeof getDefaultSettings>>) => {
+    saved = { ...saved, ...updates }
+  })
+  Object.assign(window.api, { settings: { get: async () => saved } })
+  pane(false, vi.fn(), save)
+  await act(async () => {
+    const result = await requestSearchSettings(
+      { viewer: 'host', operation: 'local-toggle', confirmation: 'local' },
+      Date.now() + 1000
+    )
+    expect(result).toMatchObject({ applied: true, persisted: true, enabled: true })
+  })
+  expect(save).toHaveBeenCalledWith({ aiVaultSearch: { enabled: true, historyDays: null } })
+  expect(mocks.markFeatureTipsSeen).toHaveBeenCalledWith(['agent-session-search'])
+})
+
+it('rejects a viewer request when the settings owner is unavailable', async () => {
+  await expect(
+    requestSearchSettings(
+      { viewer: 'host', operation: 'local-toggle', confirmation: 'local' },
+      Date.now() + 1000
+    )
+  ).rejects.toThrow('owner_unavailable')
+})
+
+it('keeps a failed or web-only local consent request from reporting success', async () => {
+  const save = vi.fn().mockRejectedValue(new Error('save failed'))
+  Object.assign(window.api, { settings: { get: async () => getDefaultSettings('/synthetic') } })
+  pane(false, vi.fn(), save)
+  await act(async () => {
+    expect(
+      await requestSearchSettings(
+        { viewer: 'host', operation: 'local-toggle', confirmation: 'local' },
+        Date.now() + 1000
+      )
+    ).toMatchObject({ applied: false, persisted: false })
+  })
+  cleanup()
+  mocks.web = true
+  const untouched = vi.fn()
+  pane(false, vi.fn(), untouched)
+  await expect(
+    requestSearchSettings(
+      { viewer: 'host', operation: 'local-toggle', confirmation: 'local' },
+      Date.now() + 1000
+    )
+  ).rejects.toThrow('unavailable')
+  expect(untouched).not.toHaveBeenCalled()
+})
+
+it('uses the paired row toggle owner and reads the changed host status', async () => {
+  mixedFleet()
+  mocks.setEnabled.mockImplementation(async (host: string, enabled: boolean) => {
+    const next = { ...current, enabled }
+    mocks.statusByHost[host] = next
+    return next
+  })
+  pane(true)
+  await act(async () => {})
+  await act(async () => {
+    expect(
+      await requestSearchSettings(
+        {
+          viewer: 'host',
+          operation: 'server-toggle',
+          executionHostId: 'runtime:off',
+          confirmation: 'runtime:off'
+        },
+        Date.now() + 1000
+      )
+    ).toMatchObject({ applied: true, persisted: true, enabled: true })
+  })
+  expect(mocks.setEnabled).toHaveBeenCalledExactlyOnceWith('runtime:off', true)
+  expect(screen.getByRole('switch', { name: 'Search sessions on gpu-a' })).toHaveAttribute(
+    'aria-checked',
+    'true'
+  )
+})
+
+it('toggles the actual computer list and enables only the offered host', async () => {
+  mixedFleet()
+  mocks.environments.push(
+    { id: 'extra-one', name: 'extra-one' },
+    { id: 'extra-two', name: 'extra-two' }
+  )
+  mocks.details['extra-one'] = OFFLINE_DETAILS
+  mocks.details['extra-two'] = OFFLINE_DETAILS
+  pane(true)
+  await act(async () => {})
+  await act(async () => {
+    expect(
+      await requestSearchSettings({ viewer: 'host', operation: 'list-toggle' }, Date.now() + 1000)
+    ).toMatchObject({ applied: true, expanded: true })
+  })
+  expect(document.querySelector('[data-search-computers-expanded]')).toHaveAttribute(
+    'data-search-computers-expanded',
+    'true'
+  )
+  await act(async () => {
+    expect(
+      await requestSearchSettings(
+        { viewer: 'host', operation: 'enable-all', confirmation: 'all-computers' },
+        Date.now() + 1000
+      )
+    ).toMatchObject({ applied: true, persisted: false })
+  })
+  expect(mocks.setEnabled).toHaveBeenCalledExactlyOnceWith('runtime:off', true)
 })
 
 it('turns search on from the switch alone, touching no transcript while it is off', async () => {

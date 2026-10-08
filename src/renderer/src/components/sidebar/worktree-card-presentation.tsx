@@ -148,6 +148,8 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     : compactCards && (showBranchIdentityHover || hasDetails || hasPorts)
       ? (title: React.ReactElement): React.ReactElement => (
           <WorktreeCardDetailsHover
+            linkedBrowserWorkspaceId={worktree.id}
+            linkedBrowserSurface="card-details"
             issue={metaIssue}
             linearIssue={metaLinearIssue}
             jiraIssue={metaJiraIssue}
@@ -223,6 +225,8 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
   const detailsAndPorts =
     detailsAndPortsContent && !newCardStyle ? (
       <WorktreeCardDetailsHover
+        linkedBrowserWorkspaceId={worktree.id}
+        linkedBrowserSurface="card-title"
         issue={metaIssue}
         linearIssue={metaLinearIssue}
         jiraIssue={metaJiraIssue}

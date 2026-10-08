@@ -150,6 +150,8 @@ export async function useIpcEventsForCloseRouting({
   }))
 
   vi.stubGlobal('window', {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
     api: {
       repos: { onChanged: () => () => {} },

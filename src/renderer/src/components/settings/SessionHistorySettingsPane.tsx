@@ -19,6 +19,7 @@ import { SessionSearchAdvancedSection } from './SessionSearchAdvancedSection'
 import { SessionHistoryComputerRow } from './SessionHistoryComputerRow'
 import { SessionHistoryServerRow } from './SessionHistoryServerRow'
 import { SessionSearchComputerList } from './SessionSearchComputerList'
+import { useSearchSettingsCommands } from './use-search-settings-commands'
 import {
   isTurnOnableSessionSearchState,
   orderSessionSearchServers,
@@ -101,11 +102,13 @@ export function SessionHistorySettingsPane({
     })
   }
 
-  async function save(updates: Partial<typeof policy>): Promise<void> {
+  async function save(updates: Partial<typeof policy>): Promise<boolean> {
     setBusy(true)
     setError(null)
+    let saved = false
     try {
       await writePolicy(updates)
+      saved = true
     } catch {
       if (mounted.current) {
         setError(saveErrorMessage())
@@ -115,21 +118,24 @@ export function SessionHistorySettingsPane({
         setBusy(false)
       }
     }
+    return saved
   }
 
-  function toggleEnabled(): Promise<void> {
+  function toggleEnabled(): Promise<boolean> {
     return save({ enabled: !policy.enabled })
   }
 
   /** Remembers nothing: what it acts on is read off the rows at the moment it is clicked. */
-  async function enableOnAllComputers(): Promise<void> {
+  async function enableOnAllComputers(): Promise<boolean> {
     setBusy(true)
     setError(null)
+    let succeeded = true
     try {
       if (!policy.enabled) {
         try {
           await writePolicy({ enabled: true })
         } catch {
+          succeeded = false
           setError(saveErrorMessage())
         }
       }
@@ -138,6 +144,7 @@ export function SessionHistorySettingsPane({
         try {
           await window.api.aiVault.setSearchEnabled(toRuntimeExecutionHostId(entry.id), true)
         } catch {
+          succeeded = false
           setError(serverToggleErrorMessage(entry.name))
         }
       }
@@ -147,7 +154,33 @@ export function SessionHistorySettingsPane({
         setRefresh((value) => value + 1)
       }
     }
+    return succeeded
   }
+
+  useSearchSettingsCommands('pane', async (command) => {
+    if (busy || isWebClient) {
+      throw new Error('search_settings_unavailable')
+    }
+    if (command.operation === 'local-toggle') {
+      const expected = !policy.enabled
+      const applied = await toggleEnabled()
+      const durable = resolveAiVaultSearchSettings(await window.api.settings.get())
+      return {
+        viewer: 'host',
+        applied: applied && mounted.current && durable.enabled === expected,
+        persisted: applied && durable.enabled === expected,
+        enabled: durable.enabled
+      }
+    }
+    if (command.operation !== 'enable-all' || enableableServers.length === 0) {
+      throw new Error('search_settings_action_not_offered')
+    }
+    return {
+      viewer: 'host',
+      applied: (await enableOnAllComputers()) && mounted.current,
+      persisted: false
+    }
+  })
 
   /** False when the settings write failed or the pane went away, so the delete is skipped. */
   async function turnSearchOffBeforeDelete(): Promise<boolean> {
@@ -174,7 +207,7 @@ export function SessionHistorySettingsPane({
   }
 
   return (
-    <div>
+    <div data-search-settings-pane>
       <div className="space-y-1 py-3">
         <Label className="select-text">
           {translate('sessionHistory.settings.indexComputers', 'Search inside sessions')}

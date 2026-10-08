@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { registerAppSurfaceIpcBridge } from '../../hooks/ipc-events/app-surface-ipc-bridge'
+import type { AppSurfaceRequest } from '../../../../shared/app-surface-control'
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -105,6 +107,42 @@ describe('PetOverlay grab-and-hold pointer interaction', () => {
     container?.remove()
     root = null
     container = null
+  })
+
+  it('positions the mounted pet through the same clamping and persistence effects', async () => {
+    ;({ container, root } = renderPetOverlay())
+    let receive: ((request: AppSurfaceRequest) => void) | undefined
+    const reply = vi.fn()
+    window.orcaAppSurface = {
+      onRequest: (callback) => {
+        receive = callback
+        return () => {}
+      },
+      reply
+    }
+    const cleanup = registerAppSurfaceIpcBridge()
+    try {
+      await act(async () =>
+        receive?.({
+          requestId: 'c8d153e4-ef16-4da8-b972-2fd3cecb378b',
+          action: { kind: 'pet-overlay', action: 'position', x: -100, y: -100 }
+        })
+      )
+      expect(JSON.parse(localStorage.getItem('pet-overlay-position') || '{}')).toEqual({
+        x: 0,
+        y: 0
+      })
+      const overlay = container.firstElementChild
+      if (!(overlay instanceof HTMLElement)) {
+        throw new Error('Missing overlay')
+      }
+      expect(overlay.style.left).toBe('0px')
+      expect(overlay.style.top).toBe('0px')
+      expect(reply.mock.lastCall?.[0]).toMatchObject({ ok: true })
+    } finally {
+      cleanup()
+      delete window.orcaAppSurface
+    }
   })
 
   it('freezes on a stationary grab, then animates once dragged past the deadzone', () => {

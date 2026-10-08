@@ -9,19 +9,29 @@ import { ACCOUNT_HANDLER_GROUPS } from './account-handler-groups'
 import { ACCOUNT_VIEWER_HANDLER_GROUPS } from './account-viewer-handler-groups'
 import { USAGE_HANDLER_GROUPS } from './usage-handler-groups'
 import { EXTENSIONS_HANDLER_GROUPS } from './extensions-handler-groups'
+import { BROWSER_VIEWER_HANDLER_GROUPS } from './browser-viewer-handler-groups'
+import { EMULATOR_HANDLER_GROUPS } from './emulator-handler-groups'
+import { SPEECH_VM_HANDLER_GROUPS } from './speech-vm-handler-groups'
+import { SEARCH_VIEWER_HANDLER_GROUPS } from './search-viewer-handler-groups'
+import { BROWSER_DOCUMENT_HANDLER_GROUPS } from './browser-document-handler-groups'
+import { BROWSER_REMOTE_PANE_HANDLER_GROUPS } from './browser-remote-pane-handler-groups'
+import { BROWSER_SETTINGS_HANDLER_GROUPS } from './browser-settings-handler-groups'
+import { FLOATING_BROWSER_HANDLER_GROUPS } from './floating-browser-handler-groups'
+import { LINKED_BROWSER_HANDLER_GROUPS } from './linked-browser-handler-groups'
+import { REMOTE_FILE_PICKER_HANDLER_GROUPS } from './remote-file-picker-handler-groups'
+import { PLUGIN_MARKETPLACE_HANDLER_GROUPS } from './plugin-marketplace-handler-groups'
+import { COMPUTER_PERMISSIONS_HANDLER_GROUPS } from './computer-permissions-handler-groups'
+import { BROWSER_OBSERVATION_HANDLER_GROUPS } from './browser-observation-handler-groups'
 import type { CommandHandler } from './dispatch'
 import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 
 export type HandlerGroup = {
   name: string
-  // Why: eager string keys let dispatch build (and duplicate-check) the whole
-  // command table without loading any group's transitive module graph.
+  // Eager keys detect duplicate commands without loading handler modules.
   keys: readonly string[]
   load: () => Promise<Record<string, CommandHandler>>
 }
 
-// Why: `keys` mirrors each group's exported record and is verified against the
-// real exports by handler-group-manifest.test.ts, so drift fails CI, not dispatch.
 export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...TCC_THRESHOLD_OBSERVE_HANDLER_GROUPS,
   ...CODEX_ACCOUNT_OBSERVE_HANDLER_GROUPS,
@@ -39,6 +49,17 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...SETTINGS_HANDLER_GROUPS,
   ...EXTENSIONS_HANDLER_GROUPS,
   ...APP_LIFECYCLE_HANDLER_GROUPS,
+  ...SEARCH_VIEWER_HANDLER_GROUPS,
+  ...BROWSER_DOCUMENT_HANDLER_GROUPS,
+  ...BROWSER_REMOTE_PANE_HANDLER_GROUPS,
+  ...BROWSER_SETTINGS_HANDLER_GROUPS,
+  ...FLOATING_BROWSER_HANDLER_GROUPS,
+  ...LINKED_BROWSER_HANDLER_GROUPS,
+  ...REMOTE_FILE_PICKER_HANDLER_GROUPS,
+  ...PLUGIN_MARKETPLACE_HANDLER_GROUPS,
+
+  ...COMPUTER_PERMISSIONS_HANDLER_GROUPS,
+  ...BROWSER_OBSERVATION_HANDLER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],
@@ -52,6 +73,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'artifacts',
     keys: [
+      'artifacts viewer',
       'artifacts list',
       'artifacts share',
       'artifacts update',
@@ -134,6 +156,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/terminal.js')).TERMINAL_HANDLERS
   },
   ...BROWSER_HANDLER_GROUPS,
+  ...BROWSER_VIEWER_HANDLER_GROUPS,
   {
     name: 'orchestration',
     keys: [
@@ -170,28 +193,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     ],
     load: async () => (await import('./handlers/orchestration.js')).ORCHESTRATION_HANDLERS
   },
-  {
-    name: 'emulator',
-    keys: [
-      'emulator list',
-      'emulator devices',
-      'emulator attach',
-      'emulator tap',
-      'emulator type',
-      'emulator gesture',
-      'emulator button',
-      'emulator rotate',
-      'emulator exec',
-      'emulator kill',
-      'emulator shutdown',
-      'emulator install',
-      'emulator launch',
-      'emulator permissions',
-      'emulator ax',
-      'emulator logcat'
-    ],
-    load: async () => (await import('./handlers/emulator.js')).EMULATOR_HANDLERS
-  },
+  ...EMULATOR_HANDLER_GROUPS,
   {
     name: 'computer',
     keys: [
@@ -277,6 +279,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     ],
     load: async () => (await import('./handlers/linear.js')).LINEAR_HANDLERS
   },
+  ...SPEECH_VM_HANDLER_GROUPS,
   {
     name: 'vm',
     keys: ['vm recipe doctor'],

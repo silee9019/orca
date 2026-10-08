@@ -1,3 +1,5 @@
+import { SkillsViewerParams } from '../../../../shared/skills-viewer-command'
+import { requestAccountViewerAction } from '../../account-viewer-request'
 import { defineMethod } from '../core'
 import type { z } from 'zod'
 import type { SkillFreshnessInventory } from '../../../../shared/skill-freshness'
@@ -44,6 +46,12 @@ function shareServices(): ShareServices {
   return shares
 }
 export const SKILL_LIFECYCLE_METHODS = [
+  defineMethod({
+    name: 'skills.viewerAction',
+    params: SkillsViewerParams,
+    handler: ({ action }, { signal }) =>
+      requestAccountViewerAction({ domain: 'skills', action }, signal)
+  }),
   defineMethod({
     name: 'skills.freshnessInventory',
     params: null,

@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest'
 import type { ReactNode } from 'react'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OrcaProfileAuthStatus } from '../../../../shared/orca-profiles'
@@ -72,6 +72,7 @@ function storeState(): Record<string, unknown> {
 }
 
 import ArtifactsPage from './ArtifactsPage'
+import { applyArtifactViewerAction } from '../../runtime/artifact-viewer-controller'
 import { artifactAccountIdentity } from './useArtifactPagination'
 
 describe('ArtifactsPage', () => {
@@ -129,6 +130,59 @@ describe('ArtifactsPage', () => {
   })
 
   afterEach(cleanup)
+
+  it('applies viewer query and detail selection to the mounted page before acknowledging', async () => {
+    render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /Quarterly report/ })
+    let request: ReturnType<typeof applyArtifactViewerAction> | undefined
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'query', value: 'no match' })
+    })
+    await expect(request).resolves.toMatchObject({ query: 'no match', visibleSlugs: [] })
+    expect(screen.getByPlaceholderText('Search...')).toHaveValue('no match')
+    expect(screen.getByText('No matches')).toBeInTheDocument()
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'query', value: '' })
+    })
+    await request
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'select', slug: 'report-123' })
+    })
+    await expect(request).resolves.toMatchObject({ selectedSlug: 'report-123' })
+    expect(screen.getByRole('heading', { level: 2, name: 'Quarterly report' })).toBeInTheDocument()
+    act(() => {
+      request = applyArtifactViewerAction({ kind: 'select', slug: null })
+    })
+    await expect(request).resolves.toMatchObject({ selectedSlug: null })
+    expect(screen.queryByRole('heading', { level: 2, name: 'Quarterly report' })).toBeNull()
+  })
+
+  it('loads the current viewer cursor and acknowledges the appended page', async () => {
+    mocks.rpc.mockReset()
+    mocks.rpc
+      .mockResolvedValueOnce({
+        status: 'ok',
+        value: { artifacts: [artifactListItem('First page', 'first')], nextCursor: 'page-two' }
+      })
+      .mockResolvedValueOnce({
+        status: 'ok',
+        value: { artifacts: [artifactListItem('Second page', 'second')] }
+      })
+    render(<ArtifactsPage />)
+    await screen.findByRole('button', { name: /First page/ })
+    let request: ReturnType<typeof applyArtifactViewerAction> | undefined
+    await act(async () => {
+      request = applyArtifactViewerAction({ kind: 'load-more' })
+    })
+    await expect(request).resolves.toMatchObject({
+      loadedSlugs: ['first', 'second'],
+      hasMore: false
+    })
+    expect(screen.getByRole('button', { name: /Second page/ })).toBeInTheDocument()
+    expect(mocks.rpc).toHaveBeenLastCalledWith({ kind: 'local' }, 'artifacts.list', {
+      cursor: 'page-two'
+    })
+  })
 
   it('renders the selected artifact in a right drawer with copy link as the primary action', async () => {
     render(<ArtifactsPage />)

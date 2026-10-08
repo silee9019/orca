@@ -1,3 +1,5 @@
+import { openBrowserTabExternallyVerified } from './browser-tab-external-open'
+import { useBrowserTabUiCommands } from './use-browser-tab-ui-commands'
 import { useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import {
@@ -112,6 +114,41 @@ export default function BrowserTab({
   })
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPoint, setMenuPoint] = useState({ x: 0, y: 0 })
+  const openMenu = (point: { x: number; y: number }): void => {
+    window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
+    setMenuPoint(point)
+    setMenuOpen(true)
+  }
+  useBrowserTabUiCommands({
+    target: {
+      workspace: tab.id,
+      worktree: dragData.worktreeId,
+      group: dragData.groupId,
+      unifiedTab: dragData.unifiedTabId
+    },
+    openExternalVerified: () => {
+      if (!isHttpUrl) {
+        return Promise.reject(new Error('browser_tab_external_url_unsupported'))
+      }
+      return openBrowserTabExternallyVerified(window.api.shell, openInBrowserUrl)
+    },
+    menuOpen,
+    menuPoint,
+    menu: (open, point) => {
+      if (open && point) {
+        openMenu(point)
+      } else {
+        setMenuOpen(false)
+      }
+    },
+    activate: onActivate,
+    close: onClose,
+    closeOthers: onCloseOthers,
+    closeLeft: onCloseToLeft,
+    closeRight: onCloseToRight,
+    togglePin: onTogglePin,
+    duplicate: onDuplicate
+  })
 
   // Why: about:blank and other non-http URLs should not be sent to the
   // system browser. Disable the context menu item instead of silently
@@ -224,9 +261,7 @@ export default function BrowserTab({
         {...slotProps}
         onContextMenuCapture={(event) => {
           event.preventDefault()
-          window.dispatchEvent(new Event(CLOSE_ALL_CONTEXT_MENUS_EVENT))
-          setMenuPoint({ x: event.clientX, y: event.clientY })
-          setMenuOpen(true)
+          openMenu({ x: event.clientX, y: event.clientY })
         }}
       >
         {menuOpen ? (

@@ -2,6 +2,12 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const MANAGED_SKILL_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['skills', 'viewer'],
+    summary: 'Read or change the mounted desktop skills viewer on its discovery owner',
+    usage: 'orca skills viewer --viewer desktop --input-file <action.json> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'input-file', 'input-stdin']
+  },
+  {
     path: ['skills', 'delete-supported'],
     summary: 'Check the selected runtime skill-delete capability',
     usage: 'orca skills delete-supported [--json]',

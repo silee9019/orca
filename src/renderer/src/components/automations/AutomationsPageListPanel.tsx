@@ -34,7 +34,6 @@ export function AutomationsPageListPanel({
     listSearchQuery,
     setListSearchQuery,
     listFilter,
-    setListFilter,
     relativeNow,
     externalActionKey,
     setActivePaneTab,
@@ -50,12 +49,7 @@ export function AutomationsPageListPanel({
     selectedExternal,
     searchCounts
   } = list
-  const onListFilterChange = (next: typeof listFilter): void => {
-    setListFilter(next)
-    if ((next.hostStableKeys?.length ?? 0) > 0 && hostCatalog.resolution.effective.kind !== 'all') {
-      hostCatalog.selectHost({ kind: 'all' })
-    }
-  }
+  const onListFilterChange = list.changeListFilter
   return (
     <AutomationsListPanel
       hasListItems={hasListItems}

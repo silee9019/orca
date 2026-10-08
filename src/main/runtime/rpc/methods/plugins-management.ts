@@ -3,9 +3,14 @@ import type { PluginService } from '../../../plugins/plugin-service'
 import type { PluginMarketplaceService } from '../../../plugins/plugin-marketplace-service'
 import type { PluginMarketplaceInstaller } from '../../../plugins/plugin-marketplace-installer'
 import { pluginMarketplaceGitSourceSchema } from '../../../../shared/plugins/plugin-marketplace'
-import { installManagedPlugin } from '../../../plugins/plugin-management'
+import {
+  installManagedPlugin,
+  type projectPluginPreferences,
+  type updateManagedPluginPreferences
+} from '../../../plugins/plugin-management'
 import { listPluginsForClients } from '../../../plugins/plugin-client-list'
 import {
+  PluginPreferencesUpdate,
   PluginInstallParams,
   PluginKeyParams,
   PluginMarketplaceSourceParams,
@@ -19,6 +24,10 @@ type PluginManagementServices = {
   marketplace: PluginMarketplaceService
   installer: PluginMarketplaceInstaller
   remove: (pluginKey: string) => Promise<unknown>
+  preferences: {
+    get: () => ReturnType<typeof projectPluginPreferences>
+    update: (input: unknown) => ReturnType<typeof updateManagedPluginPreferences>
+  }
 }
 let services: PluginManagementServices | null = null
 export function setPluginManagementForRpc(value: PluginManagementServices | null): void {
@@ -32,6 +41,16 @@ function requireServices(): PluginManagementServices {
 }
 
 export const PLUGIN_MANAGEMENT_METHODS = [
+  defineMethod({
+    name: 'plugins.getPreferences',
+    params: null,
+    handler: () => requireServices().preferences.get()
+  }),
+  defineMethod({
+    name: 'plugins.updatePreferences',
+    params: PluginPreferencesUpdate,
+    handler: (params) => requireServices().preferences.update(params)
+  }),
   defineMethod({
     name: 'plugins.install',
     params: PluginInstallParams,

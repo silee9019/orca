@@ -42,8 +42,11 @@ export function PluginsSettingsSection({
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const mountedRef = useRef(false)
   const listRequestRef = useRef(0)
+  const acceptedListGenerationRef = useRef(0)
+  const renderedListGeneration = acceptedListGenerationRef.current
 
   const applyPluginList = (nextPlugins: PluginHostListEntry[]): void => {
+    acceptedListGenerationRef.current = listRequestRef.current
     const installedPluginKeys = new Set(nextPlugins.map((plugin) => plugin.pluginKey))
     setPlugins(nextPlugins)
     setError(null)
@@ -334,6 +337,21 @@ export function PluginsSettingsSection({
         onToggleEnabled={(entry) => void toggleEnabled(entry)}
         onToggleLogs={pluginLogs.toggleLogs}
         onMarketplaceInstalled={marketplaceLifecycle.reloadAfterMutation}
+        readMarketplaceParent={() => ({
+          generation: renderedListGeneration,
+          currentGeneration: listRequestRef.current,
+          ready: mountedRef.current && mounted && settings.pluginSystemEnabled && !loading,
+          errorPresent: error !== null,
+          installedCount: plugins.length,
+          installed: plugins,
+          dialogBusy:
+            installOpen ||
+            removePlugin !== null ||
+            marketplaceLifecycle.rollbackPlugin !== null ||
+            consentPlugin !== null,
+          consentPluginKey: consentPlugin?.pluginKey ?? null,
+          consentFingerprint: consentPlugin?.consentFingerprint ?? null
+        })}
         onRollbackRequest={marketplaceLifecycle.requestRollback}
         onRemoveRequest={setRemovePluginId}
         onUpdateDevPaths={updateDevPaths}

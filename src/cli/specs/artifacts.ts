@@ -5,6 +5,13 @@ const CLOUD_FLAGS = ['api-url']
 
 export const ARTIFACT_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['artifacts', 'viewer'],
+    summary: 'Read or change the mounted desktop artifact viewer and await its committed state',
+    usage: 'orca artifacts viewer --viewer desktop --input-file <action.json> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'input-file', 'input-stdin'],
+    examples: ['orca artifacts viewer --viewer desktop --input-file action.json --json']
+  },
+  {
     path: ['artifacts', 'share'],
     summary: 'Share an HTML or Markdown file with your Orca account',
     usage: 'orca artifacts share <file> [--api-url <url>] [--json]',
@@ -29,9 +36,10 @@ export const ARTIFACT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['artifacts', 'list'],
-    summary: 'List artifacts owned by the signed-in Orca account',
-    usage: 'orca artifacts list [--cursor <cursor>] [--api-url <url>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, ...CLOUD_FLAGS, 'cursor']
+    summary: 'List owned artifacts; query and exact id filter only the requested page',
+    usage:
+      'orca artifacts list [--cursor <cursor>] [--query <text>] [--id <slug>] [--api-url <url>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, ...CLOUD_FLAGS, 'cursor', 'query', 'id']
   },
   {
     path: ['artifacts', 'delete'],

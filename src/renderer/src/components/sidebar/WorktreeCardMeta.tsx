@@ -1,4 +1,5 @@
 import React from 'react'
+import { useLinkedBrowserRequest } from './use-linked-browser-request'
 import { Badge } from '@/components/ui/badge'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import { ExternalLink, MonitorUp, Pencil, StickyNote } from 'lucide-react'
@@ -53,6 +54,8 @@ function hasComment(comment: string | null): boolean {
 }
 
 export function WorktreeCardDetailsHover({
+  linkedBrowserWorkspaceId,
+  linkedBrowserSurface,
   issue,
   linearIssue,
   jiraIssue,
@@ -92,6 +95,16 @@ export function WorktreeCardDetailsHover({
     handleReviewMenuOpenChange,
     closeHover
   } = hoverControl ?? internalHoverControl
+  useLinkedBrowserRequest({
+    workspaceId: linkedBrowserWorkspaceId,
+    surface: linkedBrowserSurface,
+    open: hoverOpen,
+    issue,
+    review,
+    closeHover,
+    openIssue: onOpenIssueInBrowser,
+    openReview: onOpenReviewInBrowser
+  })
   const [workspaceTitleEditing, setWorkspaceTitleEditing] = React.useState(false)
   const pendingWorkspaceTitleCloseRef = React.useRef(false)
   const handleWorkspaceTitleEditingChange = React.useCallback(

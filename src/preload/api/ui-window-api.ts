@@ -26,6 +26,7 @@ export type UiWindowApi = {
   writeClipboardText: (text: string) => Promise<void>
   writeTerminalClipboardText: (text: string) => Promise<void>
   writeSelectionClipboardText: (text: string) => Promise<void>
+  writeVerifiedClipboardImage: (dataUrl: string) => Promise<{ written: true }>
   writeClipboardImage: (dataUrl: string) => Promise<void>
   performNativePaste: (options?: { mode?: 'paste' | 'paste-and-match-style' }) => void
   performNativeSelectionAction: (action: 'copy' | 'select-all') => void

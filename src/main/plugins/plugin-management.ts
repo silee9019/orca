@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 import type { Store } from '../persistence'
 import type { PluginService } from './plugin-service'
+import { PluginPreferencesUpdate } from '../../shared/rpc-contract/plugins-management-params'
 import type { PluginInstallParams } from '../../shared/rpc-contract/plugins-management-params'
 import { normalizePluginIdList } from '../../shared/plugins/plugin-consent-state'
 import type { PluginLockfile } from '../../shared/plugins/plugin-install-lockfile'
@@ -78,4 +79,38 @@ export async function removeManagedPlugin(
   )
   await service.refresh()
   return listPluginsForClients(service)
+}
+
+export function projectPluginPreferences(settings: {
+  pluginSystemEnabled?: boolean
+  devPluginPaths?: unknown
+}) {
+  return {
+    pluginSystemEnabled: settings.pluginSystemEnabled === true,
+    devPluginPaths: normalizePluginIdList(settings.devPluginPaths)
+  }
+}
+
+export async function updateManagedPluginPreferences(
+  store: {
+    getSettings: () => { pluginSystemEnabled?: boolean; devPluginPaths?: unknown }
+    updateSettings: (
+      updates: z.infer<typeof PluginPreferencesUpdate>,
+      options: { notifyListeners: true }
+    ) => unknown
+    flushPendingOrThrowAsync: () => Promise<void>
+  },
+  service: Pick<PluginService, 'refresh'>,
+  input: unknown
+) {
+  const updates = PluginPreferencesUpdate.parse(input)
+  store.updateSettings(updates, { notifyListeners: true })
+  await store.flushPendingOrThrowAsync()
+  await service.refresh()
+  return {
+    preferences: projectPluginPreferences(store.getSettings()),
+    persisted: true,
+    applied: true,
+    rendered: false
+  }
 }

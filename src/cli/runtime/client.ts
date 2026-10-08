@@ -3,6 +3,7 @@ import {
   createRateLimitObserver,
   createTccThresholdObserver
 } from './account-observation-transport'
+import type { EmulatorSubscriptionArguments } from './emulator-subscription'
 import { randomUUID } from 'node:crypto'
 import type { CliStatusResult, RuntimeStatus } from '../../shared/runtime-types'
 import { runtimeHostConnectionState } from '../../shared/runtime-host-connection-state'
@@ -33,19 +34,11 @@ import {
 } from '../../shared/protocol-version'
 import { RemoteRuntimeCompatGate } from './remote-runtime-compat-gate'
 import { createOrchestrationCompatibilityEnvelope } from './orchestration-compatibility-envelope'
-import { getTimeoutMsParam, isWaitingCheck } from './runtime-request-timeout'
-import {
-  isWorkerStartTimeoutWithinTimerLimit,
-  resolveWorkerStartClientTimeoutMs,
-  resolveWorkerStartReadinessTimeoutMs
-} from '../../shared/orchestration-timing-budgets'
-import { MAX_TIMER_DELAY_MS } from '../../shared/timer-delay'
+import { resolveMethodTimeoutMs } from './runtime-request-timeout'
 import {
   buildOrchestrationRecoveryCommand,
   resolveOrchestrationCliExecutable
 } from './orchestration-recovery-command'
-
-const LONG_POLL_CLIENT_GRACE_MS = 10_000
 
 const loadWebSocketTransport = async () => await import('./websocket-transport.js')
 
@@ -101,7 +94,8 @@ export class RuntimeClient {
       terminalPromptPreflight?: { runtimeId: string | null }
     } & RuntimeOrchestrationEnvelope
   ): Promise<RuntimeRpcSuccess<TResult>> {
-    const effectiveTimeoutMs = options?.timeoutMs ?? this.resolveMethodTimeoutMs(method, params)
+    const effectiveTimeoutMs =
+      options?.timeoutMs ?? resolveMethodTimeoutMs(method, params, this.requestTimeoutMs)
     const orchestrationMutation = isOrchestrationMutation(method, params)
     const terminalPromptMutation = isTerminalPromptMutation(method, params)
     const legacyTerminalPrompt = options?.legacyTerminalPrompt === true && terminalPromptMutation
@@ -185,34 +179,13 @@ export class RuntimeClient {
     return response
   }
 
-  // Why: centralises the per-method timeout policy. Long-poll inner waiter
-  // budgets live in `params.timeoutMs`; widen the client-side socket timeout
-  // to `timeoutMs + grace` so it doesn't fire before the server has a chance
-  // to resolve. Without this, a 5 min wait would still die at the 60 s default.
-  // See design doc §3.1.
-  private resolveMethodTimeoutMs(method: string, params?: unknown): number {
-    if (method === 'orchestration.workerStart') {
-      const requestedValue = getTimeoutMsParam(params)
-      const requested = typeof requestedValue === 'number' ? requestedValue : Number(requestedValue)
-      if (!isWorkerStartTimeoutWithinTimerLimit(requested)) {
-        throw new RuntimeClientError(
-          'invalid_argument',
-          `--timeout-ms is too large for worker-start transport grace; the derived timeout must be <= ${MAX_TIMER_DELAY_MS}ms.`
-        )
-      }
-      const readiness = resolveWorkerStartReadinessTimeoutMs(requested)
-      return Math.max(resolveWorkerStartClientTimeoutMs(readiness), this.requestTimeoutMs)
-    }
-    if (
-      (method === 'orchestration.check' && isWaitingCheck(params)) ||
-      method === 'terminal.wait'
-    ) {
-      const inner = Number(getTimeoutMsParam(params))
-      if (Number.isFinite(inner) && inner > 0) {
-        return Math.max(inner + LONG_POLL_CLIENT_GRACE_MS, this.requestTimeoutMs)
-      }
-    }
-    return this.requestTimeoutMs
+  async consumeEmulatorStream(...args: EmulatorSubscriptionArguments) {
+    const { consumeEmulatorStream } = await import('./emulator-subscription.js')
+    await consumeEmulatorStream(
+      this.remotePairing ? null : readMetadata(this.userDataPath),
+      this.remotePairing,
+      args
+    )
   }
 
   async getCliStatus(): Promise<RuntimeRpcSuccess<CliStatusResult>> {

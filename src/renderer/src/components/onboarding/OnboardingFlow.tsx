@@ -1,3 +1,4 @@
+import { useOnboardingCliControl } from './use-onboarding-cli-control'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { isEditableTarget } from '@/lib/editable-target'
@@ -138,6 +139,7 @@ export default function OnboardingFlow({
       ? translate('components.onboarding.flow.actions.addFirstProject', 'Add your first project')
       : translate('components.onboarding.flow.actions.continue', 'Continue'))
   const [skipConfirmOpen, setSkipConfirmOpen] = useState(false)
+  useOnboardingCliControl(flow, skipConfirmOpen, setSkipConfirmOpen)
   const skipConfirmAdvancedViaRef = useRef<'button' | 'keyboard'>('button')
   const { next: flowNext, dismissOnboarding: flowDismissOnboarding } = flow
 

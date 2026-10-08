@@ -1,3 +1,6 @@
+import { createBrowserTabForCurrentViewer } from './browser-new-tab-owner'
+import { registerBrowserNewTabCommands } from './browser-new-tab-commands'
+import { attachEmulatorFocusBridge } from '../../runtime/emulator-focus-bridge'
 import { ensureSimulatorTab } from '@/lib/ensure-simulator-tab'
 import { openMobileEmulatorTab } from '@/lib/open-mobile-emulator-tab'
 import {
@@ -5,7 +8,6 @@ import {
   rememberPrelaunchedSimulatorSession
 } from '@/lib/simulator-launch-coordination'
 import {
-  createFloatingWorkspaceBrowserTab,
   createFloatingWorkspaceMarkdownTab,
   isFloatingWorkspacePanelFocused
 } from '@/lib/floating-workspace-terminal-actions'
@@ -18,25 +20,15 @@ export function registerContentCreationIpcBridge(
   unsubs: (() => void)[],
   isRuntimeEnvironmentActive: () => boolean
 ): void {
+  unsubs.push(attachEmulatorFocusBridge())
+  unsubs.push(
+    registerBrowserNewTabCommands(() =>
+      createBrowserTabForCurrentViewer({ workspaceFallback: true })
+    )
+  )
   unsubs.push(
     window.api.ui.onNewBrowserTab(() => {
-      const store = useAppStore.getState()
-      if (isFloatingWorkspacePanelFocused()) {
-        void createFloatingWorkspaceBrowserTab(store).catch((error) => {
-          toast.error(error instanceof Error ? error.message : String(error))
-        })
-        return
-      }
-      const worktreeId = store.activeWorktreeId
-      if (!worktreeId) {
-        return
-      }
-      const targetGroupId =
-        store.activeGroupIdByWorktree[worktreeId] ?? store.groupsByWorktree[worktreeId]?.[0]?.id
-      if (!targetGroupId) {
-        return
-      }
-      void store.openNewBrowserTabInActiveWorkspace(targetGroupId).catch((error) => {
+      void createBrowserTabForCurrentViewer().catch((error) => {
         toast.error(error instanceof Error ? error.message : String(error))
       })
     })

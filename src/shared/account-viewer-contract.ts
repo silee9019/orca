@@ -1,3 +1,6 @@
+import { SkillsViewerActionSchema } from './skills-viewer-command'
+import { AutomationViewerActionSchema } from './automation-viewer-command'
+import { ArtifactViewerActionSchema } from './artifact-viewer-command'
 import { z } from 'zod'
 import { ResourceViewerActionSchema } from './resource-manager-command'
 import { UsageViewerActionSchema } from './rpc-contract/usage-params'
@@ -6,6 +9,9 @@ import { AccountsViewerActionSchema } from './accounts-viewer-command'
 export const ACCOUNT_VIEWER_REQUEST_CHANNEL = 'accounts:viewerRequest'
 export const ACCOUNT_VIEWER_RESPONSE_CHANNEL = 'accounts:viewerResponse'
 export const AccountViewerCommandSchema = z.discriminatedUnion('domain', [
+  z.object({ domain: z.literal('skills'), action: SkillsViewerActionSchema }).strict(),
+  z.object({ domain: z.literal('automation'), action: AutomationViewerActionSchema }).strict(),
+  z.object({ domain: z.literal('artifact'), action: ArtifactViewerActionSchema }).strict(),
   z.object({ domain: z.literal('resource'), action: ResourceViewerActionSchema }).strict(),
   z.object({ domain: z.literal('usage'), action: UsageViewerActionSchema }).strict(),
   z.object({ domain: z.literal('account'), action: AccountsViewerActionSchema }).strict()

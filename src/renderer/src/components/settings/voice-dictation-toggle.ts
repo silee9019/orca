@@ -26,14 +26,14 @@ export async function handleVoiceDictationToggle({
   notifyPermissionOpenedSystemSettings,
   notifyPermissionRequired,
   notifyPermissionRequestFailed
-}: VoiceDictationToggleOptions): Promise<void> {
+}: VoiceDictationToggleOptions): Promise<boolean> {
   // Why: changing the Voice Dictation switch proves the user discovered the
   // feature; disabling it later should not make the discovery modal eligible.
   markFeatureTipsSeen(['voice-dictation'])
 
   if (voiceEnabled) {
     updateVoiceSettings({ enabled: false })
-    return
+    return true
   }
 
   setPermissionPending?.(true)
@@ -52,8 +52,10 @@ export async function handleVoiceDictationToggle({
     } else if (result.status !== 'unsupported') {
       notifyPermissionRequired?.()
     }
+    return result.status === 'granted' || result.status === 'unsupported'
   } catch {
     notifyPermissionRequestFailed?.()
+    return false
   } finally {
     if (isMounted?.() ?? true) {
       setPermissionPending?.(false)

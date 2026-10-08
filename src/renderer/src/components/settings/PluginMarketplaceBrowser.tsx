@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { usePluginMarketplaceInstall } from './use-plugin-marketplace-install'
+import type {
+  PluginMarketplaceParentReadback,
+  PluginMarketplaceMutationReceipt
+} from './plugin-marketplace-parent-readback'
+import { usePluginMarketplaceRefresh } from './use-plugin-marketplace-refresh'
+import { usePluginMarketplaceCatalog } from './use-plugin-marketplace-catalog'
+import { usePluginMarketplaceRequest } from './use-plugin-marketplace-request'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Blocks, Loader2, RefreshCw, SearchX, Settings2, Store } from 'lucide-react'
 import type {
   PluginHostListEntry,
   PluginMarketplaceHostInstallPreview,
-  PluginMarketplaceHostListing,
-  PluginMarketplaceHostSourceState
+  PluginMarketplaceHostListing
 } from '../../../../preload/api-types'
 import { translate } from '@/i18n/i18n'
 import { PluginCatalogEmptyState } from '../plugin-catalog/PluginCatalogEmptyState'
@@ -22,8 +29,9 @@ import { PluginMarketplaceSourceDialog } from './PluginMarketplaceSourceDialog'
 
 type PluginMarketplaceBrowserProps = {
   installedPlugins: readonly PluginHostListEntry[]
-  onInstalled: (pluginKey: string) => Promise<void>
+  onInstalled: (pluginKey: string, receipt?: PluginMarketplaceMutationReceipt) => Promise<void>
   onRefreshInstalled?: () => Promise<void>
+  readMarketplaceParent?: () => PluginMarketplaceParentReadback
   renderInstalledContent?: (search: string) => React.ReactNode
 }
 
@@ -32,66 +40,58 @@ function marketplaceError(cause: unknown, fallback: string): string {
   return fallback
 }
 
+function marketplaceLoadError(cause: unknown): string {
+  return marketplaceError(
+    cause,
+    translate(
+      'auto.components.settings.PluginMarketplaceBrowser.loadFailed',
+      'Could not load marketplace plugins.'
+    )
+  )
+}
+
 export function PluginMarketplaceBrowser({
   installedPlugins,
   onInstalled,
   onRefreshInstalled,
+  readMarketplaceParent,
   renderInstalledContent
 }: PluginMarketplaceBrowserProps): React.JSX.Element {
-  const [sources, setSources] = useState<PluginMarketplaceHostSourceState[]>([])
-  const [listings, setListings] = useState<PluginMarketplaceHostListing[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshBusy, setRefreshBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const mountedRef = useRef(false)
+  const { sources, listings, loading, error, setError, loadMarketplaceData, reloadWithReceipt } =
+    usePluginMarketplaceCatalog(mountedRef, marketplaceLoadError)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<PluginCatalogFilter>('all')
   const [sourcesOpen, setSourcesOpen] = useState(false)
+  const sourceCloseRef = useRef<(() => boolean) | null>(null)
   const [preview, setPreview] = useState<PluginMarketplaceHostInstallPreview | null>(null)
   const [previewMode, setPreviewMode] = useState<PluginMarketplacePreviewMode>('install')
   const [previewBusyKey, setPreviewBusyKey] = useState<string | null>(null)
-  const [installBusy, setInstallBusy] = useState(false)
-  const [actionError, setActionError] = useState<string | null>(null)
-  const mountedRef = useRef(false)
-  const requestRef = useRef(0)
   const previewRequestRef = useRef(0)
+  const previewOperationsRef = useRef(0)
 
-  const loadMarketplaceData = useCallback(async (): Promise<void> => {
-    const requestId = ++requestRef.current
-    try {
-      const [nextSources, nextListings] = await Promise.all([
-        window.api.plugins.listMarketplaces(),
-        window.api.plugins.listMarketplacePlugins()
-      ])
-      if (mountedRef.current && requestId === requestRef.current) {
-        setSources(nextSources)
-        setListings(nextListings)
-        setError(null)
-      }
-    } catch (cause) {
-      if (mountedRef.current && requestId === requestRef.current) {
-        setError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.loadFailed',
-              'Could not load marketplace plugins.'
-            )
-          )
+  const { installPreview, installBusy, actionError, setActionError } = usePluginMarketplaceInstall({
+    preview,
+    mountedRef,
+    previewRequestRef,
+    previewOperationsRef,
+    setPreview,
+    onInstalled,
+    formatError: (cause) =>
+      marketplaceError(
+        cause,
+        translate(
+          'auto.components.settings.PluginMarketplaceBrowser.installFailed',
+          'Could not install this plugin. The reviewed source may have changed.'
         )
-      }
-    } finally {
-      if (mountedRef.current && requestId === requestRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [])
+      )
+  })
 
   useEffect(() => {
     mountedRef.current = true
     void loadMarketplaceData()
     return () => {
       mountedRef.current = false
-      requestRef.current += 1
       previewRequestRef.current += 1
     }
   }, [loadMarketplaceData])
@@ -116,36 +116,29 @@ export function PluginMarketplaceBrowser({
     )
   }, [listings, search])
 
-  const refresh = async (): Promise<void> => {
-    setRefreshBusy(true)
-    setError(null)
-    try {
-      await Promise.all([window.api.plugins.refreshMarketplaces({}), onRefreshInstalled?.()])
-      await loadMarketplaceData()
-    } catch (cause) {
-      if (mountedRef.current) {
-        setError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.refreshFailed',
-              'Could not refresh marketplaces. Cached listings remain available.'
-            )
-          )
+  const { refresh, refreshBusy, isRefreshBusy } = usePluginMarketplaceRefresh({
+    mountedRef,
+    onRefreshInstalled,
+    loadMarketplaceData,
+    reloadWithReceipt,
+    setError,
+    formatError: (cause) =>
+      marketplaceError(
+        cause,
+        translate(
+          'auto.components.settings.PluginMarketplaceBrowser.refreshFailed',
+          'Could not refresh marketplaces. Cached listings remain available.'
         )
-      }
-    } finally {
-      if (mountedRef.current) {
-        setRefreshBusy(false)
-      }
-    }
-  }
+      )
+  })
 
   const openPreview = async (
     listing: PluginMarketplaceHostListing,
-    update: boolean
-  ): Promise<void> => {
+    update: boolean,
+    canApply?: (value: PluginMarketplaceHostInstallPreview) => boolean
+  ): Promise<(() => boolean) | undefined> => {
     const requestId = ++previewRequestRef.current
+    previewOperationsRef.current++
     setPreviewBusyKey(listing.pluginKey)
     setActionError(null)
     setError(null)
@@ -157,8 +150,12 @@ export function PluginMarketplaceBrowser({
             pluginKey: listing.pluginKey
           })
       if (mountedRef.current && requestId === previewRequestRef.current) {
+        if (canApply && !canApply(nextPreview)) {
+          return undefined
+        }
         setPreviewMode(update ? 'update' : 'install')
         setPreview(nextPreview)
+        return () => mountedRef.current && requestId === previewRequestRef.current
       }
     } catch (cause) {
       if (mountedRef.current && requestId === previewRequestRef.current) {
@@ -173,48 +170,41 @@ export function PluginMarketplaceBrowser({
         )
       }
     } finally {
+      previewOperationsRef.current--
       if (mountedRef.current && requestId === previewRequestRef.current) {
         setPreviewBusyKey(null)
       }
     }
+    return undefined
   }
 
-  const installPreview = async (): Promise<void> => {
-    if (!preview || installBusy) {
-      return
-    }
-    setInstallBusy(true)
-    setActionError(null)
-    try {
-      const result = await window.api.plugins.installMarketplacePlugin({
-        marketplaceSourceId: preview.marketplaceSourceId,
-        marketplaceCommit: preview.marketplaceCommit,
-        pluginKey: preview.pluginKey,
-        resolvedCommit: preview.resolvedCommit
-      })
-      if (!result.ok) {
-        throw new Error(result.error)
-      }
-      setPreview(null)
-      await onInstalled(result.pluginKey)
-    } catch (cause) {
-      if (mountedRef.current) {
-        setActionError(
-          marketplaceError(
-            cause,
-            translate(
-              'auto.components.settings.PluginMarketplaceBrowser.installFailed',
-              'Could not install this plugin. The reviewed source may have changed.'
-            )
-          )
-        )
-      }
-    } finally {
-      if (mountedRef.current) {
-        setInstallBusy(false)
-      }
-    }
-  }
+  usePluginMarketplaceRequest({
+    search,
+    filter,
+    visibleCount: visibleListings.length,
+    installedCount: installedPlugins.length,
+    loading,
+    errorPresent: error !== null,
+    reload: reloadWithReceipt,
+    refresh: () => refresh(true),
+    isRefreshBusy,
+    readParent: readMarketplaceParent,
+    sourcesOpen,
+    previewOpen: preview !== null,
+    preview,
+    previewBusy: previewBusyKey !== null,
+    isPreviewBusy: () => previewOperationsRef.current > 0,
+    installBusy,
+    installPreview,
+    visibleListings,
+    installedByKey,
+    openPreview,
+    closePreview: () => setPreview(null),
+    setSearch,
+    setFilter,
+    setSourcesOpen,
+    closeSources: () => sourceCloseRef.current?.() ?? false
+  })
 
   const currentVersion = Boolean(
     preview && installedByKey.get(preview.pluginKey)?.source?.contentHash === preview.contentHash
@@ -362,6 +352,7 @@ export function PluginMarketplaceBrowser({
         sources={sources}
         onOpenChange={setSourcesOpen}
         onChanged={loadMarketplaceData}
+        closeRequestRef={sourceCloseRef}
       />
       <PluginMarketplacePreviewDialog
         key={preview ? `${preview.pluginKey}:${preview.contentHash}` : 'closed'}

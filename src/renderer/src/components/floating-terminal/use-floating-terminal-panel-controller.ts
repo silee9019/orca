@@ -43,6 +43,7 @@ export function useFloatingTerminalPanelController({
     open
   })
   const createActions = useFloatingTerminalCreateActions({
+    viewerOpen: open,
     ...storeState,
     ...localState,
     ...items

@@ -2,6 +2,21 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const PLUGIN_MANAGEMENT_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['plugins', 'preferences', 'get'],
+    summary: 'Read plugin system enablement and development paths on the selected runtime',
+    usage: 'orca plugins preferences get [--json]',
+    allowedFlags: [...GLOBAL_FLAGS]
+  },
+  {
+    path: ['plugins', 'preferences', 'update'],
+    summary: 'Save plugin system enablement or development paths and refresh plugin workers',
+    usage: 'orca plugins preferences update --input-file <request.json> | --input-stdin [--json]',
+    notes: [
+      'JSON accepts pluginSystemEnabled and devPluginPaths only. Paths refer to the runtime host. Existing per-plugin consent remains required. The result distinguishes persisted worker settings from rendered UI.'
+    ],
+    allowedFlags: [...GLOBAL_FLAGS, 'input-file', 'input-stdin']
+  },
+  {
     path: ['plugins', 'install'],
     summary: 'Install a pinned Git or local-path plugin on the runtime host',
     usage: 'orca plugins install --input-file <request.json> | --input-stdin [--json]',

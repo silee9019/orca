@@ -1,3 +1,4 @@
+import { useAutomationViewerController } from '../../runtime/automation-viewer-controller'
 import { createAutomationManagementActions } from './automation-management-actions'
 import { createAutomationRunActions } from './automation-run-actions'
 import { createAutomationRunWorkspaceAction } from './automation-run-workspace-action'
@@ -22,6 +23,7 @@ export function useAutomationsPageController() {
   const store = useAutomationsPageStoreState()
   const local = useAutomationsPageLocalState(store)
   const list = useAutomationsPageListState({ store, local })
+  useAutomationViewerController({ local, list })
   const destination = useAutomationsPageDestinationState({ store, local, list })
   const runsDashboard = useAutomationRunsDashboard({
     enabled: local.pageView === 'runs',

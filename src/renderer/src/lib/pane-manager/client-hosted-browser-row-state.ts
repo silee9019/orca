@@ -181,3 +181,5 @@ export function useActiveClientHostedBrowserRowId(
   )
   return useSyncExternalStore(subscribe, getActiveRowId, getNoActiveRowServerSnapshot)
 }
+
+export { subscribe as subscribeClientHostedBrowserRows }

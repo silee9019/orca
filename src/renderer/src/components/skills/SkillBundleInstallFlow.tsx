@@ -1,3 +1,5 @@
+import { useSkillBundleViewerController } from '@/runtime/skill-bundle-viewer-controller'
+import { skillInstallViewerHosts } from '@/runtime/skill-install-viewer-hosts'
 import { useMemo, useState } from 'react'
 import { Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -244,6 +246,47 @@ export function SkillBundleInstallFlow(props: {
   }
 
   const retryIds = retryableSkillIds(result)
+  useSkillBundleViewerController({
+    identity: JSON.stringify([
+      props.shareId,
+      props.version.packageId,
+      props.version.versionId,
+      props.version.packageDigest
+    ]),
+    skillIds: allSkillIds,
+    selectedSkillIds,
+    replaceSkillIds,
+    setSelectedSkillIds,
+    setReplaceSkillIds,
+    destinationPreview,
+    result,
+    retryIds,
+    busy,
+    error,
+    activeOperationId: installProgress.activeOperationId,
+    install,
+    cancelInstall,
+    close: props.onClose,
+    environmentId,
+    setEnvironmentId,
+    scope,
+    setScope,
+    workspace,
+    setWorkspace,
+    executionTarget,
+    setExecutionTarget,
+    providers,
+    setProviders: setProviderChoice,
+    clearDestinationPreview: resetPreview,
+    availableWorkspaces: workspaceChoices.map((choice) => choice.id),
+    ...skillInstallViewerHosts({
+      runtimeEnvironments,
+      runtimeStatus,
+      sshTargetLabels,
+      sshConnectionStates,
+      requiredCapability: SKILL_BUNDLE_INSTALL_CAPABILITY
+    })
+  })
 
   return (
     <>

@@ -6,6 +6,7 @@ import { readJsonInput } from '../json-input'
 import { RuntimeClientError } from '../runtime-client'
 import { pluginMarketplaceGitSourceSchema } from '../../shared/plugins/plugin-marketplace'
 import {
+  PluginPreferencesUpdate,
   PluginInstallParams,
   PluginMarketplacePreviewParams,
   PluginMarketplaceInstallParams,
@@ -43,6 +44,8 @@ function list(method: string): CommandHandler {
 }
 
 export const PLUGIN_MANAGEMENT_HANDLERS: Record<string, CommandHandler> = {
+  'plugins preferences get': list('plugins.getPreferences'),
+  'plugins preferences update': request('plugins.updatePreferences', PluginPreferencesUpdate),
   'plugins install': request('plugins.install', PluginInstallParams),
   'plugins remove': plugin('plugins.remove'),
   'plugins logs': plugin('plugins.getLogs'),

@@ -66,6 +66,10 @@ export type RuntimeServiceCommandSurface = {
   removeDataAccount: RuntimeAccountController['removeData']
   onAccountsChanged: RuntimeAccountController['onChanged']
   observeCodexLogin: RuntimeAccountController['observeCodexLogin']
+  cancelMobileSpeechDownload: RuntimeMobileSpeechCatalog['cancelDownload']
+  getSpeechKeyStatus: RuntimeMobileSpeechCatalog['keyStatus']
+  saveSpeechKey: RuntimeMobileSpeechCatalog['saveKey']
+  clearSpeechKey: RuntimeMobileSpeechCatalog['clearKey']
   listMobileSpeechModels: RuntimeMobileSpeechCatalog['list']
   downloadMobileSpeechModel: RuntimeMobileSpeechCatalog['download']
   deleteMobileSpeechModel: RuntimeMobileSpeechCatalog['delete']
@@ -170,6 +174,10 @@ export function installRuntimeServiceCommandSurface(
     removeDataAccount: accounts.removeData.bind(accounts),
     onAccountsChanged: accounts.onChanged.bind(accounts),
     observeCodexLogin: accounts.observeCodexLogin.bind(accounts),
+    cancelMobileSpeechDownload: speech.cancelDownload.bind(speech),
+    getSpeechKeyStatus: speech.keyStatus.bind(speech),
+    saveSpeechKey: speech.saveKey.bind(speech),
+    clearSpeechKey: speech.clearKey.bind(speech),
     listMobileSpeechModels: speech.list.bind(speech),
     downloadMobileSpeechModel: speech.download.bind(speech),
     deleteMobileSpeechModel: speech.delete.bind(speech),

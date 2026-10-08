@@ -1,3 +1,5 @@
+import { useArtifactViewerController } from '../../runtime/artifact-viewer-controller'
+import { filterArtifactsBySearchQuery } from './artifact-list-search'
 import { useEffect, useState } from 'react'
 import type { ArtifactCloudOperation, ArtifactListItem } from '../../../../shared/artifacts'
 import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
@@ -31,7 +33,6 @@ export default function ArtifactsPage(): React.JSX.Element {
   // capability is granted. Only claim that once settings have actually loaded.
   const publishingBlocked = settings ? settings.artifactSharingEnabled !== true : false
   const [deleting, setDeleting] = useState<{ identity: string; slug: string } | null>(null)
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(null)
   const signedIn = authStatus?.state === 'connected'
   const needsReconnect = authStatus?.state === 'reconnect-required'
   const openAccountSettings = (): void => {
@@ -50,6 +51,17 @@ export default function ArtifactsPage(): React.JSX.Element {
     removeArtifact,
     setError
   } = useArtifactPagination(authStatus, refreshAuth)
+  const { query, setQuery, selectedSlug, setSelectedSlug } = useArtifactViewerController({
+    identity: accountIdentity,
+    slugs: artifacts.map((item) => item.artifact.slug),
+    visibleSlugs: (value) =>
+      filterArtifactsBySearchQuery(artifacts, value).map((item) => item.artifact.slug),
+    refresh: loadArtifacts,
+    loadMore: loadMoreArtifacts,
+    hasMore: Boolean(nextCursor),
+    loading: loading || loadingMore,
+    error
+  })
   const deletingId = deleting?.identity === accountIdentity ? deleting.slug : null
   const selectedArtifact =
     selectedSlug === null
@@ -211,6 +223,7 @@ export default function ArtifactsPage(): React.JSX.Element {
         />
       ) : (
         <ArtifactCollection
+          search={{ query, onChange: setQuery }}
           artifacts={artifacts}
           deletingId={deletingId}
           selectedSlug={selectedSlug}

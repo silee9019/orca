@@ -1,3 +1,6 @@
+import { applySkillsViewerAction } from './skills-viewer-controller'
+import { applyAutomationViewerAction } from './automation-viewer-controller'
+import { applyArtifactViewerAction } from './artifact-viewer-controller'
 import type { AccountViewerApi } from '../../../shared/account-viewer-contract'
 import { applyResourceManagerViewerAction } from './resource-manager-viewer-actions'
 import { applyUsageViewerAction } from './usage-viewer-actions'
@@ -8,6 +11,12 @@ export function registerAccountViewerBridge(api: AccountViewerApi, unsubs: (() =
     api.onRequest((request) => {
       const apply = async (): Promise<unknown> => {
         switch (request.command.domain) {
+          case 'skills':
+            return applySkillsViewerAction(request.command.action)
+          case 'automation':
+            return applyAutomationViewerAction(request.command.action)
+          case 'artifact':
+            return applyArtifactViewerAction(request.command.action)
           case 'resource':
             return applyResourceManagerViewerAction(request.command.action)
           case 'usage':

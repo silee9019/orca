@@ -1,3 +1,6 @@
+import { useBrowserReloadMenuCommands } from './use-browser-reload-menu-commands'
+import { useBrowserToolbarHistoryCommands } from './use-browser-toolbar-history-commands'
+import type { BrowserNavigationControls } from './browser-navigation-control-row'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { ArtifactPublishButton } from '@/components/artifacts/ArtifactPublishButton'
 import { translate } from '@/i18n/i18n'
@@ -115,40 +118,51 @@ export function BrowserPageToolbar({
         ? ('annotate' as const)
         : undefined
 
+  useBrowserReloadMenuCommands(browserPageId, isActive, reloadMenuOpen, setReloadMenuOpen)
+  const controls: BrowserNavigationControls = {
+    canGoBack: canGoBack || Boolean(convertedFrom),
+    canGoForward: canGoForward || Boolean(convertedTo),
+    loading,
+    // Why the fallbacks: guest history cannot survive a conversion (the guest was replaced),
+    // so once it runs out Back returns across the conversion — and Forward re-crosses it —
+    // instead of going dead.
+    goBack: () => {
+      if (canGoBack) {
+        webviewRef.current?.goBack()
+        return
+      }
+      if (convertedFrom) {
+        returnAcrossBrowserPageConversion(browserPageId, convertedFrom)
+      }
+    },
+    goForward: () => {
+      if (canGoForward) {
+        webviewRef.current?.goForward()
+        return
+      }
+      if (convertedTo) {
+        advanceAcrossBrowserPageConversion(browserPageId, convertedTo)
+      }
+    },
+    reload: () => runReloadTrigger('button'),
+    navigate: navigateToUrl
+  }
+  useBrowserToolbarHistoryCommands({
+    page: browserPageId,
+    controls,
+    guestAvailable: () => webviewRef.current !== null,
+    nativeBack: canGoBack,
+    nativeForward: canGoForward
+  })
+
   return (
     <BrowserChromeToolbar
       showTourAnchors
       pinnedStage={pinnedStage}
-      controls={{
-        canGoBack: canGoBack || Boolean(convertedFrom),
-        canGoForward: canGoForward || Boolean(convertedTo),
-        loading,
-        // Why the fallbacks: guest history cannot survive a conversion (the guest was replaced),
-        // so once it runs out Back returns across the conversion — and Forward re-crosses it —
-        // instead of going dead.
-        goBack: () => {
-          if (canGoBack) {
-            webviewRef.current?.goBack()
-            return
-          }
-          if (convertedFrom) {
-            returnAcrossBrowserPageConversion(browserPageId, convertedFrom)
-          }
-        },
-        goForward: () => {
-          if (canGoForward) {
-            webviewRef.current?.goForward()
-            return
-          }
-          if (convertedTo) {
-            advanceAcrossBrowserPageConversion(browserPageId, convertedTo)
-          }
-        },
-        reload: () => runReloadTrigger('button'),
-        navigate: navigateToUrl
-      }}
+      controls={controls}
       addressSlot={
         <BrowserAddressBar
+          commandOwner={{ page: browserPageId, active: isActive }}
           value={addressBarValue}
           onChange={setAddressBarValue}
           onSubmit={submitAddressBar}

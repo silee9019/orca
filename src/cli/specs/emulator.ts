@@ -3,6 +3,119 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['emulator', 'pointer-view'],
+    summary: 'Run a bounded pointer sequence through the exact emulator screen owner',
+    usage:
+      'orca emulator pointer-view --worktree <selector> --tab-id <id> (--text <json> | --text-stdin) [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'text', 'text-stdin']
+  },
+  {
+    path: ['emulator', 'session-view'],
+    summary: 'Attach or shut down through the exact mounted emulator pane owner',
+    usage:
+      'orca emulator session-view --worktree <selector> --tab-id <id> --action <attach|shutdown> --device <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'action', 'device']
+  },
+  {
+    path: ['emulator', 'focus-group'],
+    summary: 'Focus the exact owning group of an existing simulator tab',
+    usage: 'orca emulator focus-group --worktree <selector> --tab-id <id> --group-id <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'group-id']
+  },
+  {
+    path: ['emulator', 'select-tab'],
+    summary: 'Select an exact simulator tab through the existing Palette owner',
+    usage:
+      'orca emulator select-tab --worktree <selector> --tab-id <id> --execution-host <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'execution-host']
+  },
+  {
+    path: ['emulator', 'screen-key'],
+    summary: 'Send a key through the existing screen capture owner',
+    usage:
+      'orca emulator screen-key --worktree <selector> --tab-id <id> --key <value> --shift [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'key', 'shift']
+  },
+  {
+    path: ['emulator', 'screen-paste'],
+    summary: 'Paste through the existing screen capture, batching and cancellation owner',
+    usage:
+      'orca emulator screen-paste --worktree <selector> --tab-id <id> --text <value> --text-stdin [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id', 'text', 'text-stdin']
+  },
+  {
+    path: ['emulator', 'rotate-view'],
+    summary: 'Rotate through the pane owner and update its visual orientation',
+    usage: 'orca emulator rotate-view --worktree <selector> --tab-id <id>  [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'tab-id']
+  },
+  {
+    path: ['emulator', 'wheel'],
+    summary: 'Scroll an existing emulator viewer using its wheel input owner',
+    usage:
+      'orca emulator wheel --worktree <selector> --tab-id <id> --x <pixels> --y <pixels> --delta-y <pixels> [--delta-x <pixels>] [--delta-mode <0|1|2>] [--json]',
+    allowedFlags: [
+      ...GLOBAL_FLAGS,
+      'worktree',
+      'tab-id',
+      'x',
+      'y',
+      'delta-x',
+      'delta-y',
+      'delta-mode'
+    ]
+  },
+  {
+    path: ['emulator', 'focus'],
+    summary: 'Focus the host viewer simulator pane and await rendered state read-back',
+    usage: 'orca emulator focus --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'key'],
+    summary: 'Send a named or printable key using the active device control stream',
+    usage: 'orca emulator key <key> --worktree <selector> [--shift] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'key', 'worktree', 'shift'],
+    positionalArgs: ['key']
+  },
+  {
+    path: ['emulator', 'control'],
+    summary: 'Run bounded key, touch, wait and blur events with held input released on completion',
+    usage: 'orca emulator control (--text <json> | --text-stdin) --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'text', 'text-stdin', 'worktree']
+  },
+  {
+    path: ['emulator', 'stream'],
+    summary: 'Stream JSON frame events until the duration expires or SIGINT cancels observation',
+    usage:
+      'orca emulator stream --codec <mjpeg|h264> --worktree <selector> [--timeout-ms <1..60000>]',
+    allowedFlags: [...GLOBAL_FLAGS, 'codec', 'worktree', 'timeout-ms']
+  },
+  {
+    path: ['emulator', 'observe'],
+    summary: 'Capture a JPEG frame or an H264 keyframe with codec metadata from the active device',
+    usage: 'orca emulator observe --worktree <selector> [--timeout-ms <1..60000>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree', 'timeout-ms']
+  },
+  {
+    path: ['emulator', 'availability'],
+    summary: 'Check emulator backend availability on the execution host',
+    usage: 'orca emulator availability [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'simulators'],
+    summary: 'List iOS simulators on the execution host',
+    usage: 'orca emulator simulators [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
+    path: ['emulator', 'detach'],
+    summary: 'Remove the workspace active-device association without stopping the device',
+    usage: 'orca emulator detach --worktree <selector> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'worktree']
+  },
+  {
     path: ['emulator', 'list'],
     summary: 'List available/running emulators (Orca-managed + raw serve-sim)',
     usage: 'orca emulator list [--worktree <selector>] [--json]',
@@ -31,8 +144,9 @@ export const EMULATOR_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['emulator', 'type'],
     summary: 'Type text (US ASCII only)',
-    usage: 'orca emulator type <text> [--device <id>] [--worktree <selector>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'text', 'device', 'emulator', 'worktree'],
+    usage:
+      'orca emulator type (<text> | --text-stdin) [--device <id>] [--worktree <selector>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'text', 'text-stdin', 'device', 'emulator', 'worktree'],
     positionalArgs: ['text']
   },
   {

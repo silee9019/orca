@@ -20,7 +20,7 @@ export type OwnedSkillShares = {
   loading: boolean
   error: string | null
   busyShareId: string | null
-  refresh: () => void
+  refresh: () => Promise<void>
   revoke: (share: SkillCloudOwnedShare) => Promise<void>
 }
 
@@ -91,7 +91,7 @@ export function useOwnedSkillShares(): OwnedSkillShares {
     loading,
     error,
     busyShareId,
-    refresh: () => void load(),
+    refresh: load,
     revoke
   }
 }

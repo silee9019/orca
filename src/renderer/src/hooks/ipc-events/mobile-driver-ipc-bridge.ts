@@ -1,3 +1,4 @@
+import { attachBrowserObservationOwner } from '@/runtime/browser-observation-request'
 import {
   hydrateBrowserDrivers,
   setDriverForBrowserPage
@@ -49,6 +50,13 @@ export function registerMobileDriverIpcBridge(
   let mobileStateHydrated = isRuntimeEnvironmentActive()
   const pendingMobileStateEvents: PendingMobileStateEvent[] = []
   let disposed = false
+  let driverSnapshotAccepted = false
+  const disposeObservation = attachBrowserObservationOwner(
+    'driver',
+    isRuntimeEnvironmentActive,
+    () => mobileStateHydrated && driverSnapshotAccepted
+  )
+  unsubs.push(disposeObservation)
 
   const applyPendingMobileStateEvents = (): void => {
     for (const pending of pendingMobileStateEvents) {
@@ -196,6 +204,7 @@ export function registerMobileDriverIpcBridge(
         hydrateDrivers(drivers)
         hydrateBrowserDrivers(browserDrivers)
         hydrateBrowserRemoteViewerPages(remoteViewerPages)
+        driverSnapshotAccepted = true
         mobileStateHydrated = true
         applyPendingMobileStateEvents()
       })
@@ -211,6 +220,7 @@ export function registerMobileDriverIpcBridge(
 
   return () => {
     disposed = true
+    disposeObservation()
     pendingMobileStateEvents.length = 0
     pendingClientHostedRowEvents.length = 0
   }

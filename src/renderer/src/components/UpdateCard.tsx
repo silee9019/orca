@@ -1,3 +1,4 @@
+import { useAppSurfaceControl } from '../hooks/ipc-events/app-surface-ipc-bridge'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import type { ChangelogData } from '../../../shared/update-status-types'
@@ -103,18 +104,6 @@ export function UpdateCard(): React.JSX.Element | null {
     [clearAnimationTimers]
   )
   const cachedVersion = versionRef.current
-  if (
-    !isUpdateCardVisible({
-      status,
-      dismissedVersion,
-      cachedVersion,
-      updateUserInitiatedCycle,
-      autoDismissed,
-      collapsed
-    })
-  ) {
-    return null
-  }
 
   const handleUpdate = (): void => {
     hasStartedDownload.current = true
@@ -207,6 +196,54 @@ export function UpdateCard(): React.JSX.Element | null {
     } else {
       handleDismissWithAnimation()
     }
+  }
+
+  useAppSurfaceControl('update-card', (input) => {
+    if (input.kind !== 'update-card') {
+      return
+    }
+    if (input.action === 'status') {
+      return { status, collapsed, reassuranceSeen, installError }
+    }
+    switch (input.action) {
+      case 'update':
+        if (status.state !== 'available' && status.state !== 'error') {
+          throw new Error('No update is available')
+        }
+        handleUpdate()
+        break
+      case 'retry-install':
+        if (
+          status.state !== 'downloaded' &&
+          !(status.state === 'error' && status.retryAction === 'install')
+        ) {
+          throw new Error('No update is ready')
+        }
+        handleInstallRetry()
+        break
+      case 'dismiss':
+        handleDismissWithAnimation()
+        break
+      case 'collapse':
+        handleCollapseWithAnimation()
+        break
+      case 'reassurance':
+        markReassuranceSeen()
+        break
+    }
+    return { state: 'requested' }
+  })
+  if (
+    !isUpdateCardVisible({
+      status,
+      dismissedVersion,
+      cachedVersion,
+      updateUserInitiatedCycle,
+      autoDismissed,
+      collapsed
+    })
+  ) {
+    return null
   }
 
   const cardContent = (

@@ -17,6 +17,8 @@ export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'plugins-management',
     keys: [
+      'plugins preferences get',
+      'plugins preferences update',
       'plugins install',
       'plugins remove',
       'plugins logs',
@@ -37,6 +39,7 @@ export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'skills-managed',
     keys: [
+      'skills viewer',
       'skills delete-supported',
       'skills install-share',
       'skills install-package',
@@ -75,6 +78,7 @@ export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'automation-extensions',
     keys: [
+      'automations viewer',
       'automations external list',
       'automations external runs',
       'automations external create',

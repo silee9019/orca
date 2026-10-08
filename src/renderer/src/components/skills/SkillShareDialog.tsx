@@ -1,3 +1,5 @@
+import { useSkillShareViewerController } from '@/runtime/skill-share-viewer-controller'
+import { useSkillsViewerDialog } from '@/runtime/skills-viewer-controller'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -247,6 +249,33 @@ export function SkillShareDialog({
     await window.api.ui.writeClipboardText(shareUrl)
     toast.success(translate('auto.components.skills.SkillShareDialog.copied', 'Share link copied'))
   }
+
+  useSkillsViewerDialog('share', open, publishing, () => {
+    void close()
+  })
+  useSkillShareViewerController({
+    open,
+    skillIds: selectedSkills.map((skill) => skill.id),
+    preview,
+    hasCloudAccount,
+    releaseNotes,
+    setReleaseNotes,
+    preparing,
+    publishing,
+    cancelling,
+    progress,
+    shareUrl,
+    error,
+    publish,
+    cancelPublish,
+    copyLink,
+    close,
+    manageLinks: async () => {
+      openSettingsTarget({ pane: 'share-skills', repoId: null })
+      openSettingsPage()
+      await close()
+    }
+  })
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !publishing && void close()}>

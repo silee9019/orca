@@ -1,5 +1,12 @@
 import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
 import type { ProjectFilterResult } from '../../shared/project-filter'
+import type { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
+import type { VoiceViewerOperation, VoiceViewerResult } from '../../shared/voice-viewer'
+import type {
+  SearchSettingsViewerCommand,
+  SearchSettingsViewerResult
+} from '../../shared/search-settings-viewer'
 import type { SleepingAgentLaunchConfig } from '../../shared/agent-session-resume'
 import type { TerminalPaneSplitSource } from '../../shared/feature-education-telemetry'
 import type { TerminalRevealIdentity } from '../../shared/terminal-reveal-identity'
@@ -25,6 +32,9 @@ type DriverState = RuntimeTerminalDriverState
 
 export type RuntimeNotifier = {
   projectFilter?(command: ProjectFilterOperation): Promise<ProjectFilterResult>
+  browserViewer?(command: BrowserViewerCommand): Promise<BrowserViewerResult>
+  voiceViewer?(command: VoiceViewerOperation): Promise<VoiceViewerResult>
+  searchSettingsViewer?(command: SearchSettingsViewerCommand): Promise<SearchSettingsViewerResult>
   automationsChanged?(payload: {
     selector?: { kind: 'self' } | { kind: 'ssh'; targetId: string } | { kind: 'orphan' }
     reason?: 'definition' | 'run' | 'usage'

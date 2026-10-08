@@ -1,3 +1,4 @@
+import { APP_SURFACE_COMMAND_SPECS } from './app-surface'
 import { APP_ASSET_COMMAND_SPECS } from './app-assets'
 import { APP_SUPPORT_COMMAND_SPECS } from './app-support'
 import type { CommandSpec } from '../args'
@@ -209,5 +210,6 @@ export const APP_LIFECYCLE_COMMAND_SPECS: CommandSpec[] = [
     ]
   },
   ...APP_SUPPORT_COMMAND_SPECS,
+  ...APP_SURFACE_COMMAND_SPECS,
   ...APP_ASSET_COMMAND_SPECS
 ]

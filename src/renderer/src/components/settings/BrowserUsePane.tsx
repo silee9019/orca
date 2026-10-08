@@ -23,10 +23,12 @@ import { BrowserUseSkillStep } from './BrowserUseSkillStep'
 import { BrowserUseCookieImportStep } from './BrowserUseCookieImportStep'
 import { buildSkillCommandForRuntime } from './CliSkillRuntimeSetup'
 import { translate } from '@/i18n/i18n'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { getBrowserSettingsHostId } from '@/store/slices/browser/browser-host-state'
 
 type BrowserUseSetupProps = {
-  onConfigureMoreBrowsers?: () => void
-  onOpenComputerUse?: () => void
+  onConfigureMoreBrowsers?: () => void | Promise<boolean>
+  onOpenComputerUse?: () => void | Promise<boolean>
 }
 
 export function BrowserUseSetup({
@@ -50,11 +52,15 @@ export function BrowserUseSetup({
     return localStorage.getItem(BROWSER_USE_ENABLED_STORAGE_KEY) === '1'
   })
 
-  const toggleBrowserUse = (value: boolean): void => {
+  const recordBrowserUseSetup = async (): Promise<void> => {
+    await useAppStore.getState().recordFeatureInteraction('agent-browser-setup')
+  }
+
+  const toggleBrowserUse = async (value: boolean): Promise<void> => {
     setBrowserUseEnabled(value)
     localStorage.setItem(BROWSER_USE_ENABLED_STORAGE_KEY, value ? '1' : '0')
     if (value) {
-      useAppStore.getState().recordFeatureInteraction('agent-browser-setup')
+      await recordBrowserUseSetup()
     }
   }
 
@@ -72,11 +78,55 @@ export function BrowserUseSetup({
     installed: skillDetected,
     loading: skillLoading,
     error: skillError,
-    refresh: refreshSkill
+    refresh: refreshSkill,
+    settled: skillSettled,
+    installedUnverifiable: skillUnverifiable
   } = useInstalledAgentSkill(ORCA_CLI_SKILL_NAME, {
     enabled: browserUseEnabled,
     discoveryTarget: activeSkillRuntime.discoveryTarget,
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
+  })
+
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      [
+        'browser-use-status',
+        'browser-use-enabled',
+        'browser-use-refresh',
+        'browser-use-install-intent',
+        'browser-use-configure',
+        'browser-use-computer'
+      ].includes(command.action),
+    apply: async (command) => {
+      if (command.action === 'browser-use-enabled') {
+        await toggleBrowserUse(command.enabled)
+      } else if (command.action === 'browser-use-install-intent') {
+        if (!browserUseEnabled || activeSkillRuntime.installDisabledReason) {
+          throw new Error('browser_use_setup_disabled')
+        }
+        await recordBrowserUseSetup()
+      } else if (command.action === 'browser-use-refresh') {
+        if (!browserUseEnabled) {
+          throw new Error('browser_use_refresh_unacknowledged')
+        }
+        await refreshSkill()
+      } else if (command.action === 'browser-use-configure') {
+        if (!browserUseEnabled || (await onConfigureMoreBrowsers?.()) !== true) {
+          throw new Error('browser_use_configure_unacknowledged')
+        }
+      } else if (command.action === 'browser-use-computer') {
+        if (!browserUseEnabled || (await onOpenComputerUse?.()) !== true) {
+          throw new Error('browser_use_navigation_unacknowledged')
+        }
+      }
+    },
+    read: () => ({
+      hostId: getBrowserSettingsHostId(useAppStore.getState()),
+      browserUseEnabled,
+      skillDetected,
+      skillLoading,
+      skillScanSucceeded: skillSettled && !skillUnverifiable && !skillError
+    })
   })
 
   const isImportingDefault =
@@ -178,9 +228,7 @@ export function BrowserUseSetup({
             disabled={skillDisabled}
             terminalShellOverride={activeSkillRuntime.terminalShellOverride}
             terminalRuntime={activeSkillRuntime.agentRuntime}
-            onBeforeOpenTerminal={() => {
-              useAppStore.getState().recordFeatureInteraction('agent-browser-setup')
-            }}
+            onBeforeOpenTerminal={recordBrowserUseSetup}
             onRecheck={refreshSkill}
           />
         </SearchableSetting>

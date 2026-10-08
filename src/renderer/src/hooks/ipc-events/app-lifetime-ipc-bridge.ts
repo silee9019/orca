@@ -1,5 +1,9 @@
+import { registerAppSurfaceIpcBridge } from './app-surface-ipc-bridge'
 import { attachProjectFilterBridge } from '@/runtime/project-filter-bridge'
 import { registerAccountViewerBridge } from '../../runtime/account-viewer-bridge'
+import { attachBrowserViewerBridge } from '@/runtime/browser-viewer-bridge'
+import { attachVoiceViewerBridge } from '@/runtime/voice-viewer-bridge'
+import { attachSearchSettingsViewerBridge } from '@/runtime/search-settings-viewer-bridge'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/runtime-host-status'
 import { getTabIdsAwaitingHostHydrationRemount } from '@/lib/parked-terminal-host-hydration'
 import { emitAutomationsChangedWindowEvent } from '@/lib/automations-changed-window-event'
@@ -58,12 +62,15 @@ export type IpcEventsCleanupPhase =
 export function installAppLifetimeIpcEvents(
   onCleanupPhase?: (phase: IpcEventsCleanupPhase) => void
 ): () => void {
-  const unsubs: (() => void)[] = []
+  const unsubs: (() => void)[] = [registerAppSurfaceIpcBridge()]
+  unsubs.push(attachSearchSettingsViewerBridge())
   const directSshRuntime = createDirectSshBridgeRuntime()
   const backgroundWakeDispatcher = createBackgroundSleepingAgentWakeDispatcher()
   unsubs.push(backgroundWakeDispatcher.dispose)
   unsubs.push(attachMobileMarkdownBridge())
   unsubs.push(attachProjectFilterBridge())
+  unsubs.push(attachBrowserViewerBridge(window.api.ui))
+  unsubs.push(attachVoiceViewerBridge())
   unsubs.push(
     window.api.automations.onChanged((payload) => emitAutomationsChangedWindowEvent(payload))
   )

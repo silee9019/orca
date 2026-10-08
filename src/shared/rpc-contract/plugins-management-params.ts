@@ -26,3 +26,10 @@ export const PluginMarketplaceInstallParams = PluginMarketplacePreviewParams.ext
   marketplaceCommit: z.string().regex(PLUGIN_COMMIT_PATTERN),
   resolvedCommit: z.string().regex(PLUGIN_COMMIT_PATTERN)
 })
+
+export const PluginPreferencesUpdate = z
+  .strictObject({
+    pluginSystemEnabled: z.boolean().optional(),
+    devPluginPaths: z.array(z.string().trim().min(1).max(32_768)).max(128).optional()
+  })
+  .refine((value) => Object.keys(value).length > 0, 'At least one plugin preference is required')

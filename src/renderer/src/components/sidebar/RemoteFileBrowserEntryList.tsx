@@ -1,3 +1,4 @@
+import { focusRemoteFileBrowserInput } from './remote-file-browser-input-focus'
 import type React from 'react'
 import { useMemo, type RefObject } from 'react'
 import { ChevronRight, Folder, LoaderCircle } from 'lucide-react'
@@ -98,10 +99,7 @@ export function RemoteFileBrowserEntryList({
                 type="button"
                 onClick={() => handleRowClick(entry)}
                 onDoubleClick={() => handleRowDoubleClick(entry)}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  inputRef.current?.focus()
-                }}
+                onMouseDown={(event) => focusRemoteFileBrowserInput(inputRef, event)}
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors cursor-pointer',
                   'hover:bg-accent/60'

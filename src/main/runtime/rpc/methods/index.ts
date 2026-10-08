@@ -26,6 +26,10 @@ import { DESKTOP_PET_METHODS } from './desktop-pet'
 import { DESKTOP_STAR_PROMPT_METHODS } from './desktop-star-prompt'
 import { DESKTOP_SHELL_METHODS } from './desktop-shell'
 import { APP_VAULT_METHODS } from './app-vault'
+import { BROWSER_PROFILE_FILE_METHODS } from './browser-profile-file'
+import { BROWSER_VIEWER_METHODS } from './browser-viewer'
+import { SEARCH_SETTINGS_VIEWER_METHODS } from './search-settings-viewer'
+import { browserReaderMethods } from './browser-readers'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -60,6 +64,10 @@ import { LINEAR_AGENT_ACCESS_METHODS } from './linear-agent-access'
 import { JIRA_METHODS } from './jira'
 import { SSH_METHODS } from './ssh'
 import { SPEECH_METHODS } from './speech'
+import { SPEECH_CONTROL_METHODS } from './speech-control'
+import { SPEECH_TRANSCRIPTION_METHODS } from './speech-transcription'
+import { EPHEMERAL_VM_METHODS } from './ephemeral-vm'
+import { VOICE_VIEWER_METHODS } from './voice-viewer'
 import { CLIENT_UI_METHODS } from './client-ui'
 import { CLIENT_EVENT_METHODS } from './client-events'
 import { WORKSPACE_PORT_METHODS } from './workspace-ports'
@@ -109,6 +117,8 @@ export const ALL_RPC_METHODS = [
   ...DESKTOP_STAR_PROMPT_METHODS,
   ...DESKTOP_SHELL_METHODS,
   ...APP_VAULT_METHODS,
+  ...SEARCH_SETTINGS_VIEWER_METHODS,
+  ...browserReaderMethods,
   ...STATUS_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
@@ -123,6 +133,8 @@ export const ALL_RPC_METHODS = [
   ...TERMINAL_METHODS,
   ...TERMINAL_ORPHAN_METHODS,
   ...BROWSER_CORE_METHODS,
+  ...BROWSER_PROFILE_FILE_METHODS,
+  ...BROWSER_VIEWER_METHODS,
   ...BROWSER_IDENTITY_METHODS,
   ...BROWSER_SCREENCAST_METHODS,
   ...BROWSER_EXTRA_METHODS,
@@ -151,6 +163,10 @@ export const ALL_RPC_METHODS = [
   ...JIRA_METHODS,
   ...SSH_METHODS,
   ...SPEECH_METHODS,
+  ...SPEECH_CONTROL_METHODS,
+  ...SPEECH_TRANSCRIPTION_METHODS,
+  ...EPHEMERAL_VM_METHODS,
+  ...VOICE_VIEWER_METHODS,
   ...WORKSPACE_PORT_METHODS,
   ...PLUGIN_METHODS,
   ...SKILL_METHODS,

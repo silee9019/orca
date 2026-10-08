@@ -1,4 +1,6 @@
-import { useCallback, useRef } from 'react'
+export { useRemoteBrowserPageInputQueue } from './use-remote-browser-input-queue'
+import { useCallback } from 'react'
+import type { BrowserRemotePaneInputCommand } from '../../../../../shared/rpc-contract/browser-remote-pane-params'
 import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import { isEditableKeyboardTarget } from '../host-guest/browser-keyboard'
 import {
@@ -15,53 +17,9 @@ import type { BrowserScreencastFrameMetadata } from '../../../../../shared/brows
 import {
   getRemoteBrowserMouseButton,
   resolveRemoteBrowserCssViewport,
-  type PendingRemoteBrowserWheel,
   type RemoteBrowserPaneNotice,
   type RemoteBrowserRuntimeTarget
 } from './remote-browser-page-input-model'
-
-export function useRemoteBrowserPageInputQueue(): {
-  enqueueRemoteInput: (operation: () => Promise<void>) => Promise<void>
-  clearPendingRemoteWheel: () => void
-  resetRemoteInputQueue: () => void
-  pendingRemoteWheelRef: React.MutableRefObject<PendingRemoteBrowserWheel | null>
-  remoteWheelFrameRef: React.MutableRefObject<number | null>
-  remoteWheelInFlightRef: React.MutableRefObject<boolean>
-} {
-  const remoteInputQueueRef = useRef<Promise<unknown>>(undefined!)
-  remoteInputQueueRef.current ??= Promise.resolve()
-  const pendingRemoteWheelRef = useRef<PendingRemoteBrowserWheel | null>(null)
-  const remoteWheelFrameRef = useRef<number | null>(null)
-  const remoteWheelInFlightRef = useRef(false)
-
-  const enqueueRemoteInput = useCallback((operation: () => Promise<void>): Promise<void> => {
-    const next = remoteInputQueueRef.current.catch(() => {}).then(operation)
-    remoteInputQueueRef.current = next.catch(() => {})
-    return next
-  }, [])
-
-  const resetRemoteInputQueue = useCallback((): void => {
-    remoteInputQueueRef.current = Promise.resolve()
-  }, [])
-
-  const clearPendingRemoteWheel = useCallback((): void => {
-    pendingRemoteWheelRef.current = null
-    remoteWheelInFlightRef.current = false
-    if (remoteWheelFrameRef.current !== null) {
-      window.cancelAnimationFrame(remoteWheelFrameRef.current)
-      remoteWheelFrameRef.current = null
-    }
-  }, [])
-
-  return {
-    enqueueRemoteInput,
-    clearPendingRemoteWheel,
-    resetRemoteInputQueue,
-    pendingRemoteWheelRef,
-    remoteWheelFrameRef,
-    remoteWheelInFlightRef
-  }
-}
 
 export function useRemoteBrowserPageInput({
   busy,
@@ -100,6 +58,10 @@ export function useRemoteBrowserPageInput({
     clientX: number
     clientY: number
   }) => { x: number; y: number } | null
+  performRemoteInput: (
+    command: BrowserRemotePaneInputCommand,
+    isCurrent: () => boolean
+  ) => Promise<void>
   handleRemotePointerDown: (event: React.PointerEvent<HTMLImageElement>) => void
   handleRemotePointerUp: (event: React.PointerEvent<HTMLImageElement>) => void
   handleRemoteScreenshotKeyDown: (event: React.KeyboardEvent<HTMLImageElement>) => void
@@ -129,129 +91,129 @@ export function useRemoteBrowserPageInput({
     [frameMetadata, imageRef, remoteCssViewportSizeRef, remoteViewportRef, remoteViewportSizeRef]
   )
 
-  const handleRemotePointerDown = (event: React.PointerEvent<HTMLImageElement>): void => {
-    if (busy) {
-      return
-    }
+  const runPointer = (
+    event: { clientX: number; clientY: number; button: number; preventDefault: () => void },
+    action: 'down' | 'up' | 'click',
+    isCurrent: () => boolean = () => true
+  ): Promise<void> => {
     const target = runtimeTarget()
     const pageId = lifecycle.tokens.remotePage
     const image = imageRef.current
     const operationToken = pageId ? createRemoteOperationToken(pageId) : null
     const point = getRemoteImagePoint(event)
     const button = getRemoteBrowserMouseButton(event.button)
-    if (button === 'right') {
-      return
-    }
-    if (!target || !pageId || !image || !operationToken || !point || !button) {
-      return
+    if (
+      busy ||
+      !target ||
+      !pageId ||
+      !image ||
+      !operationToken ||
+      !point ||
+      !button ||
+      button === 'right'
+    ) {
+      return Promise.reject(new Error('remote_browser_pointer_unavailable'))
     }
     event.preventDefault()
-    image.focus()
+    if (action !== 'up') {
+      image.focus()
+    }
     setPaneNotice(null)
-    enqueueRemoteInput(async () => {
-      if (!isCurrentRemoteOperationToken(operationToken)) {
-        return
+    return enqueueRemoteInput(async () => {
+      const current = (): boolean => isCurrent() && isCurrentRemoteOperationToken(operationToken)
+      if (!current()) {
+        throw new Error('remote_browser_input_cancelled')
       }
+      const params = { worktree: runtimeWorktree, page: pageId }
+      const options = { timeoutMs: 15_000, suppressFeatureInteraction: true }
+      let releaseRequired = false
       try {
-        const params = { worktree: runtimeWorktree, page: pageId }
         await callRuntimeRpc(
           target,
           'browser.mouseMove',
           { ...params, x: point.x, y: point.y },
-          { timeoutMs: 15_000, suppressFeatureInteraction: true }
+          options
         )
+        if (!current()) {
+          throw new Error('remote_browser_input_cancelled')
+        }
+        releaseRequired = action === 'click'
         await callRuntimeRpc(
           target,
-          'browser.mouseDown',
+          action === 'up' ? 'browser.mouseUp' : 'browser.mouseDown',
           { ...params, button },
-          { timeoutMs: 15_000, suppressFeatureInteraction: true }
+          options
         )
+        if (action === 'click') {
+          await callRuntimeRpc(target, 'browser.mouseUp', { ...params, button }, options)
+          releaseRequired = false
+        }
+        if (!current()) {
+          throw new Error('remote_browser_input_cancelled_effect_unknown')
+        }
+        if (action !== 'down') {
+          scheduleRemoteTabInfoRefresh(operationToken, 250)
+        }
       } catch (error) {
         if (isCurrentRemoteOperationToken(operationToken)) {
           if (isRemoteBrowserPageMissingError(error)) {
             closeMissingRemotePage(pageId)
-            return
+          } else {
+            setPaneNotice({
+              kind: 'consequence',
+              text: error instanceof Error ? error.message : 'Remote mouse input failed.'
+            })
           }
-          setPaneNotice({
-            kind: 'consequence',
-            text: error instanceof Error ? error.message : 'Remote mouse input failed.'
-          })
         }
+        if (releaseRequired) {
+          try {
+            await callRuntimeRpc(target, 'browser.mouseUp', { ...params, button }, options)
+          } catch {
+            throw new Error('remote_browser_mouse_release_unverifiable')
+          }
+        }
+        throw error
       }
     })
   }
-
+  const handleRemotePointerDown = (event: React.PointerEvent<HTMLImageElement>): void => {
+    void runPointer(event, 'down').catch(() => {})
+  }
   const handleRemotePointerUp = (event: React.PointerEvent<HTMLImageElement>): void => {
-    if (busy) {
-      return
-    }
-    const target = runtimeTarget()
-    const pageId = lifecycle.tokens.remotePage
-    const operationToken = pageId ? createRemoteOperationToken(pageId) : null
-    const point = getRemoteImagePoint(event)
-    const button = getRemoteBrowserMouseButton(event.button)
-    if (button === 'right') {
-      return
-    }
-    if (!target || !pageId || !operationToken || !point || !button) {
-      return
-    }
-    event.preventDefault()
-    setPaneNotice(null)
-    enqueueRemoteInput(async () => {
-      if (!isCurrentRemoteOperationToken(operationToken)) {
-        return
-      }
-      try {
-        const params = { worktree: runtimeWorktree, page: pageId }
-        await callRuntimeRpc(
-          target,
-          'browser.mouseMove',
-          { ...params, x: point.x, y: point.y },
-          { timeoutMs: 15_000, suppressFeatureInteraction: true }
-        )
-        await callRuntimeRpc(
-          target,
-          'browser.mouseUp',
-          { ...params, button },
-          { timeoutMs: 15_000, suppressFeatureInteraction: true }
-        )
-        scheduleRemoteTabInfoRefresh(operationToken, 250)
-      } catch (error) {
-        if (isCurrentRemoteOperationToken(operationToken)) {
-          if (isRemoteBrowserPageMissingError(error)) {
-            closeMissingRemotePage(pageId)
-            return
-          }
-          setPaneNotice({
-            kind: 'consequence',
-            text: error instanceof Error ? error.message : 'Remote mouse input failed.'
-          })
-        }
-      }
-    })
+    void runPointer(event, 'up').catch(() => {})
   }
 
-  const handleRemoteScreenshotKeyDown = (event: React.KeyboardEvent<HTMLImageElement>): void => {
+  const runKey = (
+    event: {
+      target: EventTarget | null
+      key: string
+      metaKey: boolean
+      ctrlKey: boolean
+      altKey: boolean
+      shiftKey: boolean
+      preventDefault: () => void
+    },
+    isCurrent: () => boolean = () => true
+  ): Promise<void> => {
     if (isEditableKeyboardTarget(event.target)) {
-      return
+      return Promise.reject(new Error('remote_browser_key_unavailable'))
     }
     const target = runtimeTarget()
     const pageId = lifecycle.tokens.remotePage
     const operationToken = pageId ? createRemoteOperationToken(pageId) : null
     if (!target || !pageId || !operationToken) {
-      return
+      return Promise.reject(new Error('remote_browser_key_unavailable'))
     }
     const params = { worktree: runtimeWorktree, page: pageId }
     const key = getRemoteBrowserKeyboardShortcut(event) ?? getRemoteBrowserKeypressKey(event)
     if (!key) {
-      return
+      return Promise.reject(new Error('remote_browser_key_unavailable'))
     }
     event.preventDefault()
     setPaneNotice(null)
-    enqueueRemoteInput(async () => {
-      if (!isCurrentRemoteOperationToken(operationToken)) {
-        return
+    return enqueueRemoteInput(async () => {
+      if (!isCurrent() || !isCurrentRemoteOperationToken(operationToken)) {
+        throw new Error('remote_browser_input_cancelled')
       }
       try {
         await callRuntimeRpc(
@@ -260,6 +222,9 @@ export function useRemoteBrowserPageInput({
           { ...params, key },
           { timeoutMs: 15_000, suppressFeatureInteraction: true }
         )
+        if (!isCurrent() || !isCurrentRemoteOperationToken(operationToken)) {
+          throw new Error('remote_browser_input_cancelled_effect_unknown')
+        }
         if (
           key === 'Enter' ||
           key === 'Meta+r' ||
@@ -273,18 +238,56 @@ export function useRemoteBrowserPageInput({
         if (isCurrentRemoteOperationToken(operationToken)) {
           if (isRemoteBrowserPageMissingError(error)) {
             closeMissingRemotePage(pageId)
-            return
+          } else {
+            setPaneNotice({
+              kind: 'consequence',
+              text: error instanceof Error ? error.message : 'Remote keyboard input failed.'
+            })
           }
-          setPaneNotice({
-            kind: 'consequence',
-            text: error instanceof Error ? error.message : 'Remote keyboard input failed.'
-          })
         }
+        throw error
       }
     })
   }
 
+  const handleRemoteScreenshotKeyDown = (event: React.KeyboardEvent<HTMLImageElement>): void => {
+    void runKey(event).catch(() => {})
+  }
+  const performRemoteInput = (
+    command: BrowserRemotePaneInputCommand,
+    isCurrent: () => boolean
+  ): Promise<void> => {
+    if (command.action === 'key') {
+      return runKey(
+        {
+          target: imageRef.current,
+          key: command.key,
+          metaKey: command.meta,
+          ctrlKey: command.ctrl,
+          altKey: command.alt,
+          shiftKey: command.shift,
+          preventDefault: () => {}
+        },
+        isCurrent
+      )
+    }
+    const rect = remoteViewportRef.current?.getBoundingClientRect()
+    if (!rect || command.x >= rect.width || command.y >= rect.height) {
+      return Promise.reject(new Error('remote_browser_point_outside_viewport'))
+    }
+    return runPointer(
+      {
+        clientX: rect.left + command.x,
+        clientY: rect.top + command.y,
+        button: command.button === 'left' ? 0 : 1,
+        preventDefault: () => {}
+      },
+      'click',
+      isCurrent
+    )
+  }
   return {
+    performRemoteInput,
     getRemoteImagePoint,
     handleRemotePointerDown,
     handleRemotePointerUp,

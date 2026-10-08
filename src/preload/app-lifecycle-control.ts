@@ -1,3 +1,4 @@
+import { installAppSurfaceControl } from './app-surface-control'
 import { ipcRenderer } from 'electron'
 import { AppLifecycleRequest } from '../shared/app-lifecycle-control'
 import {
@@ -7,6 +8,7 @@ import {
 import { awaitBeforeUnloadCheckpoint, updaterQuitAbortRelay } from './preload-runtime-support'
 
 export function installAppLifecycleControl(): void {
+  installAppSurfaceControl()
   ipcRenderer.on('app-control:request', (_event, input: unknown) => {
     const parsed = AppLifecycleRequest.safeParse(input)
     if (!parsed.success) {

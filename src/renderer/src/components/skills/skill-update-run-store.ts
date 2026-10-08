@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { SkillUpdateRun } from '../../../../shared/skill-freshness'
+import type { SkillUpdateRun, SkillUpdateStartResult } from '../../../../shared/skill-freshness'
 import { notifyInstalledAgentSkillsChanged } from '@/hooks/useInstalledAgentSkills'
 import {
   getSkillFreshnessUpdateDialogRequest,
@@ -92,31 +92,36 @@ export function useSkillUpdateRun(): SkillUpdateRun {
   return useSyncExternalStore(subscribeSkillUpdateRun, getSkillUpdateRun, getSkillUpdateRun)
 }
 
-// Why: every caller fires these from an event handler with `void`. Swallowing
-// here rather than at each call site keeps a dropped IPC from surfacing as an
-// unhandled rejection; the run state itself is pushed from main either way.
-export async function startSkillUpdateRun(names: readonly string[]): Promise<void> {
+// UI callers may ignore IPC failures; CLI callers inspect acceptance separately from pushed run state.
+export async function startSkillUpdateRun(
+  names: readonly string[]
+): Promise<SkillUpdateStartResult | null> {
   ensureSubscribed()
   try {
-    await window.api.skills.startUpdateRun([...names])
+    return await window.api.skills.startUpdateRun([...names])
   } catch (error) {
     console.error('Failed to start skill update run', error)
+    return null
   }
 }
 
-export async function cancelSkillUpdateRun(): Promise<void> {
+export async function cancelSkillUpdateRun(): Promise<boolean> {
   try {
     await window.api.skills.cancelUpdateRun()
+    return true
   } catch (error) {
     console.error('Failed to cancel skill update run', error)
+    return false
   }
 }
 
-export async function acknowledgeSkillUpdateRun(): Promise<void> {
+export async function acknowledgeSkillUpdateRun(): Promise<boolean> {
   try {
     await window.api.skills.acknowledgeUpdateRun()
+    return true
   } catch (error) {
     console.error('Failed to acknowledge skill update run', error)
+    return false
   }
 }
 

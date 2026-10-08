@@ -1,5 +1,9 @@
 import { setPluginManagementForRpc } from '../runtime/rpc/methods/plugins-management'
-import { removeManagedPlugin } from '../plugins/plugin-management'
+import {
+  removeManagedPlugin,
+  projectPluginPreferences,
+  updateManagedPluginPreferences
+} from '../plugins/plugin-management'
 import { app, BrowserWindow } from 'electron'
 import { performance } from 'node:perf_hooks'
 import { PluginService } from '../plugins/plugin-service'
@@ -125,7 +129,11 @@ export async function initializeMainProcessPlugins(runtime: OrcaRuntimeService):
     service: pluginService,
     marketplace: state.pluginMarketplaceService,
     installer: state.pluginMarketplaceInstaller,
-    remove: (pluginKey) => removeManagedPlugin(store, pluginService, pluginKey)
+    remove: (pluginKey) => removeManagedPlugin(store, pluginService, pluginKey),
+    preferences: {
+      get: () => projectPluginPreferences(store.getSettings()),
+      update: (input) => updateManagedPluginPreferences(store, pluginService, input)
+    }
   })
   // Lazy kernel: initialize() only discovers manifests — no worker forks, no
   // panel reads. Zero plugin code runs before an explicit trigger.

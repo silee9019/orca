@@ -206,6 +206,15 @@ export default function BrowserPane({
                 </DeferredBrowserContent>
               ))}
               <BrowserMobileDriverOverlay
+                commandOwner={
+                  isActive && isWorktreeActive && activeBrowserPage
+                    ? {
+                        page: activeBrowserPage.id,
+                        worktreeId: browserTab.worktreeId,
+                        workspaceId: browserTab.id
+                      }
+                    : undefined
+                }
                 driver={activeBrowserDriver}
                 onTakeBack={reclaimActiveBrowserForDesktop}
               />

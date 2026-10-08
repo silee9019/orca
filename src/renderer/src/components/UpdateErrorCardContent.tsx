@@ -1,3 +1,4 @@
+import { useAppSurfaceControl } from '../hooks/ipc-events/app-surface-ipc-bridge'
 import { useId, useState } from 'react'
 import {
   AlertCircle,
@@ -83,6 +84,42 @@ export function UpdateErrorCardContent({
   // Why: raw error starts collapsed so the card leads with the plain summary, not a stack dump.
   const [showDetails, setShowDetails] = useState(false)
   const detailId = useId()
+  useAppSurfaceControl('update-error', (input) => {
+    if (input.kind !== 'update-error') {
+      return
+    }
+    if (input.action === 'status') {
+      return {
+        showDetails,
+        variant,
+        hasDetails: Boolean(detail),
+        primary: primaryAction?.label,
+        secondary: secondaryAction?.label,
+        tertiary: tertiaryAction?.label
+      }
+    }
+    if (input.action === 'details') {
+      if (input.open === undefined) {
+        throw new Error('Specify open')
+      }
+      setShowDetails(input.open)
+    } else if (input.action === 'close') {
+      onClose()
+    } else {
+      const action =
+        input.action === 'primary'
+          ? primaryAction
+          : input.action === 'secondary'
+            ? secondaryAction
+            : tertiaryAction
+      if (!action || action.disabled || action.isPending) {
+        throw new Error('The requested update recovery action is unavailable')
+      }
+      action.onClick()
+    }
+    return { state: 'requested' }
+  })
+
   const isCompatibility = variant === 'http1Compatibility'
   const isSecurity = variant === 'security'
   const Icon = isCompatibility ? Network : isSecurity ? ShieldAlert : AlertCircle

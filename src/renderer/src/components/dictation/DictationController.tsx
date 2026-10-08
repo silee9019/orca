@@ -13,7 +13,8 @@ import { recordStoppedSession, waitForStoppedSession } from './dictation-stopped
 import { translate } from '@/i18n/i18n'
 import { showDictationStartErrorToast } from './dictation-start-error-toast'
 import { useHoldDictationGesture } from './use-hold-dictation-gesture'
-import { DICTATION_CONTROL_EVENT, type DictationControlAction } from './dictation-control-events'
+import { useDictationDocumentControl } from './use-dictation-document-control'
+import { useDictationViewerControl } from './use-dictation-viewer-control'
 import { publishDictationMeter } from './dictation-meter-store'
 
 export function DictationController() {
@@ -36,6 +37,8 @@ export function DictationController() {
   const dictationRunRef = useRef(0)
   const holdGestureActiveRef = useRef(false)
   const insertionTargetRef = useRef<DictationInsertionTarget | null>(null)
+  const lastSessionIdRef = useRef<string | null>(null)
+  const cancellationRequestedRef = useRef(false)
   const activeSessionIdRef = useRef<string | null>(null)
   const stoppedSessionIdsRef = useRef(new Set<string>())
   const stoppedResolversRef = useRef(new Map<string, () => void>())
@@ -122,6 +125,8 @@ export function DictationController() {
     const sessionId = String(runId)
     dictationRunRef.current = runId
     activeSessionIdRef.current = sessionId
+    lastSessionIdRef.current = sessionId
+    cancellationRequestedRef.current = false
     insertionTargetRef.current = captureInsertionTarget()
     stopRequestedDuringStartRef.current = false
     finalTranscriptReceivedRef.current = false
@@ -156,6 +161,14 @@ export function DictationController() {
         }
       })
       captureStarted = true
+      if (cancellationRequestedRef.current) {
+        discardBufferedAudio()
+        stopCapture()
+        activeSessionIdRef.current = null
+        dictationStateRef.current = 'idle'
+        setDictationState('idle')
+        return
+      }
       if (captureResult?.fellBackToDefaultMicrophone) {
         // Why: a stop requested during startup tears this capture down below, so the
         // notice would describe a fallback that never records anything.
@@ -194,6 +207,11 @@ export function DictationController() {
         return
       }
 
+      if (cancellationRequestedRef.current) {
+        discardBufferedAudio()
+        await finishDictationSession(sessionId)
+        return
+      }
       await flushBufferedAudio()
       if (dictationRunRef.current !== runId) {
         discardBufferedAudio()
@@ -230,7 +248,7 @@ export function DictationController() {
       insertedFinalTranscriptRef.current = ''
       activeSessionIdRef.current = null
       setPartialTranscript('')
-      if (message.includes('dictation_canceled')) {
+      if (cancellationRequestedRef.current || message.includes('dictation_canceled')) {
         dictationStateRef.current = 'idle'
         setDictationState('idle')
         return
@@ -311,34 +329,24 @@ export function DictationController() {
     stopDictation
   ])
 
-  useEffect(() => {
-    const canDictate = (): boolean => Boolean(settings?.voice?.enabled && settings.voice.sttModel)
-    const handleControl = (event: Event): void => {
-      if (!canDictate() || dictationStateRef.current === 'stopping') {
-        return
-      }
-      const action = (event as CustomEvent<DictationControlAction>).detail
-      if (action === 'start') {
-        if (dictationStateRef.current === 'idle') {
-          void startDictation()
-        }
-        return
-      }
-      if (action === 'stop') {
-        if (dictationStateRef.current === 'listening' || dictationStateRef.current === 'starting') {
-          void stopDictation()
-        }
-        return
-      }
-      if (dictationStateRef.current === 'listening' || dictationStateRef.current === 'starting') {
-        void stopDictation()
-      } else {
-        void startDictation()
-      }
-    }
-    document.addEventListener(DICTATION_CONTROL_EVENT, handleControl)
-    return () => document.removeEventListener(DICTATION_CONTROL_EVENT, handleControl)
-  }, [settings?.voice?.enabled, settings?.voice?.sttModel, startDictation, stopDictation])
+  useDictationDocumentControl({
+    enabled: Boolean(settings?.voice?.enabled && settings.voice.sttModel),
+    dictationStateRef,
+    startDictation,
+    stopDictation
+  })
+
+  useDictationViewerControl({
+    enabled: Boolean(settings?.voice?.enabled && settings.voice.sttModel),
+    dictationStateRef,
+    lastSessionIdRef,
+    insertionTargetRef,
+    cancellationRequestedRef,
+    intentionalTargetCancellationRef,
+    discardBufferedAudio,
+    start: startDictation,
+    stop: stopDictation
+  })
 
   useHoldDictationGesture({
     dictationStateRef,

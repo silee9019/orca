@@ -1,3 +1,5 @@
+import { useVmRuntimeViewerRequest } from './use-vm-runtime-viewer-request'
+import { attachVmCleanupConfirmRequest } from '@/runtime/vm-cleanup-confirm-request'
 import { Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
@@ -84,7 +86,7 @@ export function EphemeralVmRuntimesSection({
   const mountedRef = useMountedRef()
 
   const refresh = useCallback(
-    async (showLoading = true, reportError = true): Promise<void> => {
+    async (showLoading = true, reportError = true): Promise<boolean> => {
       if (mountedRef.current && showLoading) {
         setIsLoading(true)
       }
@@ -93,6 +95,7 @@ export function EphemeralVmRuntimesSection({
         if (mountedRef.current) {
           setRuntimes(getVisibleEphemeralVmRuntimes(nextRuntimes))
         }
+        return mountedRef.current
       } catch (error) {
         if (mountedRef.current && reportError) {
           toast.error(
@@ -104,6 +107,7 @@ export function EphemeralVmRuntimesSection({
                 )
           )
         }
+        return false
       } finally {
         if (mountedRef.current && showLoading) {
           setIsLoading(false)
@@ -141,120 +145,181 @@ export function EphemeralVmRuntimesSection({
     }
   }, [active, hasRunningCleanup, refresh])
 
-  const cleanupRuntime = async (runtime: EphemeralVmRuntimeRecord): Promise<void> => {
-    setCleaningId(runtime.id)
-    try {
-      const cleaned = await window.api.ephemeralVm.cleanup({ runtimeId: runtime.id })
-      if (hasCleanupStopped(cleaned)) {
-        await refresh(false)
-        return
-      }
-      if (hasCleanupFailed(cleaned)) {
-        throw new Error(
-          cleaned.cleanupLastError ??
-            translate(
-              'auto.components.settings.EphemeralVmRuntimesSection.cloudVmCleanupFailedToast',
-              'Couldn’t clean up Cloud VM runtime.'
-            )
-        )
-      }
-      if (mountedRef.current) {
-        toast.success(
-          cleaned.cleanupStatus === 'disabled'
-            ? translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.cloudVmMarkedCleaned',
-                'Marked Cloud VM runtime as cleaned.'
-              )
-            : translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.cloudVmCleaned',
-                'Cleaned up Cloud VM runtime.'
-              )
-        )
-      }
-      await refresh()
-    } catch (error) {
-      if (mountedRef.current) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : translate(
+  const cleanupRuntime = useCallback(
+    async (runtime: EphemeralVmRuntimeRecord): Promise<boolean> => {
+      setCleaningId(runtime.id)
+      try {
+        const cleaned = await window.api.ephemeralVm.cleanup({ runtimeId: runtime.id })
+        if (hasCleanupStopped(cleaned)) {
+          await refresh(false)
+          return mountedRef.current
+        }
+        if (hasCleanupFailed(cleaned)) {
+          throw new Error(
+            cleaned.cleanupLastError ??
+              translate(
                 'auto.components.settings.EphemeralVmRuntimesSection.cloudVmCleanupFailedToast',
                 'Couldn’t clean up Cloud VM runtime.'
               )
-        )
+          )
+        }
+        if (mountedRef.current) {
+          toast.success(
+            cleaned.cleanupStatus === 'disabled'
+              ? translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.cloudVmMarkedCleaned',
+                  'Marked Cloud VM runtime as cleaned.'
+                )
+              : translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.cloudVmCleaned',
+                  'Cleaned up Cloud VM runtime.'
+                )
+          )
+        }
         await refresh()
+        return mountedRef.current
+      } catch (error) {
+        if (mountedRef.current) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.cloudVmCleanupFailedToast',
+                  'Couldn’t clean up Cloud VM runtime.'
+                )
+          )
+          await refresh()
+        }
+        return false
+      } finally {
+        if (mountedRef.current) {
+          setCleaningId(null)
+        }
       }
-    } finally {
-      if (mountedRef.current) {
-        setCleaningId(null)
-      }
-    }
-  }
+    },
+    [mountedRef, refresh]
+  )
 
-  const copyCleanupCommand = async (runtime: EphemeralVmRuntimeRecord): Promise<void> => {
-    try {
-      const result = await window.api.ephemeralVm.getCleanupCommand({ runtimeId: runtime.id })
-      const text = result.command
-        ? `${result.command}\n\n# Cleanup payload:\n${result.payloadJson}`
-        : result.payloadJson
-      await window.api.ui.writeClipboardText(text)
-      if (mountedRef.current) {
-        toast.success(
-          result.command
-            ? translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.copiedCleanupCommand',
-                'Copied cleanup command.'
-              )
-            : translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.copiedCleanupPayload',
-                'Copied cleanup payload.'
-              )
-        )
+  const copyCleanupCommand = useCallback(
+    async (runtime: EphemeralVmRuntimeRecord): Promise<boolean> => {
+      try {
+        const result = await window.api.ephemeralVm.getCleanupCommand({ runtimeId: runtime.id })
+        const text = result.command
+          ? `${result.command}\n\n# Cleanup payload:\n${result.payloadJson}`
+          : result.payloadJson
+        await window.api.ui.writeClipboardText(text)
+        if (mountedRef.current) {
+          toast.success(
+            result.command
+              ? translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.copiedCleanupCommand',
+                  'Copied cleanup command.'
+                )
+              : translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.copiedCleanupPayload',
+                  'Copied cleanup payload.'
+                )
+          )
+        }
+        return (await window.api.ui.readClipboardText()) === text
+      } catch (error) {
+        if (mountedRef.current) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.copyCleanupFailed',
+                  'Couldn’t copy cleanup command.'
+                )
+          )
+        }
+        return false
       }
-    } catch (error) {
-      if (mountedRef.current) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.copyCleanupFailed',
-                'Couldn’t copy cleanup command.'
-              )
-        )
-      }
-    }
-  }
+    },
+    [mountedRef]
+  )
 
-  const stopCleanup = async (runtime: EphemeralVmRuntimeRecord): Promise<void> => {
-    setStoppingId(runtime.id)
-    try {
-      await window.api.ephemeralVm.stopCleanup({ runtimeId: runtime.id })
-      if (mountedRef.current) {
-        setPendingStop(null)
-        await refresh(false)
+  const stopCleanup = useCallback(
+    async (runtime: EphemeralVmRuntimeRecord): Promise<boolean> => {
+      setStoppingId(runtime.id)
+      try {
+        const stopped = await window.api.ephemeralVm.stopCleanup({ runtimeId: runtime.id })
+        if (isCleanupRunning(stopped)) {
+          return false
+        }
+        if (mountedRef.current) {
+          setPendingStop(null)
+          await refresh(false)
+        }
+        return mountedRef.current
+      } catch (error) {
+        if (mountedRef.current) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : translate(
+                  'auto.components.settings.EphemeralVmRuntimesSection.stopCleanupFailed',
+                  'Couldn’t stop Cloud VM cleanup.'
+                )
+          )
+          await refresh(false)
+        }
+        return false
+      } finally {
+        if (mountedRef.current) {
+          setStoppingId(null)
+        }
       }
-    } catch (error) {
-      if (mountedRef.current) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : translate(
-                'auto.components.settings.EphemeralVmRuntimesSection.stopCleanupFailed',
-                'Couldn’t stop Cloud VM cleanup.'
-              )
-        )
-        await refresh(false)
-      }
-    } finally {
-      if (mountedRef.current) {
-        setStoppingId(null)
-      }
-    }
-  }
+    },
+    [mountedRef, refresh]
+  )
+
+  useEffect(
+    () =>
+      attachVmCleanupConfirmRequest((request) => {
+        if (!active || stoppingId !== null) {
+          return false
+        }
+        if (request.operation === 'cancel') {
+          if (pendingStop?.id !== request.runtimeId) {
+            return false
+          }
+          setPendingStop(null)
+          return true
+        }
+        const runtime = runtimes.find((value) => value.id === request.runtimeId)
+        if (!runtime || (pendingStop && pendingStop.id !== request.runtimeId)) {
+          return false
+        }
+        setPendingStop(runtime)
+        return true
+      }),
+    [active, pendingStop, runtimes, stoppingId]
+  )
+
+  useVmRuntimeViewerRequest({
+    active,
+    isLoading,
+    cleaningId,
+    stoppingId,
+    runtimes,
+    pendingStop,
+    refresh,
+    cleanupRuntime,
+    copyCleanupCommand,
+    stopCleanup
+  })
 
   const hasRuntimes = runtimes.length > 0
   return (
-    <div className="space-y-3 pt-2" data-settings-section="temporary-vm-runtimes">
+    <div
+      className="space-y-3 pt-2"
+      data-settings-section="temporary-vm-runtimes"
+      data-vm-runtime-count={runtimes.length}
+      data-vm-cleaning={cleaningId ?? ''}
+      data-vm-stopping={stoppingId ?? ''}
+      data-vm-runtimes-loading={isLoading}
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 space-y-0.5">
           <div className="text-sm font-medium">

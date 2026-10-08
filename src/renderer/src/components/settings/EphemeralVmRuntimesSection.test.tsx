@@ -1,5 +1,10 @@
+import {
+  startVmRuntimeViewerRequest,
+  readVmRuntimeViewerRequest
+} from '@/runtime/vm-runtime-viewer-request'
 // @vitest-environment happy-dom
 
+import { requestVmCleanupConfirm } from '@/runtime/vm-cleanup-confirm-request'
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -108,11 +113,108 @@ describe('EphemeralVmRuntimesSection helpers', () => {
 })
 
 describe('EphemeralVmRuntimesSection', () => {
+  it('opens and cancels the exact renderer confirmation without stopping cleanup', async () => {
+    const container = await renderSection()
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'open', runtimeId: 'runtime-1' })).toBe(true)
+    })
+    expect(
+      container
+        .querySelector('[data-vm-cleanup-confirm-runtime]')
+        ?.getAttribute('data-vm-cleanup-confirm-runtime')
+    ).toBe('runtime-1')
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'cancel', runtimeId: 'other-runtime' })).toBe(
+        false
+      )
+    })
+    expect(container.textContent).toContain('Stop cleanup?')
+    await act(async () => {
+      expect(requestVmCleanupConfirm({ operation: 'cancel', runtimeId: 'runtime-1' })).toBe(true)
+    })
+    expect(container.querySelector('[data-vm-cleanup-confirm-runtime]')).toBeNull()
+    expect(window.api.ephemeralVm.stopCleanup).not.toHaveBeenCalled()
+  })
+
+  it('updates actual cleanup busy and visible rows through the typed owner', async () => {
+    const container = await renderSection()
+    let finish: (() => void) | undefined
+    window.api.ephemeralVm.cleanup = vi.fn(
+      () =>
+        new Promise<EphemeralVmRuntimeRecord>((resolve) => {
+          finish = () => {
+            window.api.ephemeralVm.listRuntimes = vi.fn().mockResolvedValue([])
+            resolve(makeRuntime({ status: 'cleaned', cleanupStatus: 'succeeded' }))
+          }
+        })
+    )
+    let id = ''
+    await act(async () => {
+      id = startVmRuntimeViewerRequest({ action: 'cleanup', runtimeId: 'runtime-1' }).operationId
+    })
+    expect(container.querySelector('[data-vm-cleaning]')?.getAttribute('data-vm-cleaning')).toBe(
+      'runtime-1'
+    )
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('pending')
+    if (!finish) {
+      throw new Error('Missing cleanup fixture')
+    }
+    await act(async () => finish?.())
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('succeeded')
+    expect(
+      container.querySelector('[data-vm-runtime-count]')?.getAttribute('data-vm-runtime-count')
+    ).toBe('0')
+    expect(container.querySelector('[data-vm-cleaning]')?.getAttribute('data-vm-cleaning')).toBe('')
+    window.api.ephemeralVm.listRuntimes = vi.fn().mockResolvedValue([makeRuntime()])
+    await act(async () => {
+      id = startVmRuntimeViewerRequest({ action: 'refresh' }).operationId
+    })
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('succeeded')
+    expect(
+      container.querySelector('[data-vm-runtime-count]')?.getAttribute('data-vm-runtime-count')
+    ).toBe('1')
+  })
+
+  it('finishes the exact stop confirmation and private clipboard through the typed owner', async () => {
+    const container = await renderSection()
+    await act(async () => {
+      requestVmCleanupConfirm({ operation: 'open', runtimeId: 'runtime-1' })
+    })
+    let id = ''
+    await act(async () => {
+      id = startVmRuntimeViewerRequest({
+        action: 'stop',
+        runtimeId: 'runtime-1',
+        confirmation: 'wrong'
+      }).operationId
+    })
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('failed')
+    expect(window.api.ephemeralVm.stopCleanup).not.toHaveBeenCalled()
+    expect(container.querySelector('[data-vm-cleanup-confirm-runtime]')).not.toBeNull()
+    await act(async () => {
+      id = startVmRuntimeViewerRequest({
+        action: 'stop',
+        runtimeId: 'runtime-1',
+        confirmation: 'runtime-1'
+      }).operationId
+    })
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('succeeded')
+    expect(container.querySelector('[data-vm-cleanup-confirm-runtime]')).toBeNull()
+    expect(container.querySelector('[data-vm-stopping]')?.getAttribute('data-vm-stopping')).toBe('')
+    await act(async () => {
+      id = startVmRuntimeViewerRequest({ action: 'copy', runtimeId: 'runtime-1' }).operationId
+    })
+    expect(readVmRuntimeViewerRequest(id).vmActionState).toBe('succeeded')
+    expect(await window.api.ui.readClipboardText()).toContain('Cleanup payload:')
+    expect(JSON.stringify(readVmRuntimeViewerRequest(id))).not.toContain('payloadJson')
+  })
+
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
     toastMocks.success.mockClear()
     toastMocks.error.mockClear()
-    globalThis.window = {
+    let clipboard = ''
+    Object.assign(window, {
       api: {
         ephemeralVm: {
           listRuntimes: vi.fn().mockResolvedValue([makeRuntime()]),
@@ -138,10 +240,13 @@ describe('EphemeralVmRuntimesSection', () => {
           )
         },
         ui: {
-          writeClipboardText: vi.fn().mockResolvedValue(undefined)
+          writeClipboardText: vi.fn(async (text: string) => {
+            clipboard = text
+          }),
+          readClipboardText: vi.fn(async () => clipboard)
         }
       }
-    } as never
+    })
   })
 
   afterEach(() => {

@@ -3,7 +3,7 @@ import { translate } from '@/i18n/i18n'
 import { SkillSharedLinkRow } from './SkillSharedLinkRow'
 import type { OwnedSkillShares } from './use-owned-skill-shares'
 
-function matchesQuery(name: string, query: string): boolean {
+export function matchesSkillShareQuery(name: string, query: string): boolean {
   return !query || name.toLocaleLowerCase('en-US').includes(query.toLocaleLowerCase('en-US').trim())
 }
 
@@ -17,7 +17,7 @@ export function SkillSharedLinksView({
   shares: OwnedSkillShares
 }): React.JSX.Element {
   const visible = useMemo(
-    () => shares.filter((share) => matchesQuery(share.name, query)),
+    () => shares.filter((share) => matchesSkillShareQuery(share.name, query)),
     [query, shares]
   )
 

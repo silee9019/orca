@@ -8,6 +8,9 @@ import {
   AiVaultSetSearchEnabledParamsSchema
 } from '../ai-vault-search-contract'
 import { AppLifecycleControlParams, AppLifecycleInstallParams } from '../app-lifecycle-control'
+import { AppSurfaceControlParams, DesktopNativeMenuParams } from '../app-surface-control'
+import { ArtifactViewerParams } from '../artifact-viewer-command'
+import { AutomationViewerParams } from '../automation-viewer-command'
 import {
   BrowserClientFileChannelAbortParams,
   BrowserClientFileChannelReadParams,
@@ -22,6 +25,16 @@ import { BrowserClientPageMetadataParams } from '../browser-client-page-metadata
 import { CliDesktopSettingsUpdate } from '../cli-desktop-settings'
 import { CliSettingsUpdate } from '../cli-runtime-settings'
 import { SettingsPreflightCheck, SettingsPreflightContext } from '../cli-settings-preflight'
+import {
+  EmulatorFocusGroupParams,
+  EmulatorPointerViewParams,
+  EmulatorRotateViewParams,
+  EmulatorScreenKeyParams,
+  EmulatorScreenPasteParams,
+  EmulatorSelectTabParams,
+  EmulatorSessionViewParams,
+  EmulatorWheelParams
+} from '../emulator-frame-command'
 import {
   PairingGetEndpointsParamsSchema,
   PairingProvisionRelayParamsSchema
@@ -162,8 +175,10 @@ import {
   Viewport,
   Wait
 } from './browser-params'
+import { BrowserProfileImportFile } from './browser-profile-file-params'
 import { ScreencastUnsubscribe } from './browser-screencast-params'
 import { BrowserOpenUrlParams, BrowserTabCreateParams } from './browser-tab-create-params'
+import { BrowserViewerCommand } from './browser-viewer-params'
 import { ClientEventsUnsubscribeParams } from './client-events-params'
 import {
   NativeChatSessionOptionsMutation,
@@ -194,6 +209,8 @@ import {
   SetValue,
   TypeText
 } from './computer-schemas-params'
+import { EmulatorControlParams, EmulatorFocusParams } from './emulator-control-params'
+import { EmulatorObservationParams, EmulatorStreamStopParams } from './emulator-observation-params'
 import {
   AttachParams as AttachParamsOfEmulatorParams,
   AxParams,
@@ -214,6 +231,16 @@ import {
   TapParams,
   TypeParams
 } from './emulator-params'
+import {
+  VmAttach,
+  VmProvision,
+  VmProvisionIdentity,
+  VmRecipe,
+  VmRepo,
+  VmRuntime,
+  VmStopCleanup,
+  VmWorkspace
+} from './ephemeral-vm-params'
 import {
   FileCommitUpload,
   FileCopy,
@@ -492,7 +519,8 @@ import {
   PluginMarketplaceInstallParams,
   PluginMarketplacePreviewParams,
   PluginMarketplaceRefreshParams,
-  PluginMarketplaceSourceParams
+  PluginMarketplaceSourceParams,
+  PluginPreferencesUpdate
 } from './plugins-management-params'
 import {
   PluginInvokeCommandParams,
@@ -651,6 +679,7 @@ import {
   UsageSessionsParams,
   UsageViewerParams
 } from './usage-params'
+import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
@@ -667,6 +696,7 @@ import {
   WorktreeSortOrder,
   WorktreeTeardownMissingTerminalsParams
 } from './worktree-params'
+import { SearchSettingsViewerParams } from '../search-settings-viewer'
 import {
   SkillBundleInstallPreviewRequestSchema,
   SkillBundleInstallRequestSchema
@@ -682,6 +712,8 @@ import {
   SkillUploadChunkRequestSchema,
   SkillUploadCommitRequestSchema
 } from '../skill-upload-session-contract'
+import { SkillsViewerParams } from '../skills-viewer-command'
+import { VoiceViewerParams } from '../voice-viewer'
 
 // Why: the host parses params with these schemas, so a client that matches this map
 // matches the dispatcher. Clients must import it for types only — parsing a params
@@ -770,9 +802,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'app.getStatus': null,
   'app.keyboardInputSource': null,
   'app.keyboardLayout': null,
+  'app.nativeMenu': DesktopNativeMenuParams,
   'app.platform': null,
   'app.setDockBadge': DesktopDockBadgeParams,
   'app.shellAvailability': null,
+  'app.surfaceControl': AppSurfaceControlParams,
   'app.wslDistros': null,
   'appVault.clearSearchIndex': AppTargetParams,
   'appVault.firstUserPrompt': AppVaultFirstPromptParams,
@@ -783,6 +817,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'artifacts.share': WriteRequest,
   'artifacts.unshare': SourceRequest,
   'artifacts.update': WriteRequest,
+  'artifacts.viewerAction': ArtifactViewerParams,
   'automation.create': AutomationCreate,
   'automation.delete': AutomationId,
   'automation.externalAction': ExternalAutomationActionParams,
@@ -794,9 +829,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'automation.precheck': AutomationRunPrecheckParams,
   'automation.runNow': AutomationId,
   'automation.runs': AutomationRuns,
+  'automation.runsPage': AutomationRuns,
   'automation.show': AutomationId,
   'automation.snapshotWorkspaceName': AutomationSnapshotNameParams,
   'automation.update': AutomationUpdate,
+  'automation.viewerAction': AutomationViewerParams,
   'browser.back': BrowserTarget,
   'browser.capture.start': BrowserTarget,
   'browser.capture.stop': BrowserTarget,
@@ -853,6 +890,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'browser.profileCreate': ProfileCreate,
   'browser.profileDelete': ProfileDelete,
   'browser.profileDetectBrowsers': null,
+  'browser.profileImportFile': BrowserProfileImportFile,
   'browser.profileImportFromBrowser': ProfileImportFromBrowser,
   'browser.profileList': null,
   'browser.reload': BrowserTarget,
@@ -955,7 +993,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'emulator.availability': EmulatorAvailabilityParams,
   'emulator.ax': AxParams,
   'emulator.button': ButtonParams,
+  'emulator.control': EmulatorControlParams,
   'emulator.exec': ExecParams,
+  'emulator.focus': EmulatorFocusParams,
+  'emulator.focusGroup': EmulatorFocusGroupParams,
   'emulator.gesture': GestureParams,
   'emulator.kill': KillParams,
   'emulator.launch': LaunchParams,
@@ -963,12 +1004,24 @@ export const RPC_PARAMS_BY_METHOD = {
   'emulator.listDevices': EmulatorListDevicesParams,
   'emulator.listSimulators': EmulatorListSimulatorsParams,
   'emulator.logcat': LogcatParams,
+  'emulator.observe': EmulatorObservationParams,
   'emulator.permissions': PermissionsParams,
+  'emulator.pointerView': EmulatorPointerViewParams,
   'emulator.rotate': RotateParams,
+  'emulator.rotateView': EmulatorRotateViewParams,
+  'emulator.screenKey': EmulatorScreenKeyParams,
+  'emulator.screenPaste': EmulatorScreenPasteParams,
+  'emulator.selectTab': EmulatorSelectTabParams,
+  'emulator.sessionView': EmulatorSessionViewParams,
   'emulator.shutdown': ShutdownParams,
+  'emulator.startFrameStream': EmulatorObservationParams,
+  'emulator.startVideoStream': EmulatorObservationParams,
+  'emulator.stopFrameStream': EmulatorStreamStopParams,
+  'emulator.stopVideoStream': EmulatorStreamStopParams,
   'emulator.tap': TapParams,
   'emulator.type': TypeParams,
   'emulator.unregisterActive': EmulatorUnregisterActiveParams,
+  'emulator.wheel': EmulatorWheelParams,
   'files.browseServerDir': ServerDirectoryBrowse,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
@@ -1264,6 +1317,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'plugins.addMarketplace': pluginMarketplaceGitSourceSchema,
   'plugins.consent': pluginConsentRequestSchema,
   'plugins.getLogs': PluginKeyParams,
+  'plugins.getPreferences': null,
   'plugins.inspectPanel': PluginInspectPanelParams,
   'plugins.install': PluginInstallParams,
   'plugins.installMarketplacePlugin': PluginMarketplaceInstallParams,
@@ -1283,6 +1337,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'plugins.removeMarketplace': PluginMarketplaceSourceParams,
   'plugins.rollbackMarketplacePlugin': PluginKeyParams,
   'plugins.setEnabled': PluginSetEnabledParams,
+  'plugins.updatePreferences': PluginPreferencesUpdate,
   'preflight.check': PreflightCheck,
   'preflight.detectAgents': null,
   'preflight.detectRemoteAgents': PreflightDetectRemoteAgents,
@@ -1356,9 +1411,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'repo.sparsePresets': RepoSelector,
   'repo.update': RepoUpdate,
   'resourceManager.viewer': ResourceManagerViewerParams,
+  'runtime.browserDrivers': null,
   'runtime.clientCapabilities.update': ClientCapabilitiesUpdate,
   'runtime.clientEvents.subscribe': null,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
+  'runtime.clientHostedBrowserRows': null,
+  'search.viewer': SearchSettingsViewerParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
   'session.tabs.closeLifecycle': CloseLifecycleTab,
@@ -1424,11 +1482,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'skills.share': AgentSkillShareRequestSchema,
   'skills.startUpdateRun': SkillUpdateStartParams,
   'skills.uploadChunk': SkillUploadChunkRequestSchema,
+  'skills.viewerAction': SkillsViewerParams,
   'speech.dictation.cancel': DictationHandle,
   'speech.dictation.chunk': DictationChunk,
   'speech.dictation.finish': DictationHandle,
   'speech.dictation.setup': DictationSetup,
   'speech.dictation.start': DictationStart,
+  'speech.dictation.transcribe': SpeechFileTranscription,
+  'speech.key.clear': null,
+  'speech.key.save': SpeechKeySave,
+  'speech.key.status': null,
+  'speech.models.cancel': SpeechModelAction,
   'speech.models.delete': SpeechModelAction,
   'speech.models.download': SpeechModelAction,
   'speech.models.list': null,
@@ -1477,6 +1541,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.unsubscribe': TerminalUnsubscribe,
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
+  'ui.browserViewer': BrowserViewerCommand,
   'ui.get': null,
   'ui.projectFilter': ProjectFilterParams,
   'ui.recordFeatureInteraction': FeatureInteractionIdParam,
@@ -1494,6 +1559,20 @@ export const RPC_PARAMS_BY_METHOD = {
   'usage.refresh': UsageRefreshParams,
   'usage.setEnabled': UsageEnabledParams,
   'usage.viewerAction': UsageViewerParams,
+  'vm.attach': VmAttach,
+  'vm.cleanup': VmRuntime,
+  'vm.cleanup.command': VmRuntime,
+  'vm.cleanup.stop': VmStopCleanup,
+  'vm.doctor': VmRecipe,
+  'vm.provision': VmProvision,
+  'vm.provision.cancel': VmProvisionIdentity,
+  'vm.provision.status': VmProvisionIdentity,
+  'vm.recipes.catalog': null,
+  'vm.recipes.list': VmRepo,
+  'vm.resume': VmWorkspace,
+  'vm.runtimes.list': null,
+  'vm.suspend': VmWorkspace,
+  'voice.viewer': VoiceViewerParams,
   'workspacePorts.kill': WorkspacePortKillParams,
   'workspacePorts.scan': WorkspacePortScanParams,
   'worktree.activate': WorktreeActivate,

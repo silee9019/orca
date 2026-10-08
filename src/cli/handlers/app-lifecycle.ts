@@ -1,3 +1,5 @@
+import { normalizeRepoBadgeColor } from '../../shared/repo-badge-color'
+import { DesktopNativeMenuParams, AppSurfaceAction } from '../../shared/app-surface-control'
 import type { CommandHandler } from '../dispatch'
 import { RuntimeClientError } from '../runtime-client'
 import { isReleaseChannel } from '../../shared/release-channel'
@@ -17,6 +19,32 @@ import { APP_ASSET_HANDLERS } from './app-lifecycle-assets'
 
 export const APP_LIFECYCLE_HANDLERS: Record<string, CommandHandler> = {
   ...APP_ASSET_HANDLERS,
+  'app repo-color': (context) => {
+    const input = requiredFlag(context.flags, 'color').trim()
+    const color = /^#?[0-9a-fA-F]{6}$/.test(input) ? normalizeRepoBadgeColor(input) : null
+    if (!color) {
+      throw new RuntimeClientError('invalid_argument', 'Specify a complete six-digit hex color')
+    }
+    return printCall(context, 'repo.update', {
+      repo: requiredFlag(context.flags, 'repo'),
+      updates: { badgeColor: color }
+    })
+  },
+  'app native-menu': (context) =>
+    printCall(
+      context,
+      'app.nativeMenu',
+      DesktopNativeMenuParams.parse({
+        confirmTarget: confirmTarget(context.flags),
+        action: requiredFlag(context.flags, 'action')
+      })
+    ),
+  'app view control': async (context) =>
+    printCall(context, 'app.surfaceControl', {
+      confirmTarget: confirmTarget(context.flags),
+      viewer: viewer(context.flags),
+      action: AppSurfaceAction.parse(await readAppInput(context))
+    }),
   'app quit': (context) =>
     printCall(context, 'app.control', {
       confirmTarget: confirmTarget(context.flags),

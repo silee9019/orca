@@ -19,6 +19,7 @@ export const APP_LIFECYCLE_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'app keyboard-layout',
       'app keyboard-source',
       'app markdown-directory',
+      'app native-menu',
       'app onboarding get',
       'app onboarding update',
       'app pet delete',
@@ -31,6 +32,7 @@ export const APP_LIFECYCLE_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'app quit',
       'app relaunch',
       'app reload',
+      'app repo-color',
       'app restart',
       'app shell exists',
       'app shell open-path',
@@ -57,6 +59,7 @@ export const APP_LIFECYCLE_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'app vault clear-index',
       'app vault first-prompt',
       'app vault status',
+      'app view control',
       'app wsl-distros'
     ],
     load: async () => (await import('./handlers/app-lifecycle.js')).APP_LIFECYCLE_HANDLERS

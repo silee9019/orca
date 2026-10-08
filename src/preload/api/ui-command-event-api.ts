@@ -1,4 +1,13 @@
 import type { ProjectFilterRequest, ProjectFilterResponse } from '../../shared/project-filter'
+import type {
+  BrowserViewerRequest,
+  BrowserViewerResponse
+} from '../../shared/browser-viewer-command'
+import type { VoiceViewerRequest, VoiceViewerResponse } from '../../shared/voice-viewer'
+import type {
+  SearchSettingsViewerRequest,
+  SearchSettingsViewerResponse
+} from '../../shared/search-settings-viewer'
 import type { MarkdownDocument } from '../../shared/filesystem-entry-types'
 import type { PersistedUIState } from '../../shared/persisted-ui-state-types'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -44,6 +53,14 @@ import type {
 export type CloseActiveTabPayload = { sourceId: string }
 
 export type UiCommandEventApi = {
+  onBrowserViewerRequest?: (callback: (request: BrowserViewerRequest) => void) => () => void
+  respondBrowserViewer?: (response: BrowserViewerResponse) => void
+  onVoiceViewerRequest?: (callback: (request: VoiceViewerRequest) => void) => () => void
+  respondVoiceViewer?: (response: VoiceViewerResponse) => void
+  onSearchSettingsViewerRequest?: (
+    callback: (request: SearchSettingsViewerRequest) => void
+  ) => () => void
+  respondSearchSettingsViewer?: (response: SearchSettingsViewerResponse) => void
   get: () => Promise<PersistedUIState>
   set: (args: Partial<PersistedUIState>) => Promise<void>
   /** Like set, but REJECTS when the update did not reach the host (the web preload's set

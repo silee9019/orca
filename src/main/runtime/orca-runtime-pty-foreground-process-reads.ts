@@ -1,6 +1,13 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
 import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
 import type { ProjectFilterResult } from '../../shared/project-filter'
+import type { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
+import type { VoiceViewerOperation, VoiceViewerResult } from '../../shared/voice-viewer'
+import type {
+  SearchSettingsViewerCommand,
+  SearchSettingsViewerResult
+} from '../../shared/search-settings-viewer'
 import { OrcaRuntimeWithStateFields } from './orca-runtime-state-fields'
 import {
   persistClientHostedBrowserPages,
@@ -25,6 +32,15 @@ import type { NativeChatSessionOptionSettingsMutation } from '../../shared/nativ
 import type { Automation } from '../../shared/automations-types'
 
 export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithStateFields {
+  async searchSettingsViewer(
+    command: SearchSettingsViewerCommand
+  ): Promise<SearchSettingsViewerResult> {
+    if (!this.notifier?.searchSettingsViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.searchSettingsViewer(command)
+  }
+
   get ptyForegroundProcessReads() {
     return this.ptyForegroundAgent.getReads()
   }
@@ -182,6 +198,20 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
       throw new Error('renderer_unavailable')
     }
     return await this.notifier.projectFilter(command)
+  }
+
+  async browserViewer(command: BrowserViewerCommand): Promise<BrowserViewerResult> {
+    if (!this.notifier?.browserViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.browserViewer(command)
+  }
+
+  async voiceViewer(command: VoiceViewerOperation): Promise<VoiceViewerResult> {
+    if (!this.notifier?.voiceViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.voiceViewer(command)
   }
 
   getUIState(): PersistedUIState {

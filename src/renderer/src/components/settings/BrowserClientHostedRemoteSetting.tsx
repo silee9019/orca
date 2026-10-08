@@ -1,3 +1,5 @@
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../../shared/execution-host'
 import { translate } from '@/i18n/i18n'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { BROWSER_CLIENT_HOSTED_REMOTE_SETTINGS_TARGET_ID } from '@/lib/settings-navigation-types'
@@ -10,7 +12,7 @@ import {
 
 type BrowserClientHostedRemoteSettingProps = {
   settings: Pick<GlobalSettings, 'browserClientHostedRemoteEnabled'>
-  updateSettings: (updates: Partial<GlobalSettings>) => void
+  updateSettings: (updates: Partial<GlobalSettings>) => void | Promise<void>
 }
 
 export function BrowserClientHostedRemoteSetting({
@@ -19,6 +21,33 @@ export function BrowserClientHostedRemoteSetting({
 }: BrowserClientHostedRemoteSettingProps): React.JSX.Element {
   const title = getBrowserClientHostedRemoteTitle()
   const description = getBrowserClientHostedRemoteDescription()
+
+  const setClientPlacement = (value: string) =>
+    updateSettings({ browserClientHostedRemoteEnabled: value === 'device' })
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      command.action === 'browser-preference-set' &&
+      command.preference.field === 'client-hosted-remote',
+    apply: async (command) => {
+      if (
+        command.action === 'browser-preference-set' &&
+        command.preference.field === 'client-hosted-remote'
+      ) {
+        await setClientPlacement(command.preference.value ? 'device' : 'server')
+      }
+    },
+    read: () => ({
+      hostId: LOCAL_EXECUTION_HOST_ID,
+      preference: {
+        field: 'client-hosted-remote',
+        value: settings.browserClientHostedRemoteEnabled !== false
+      }
+    }),
+    verify: (command, state) =>
+      command.action === 'browser-preference-set' &&
+      state.preference?.field === command.preference.field &&
+      state.preference.value === command.preference.value
+  })
 
   return (
     <SearchableSetting
@@ -47,9 +76,7 @@ export function BrowserClientHostedRemoteSetting({
             ariaLabel={title}
             // Why: absent means on — profiles written before the flag existed default to client hosting.
             value={settings.browserClientHostedRemoteEnabled !== false ? 'device' : 'server'}
-            onChange={(value) =>
-              updateSettings({ browserClientHostedRemoteEnabled: value === 'device' })
-            }
+            onChange={setClientPlacement}
             options={[
               {
                 value: 'device',

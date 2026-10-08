@@ -41,6 +41,7 @@ export function useSshWorkspaceBrowserRoute(
 ): {
   state: SshWorkspaceBrowserRouteState
   targetId: string | null
+  attempt: number
   retry: () => void
   tryWithoutProbe: () => void
   browseFromThisDevice: () => void
@@ -147,6 +148,7 @@ export function useSshWorkspaceBrowserRoute(
   return {
     state: effectiveState,
     targetId: sshTargetId,
+    attempt: attempt.count,
     retry: () => rederive(false),
     tryWithoutProbe: () => {
       // Persist the override so this host isn't re-nagged on every launch.
@@ -180,7 +182,7 @@ export function useSshWorkspaceBrowserRoute(
  * SSH target carries the skip; clearing it flips the route hooks back to
  * probing, which resurfaces the classified card if forwarding is still blocked.
  */
-export function useSshWorkspaceProbeSkipRecheck(worktreeId: string): (() => void) | null {
+export function useSshWorkspaceProbeSkipRecheck(worktreeId: string): (() => Promise<void>) | null {
   const executionHostId = useAppStore((s) => getExecutionHostIdForWorktree(s, worktreeId))
   const browserRoutingSettings = useAppStore((s) => s.settings)
   const probeSkippedTargetIds = useAppStore(

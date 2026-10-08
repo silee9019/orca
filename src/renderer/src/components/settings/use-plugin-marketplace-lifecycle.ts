@@ -1,3 +1,4 @@
+import type { PluginMarketplaceMutationReceipt } from './plugin-marketplace-parent-readback'
 import {
   useEffect,
   useState,
@@ -29,7 +30,10 @@ export function usePluginMarketplaceLifecycle({
 }: PluginMarketplaceLifecycleOptions): {
   rollbackPlugin: PluginHostListEntry | null
   rollbackError: string | null
-  reloadAfterMutation: (pluginKey: string) => Promise<void>
+  reloadAfterMutation: (
+    pluginKey: string,
+    receipt?: PluginMarketplaceMutationReceipt
+  ) => Promise<void>
   requestRollback: (pluginKey: string) => void
   cancelRollback: () => void
   confirmRollback: (pluginKey: string) => Promise<void>
@@ -45,10 +49,13 @@ export function usePluginMarketplaceLifecycle({
     }
   }, [mounted, rollbackPlugin, rollbackPluginId])
 
-  const reloadAfterMutation = async (pluginKey: string): Promise<void> => {
+  const reloadAfterMutation = async (
+    pluginKey: string,
+    receipt?: PluginMarketplaceMutationReceipt
+  ): Promise<void> => {
     try {
       const nextPlugins = await window.api.plugins.list()
-      if (!mountedRef.current) {
+      if (!mountedRef.current || (receipt && !receipt.canApply())) {
         return
       }
       applyCompletedMutation(nextPlugins)
@@ -56,8 +63,9 @@ export function usePluginMarketplaceLifecycle({
       if (changedPlugin?.needsReconsent || changedPlugin?.status === 'pending') {
         setConsentPluginId(pluginKey)
       }
+      receipt?.applied()
     } catch (cause) {
-      if (mountedRef.current) {
+      if (mountedRef.current && (!receipt || receipt.canApply())) {
         setPluginListError(cause)
       }
     }

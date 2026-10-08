@@ -1,6 +1,9 @@
+import { useBrowserGrabCommands } from './use-browser-grab-commands'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type {
   BrowserGrabPayload,
+  BrowserGrabResult,
+  BrowserSetGrabModeResult,
   BrowserGrabRejectReason,
   BrowserGrabScreenshot
 } from '../../../../../shared/browser-grab-types'
@@ -21,7 +24,8 @@ export type GrabModeHook = {
   /** True when the user right-clicked to select, signalling the renderer
    *  should show the full action menu instead of auto-copying. */
   contextMenu: boolean
-  toggle: () => void
+  getCaptureGeneration?: () => number
+  toggle: () => void | Promise<boolean>
   cancel: () => void
   /** Called after Copy — re-arms grab for another pick. */
   rearm: () => void
@@ -101,11 +105,12 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
     grabTabIdRef.current = tabId
     setState('armed')
 
-    // Enable grab mode — injects the overlay
-    const setResult = await window.api.browser.setGrabMode({
-      browserPageId: tabId,
-      enabled: true
-    })
+    let setResult: BrowserSetGrabModeResult
+    try {
+      setResult = await window.api.browser.setGrabMode({ browserPageId: tabId, enabled: true })
+    } catch {
+      setResult = { ok: false, reason: 'injection-failed' }
+    }
     if (
       !mountedRef.current ||
       armGenerationRef.current !== armGeneration ||
@@ -135,10 +140,16 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
     activeOpIdRef.current = opId
 
     setState('awaiting')
-    const result = await window.api.browser.awaitGrabSelection({
-      browserPageId: tabId,
-      opId
-    })
+    const result = await window.api.browser
+      .awaitGrabSelection({
+        browserPageId: tabId,
+        opId
+      })
+      .catch((): BrowserGrabResult => ({
+        opId,
+        kind: 'error',
+        reason: 'Selection request failed.'
+      }))
 
     // Ignore stale results
     if (!mountedRef.current || activeOpIdRef.current !== opId || grabTabIdRef.current !== tabId) {
@@ -186,31 +197,32 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
   const cancel = useCallback(() => {
     const targetTabId = grabTabIdRef.current ?? browserPageId
     armGenerationRef.current += 1
-    void window.api.browser.setGrabMode({
+    const disabling = window.api.browser.setGrabMode({
       browserPageId: targetTabId,
       enabled: false
     })
-    if (activeOpIdRef.current) {
-      void window.api.browser.cancelGrab({
-        browserPageId: targetTabId
-      })
-      activeOpIdRef.current = null
-    }
+    const cancelling = activeOpIdRef.current
+      ? window.api.browser.cancelGrab({ browserPageId: targetTabId })
+      : Promise.resolve(true)
+    activeOpIdRef.current = null
     grabTabIdRef.current = null
     setState('idle')
     setPayload(null)
     setError(null)
     setContextMenu(false)
+    return Promise.all([disabling, cancelling])
+      .then(([disabled, cancelled]) => disabled.ok && cancelled)
+      .catch(() => false)
   }, [browserPageId])
 
-  const toggle = useCallback(() => {
+  const toggle = useCallback((): void | Promise<boolean> => {
     if ((state === 'idle' || state === 'error') && grabTabIdRef.current === null) {
       setError(null)
       setPayload(null)
       setContextMenu(false)
       void armAndAwait()
     } else {
-      cancel()
+      return cancel()
     }
   }, [state, armAndAwait, cancel])
 
@@ -231,7 +243,7 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
   const exit = useCallback(() => {
     const targetTabId = grabTabIdRef.current ?? browserTabIdRef.current
     armGenerationRef.current += 1
-    void window.api.browser.setGrabMode({
+    const disabling = window.api.browser.setGrabMode({
       browserPageId: targetTabId,
       enabled: false
     })
@@ -243,6 +255,7 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
     setPayload(null)
     setError(null)
     setContextMenu(false)
+    return disabling.then((result) => result.ok).catch(() => false)
   }, [])
 
   // Keyboard shortcut: Esc cancels grab mode
@@ -270,5 +283,27 @@ export function useGrabMode(browserPageId: string): GrabModeHook {
     return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [state, cancel])
 
-  return { state, payload, error, contextMenu, toggle, cancel, rearm, exit }
+  useBrowserGrabCommands(browserPageId, {
+    state: {
+      state,
+      hasSelection: payload !== null,
+      hasScreenshot: payload?.screenshot !== null && payload?.screenshot !== undefined,
+      contextMenu
+    },
+    start: toggle,
+    cancel,
+    rearm,
+    exit
+  })
+  return {
+    state,
+    payload,
+    error,
+    contextMenu,
+    toggle,
+    cancel,
+    rearm,
+    exit,
+    getCaptureGeneration: () => armGenerationRef.current
+  }
 }

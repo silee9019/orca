@@ -1,3 +1,5 @@
+import { DESKTOP_NATIVE_MENU_METHODS } from './desktop-native-menu'
+import { AppSurfaceControlParams } from '../../../../shared/app-surface-control'
 import { DesktopDockBadgeParams } from '../../../../shared/rpc-contract/app-lifecycle-params'
 import { arch, release } from 'node:os'
 import { AppLifecycleControlParams } from '../../../../shared/app-lifecycle-control'
@@ -5,6 +7,18 @@ import { defineMethod } from '../core'
 import { desktopAppTarget, assertDesktopAppContext } from './desktop-app-target'
 
 export const APP_LIFECYCLE_METHODS = [
+  ...DESKTOP_NATIVE_MENU_METHODS,
+  defineMethod({
+    name: 'app.surfaceControl',
+    params: AppSurfaceControlParams,
+    handler: async (params, context) => {
+      assertDesktopAppContext(context)
+      return (await import('../../../window/app-surface-control')).requestAppSurfaceControl(
+        params,
+        context
+      )
+    }
+  }),
   defineMethod({
     name: 'app.featureWallAssets',
     params: null,

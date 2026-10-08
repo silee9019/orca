@@ -1,3 +1,13 @@
+import {
+  isWorkerStartTimeoutWithinTimerLimit,
+  resolveWorkerStartClientTimeoutMs,
+  resolveWorkerStartReadinessTimeoutMs
+} from '../../shared/orchestration-timing-budgets'
+import { MAX_TIMER_DELAY_MS } from '../../shared/timer-delay'
+import { RuntimeClientError } from './types'
+
+const LONG_POLL_CLIENT_GRACE_MS = 10_000
+
 export function isWaitingCheck(params: unknown): boolean {
   return (
     typeof params === 'object' &&
@@ -12,4 +22,30 @@ export function getTimeoutMsParam(params: unknown): unknown {
     return undefined
   }
   return (params as { timeoutMs?: unknown }).timeoutMs
+}
+
+export function resolveMethodTimeoutMs(
+  method: string,
+  params: unknown,
+  requestTimeoutMs: number
+): number {
+  if (method === 'orchestration.workerStart') {
+    const requestedValue = getTimeoutMsParam(params)
+    const requested = typeof requestedValue === 'number' ? requestedValue : Number(requestedValue)
+    if (!isWorkerStartTimeoutWithinTimerLimit(requested)) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        `--timeout-ms is too large for worker-start transport grace; the derived timeout must be <= ${MAX_TIMER_DELAY_MS}ms.`
+      )
+    }
+    const readiness = resolveWorkerStartReadinessTimeoutMs(requested)
+    return Math.max(resolveWorkerStartClientTimeoutMs(readiness), requestTimeoutMs)
+  }
+  if ((method === 'orchestration.check' && isWaitingCheck(params)) || method === 'terminal.wait') {
+    const inner = Number(getTimeoutMsParam(params))
+    if (Number.isFinite(inner) && inner > 0) {
+      return Math.max(inner + LONG_POLL_CLIENT_GRACE_MS, requestTimeoutMs)
+    }
+  }
+  return requestTimeoutMs
 }

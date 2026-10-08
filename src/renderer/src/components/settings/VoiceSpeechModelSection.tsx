@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { attachVoiceModelDeleteRequest } from '@/runtime/voice-model-delete-request'
 import { toast } from 'sonner'
 import type {
   VoiceSettings,
@@ -29,7 +30,7 @@ type VoiceSpeechModelSectionProps = {
   modelStates: SpeechModelState[]
   onUpdateVoiceSettings: (updates: Partial<VoiceSettings>) => void
   onOpenOpenAiDialog: (modelId: string) => void
-  onRefreshModelStates: () => void
+  onRefreshModelStates: () => void | Promise<void>
 }
 
 export function VoiceSpeechModelSection({
@@ -41,8 +42,44 @@ export function VoiceSpeechModelSection({
   onRefreshModelStates
 }: VoiceSpeechModelSectionProps): React.JSX.Element {
   const [pendingDeleteModelIds, setPendingDeleteModelIds] = useState<Set<string>>(() => new Set())
+  const [modelMenuOpen, setModelMenuOpen] = useState(false)
   const getModelState = (id: string): SpeechModelState | undefined =>
     modelStates.find((s) => s.id === id)
+
+  const deleteModel = useCallback(
+    async (modelId: string): Promise<void> => {
+      const manifest = catalog.find((value) => value.id === modelId)
+      if (
+        !manifest ||
+        manifest.provider === 'openai' ||
+        !modelStates.some((value) => value.id === modelId && value.status === 'ready')
+      ) {
+        throw new Error('voice_model_not_deletable')
+      }
+      if (pendingDeleteModelIds.has(modelId)) {
+        throw new Error('voice_model_delete_pending')
+      }
+      setModelMenuOpen(true)
+      setPendingDeleteModelIds((previous) => new Set([...previous, modelId]))
+      try {
+        await window.api.speech.deleteModel(modelId)
+        await onRefreshModelStates()
+      } catch (error) {
+        toast.error(
+          translate('auto.components.settings.VoicePane.68de13f72c', 'Failed to delete model.')
+        )
+        throw error
+      } finally {
+        setPendingDeleteModelIds((previous) => {
+          const next = new Set(previous)
+          next.delete(modelId)
+          return next
+        })
+      }
+    },
+    [catalog, modelStates, onRefreshModelStates, pendingDeleteModelIds]
+  )
+  useEffect(() => attachVoiceModelDeleteRequest(deleteModel), [deleteModel])
 
   const selectedModel = catalog.find((m) => m.id === voiceSettings.sttModel)
   const selectedModelState = voiceSettings.sttModel
@@ -51,7 +88,10 @@ export function VoiceSpeechModelSection({
   const selectedIsReady = selectedModelState?.status === 'ready'
 
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
+    <div
+      data-voice-pending-model-deletes={JSON.stringify([...pendingDeleteModelIds])}
+      className="flex items-center justify-between gap-4 py-2"
+    >
       <div className="space-y-0.5">
         <Label>{translate('auto.components.settings.VoicePane.43fd4f454b', 'Speech Model')}</Label>
         <p className="text-xs text-muted-foreground">
@@ -63,7 +103,7 @@ export function VoiceSpeechModelSection({
               )}
         </p>
       </div>
-      <DropdownMenu>
+      <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
@@ -182,32 +222,7 @@ export function VoiceSpeechModelSection({
                     onClick={(event) => {
                       event.preventDefault()
                       event.stopPropagation()
-                      if (deletePending) {
-                        return
-                      }
-                      setPendingDeleteModelIds((prev) => {
-                        const next = new Set(prev)
-                        next.add(manifest.id)
-                        return next
-                      })
-                      void window.api.speech
-                        .deleteModel(manifest.id)
-                        .then(onRefreshModelStates)
-                        .catch(() =>
-                          toast.error(
-                            translate(
-                              'auto.components.settings.VoicePane.68de13f72c',
-                              'Failed to delete model.'
-                            )
-                          )
-                        )
-                        .finally(() =>
-                          setPendingDeleteModelIds((prev) => {
-                            const next = new Set(prev)
-                            next.delete(manifest.id)
-                            return next
-                          })
-                        )
+                      void deleteModel(manifest.id).catch(() => {})
                     }}
                     className="shrink-0 text-muted-foreground can-hover:opacity-0 group-hover:opacity-100 hover:text-destructive disabled:opacity-60 disabled:hover:text-muted-foreground"
                   >

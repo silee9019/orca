@@ -1,3 +1,4 @@
+import { openExternalUrlWithAck } from './shell-external-url-open'
 import { validatePathExistenceBatch } from '../../shared/path-existence-batch'
 import { ipcMain, shell, dialog } from 'electron'
 import { constants, copyFile, readFile, stat } from 'node:fs/promises'
@@ -154,7 +155,11 @@ export function registerShellHandlers(store: Store): void {
       openInExternalEditor(store, request)
   )
 
-  ipcMain.handle('shell:openUrl', (_event, rawUrl: string) => openShellUrl(rawUrl))
+  ipcMain.handle('shell:openUrl', (_event, rawUrl: string, options?: { requireOpen?: boolean }) =>
+    openExternalUrlWithAck(rawUrl, options?.requireOpen === true, async (url) => {
+      await openShellUrl(url)
+    })
+  )
 
   ipcMain.handle('shell:openFilePath', async (_event, filePath: string): Promise<boolean> => {
     return openWithSystemDefault(filePath)

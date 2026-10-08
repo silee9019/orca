@@ -1,3 +1,6 @@
+import { useSkillsViewerDialog } from '@/runtime/skills-viewer-dialog'
+import { useSkillListViewerController } from '@/runtime/skill-list-viewer-controller'
+import type { RuntimeClientTarget } from '@/runtime/runtime-client-target'
 import { useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import type { DiscoveredSkill } from '../../../../shared/skills'
@@ -24,6 +27,9 @@ function focusEdgeOption(listbox: HTMLElement | null, edge: 'first' | 'last'): v
 
 export function SkillsList({
   skills,
+  target,
+  locked = false,
+  busy = false,
   allSkills,
   local,
   agentByRootPath,
@@ -37,6 +43,9 @@ export function SkillsList({
   onDelete
 }: {
   skills: readonly DiscoveredSkill[]
+  target?: RuntimeClientTarget | null
+  locked?: boolean
+  busy?: boolean
   allSkills: readonly DiscoveredSkill[]
   local: boolean
   agentByRootPath: ReadonlyMap<string, string>
@@ -101,6 +110,45 @@ export function SkillsList({
       onSelectResults(skills)
     }
   }
+
+  useSkillsViewerDialog('detail', detailSkill !== null, false, () => setDetailSkill(null))
+  useSkillListViewerController({
+    target,
+    locked,
+    busy,
+    local,
+    skills,
+    selectedIds,
+    selectionMode,
+    detailSkill,
+    setDetailSkill,
+    focusedId,
+    handleSelection,
+    canSelect: (skill) =>
+      selectionMode === 'delete'
+        ? deleteSupported && isSkillDeleteEligible(skill)
+        : isSkillShareEligible(skill, local) &&
+          (selectedIds.has(skill.id) || !selectedNames.has(skill.name.toLocaleLowerCase('en-US'))),
+    share: (skill) => {
+      onShare(skill)
+      setDetailSkill(null)
+    },
+    focus: (value, id) => {
+      const options = [...(listRef.current?.querySelectorAll<HTMLElement>(OPTION_SELECTOR) ?? [])]
+      if (value === 'id') {
+        options.find((option) => option.dataset.skillRow === id)?.focus()
+      } else if (value === 'first' || value === 'last') {
+        focusEdgeOption(listRef.current, value)
+      } else {
+        const active = options.find((option) => option === document.activeElement)
+        if (active) {
+          moveOptionFocus(listRef.current, active, value === 'next' ? 1 : -1)
+        } else {
+          focusEdgeOption(listRef.current, 'first')
+        }
+      }
+    }
+  })
 
   return (
     <>

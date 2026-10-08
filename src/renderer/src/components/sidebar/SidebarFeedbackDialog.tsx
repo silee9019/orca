@@ -1,3 +1,4 @@
+import { useFeedbackDraftCliControl } from './use-feedback-draft-cli-control'
 /* oxlint-disable react-doctor/no-adjust-state-on-prop-change -- Why: feedback viewer details are loaded through GitHub IPC after the dialog receives the issue URL. */
 import React, { useRef, useState } from 'react'
 import { ExternalLink, Github } from 'lucide-react'
@@ -87,6 +88,14 @@ export function SidebarFeedbackDialog({
     hasPendingImageReads,
     getReservedImageCapacity
   } = useSidebarFeedbackImages({ open, isSubmitting, mountedRef })
+
+  useFeedbackDraftCliControl({
+    open,
+    busy: isSubmitting,
+    images,
+    remove: handleRemoveImage,
+    textarea: feedbackTextareaRef
+  })
 
   // Why: reads the committed draft at call time so a late-resolving prefill
   // cannot overwrite characters typed while it was in flight.

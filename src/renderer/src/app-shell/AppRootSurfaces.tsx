@@ -1,3 +1,4 @@
+import { useAppShellControl } from './use-app-shell-control'
 import { NotificationCardStack } from '../components/NotificationCardStack'
 import { Suspense } from 'react'
 import { lazyWithRetry as lazy } from '@/lib/lazy-with-retry'
@@ -131,6 +132,7 @@ export function AppRootSurfaces(props: {
   onboardingGate: OnboardingGate
 }): React.JSX.Element {
   const { floatingWorkspace, onboardingGate } = props
+  useAppShellControl(floatingWorkspace)
   const { mountedLazyModalIds, shouldMountAddRepoDialog } = useLazyModalMounts()
   const activeView = useAppStore((s) => s.activeView)
   const activeModal = useAppStore((s) => s.activeModal)

@@ -2,6 +2,12 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const AUTOMATION_EXTENSION_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['automations', 'viewer'],
+    summary: 'Read or change the mounted desktop automation viewer and await filtered state',
+    usage: 'orca automations viewer --viewer desktop --input-file <action.json> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'input-file', 'input-stdin']
+  },
+  {
     path: ['automations', 'external', 'list'],
     summary: 'external list through the owning automation service',
     usage: 'orca automations external list --input-file <request.json> | --input-stdin [--json]',
