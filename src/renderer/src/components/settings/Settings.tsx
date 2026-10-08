@@ -7,6 +7,7 @@ import { useSettingsRepoScrollEffects } from './use-settings-repo-scroll-effects
 import { buildSettingsViewModel, useSettingsNavigationActions } from './settings-view-model'
 import { renderSettingsLoading, renderSettingsPage } from './settings-page-renderer'
 import type { LoadedSettingsStoreModel, SettingsRenderContext } from './settings-render-context'
+import { useSettingsViewerPublication } from './use-settings-viewer-publication'
 
 function Settings(): React.JSX.Element {
   const model = useSettingsStoreModel()
@@ -16,6 +17,7 @@ function Settings(): React.JSX.Element {
   const terminal = useSettingsTerminalModel(model, navigation)
   useSettingsRepoScrollEffects(model, interactions, navigation, terminal)
   const actions = useSettingsNavigationActions(model, interactions)
+  useSettingsViewerPublication(model, interactions, navigation)
 
   if (!model.settings) {
     return renderSettingsLoading(interactions)
