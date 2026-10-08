@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { WorkspaceFilterResultSchema, defaultWorkspaceFilters } from './workspace-filter-command'
 import { SettingsViewerResultSchema } from './settings-viewer-command'
 import { SidebarViewerResultSchema } from './sidebar-viewer-command'
+import { CardViewerResultSchema } from './card-viewer-command'
 
 it('reads newer viewer replies without accepting malformed required fields', () => {
   const filter = {
@@ -61,6 +62,36 @@ it('reads newer viewer replies without accepting malformed required fields', () 
       futureSnapshot: true
     }
   }
+  const card = {
+    viewer: 'host',
+    viewerId: 1,
+    dispatched: true,
+    applied: false,
+    persisted: null,
+    compact: false,
+    defaulted: true,
+    properties: ['future-property'],
+    activityMode: 'future-mode',
+    rendered: [
+      {
+        id: 'workspace',
+        repoId: 'project',
+        hostId: null,
+        compact: false,
+        newStyle: true,
+        properties: [],
+        activityMode: 'future-mode',
+        runtimeContextKey: 'local',
+        futureSnapshot: true
+      }
+    ],
+    futureReply: true,
+    reason: 'future_reason'
+  }
+  expect(CardViewerResultSchema.parse(card)).toMatchObject({
+    reason: 'viewer_not_applied',
+    activityMode: 'future-mode'
+  })
   expect(WorkspaceFilterResultSchema.parse(filter)).toMatchObject({ reason: 'viewer_not_applied' })
   expect(SettingsViewerResultSchema.parse(settings)).toMatchObject({ reason: 'viewer_not_applied' })
   expect(SidebarViewerResultSchema.parse(sidebar)).toMatchObject({
@@ -70,7 +101,8 @@ it('reads newer viewer replies without accepting malformed required fields', () 
   for (const [schema, value] of [
     [WorkspaceFilterResultSchema, filter],
     [SettingsViewerResultSchema, settings],
-    [SidebarViewerResultSchema, sidebar]
+    [SidebarViewerResultSchema, sidebar],
+    [CardViewerResultSchema, card]
   ] as const) {
     expect(schema.safeParse({ ...value, applied: 'true' }).success).toBe(false)
     expect(schema.safeParse({ ...value, reason: 1 }).success).toBe(false)

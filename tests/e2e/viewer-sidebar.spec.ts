@@ -1,7 +1,6 @@
-import { execFile } from 'node:child_process'
+import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { test, expect } from './helpers/orca-app'
 import { SidebarViewerResultSchema } from '../../src/shared/sidebar-viewer-command'
 
@@ -16,20 +15,14 @@ test('sidebar CLI uses existing guards and acknowledges actual panels', async ({
     JSON.stringify({ pid, userData, backgroundLaunch: process.env.ORCA_BACKGROUND_LAUNCH }, null, 2)
   )
   if (process.platform === 'darwin') {
-    const { stdout: processState } = await promisify(execFile)('ps', [
-      '-p',
-      String(pid),
-      '-o',
-      'pid=,ppid=,ni=,comm='
-    ])
-    const { stdout: listeners } = await promisify(execFile)('lsof', [
-      '-nP',
-      '-a',
-      '-p',
-      String(pid),
-      '-iTCP',
-      '-sTCP:LISTEN'
-    ])
+    const { stdout: processState } = await runViewerFixtureProcess({
+      program: 'ps',
+      args: ['-p', String(pid), '-o', 'pid=,ppid=,ni=,comm=']
+    })
+    const { stdout: listeners } = await runViewerFixtureProcess({
+      program: 'lsof',
+      args: ['-nP', '-a', '-p', String(pid), '-iTCP', '-sTCP:LISTEN']
+    })
     writeFileSync(testInfo.outputPath('process-isolation.txt'), `${processState}\n${listeners}`)
   }
   const results: unknown[] = []
@@ -37,14 +30,19 @@ test('sidebar CLI uses existing guards and acknowledges actual panels', async ({
     const env = Object.fromEntries(
       Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
     )
-    const { stdout } = await promisify(execFile)(
-      process.execPath,
-      [path.join(process.cwd(), 'out/cli/index.js'), 'ui', ...args, '--viewer', 'host', '--json'],
-      {
-        env: { ...env, ORCA_USER_DATA_PATH: userData, ORCA_BACKGROUND_LAUNCH: '1' },
-        timeout: 20000
-      }
-    ).catch((error: unknown) => {
+    const { stdout } = await runViewerFixtureProcess({
+      program: process.execPath,
+      args: [
+        path.join(process.cwd(), 'out/cli/index.js'),
+        'ui',
+        ...args,
+        '--viewer',
+        'host',
+        '--json'
+      ],
+      env: { ...env, ORCA_USER_DATA_PATH: userData, ORCA_BACKGROUND_LAUNCH: '1' },
+      timeoutMs: 20000
+    }).catch((error: unknown) => {
       if (typeof error === 'object' && error !== null && 'stdout' in error) {
         writeFileSync(
           testInfo.outputPath('cli-error.json'),

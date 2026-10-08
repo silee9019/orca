@@ -1,8 +1,7 @@
-import { execFile } from 'node:child_process'
+import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { test, expect } from './helpers/orca-app'
 import { WorkspaceFilterResultSchema } from '../../src/shared/workspace-filter-command'
 import type { WorkspaceFilters } from '../../src/shared/rpc-contract/workspace-filter-params'
@@ -46,20 +45,14 @@ test('workspace filter CLI changes the hidden sidebar and resets its saved filte
   )
   if (process.platform === 'darwin') {
     const pid = String(await electronApp.evaluate(() => process.pid))
-    const { stdout: processState } = await promisify(execFile)('ps', [
-      '-p',
-      pid,
-      '-o',
-      'pid=,ppid=,ni=,comm='
-    ])
-    const { stdout: listeners } = await promisify(execFile)('lsof', [
-      '-nP',
-      '-a',
-      '-p',
-      pid,
-      '-iTCP',
-      '-sTCP:LISTEN'
-    ])
+    const { stdout: processState } = await runViewerFixtureProcess({
+      program: 'ps',
+      args: ['-p', pid, '-o', 'pid=,ppid=,ni=,comm=']
+    })
+    const { stdout: listeners } = await runViewerFixtureProcess({
+      program: 'lsof',
+      args: ['-nP', '-a', '-p', pid, '-iTCP', '-sTCP:LISTEN']
+    })
     writeFileSync(testInfo.outputPath('process-isolation.txt'), `${processState}\n${listeners}`)
   }
   const results: unknown[] = []
@@ -67,14 +60,12 @@ test('workspace filter CLI changes the hidden sidebar and resets its saved filte
     const env = Object.fromEntries(
       Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
     )
-    const { stdout } = await promisify(execFile)(
-      process.execPath,
-      [path.join(process.cwd(), 'out/cli/index.js'), ...args, '--viewer', 'host', '--json'],
-      {
-        env: { ...env, ORCA_USER_DATA_PATH: userData, ORCA_BACKGROUND_LAUNCH: '1' },
-        timeout: 20000
-      }
-    ).catch((error: unknown) => {
+    const { stdout } = await runViewerFixtureProcess({
+      program: process.execPath,
+      args: [path.join(process.cwd(), 'out/cli/index.js'), ...args, '--viewer', 'host', '--json'],
+      env: { ...env, ORCA_USER_DATA_PATH: userData, ORCA_BACKGROUND_LAUNCH: '1' },
+      timeoutMs: 20000
+    }).catch((error: unknown) => {
       if (typeof error === 'object' && error !== null && 'stdout' in error) {
         writeFileSync(
           testInfo.outputPath('cli-error.json'),
@@ -140,7 +131,10 @@ test('workspace filter CLI changes the hidden sidebar and resets its saved filte
   const secondRepoRoot = mkdtempSync(path.join(os.tmpdir(), 'orca-viewer-filter-second-'))
   try {
     const secondRepo = path.join(secondRepoRoot, 'other-project')
-    await promisify(execFile)('git', ['clone', '--no-hardlinks', fixture.repoPath, secondRepo])
+    await runViewerFixtureProcess({
+      program: 'git',
+      args: ['clone', '--no-hardlinks', fixture.repoPath, secondRepo]
+    })
     await orcaPage.evaluate(async (repoPath) => {
       const store = window.__store
       if (!store) {

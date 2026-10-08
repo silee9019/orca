@@ -2,9 +2,10 @@ import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
-import { SettingsViewerResultSchema } from '../../src/shared/settings-viewer-command'
+import { CardViewerResultSchema } from '../../src/shared/card-viewer-command'
+import { normalizeWorktreeCardProperties } from '../../src/shared/worktree/card-properties'
 
-test('settings CLI opens the actual pane and waits for rendered search results', async ({
+test('card CLI acknowledges presets and rendered configuration', async ({
   orcaPage,
   electronApp
 }, testInfo) => {
@@ -35,7 +36,6 @@ test('settings CLI opens the actual pane and waits for rendered search results',
       args: [
         path.join(process.cwd(), 'out/cli/index.js'),
         'ui',
-        'settings',
         ...args,
         '--viewer',
         'host',
@@ -56,7 +56,7 @@ test('settings CLI opens the actual pane and waits for rendered search results',
     results.push(envelope)
     writeFileSync(testInfo.outputPath('cli-results.json'), JSON.stringify(results, null, 2))
     expect(envelope._meta.runtimeId).toBeTruthy()
-    return SettingsViewerResultSchema.parse(envelope.result)
+    return CardViewerResultSchema.parse(envelope.result)
   }
   expect(
     await electronApp.evaluate(({ BrowserWindow }) =>
@@ -67,44 +67,60 @@ test('settings CLI opens the actual pane and waits for rendered search results',
     .locator('[data-sidebar-resize-handle]')
     .locator('..')
     .screenshot({ path: testInfo.outputPath('before.png') })
-  const opened = await call(['open', '--pane', 'appearance'])
-  expect(opened).toMatchObject({
-    applied: true,
-    resolvedSectionId: 'appearance',
-    activeSectionId: 'appearance',
-    sectionTargetPresent: true
-  })
-  await expect(
-    orcaPage.locator('.settings-view-shell [data-settings-section="appearance"]')
-  ).toBeVisible()
-  await orcaPage
-    .locator('.settings-view-shell')
-    .screenshot({ path: testInfo.outputPath('appearance.png') })
-  expect(
-    await call(['open', '--pane', 'appearance', '--section', 'appearance-section-window'])
-  ).toMatchObject({ applied: true, sectionTargetPresent: true })
-  const search = await call(['search', '--query', 'terminal'])
-  expect(search).toMatchObject({ applied: true, queryInput: 'terminal', queryApplied: 'terminal' })
-  expect(search.visibleSectionIds).toContain('terminal')
-  await orcaPage
-    .locator('.settings-view-shell')
-    .screenshot({ path: testInfo.outputPath('search.png') })
-  expect(await call(['search', '--query', 'terminal'])).toMatchObject({
-    applied: true,
-    queryInput: 'terminal',
-    queryApplied: 'terminal'
-  })
-  const empty = await call(['search', '--query', 'no-settings-match-this-query'])
-  expect(empty).toMatchObject({ applied: true, visibleSectionIds: [] })
-  expect((await call(['search', '--query', ''])).visibleSectionIds).toContain('general')
-  const repoId = await orcaPage.evaluate(() => window.__store?.getState().repos[0]?.id)
-  if (!repoId) {
-    throw new Error('fixture_project_unavailable')
+  const initial = await call(['card', 'get'])
+  expect(initial.rendered.length).toBeGreaterThan(0)
+  await orcaPage.evaluate(() =>
+    window.__store?.getState().updateSettingsOrThrow({ experimentalNewWorktreeCardStyle: true })
+  )
+  for (const mode of ['Compact', 'Default']) {
+    const result = await call(['card', 'mode', '--mode', mode])
+    expect(result).toMatchObject({
+      applied: true,
+      persisted: true,
+      compact: mode === 'Compact',
+      defaulted: true
+    })
+    expect(result.rendered.length).toBeGreaterThan(0)
+    await orcaPage
+      .locator('[data-viewer-sidebar="left"]')
+      .screenshot({ path: testInfo.outputPath(`card-new-${mode}.png`) })
+    for (const card of result.rendered) {
+      expect(card.compact).toBe(card.newStyle ? false : mode === 'Compact')
+      expect(normalizeWorktreeCardProperties(card.properties)).toEqual(result.properties)
+    }
   }
-  const repo = await call(['open', '--pane', 'repo', '--repo', repoId])
-  expect(repo.applied).toBe(true)
-  expect(repo.activeSectionId).toBe(repo.resolvedSectionId)
-  expect(repo.renderedSectionIds).toContain(repo.resolvedSectionId)
+  await expect(call(['card', 'activity', '--mode', 'full'])).rejects.toThrow()
+  await orcaPage.evaluate(() =>
+    window.__store?.getState().updateSettingsOrThrow({ experimentalNewWorktreeCardStyle: false })
+  )
+  for (const mode of ['Compact', 'Default']) {
+    const result = await call(['card', 'mode', '--mode', mode])
+    expect(result).toMatchObject({ applied: true, persisted: true })
+    expect(
+      result.rendered.every((card) => !card.newStyle && card.compact === (mode === 'Compact'))
+    ).toBe(true)
+    await orcaPage
+      .locator('[data-viewer-sidebar="left"]')
+      .screenshot({ path: testInfo.outputPath(`card-legacy-${mode}.png`) })
+  }
+  for (const mode of ['full', 'compact']) {
+    expect(await call(['card', 'activity', '--mode', mode])).toMatchObject({
+      applied: true,
+      persisted: true,
+      activityMode: mode
+    })
+  }
+  await orcaPage
+    .locator('[data-viewer-sidebar="left"]')
+    .screenshot({ path: testInfo.outputPath('card-preset.png') })
+  await orcaPage.evaluate(() => window.__store?.getState().setSidebarOpen(false))
+  await expect(orcaPage.locator('[data-viewer-sidebar="left"]')).toBeHidden()
+  expect(await call(['card', 'mode', '--mode', 'Compact'])).toMatchObject({
+    applied: false,
+    persisted: true,
+    reason: 'card_surface_unavailable'
+  })
+  await orcaPage.evaluate(() => window.__store?.getState().setSidebarOpen(true))
   expect(
     await electronApp.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows().every((window) => !window.isVisible() && !window.isFocused())
