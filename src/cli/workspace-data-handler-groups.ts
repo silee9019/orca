@@ -3,6 +3,13 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-diagnostic-preview',
+    keys: ['diagnostics open-retained-preview'],
+    load: async () =>
+      (await import('./handlers/workspace-diagnostic-preview.js'))
+        .WORKSPACE_DIAGNOSTIC_PREVIEW_HANDLERS
+  },
+  {
     name: 'workspace-notebook-environments',
     keys: [
       'notebook environments',
