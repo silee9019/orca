@@ -16,7 +16,8 @@ const hoisted = vi.hoisted(() => {
     toRenderer,
     toMain,
     sender,
-    // Stands in for Electron's two IPC directions; everything on both sides of it is real.
+    // Replaces only Electron's IPC; the notifier, preload, renderer bridges and close relay run for real
+    // while store actions, persistence and focus surfaces are mocked at their boundary.
     ipcMain: {
       on: (channel: string, listener: Listener) => add(toMain, channel, listener),
       removeListener: (channel: string, listener: Listener) => toMain.get(channel)?.delete(listener)
