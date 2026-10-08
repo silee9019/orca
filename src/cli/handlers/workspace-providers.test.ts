@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { RuntimeClient } from '../runtime-client'
 import type { HandlerContext } from '../dispatch'
+import { WORKSPACE_LINEAR_DATA_HANDLERS } from './workspace-linear-data'
 import { WORKSPACE_GITHUB_WORK_ITEMS_HANDLERS } from './workspace-github-work-items'
 import { WORKSPACE_HOSTED_REVIEW_HANDLERS } from './workspace-hosted-review'
 import { WORKSPACE_GITHUB_REVIEW_HANDLERS } from './workspace-github-review'
@@ -154,4 +155,34 @@ it('checks a repository account binding on the selected host without selecting a
   })
   await WORKSPACE_GITHUB_WORK_ITEMS_HANDLERS['github validate-account-binding'](ctx)
   expect(call).toHaveBeenCalledWith('github.validateAccountBinding', params)
+})
+
+it('requires a concrete Linear workspace and exact project name before creating a project', async () => {
+  const params = {
+    workspaceId: 'workspace-1',
+    name: 'Roadmap',
+    teamIds: ['team-1'],
+    content: 'Plan'
+  }
+  await writeFile(input, JSON.stringify(params))
+  const call = vi.spyOn(ctx.client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    result: { ok: true, project: { id: 'project-1' } },
+    _meta: { runtimeId: 'fixture' }
+  })
+  ctx.flags.set('confirm', 'workspace-2:Roadmap')
+  await expect(WORKSPACE_LINEAR_DATA_HANDLERS['linear project create'](ctx)).rejects.toThrow(
+    '--confirm'
+  )
+  expect(call).not.toHaveBeenCalled()
+  ctx.flags.set('confirm', 'workspace-1:Roadmap')
+  await WORKSPACE_LINEAR_DATA_HANDLERS['linear project create'](ctx)
+  expect(call).toHaveBeenCalledWith('linear.createProject', params)
+  call.mockClear()
+  await writeFile(input, JSON.stringify({ ...params, workspaceId: 'all' }))
+  await expect(WORKSPACE_LINEAR_DATA_HANDLERS['linear project create'](ctx)).rejects.toMatchObject({
+    code: 'invalid_argument'
+  })
+  expect(call).not.toHaveBeenCalled()
 })

@@ -146,6 +146,7 @@ export const WORKSPACE_PROVIDER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: [
       'linear issue-comments',
       'linear project get',
+      'linear project create',
       'linear list-project-issues',
       'linear list-custom-views',
       'linear get-custom-view',

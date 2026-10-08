@@ -1,7 +1,9 @@
+import { CreateProject } from '../../shared/rpc-contract/linear-project-create-params'
 import type { CommandHandler } from '../dispatch'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
-import { readWorkspaceCommandInput } from '../workspace-command-input'
+import { readWorkspaceCommandInput, confirmWorkspaceCommand } from '../workspace-command-input'
 import {
+  ConcreteWorkspaceId,
   CustomViewContents,
   CustomViewId,
   LinearIssueCommentsParams,
@@ -11,6 +13,15 @@ import {
 } from '../../shared/rpc-contract/linear-params'
 
 export const WORKSPACE_LINEAR_DATA_HANDLERS: Record<string, CommandHandler> = {
+  'linear project create': async (ctx) => {
+    const params = await readWorkspaceCommandInput(
+      ctx,
+      CreateProject.extend({ workspaceId: ConcreteWorkspaceId })
+    )
+    confirmWorkspaceCommand(ctx, `${params.workspaceId}:${params.name}`)
+    const result = await ctx.client.call('linear.createProject', params)
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
   'linear issue-comments': async (ctx) => {
     const params = await readWorkspaceCommandInput(ctx, LinearIssueCommentsParams)
     const result = await ctx.client.call('linear.issueComments', params)

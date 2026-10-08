@@ -3,6 +3,18 @@ import { GLOBAL_FLAGS } from '../args'
 
 export const WORKSPACE_LINEAR_DATA_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['linear', 'project', 'create'],
+    summary: 'Create a project in a concrete Linear workspace',
+    usage:
+      'orca linear project create --params-file <file|-> --confirm <workspaceId:name> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
+    notes: [
+      'Input fields: workspaceId, name, teamIds, description (optional), content (optional), leadId (optional), memberIds (optional), labelIds (optional), priority (optional), startDate (optional), targetDate (optional).',
+      'Pass CreateProject JSON in a file or --params-file - for stdin. workspaceId must name one workspace; all is rejected. --confirm must exactly match workspaceId:name.',
+      'The selected Orca runtime uses its existing Linear connection and project service. Older hosts fail without another host fallback.'
+    ]
+  },
+  {
     path: ['linear', 'issue-comments'],
     summary: 'Linear issue comments on the selected Orca runtime',
     usage: 'orca linear issue-comments --params-file <file|-> [--json]',
