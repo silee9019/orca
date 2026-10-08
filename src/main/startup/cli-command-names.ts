@@ -1,5 +1,8 @@
 // Kept import-free for main/CLI project isolation; a parity test prevents drift.
 export const CLI_COMMAND_NAMES = [
+  'notebook',
+  'shell',
+  'settings',
   'crash-report',
   'keybindings',
   'workspace-cleanup',

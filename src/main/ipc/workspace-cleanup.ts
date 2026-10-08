@@ -1,3 +1,5 @@
+import { getWorkspaceCleanupCliScan } from '../workspace-cleanup-cli-scan'
+import { setDesktopCleanupScanForRpc } from '../runtime/rpc/methods/workspace-cleanup-scan'
 import { ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type {
@@ -36,6 +38,7 @@ function getBroadScanModeKey(senderId: number, args: WorkspaceCleanupScanArgs): 
 }
 
 export function registerWorkspaceCleanupHandlers(store: Store): void {
+  setDesktopCleanupScanForRpc(getWorkspaceCleanupCliScan(store))
   const snapshotDirectory = store.getProfileStorageDirectory()
   ipcMain.removeHandler('workspaceCleanup:scan')
   ipcMain.removeHandler('workspaceCleanup:cancelScan')

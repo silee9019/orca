@@ -29,6 +29,7 @@ import {
   uploadDiagnosticBundle,
   type DiagnosticsStatus
 } from '../observability'
+import { setDesktopDiagnosticPreviewForRpc } from '../runtime/rpc/methods/workspace-diagnostic-preview'
 import type { CollectedBundle } from '../observability/bundle'
 import type { UploadBundleResult } from '../observability/diagnostic-bundle-upload'
 import {
@@ -284,6 +285,7 @@ export function getDiagnosticsOperations(): ReturnType<typeof createDiagnosticsO
 }
 export function registerDiagnosticsHandlers(): void {
   const operations = getDiagnosticsOperations()
+  setDesktopDiagnosticPreviewForRpc(operations.openBundlePreview)
   ipcMain.handle(
     'diagnostics:getStatus',
     (_event, ...args: Parameters<typeof operations.getStatus>) => operations.getStatus(...args)

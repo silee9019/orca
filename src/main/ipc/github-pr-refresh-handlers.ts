@@ -1,24 +1,20 @@
+import { registerDesktopGitHubRefreshHandlers } from '../github-desktop-refresh-handlers'
 import { ipcMain } from 'electron'
 import { resolve } from 'node:path'
 import type {
   GitHubPRRefreshCandidate,
-  GitHubPRRefreshEnqueueResult,
-  GitHubPRRefreshReason,
   PRRefreshOutcome
 } from '../../shared/github/pull-request-refresh-types'
 import type { Repo } from '../../shared/repo-types'
 import { getPRForBranch, type GitHubPRBranchLookupOptions } from '../github/client'
 import {
   clearVisiblePRRefreshWindow,
-  enqueuePRRefresh,
-  refreshPRNow,
   reportVisiblePRRefreshCandidates,
   setPRRefreshOutcomeObserver
 } from '../github/pr-refresh-coordinator'
 import type { Store } from '../persistence'
 import type { StatsCollector } from '../stats/collector'
 import {
-  applyRegisteredRepoToPRRefreshCandidate,
   assertRegisteredGitHubRepo,
   getGitHubLocalGitOptionArgs,
   getGitHubRepoConnectionId,
@@ -104,40 +100,7 @@ export function registerGitHubPRRefreshHandlers(store: Store, stats: StatsCollec
     }
   )
 
-  ipcMain.handle(
-    'gh:refreshPRNow',
-    async (
-      _event,
-      args: { candidate: GitHubPRRefreshCandidate; reason?: GitHubPRRefreshReason }
-    ) => {
-      const repo = assertRegisteredGitHubRepo(args.candidate, store)
-      const outcome = await refreshPRNow(
-        applyRegisteredRepoToPRRefreshCandidate(store, repo, args.candidate),
-        args.reason
-      )
-      recordPRIfNeeded(repo, outcome)
-      return outcome
-    }
-  )
-
-  ipcMain.handle(
-    'gh:enqueuePRRefresh',
-    (
-      event,
-      args: {
-        candidate: GitHubPRRefreshCandidate
-        reason: GitHubPRRefreshReason
-        priority?: number
-      }
-    ): GitHubPRRefreshEnqueueResult => {
-      const validation = validateAutomaticPRRefreshCandidate(args.candidate, store)
-      if (validation.kind === 'skipped') {
-        return validation.result
-      }
-      enqueuePRRefresh(validation.candidate, args.reason, args.priority ?? 0, event?.sender?.id)
-      return { kind: 'queued' }
-    }
-  )
+  registerDesktopGitHubRefreshHandlers(store, recordPRIfNeeded)
 
   ipcMain.handle(
     'gh:reportVisiblePRRefreshCandidates',

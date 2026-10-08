@@ -1,3 +1,4 @@
+import { setDesktopWorktreeForgetForRpc } from '../../../runtime/rpc/methods/workspace-worktree-forget'
 import { ipcMain } from 'electron'
 import type {
   RemoveWorktreeResult,
@@ -39,116 +40,116 @@ import type { WorktreeIpcContext } from '../worktree-ipc-context'
 export function registerWorktreeForgetHandlers(context: WorktreeIpcContext): void {
   const { mainWindow, store, runtime, worktreeRemovalsInFlight } = context
 
-  ipcMain.handle(
-    'worktrees:forgetLocal',
-    async (
-      _event,
-      args: Pick<RemoveWorktreeArgs, 'worktreeId' | 'hostId' | 'snapshotPruneBatchId'>
-    ): Promise<RemoveWorktreeResult> => {
-      const { repoId } = parseWorktreeId(args.worktreeId)
-      const repoOwner = resolveWorktreeRemovalRepoOwner(store, repoId, args.hostId)
-      if (!args.hostId && repoOwner.kind === 'ambiguous') {
-        throw new Error(
-          `Workspace identity is ambiguous across hosts: ${args.worktreeId}. Retry with an explicit host.`
-        )
-      }
-      const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
-      // Repo-first (unlike owner resolution below) so this key matches worktrees:remove's; meta only covers ownerless forgets.
-      const inFlightKey = getWorktreeRemovalInFlightKey(
-        args.worktreeId,
-        repo
-          ? getRepoExecutionHostId(repo)
-          : (args.hostId ?? store.getWorktreeMeta(args.worktreeId)?.hostId)
+  const forgetLocal = async (
+    args: Pick<RemoveWorktreeArgs, 'worktreeId' | 'hostId' | 'snapshotPruneBatchId'>
+  ): Promise<RemoveWorktreeResult> => {
+    const { repoId } = parseWorktreeId(args.worktreeId)
+    const repoOwner = resolveWorktreeRemovalRepoOwner(store, repoId, args.hostId)
+    if (!args.hostId && repoOwner.kind === 'ambiguous') {
+      throw new Error(
+        `Workspace identity is ambiguous across hosts: ${args.worktreeId}. Retry with an explicit host.`
       )
-      const optionsKey = 'forget-local'
-      const inFlight = worktreeRemovalsInFlight.get(inFlightKey)
-      if (inFlight) {
-        if (inFlight.optionsKey === optionsKey) {
-          return inFlight.promise
-        }
-        throw new Error(`Worktree deletion already in progress: ${args.worktreeId}`)
+    }
+    const repo = repoOwner.kind === 'resolved' ? repoOwner.repo : undefined
+    // Repo-first (unlike owner resolution below) so this key matches worktrees:remove's; meta only covers ownerless forgets.
+    const inFlightKey = getWorktreeRemovalInFlightKey(
+      args.worktreeId,
+      repo
+        ? getRepoExecutionHostId(repo)
+        : (args.hostId ?? store.getWorktreeMeta(args.worktreeId)?.hostId)
+    )
+    const optionsKey = 'forget-local'
+    const inFlight = worktreeRemovalsInFlight.get(inFlightKey)
+    if (inFlight) {
+      if (inFlight.optionsKey === optionsKey) {
+        return inFlight.promise
+      }
+      throw new Error(`Worktree deletion already in progress: ${args.worktreeId}`)
+    }
+
+    const forget = (async (): Promise<RemoveWorktreeResult> => {
+      const isFolderRootOf = (candidate: Repo): boolean =>
+        isFolderRepo(candidate) && args.worktreeId === getFolderWorkspaceRootId(candidate)
+      const fallbackRepos = args.hostId
+        ? store.getRepos().filter((candidate) => getRepoExecutionHostId(candidate) === args.hostId)
+        : store.getRepos()
+      if (repo ? isFolderRootOf(repo) : fallbackRepos.some(isFolderRootOf)) {
+        throw new Error(
+          'Cannot delete the project root workspace. Remove the folder project instead.'
+        )
       }
 
-      const forget = (async (): Promise<RemoveWorktreeResult> => {
-        const isFolderRootOf = (candidate: Repo): boolean =>
-          isFolderRepo(candidate) && args.worktreeId === getFolderWorkspaceRootId(candidate)
-        const fallbackRepos = args.hostId
-          ? store
-              .getRepos()
-              .filter((candidate) => getRepoExecutionHostId(candidate) === args.hostId)
-          : store.getRepos()
-        if (repo ? isFolderRootOf(repo) : fallbackRepos.some(isFolderRootOf)) {
-          throw new Error(
-            'Cannot delete the project root workspace. Remove the folder project instead.'
-          )
-        }
-
-        const ownerHostId = resolveWorktreeRemovalOwnerHostId(
-          store,
-          args.worktreeId,
-          repo,
-          args.hostId
-        )
-        const ownerHost = parseExecutionHostId(ownerHostId)
-        const sshPtyProvider =
-          ownerHost?.kind === 'ssh' ? getSshPtyProvider(ownerHost.targetId) : undefined
-        const externalHost = ownerHost?.kind === 'ssh' || ownerHost?.kind === 'runtime'
-        // External host inventories must never sweep a same-id local workspace.
-        await killAllProcessesForWorktree(args.worktreeId, {
-          runtime,
-          resolvedWorktreeId: args.worktreeId,
-          ...(ownerHost?.kind === 'ssh' ? { resolvedConnectionId: ownerHost.targetId } : {}),
-          ...(ownerHost?.kind === 'runtime'
-            ? { resolvedRuntimeEnvironmentId: ownerHost.environmentId }
-            : {}),
-          localProvider: sshPtyProvider ?? getLocalPtyProvider(),
-          onPtyStopped: clearProviderPtyState,
-          // Forgetting an orphan still purges its workspace metadata, so retire structured chat
-          // tabs even when no provider child is attached to the workspace.
-          closeStructuredSessions: true,
-          ...(externalHost
-            ? {
-                includeProviderInventory: ownerHost?.kind === 'ssh' && Boolean(sshPtyProvider),
-                includeLocalRegistry: false
-              }
-            : {})
-        }).catch((err) => {
-          console.warn(`[worktree-teardown] forget-local failed for ${args.worktreeId}:`, err)
-        })
-
-        runtime.clearOptimisticReconcileToken(args.worktreeId)
-        // The resolved owner, not args.hostId: an orphan forget with no hostId still has to purge its SSH/runtime partition.
-        removeWorktreeMetadataAndTransientState(
-          store,
-          args.worktreeId,
-          ownerHost?.id,
-          args.snapshotPruneBatchId
-        )
-        // Why: cached roots outlive the forgotten workspace, so an ownerless path stays filesystem-authorized until a rebuild.
-        invalidateAuthorizedRootsCache()
-        if (ownerHost?.id) {
-          preservedBranchCleanupByScope.delete(
-            preservedBranchCleanupScopeKey({ worktreeId: args.worktreeId, hostId: ownerHost.id })
-          )
-        } else {
-          for (const [key, target] of preservedBranchCleanupByScope) {
-            if (target.worktreeId === args.worktreeId) {
-              preservedBranchCleanupByScope.delete(key)
+      const ownerHostId = resolveWorktreeRemovalOwnerHostId(
+        store,
+        args.worktreeId,
+        repo,
+        args.hostId
+      )
+      const ownerHost = parseExecutionHostId(ownerHostId)
+      const sshPtyProvider =
+        ownerHost?.kind === 'ssh' ? getSshPtyProvider(ownerHost.targetId) : undefined
+      const externalHost = ownerHost?.kind === 'ssh' || ownerHost?.kind === 'runtime'
+      // External host inventories must never sweep a same-id local workspace.
+      await killAllProcessesForWorktree(args.worktreeId, {
+        runtime,
+        resolvedWorktreeId: args.worktreeId,
+        ...(ownerHost?.kind === 'ssh' ? { resolvedConnectionId: ownerHost.targetId } : {}),
+        ...(ownerHost?.kind === 'runtime'
+          ? { resolvedRuntimeEnvironmentId: ownerHost.environmentId }
+          : {}),
+        localProvider: sshPtyProvider ?? getLocalPtyProvider(),
+        onPtyStopped: clearProviderPtyState,
+        // Forgetting an orphan still purges its workspace metadata, so retire structured chat
+        // tabs even when no provider child is attached to the workspace.
+        closeStructuredSessions: true,
+        ...(externalHost
+          ? {
+              includeProviderInventory: ownerHost?.kind === 'ssh' && Boolean(sshPtyProvider),
+              includeLocalRegistry: false
             }
+          : {})
+      }).catch((err) => {
+        console.warn(`[worktree-teardown] forget-local failed for ${args.worktreeId}:`, err)
+      })
+
+      runtime.clearOptimisticReconcileToken(args.worktreeId)
+      // The resolved owner, not args.hostId: an orphan forget with no hostId still has to purge its SSH/runtime partition.
+      removeWorktreeMetadataAndTransientState(
+        store,
+        args.worktreeId,
+        ownerHost?.id,
+        args.snapshotPruneBatchId
+      )
+      // Why: cached roots outlive the forgotten workspace, so an ownerless path stays filesystem-authorized until a rebuild.
+      invalidateAuthorizedRootsCache()
+      if (ownerHost?.id) {
+        preservedBranchCleanupByScope.delete(
+          preservedBranchCleanupScopeKey({ worktreeId: args.worktreeId, hostId: ownerHost.id })
+        )
+      } else {
+        for (const [key, target] of preservedBranchCleanupByScope) {
+          if (target.worktreeId === args.worktreeId) {
+            preservedBranchCleanupByScope.delete(key)
           }
         }
-        notifyWorktreesChanged(mainWindow, repoId)
-        return {}
-      })()
-      worktreeRemovalsInFlight.set(inFlightKey, { optionsKey, promise: forget })
-      try {
-        return await forget
-      } finally {
-        if (worktreeRemovalsInFlight.get(inFlightKey)?.promise === forget) {
-          worktreeRemovalsInFlight.delete(inFlightKey)
-        }
+      }
+      notifyWorktreesChanged(mainWindow, repoId)
+      return {}
+    })()
+    worktreeRemovalsInFlight.set(inFlightKey, { optionsKey, promise: forget })
+    try {
+      return await forget
+    } finally {
+      if (worktreeRemovalsInFlight.get(inFlightKey)?.promise === forget) {
+        worktreeRemovalsInFlight.delete(inFlightKey)
       }
     }
+  }
+  setDesktopWorktreeForgetForRpc(forgetLocal)
+  ipcMain.handle(
+    'worktrees:forgetLocal',
+    (_event, args: Pick<RemoveWorktreeArgs, 'worktreeId' | 'hostId' | 'snapshotPruneBatchId'>) =>
+      forgetLocal(args)
   )
 
   ipcMain.handle(

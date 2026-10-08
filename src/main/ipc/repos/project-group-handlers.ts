@@ -1,3 +1,4 @@
+import { registerDesktopNestedScanForRpc } from '../../desktop-nested-scan-service'
 import type { BrowserWindow } from 'electron'
 import { ipcMain } from 'electron'
 import type { Store } from '../../persistence'
@@ -16,6 +17,7 @@ import {
 import { activeNestedRepoScans, runNestedRepoScanForIpc } from './nested-repo-scan-ipc'
 
 export function registerProjectGroupHandlers(mainWindow: BrowserWindow, store: Store): void {
+  registerDesktopNestedScanForRpc()
   ipcMain.handle('projectGroups:list', () => store.getProjectGroups())
 
   ipcMain.handle('projectGroups:create', (_event, rawArgs: unknown): ProjectGroup => {

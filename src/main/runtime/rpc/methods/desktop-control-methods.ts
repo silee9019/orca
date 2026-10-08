@@ -36,6 +36,40 @@ import { MOBILE_NETWORK_HUMAN_METHODS } from './mobile-network-human-actions'
 import { TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS } from './terminal-side-effect-snapshot'
 import { TERMINAL_HOST_INVENTORY_METHODS } from './terminal-host-inventory'
 import { AGENT_STATUS_CLI_METHODS } from './agent-status-cli'
+import { WORKSPACE_REMOTE_FILE_DOWNLOAD_METHODS } from './workspace-remote-file-download'
+import { WORKSPACE_REMOTE_FOLDER_DOWNLOAD_METHODS } from './workspace-remote-folder-download'
+import { WORKSPACE_WORK_ITEM_NOTIFY_METHODS } from './workspace-work-item-notify'
+import { WORKSPACE_FILE_WATCH_METHODS } from './workspace-file-watch'
+import { WORKSPACE_JIRA_READ_METHODS } from './workspace-jira-reads'
+import { WORKSPACE_DOWNLOAD_SESSION_METHODS } from './workspace-download-session'
+import { WORKSPACE_GIT_STATUS_METHODS } from './workspace-git-status'
+import { WORKSPACE_LOG_TAIL_METHODS } from './workspace-log-tail'
+import { WORKSPACE_NOTEBOOK_KERNEL_METHODS } from './workspace-notebook-kernel'
+import { WORKSPACE_LOCAL_CLONE_METHODS } from './workspace-local-clone'
+import { WORKSPACE_REMOTE_CLONE_METHODS } from './workspace-remote-clone'
+import { WORKSPACE_FILE_SEARCH_METHODS } from './workspace-file-search'
+import { WORKSPACE_NESTED_SCAN_METHODS } from './workspace-nested-scan'
+import { WORKSPACE_FILE_LIST_METHODS } from './workspace-file-list'
+import { WORKSPACE_DESKTOP_ADOPT_METHODS } from './workspace-desktop-adopt'
+import { WORKSPACE_DESKTOP_REMOVE_METHODS } from './workspace-desktop-remove'
+import { WORKSPACE_DESKTOP_CREATE_METHODS } from './workspace-desktop-create'
+import { WORKSPACE_LINEAGE_METHODS } from './workspace-lineage'
+import { WORKSPACE_SPACE_SCAN_METHODS } from './workspace-space-scan'
+import { WORKSPACE_LOCALHOST_LABEL_METHODS } from './workspace-localhost-label'
+import { WORKSPACE_GITHUB_REFRESH_METHODS } from './workspace-github-refresh'
+import { WORKSPACE_REPO_CREATE_REMOTE_METHODS } from './workspace-repo-create-remote'
+import { WORKSPACE_REPO_ADD_METHODS } from './workspace-repo-add'
+import { WORKSPACE_REPO_FOLDER_PICKER_METHODS } from './workspace-repo-folder-picker'
+import { WORKSPACE_WORKTREE_FORGET_METHODS } from './workspace-worktree-forget'
+import { WORKSPACE_CLEANUP_SCAN_METHODS } from './workspace-cleanup-scan'
+import { WORKSPACE_REPO_ICON_PICKER_METHODS } from './workspace-repo-icon-picker'
+import { WORKSPACE_DIAGNOSTIC_PREVIEW_METHODS } from './workspace-diagnostic-preview'
+import { WORKSPACE_NOTEBOOK_ENVIRONMENT_METHODS } from './workspace-notebook-environments'
+import { WORKSPACE_SHELL_ACTION_METHODS } from './workspace-shell-actions'
+import { WORKSPACE_IMPORT_PREVIEW_METHODS } from './workspace-import-previews'
+import { WORKSPACE_REPO_UPDATE_METHODS } from './workspace-repo-update'
+import { WORKSPACE_REPO_USERNAME_METHODS } from './workspace-repo-username'
+import { WORKSPACE_DESKTOP_META_METHODS } from './workspace-desktop-meta'
 import { WORKSPACE_VISIBLE_WORKTREE_METHODS } from './workspace-visible-worktrees'
 import { WORKSPACE_HOST_PATH_METHODS } from './workspace-host-path'
 import { WORKSPACE_CRASH_REPORT_METHODS } from './workspace-crash-reports'
@@ -96,6 +130,40 @@ export const DESKTOP_CONTROL_RPC_METHODS = [
   ...MOBILE_CONNECTION_METHODS,
   ...NETWORK_CONNECTION_METHODS,
   ...MOBILE_NETWORK_HUMAN_METHODS,
+  ...WORKSPACE_REMOTE_FILE_DOWNLOAD_METHODS,
+  ...WORKSPACE_REMOTE_FOLDER_DOWNLOAD_METHODS,
+  ...WORKSPACE_WORK_ITEM_NOTIFY_METHODS,
+  ...WORKSPACE_FILE_WATCH_METHODS,
+  ...WORKSPACE_JIRA_READ_METHODS,
+  ...WORKSPACE_DESKTOP_ADOPT_METHODS,
+  ...WORKSPACE_FILE_LIST_METHODS,
+  ...WORKSPACE_FILE_SEARCH_METHODS,
+  ...WORKSPACE_DOWNLOAD_SESSION_METHODS,
+  ...WORKSPACE_GIT_STATUS_METHODS,
+  ...WORKSPACE_LOG_TAIL_METHODS,
+  ...WORKSPACE_NOTEBOOK_KERNEL_METHODS,
+  ...WORKSPACE_LOCAL_CLONE_METHODS,
+  ...WORKSPACE_REMOTE_CLONE_METHODS,
+  ...WORKSPACE_NESTED_SCAN_METHODS,
+  ...WORKSPACE_DESKTOP_REMOVE_METHODS,
+  ...WORKSPACE_DESKTOP_CREATE_METHODS,
+  ...WORKSPACE_LINEAGE_METHODS,
+  ...WORKSPACE_SPACE_SCAN_METHODS,
+  ...WORKSPACE_LOCALHOST_LABEL_METHODS,
+  ...WORKSPACE_GITHUB_REFRESH_METHODS,
+  ...WORKSPACE_REPO_CREATE_REMOTE_METHODS,
+  ...WORKSPACE_REPO_ADD_METHODS,
+  ...WORKSPACE_REPO_FOLDER_PICKER_METHODS,
+  ...WORKSPACE_WORKTREE_FORGET_METHODS,
+  ...WORKSPACE_CLEANUP_SCAN_METHODS,
+  ...WORKSPACE_REPO_ICON_PICKER_METHODS,
+  ...WORKSPACE_DIAGNOSTIC_PREVIEW_METHODS,
+  ...WORKSPACE_NOTEBOOK_ENVIRONMENT_METHODS,
+  ...WORKSPACE_SHELL_ACTION_METHODS,
+  ...WORKSPACE_DESKTOP_META_METHODS,
+  ...WORKSPACE_REPO_USERNAME_METHODS,
+  ...WORKSPACE_REPO_UPDATE_METHODS,
+  ...WORKSPACE_IMPORT_PREVIEW_METHODS,
   ...WORKSPACE_MACOS_HOTKEY_METHODS,
   ...WORKSPACE_VISIBLE_WORKTREE_METHODS,
   ...WORKSPACE_HOST_PATH_METHODS,

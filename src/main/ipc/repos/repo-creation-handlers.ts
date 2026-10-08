@@ -1,3 +1,5 @@
+import { emitRepoAdded } from './repo-added-telemetry'
+import { registerDesktopRepoAddHandlers } from '../../repo-desktop-add-handlers'
 import type { BrowserWindow } from 'electron'
 import { ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
@@ -13,11 +15,8 @@ import { gitExecFileAsync } from '../../git/runner'
 import { detectRepoIconAndUpstream } from '../../repo-icon-autodetect'
 import { prepareLocalWorktreeRootForRepo } from '../../worktree-root-preparation'
 import { invalidateAuthorizedRootsCache } from '../registered-worktree-roots-cache'
-import { emitRepoAdded } from './repo-added-telemetry'
 import { notifyReposChanged } from './repos-changed-notification'
-import { addLocalRepoFromPath } from './local-repo-registration'
-import { addRemoteRepoFromPath } from './remote-repo-registration'
-import { createRemoteRepo } from './remote-repo-creation'
+import { registerDesktopRepoCreateRemoteHandlers } from '../../repo-desktop-create-remote-handlers'
 
 const GIT_AVAILABILITY_TIMEOUT_MS = 1500
 
@@ -35,66 +34,9 @@ export function registerRepoCreationHandlers(mainWindow: BrowserWindow, store: S
     getDefaultProjectParent(store.getSettings())
   )
 
-  ipcMain.handle(
-    'repos:add',
-    async (
-      _event,
-      args: { path: string; kind?: 'git' | 'folder'; displayName?: string }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await addLocalRepoFromPath(store, args.path, args.kind, args.displayName)
-      if ('error' in result) {
-        return result
-      }
-      if (result.alreadyExisted) {
-        await prepareLocalWorktreeRootForRepo(store, result.repo)
-      }
-      invalidateAuthorizedRootsCache()
-      notifyReposChanged(mainWindow)
-      emitRepoAdded('folder_picker', result.alreadyExisted, result.repo.kind === 'git')
-      return { repo: result.repo }
-    }
-  )
+  registerDesktopRepoAddHandlers(mainWindow, store)
 
-  ipcMain.handle(
-    'repos:addRemote',
-    async (
-      _event,
-      args: {
-        connectionId: string
-        remotePath: string
-        displayName?: string
-        kind?: 'git' | 'folder'
-      }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await addRemoteRepoFromPath(store, args)
-      if ('error' in result) {
-        return result
-      }
-      notifyReposChanged(mainWindow)
-      emitRepoAdded('folder_picker', result.alreadyExisted, result.repo.kind === 'git')
-      return { repo: result.repo }
-    }
-  )
-
-  ipcMain.handle(
-    'repos:createRemote',
-    async (
-      _event,
-      args: {
-        connectionId: string
-        parentPath: string
-        name: string
-        kind: 'git' | 'folder'
-      }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await createRemoteRepo(store, args)
-      if ('error' in result) {
-        return result
-      }
-      notifyReposChanged(mainWindow)
-      return result
-    }
-  )
+  registerDesktopRepoCreateRemoteHandlers(mainWindow, store)
 
   // Create a repo/folder from scratch (orca#763); git repos need an empty initial commit so HEAD has a branch ref for worktrees.
   ipcMain.handle(

@@ -765,14 +765,50 @@ import {
 } from './usage-params'
 import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
 import { WorkspaceCleanupDismiss } from './workspace-cleanup-dismissal-params'
+import { DesktopCleanupScanRequest, DesktopCleanupScanStart } from './workspace-cleanup-scan-params'
 import {
   WorkspaceCrashReportCopy,
   WorkspaceCrashReportDismiss,
   WorkspaceCrashReportSubmit
 } from './workspace-crash-report-params'
+import { DesktopProvisionedRootAdopt } from './workspace-desktop-adopt-params'
+import { DesktopWorktreeCreate } from './workspace-desktop-create-params'
+import { DesktopWorktreeMetaUpdate } from './workspace-desktop-meta-params'
+import {
+  DesktopWorktreeRemovalPreview,
+  DesktopWorktreeRemove
+} from './workspace-desktop-remove-params'
+import { DesktopDiagnosticPreviewOpen } from './workspace-diagnostic-preview-params'
+import {
+  DesktopDownloadSessionAppend,
+  DesktopDownloadSessionRequest,
+  DesktopDownloadSessionStart,
+  DesktopSaveDownloadedFile
+} from './workspace-download-session-params'
+import {
+  DesktopFileListRequest,
+  DesktopFileListResult,
+  DesktopFileListStart
+} from './workspace-file-list-params'
+import {
+  DesktopFileSearchRequest,
+  DesktopFileSearchResult,
+  DesktopFileSearchStart
+} from './workspace-file-search-params'
+import {
+  CliFileWatchRequest,
+  CliFileWatchStart,
+  CliFileWatchStatus
+} from './workspace-file-watch-params'
 import { WorkspaceFilterParams } from './workspace-filter-params'
+import {
+  DesktopGitStatusRequest,
+  DesktopGitStatusResult,
+  DesktopGitStatusStart
+} from './workspace-git-status-params'
 import { GitHubAccountDiagnostic, GitHubStarRequest } from './workspace-github-account-params'
 import { WorkspaceGitHubCacheWriteParams } from './workspace-github-cache'
+import { DesktopGitHubRefresh } from './workspace-github-refresh-params'
 import {
   GitLabBranchMergeRequestLookup,
   GitLabIssueLookup,
@@ -780,15 +816,76 @@ import {
 } from './workspace-gitlab-inspection-params'
 import { DesktopDirectoryCreate, DesktopHostPathExists } from './workspace-host-path-params'
 import { JiraProjectAssignableUsers } from './workspace-jira-project-users-params'
+import {
+  JiraCliReadRequest,
+  JiraCliSearchStart,
+  JiraCliSummaryStart
+} from './workspace-jira-read-params'
+import { DesktopWorktreeLineageUpdate } from './workspace-lineage-params'
 import { WorkspaceListViewerParams } from './workspace-list-viewer-params'
+import { DesktopLocalCloneRequest, DesktopLocalCloneStart } from './workspace-local-clone-params'
+import { DesktopLocalhostLabel } from './workspace-localhost-label-params'
+import {
+  DesktopLogTailRead,
+  DesktopLogTailRequest,
+  DesktopLogTailStart
+} from './workspace-log-tail-params'
+import {
+  DesktopNestedScanRequest,
+  DesktopNestedScanResult,
+  DesktopNestedScanStart
+} from './workspace-nested-scan-params'
+import {
+  NotebookEnvironmentList,
+  NotebookKernelInstall,
+  NotebookPythonDescribe,
+  NotebookVenvCreate
+} from './workspace-notebook-environment-params'
+import {
+  DesktopNotebookKernelExecute,
+  DesktopNotebookKernelFrames,
+  DesktopNotebookKernelRequest,
+  DesktopNotebookKernelStart
+} from './workspace-notebook-kernel-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
+import { DesktopRemoteCloneStart } from './workspace-remote-clone-params'
+import {
+  RemoteFileDownloadRequest,
+  RemoteFileDownloadStart
+} from './workspace-remote-file-download-params'
+import {
+  RemoteFolderDownloadRequest,
+  RemoteFolderDownloadStart
+} from './workspace-remote-folder-download-params'
+import { DesktopRepoAddLocal, DesktopRepoAddRemote } from './workspace-repo-add-params'
+import { DesktopRepoCreateRemote } from './workspace-repo-create-remote-params'
+import {
+  RepoFolderPickerRequest,
+  RepoFolderPickerStart
+} from './workspace-repo-folder-picker-params'
 import { RepoHostRefSearch, RepoHostRemoval, RepoHostReorder } from './workspace-repo-host-params'
+import { RepoIconPickerStart } from './workspace-repo-icon-picker-params'
+import { DesktopRepoUpdate } from './workspace-repo-update-params'
+import { RepoHostGitUsername } from './workspace-repo-username-params'
 import { WorkspaceReviewCacheReadParams } from './workspace-review-cache-params'
 import {
   WorkspaceSessionStateFlushParams,
   WorkspaceSessionStateReadParams
 } from './workspace-session-state-params'
+import {
+  DesktopShellOpenEditor,
+  DesktopShellOpenFile,
+  DesktopShellOpenUri
+} from './workspace-shell-action-params'
+import { DesktopDocumentFileCopy } from './workspace-shell-copy-params'
+import {
+  WorkspaceSpaceScanRequest,
+  WorkspaceSpaceScanResult,
+  WorkspaceSpaceScanStart
+} from './workspace-space-scan-params'
 import { DesktopVisibleWorktrees } from './workspace-visible-worktree-params'
+import { DesktopWorkItemNotify } from './workspace-work-item-notify-params'
+import { DesktopWorktreeForget } from './workspace-worktree-forget-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
   WorktreeActivate,
@@ -1123,6 +1220,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'developerPermissions.openSettings': DeveloperPermissionSettingsParams,
   'developerPermissions.request': DeveloperPermissionRequestParams,
   'diagnostics.memory': null,
+  'diagnostics.openRetainedPreview': DesktopDiagnosticPreviewOpen,
   'emulator.attach': AttachParamsOfEmulatorParams,
   'emulator.availability': EmulatorAvailabilityParams,
   'emulator.ax': AxParams,
@@ -1167,6 +1265,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'environment.management.verifyAndAdd': EnvironmentPairing,
   'extensions.sidebarAction': ExtensionsSidebarParams,
   'files.browseServerDir': ServerDirectoryBrowse,
+  'files.cliWatchStart': CliFileWatchStart,
+  'files.cliWatchStatus': CliFileWatchStatus,
+  'files.cliWatchStop': CliFileWatchRequest,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
   'files.createDesktopDirectory': DesktopDirectoryCreate,
@@ -1174,7 +1275,25 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.createDirNoClobber': FileMutationOpen,
   'files.createFile': FileMutationOpen,
   'files.delete': FileDelete,
+  'files.desktopDownloadSessionAppend': DesktopDownloadSessionAppend,
+  'files.desktopDownloadSessionCancel': DesktopDownloadSessionRequest,
+  'files.desktopDownloadSessionFinish': DesktopDownloadSessionRequest,
+  'files.desktopDownloadSessionStart': DesktopDownloadSessionStart,
+  'files.desktopDownloadSessionStatus': DesktopDownloadSessionRequest,
+  'files.desktopListCancel': DesktopFileListRequest,
+  'files.desktopListResult': DesktopFileListResult,
+  'files.desktopListStart': DesktopFileListStart,
+  'files.desktopListStatus': DesktopFileListRequest,
+  'files.desktopLogTailRead': DesktopLogTailRead,
+  'files.desktopLogTailStart': DesktopLogTailStart,
+  'files.desktopLogTailStatus': DesktopLogTailRequest,
+  'files.desktopLogTailStop': DesktopLogTailRequest,
   'files.desktopPathExists': DesktopHostPathExists,
+  'files.desktopSaveDownloadedFile': DesktopSaveDownloadedFile,
+  'files.desktopSearchCancel': DesktopFileSearchRequest,
+  'files.desktopSearchResult': DesktopFileSearchResult,
+  'files.desktopSearchStart': DesktopFileSearchStart,
+  'files.desktopSearchStatus': DesktopFileSearchRequest,
   'files.list': WorktreeSelector,
   'files.listAll': FileListAll,
   'files.listMarkdownDocuments': WorktreeSelector,
@@ -1188,6 +1307,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'files.readPreview': FileOpen,
   'files.readTerminalArtifact': TerminalArtifactFile,
   'files.readTerminalArtifactPreview': TerminalArtifactFile,
+  'files.remoteFileDownloadCancel': RemoteFileDownloadRequest,
+  'files.remoteFileDownloadStart': RemoteFileDownloadStart,
+  'files.remoteFileDownloadStatus': RemoteFileDownloadRequest,
+  'files.remoteFolderDownloadCancel': RemoteFolderDownloadRequest,
+  'files.remoteFolderDownloadStart': RemoteFolderDownloadStart,
+  'files.remoteFolderDownloadStatus': RemoteFolderDownloadRequest,
   'files.rename': FileRename,
   'files.resolveTerminalPath': ResolveTerminalPath,
   'files.search': FileSearch,
@@ -1221,6 +1346,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'git.commitCompare': GitCommitCompare,
   'git.commitDiff': GitCommitDiff,
   'git.conflictOperation': WorktreeSelectorOfGitParams,
+  'git.desktopStatusCancel': DesktopGitStatusRequest,
+  'git.desktopStatusResult': DesktopGitStatusResult,
+  'git.desktopStatusStart': DesktopGitStatusStart,
+  'git.desktopStatusStatus': DesktopGitStatusRequest,
   'git.diff': GitDiff,
   'git.discard': GitFilePath,
   'git.discoverCommitMessageModels': GitDiscoverCommitMessageModels,
@@ -1249,6 +1378,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.countWorkItems': WorkItemsCount,
   'github.createIssue': CreateIssue,
   'github.diagnoseAuth': GitHubAccountDiagnostic,
+  'github.enqueueDesktopPRRefresh': DesktopGitHubRefresh,
   'github.issue': Issue,
   'github.listAssignableUsers': RepoSelector,
   'github.listBindableAccounts': BindableAccounts,
@@ -1257,6 +1387,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.listWorkItems': WorkItemsList,
   'github.markPRReadyForReview': MarkPrReadyForReview,
   'github.mergePR': MergePr,
+  'github.notifyDesktopWorkItemMutated': DesktopWorkItemNotify,
   'github.prCheckDetails': PullRequestCheckDetails,
   'github.prChecks': PullRequestChecks,
   'github.prComments': PullRequest,
@@ -1279,6 +1410,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.project.viewTable': ProjectViewTable,
   'github.project.workItemDetailsBySlug': ProjectWorkItemDetailsBySlug,
   'github.rateLimit': RateLimit,
+  'github.refreshDesktopPRNow': DesktopGitHubRefresh,
   'github.removePRReviewers': RemovePrReviewers,
   'github.repoSlug': RepoSelector,
   'github.repoUpstream': RepoSelector,
@@ -1336,6 +1468,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'hostedReview.forBranch': HostedReviewForBranch,
   'hostedReview.getCreationEligibility': HostedReviewCreationEligibility,
   'jira.addIssueComment': IssueCommentOfJiraParams,
+  'jira.cliSearchCancel': JiraCliReadRequest,
+  'jira.cliSearchStart': JiraCliSearchStart,
+  'jira.cliSearchStatus': JiraCliReadRequest,
+  'jira.cliSummaryCancel': JiraCliReadRequest,
+  'jira.cliSummaryStart': JiraCliSummaryStart,
+  'jira.cliSummaryStatus': JiraCliReadRequest,
   'jira.connect': Connect,
   'jira.createIssue': CreateIssueOfJiraParams,
   'jira.disconnect': SiteSelection,
@@ -1440,6 +1578,16 @@ export const RPC_PARAMS_BY_METHOD = {
   'nativeChat.unsubscribe': NativeChatUnsubscribe,
   'network.browserTunnel': BrowserNetworkTunnelAttachParams,
   'network.connection.testLocal': LocalNetworkConnectionTestParams,
+  'notebook.createDesktopVenv': NotebookVenvCreate,
+  'notebook.describeDesktopPython': NotebookPythonDescribe,
+  'notebook.desktopKernelExecute': DesktopNotebookKernelExecute,
+  'notebook.desktopKernelFrames': DesktopNotebookKernelFrames,
+  'notebook.desktopKernelInterrupt': DesktopNotebookKernelRequest,
+  'notebook.desktopKernelShutdown': DesktopNotebookKernelRequest,
+  'notebook.desktopKernelStart': DesktopNotebookKernelStart,
+  'notebook.desktopKernelStatus': DesktopNotebookKernelRequest,
+  'notebook.installDesktopIpykernel': NotebookKernelInstall,
+  'notebook.listDesktopEnvironments': NotebookEnvironmentList,
   'notifications.dismiss': NotificationDismissParams,
   'notifications.dispatch': NotificationDispatchParams,
   'notifications.getDesktopAwayState': OsPermissionViewerParams,
@@ -1556,6 +1704,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'projectGroup.moveProject': ProjectGroupMoveProject,
   'projectGroup.scanNested': ProjectGroupScanNested,
   'projectGroup.update': ProjectGroupUpdate,
+  'projectGroups.desktopScanCancel': DesktopNestedScanRequest,
+  'projectGroups.desktopScanResult': DesktopNestedScanResult,
+  'projectGroups.desktopScanStart': DesktopNestedScanStart,
+  'projectGroups.desktopScanStatus': DesktopNestedScanRequest,
   'projectHostSetup.clone': ProjectHostSetupClone,
   'projectHostSetup.create': ProjectHostSetupCreate,
   'projectHostSetup.delete': ProjectHostSetupDelete,
@@ -1578,11 +1730,23 @@ export const RPC_PARAMS_BY_METHOD = {
   'remoteWorkspace.listConnectedClients': RemoteWorkspaceClientsParams,
   'remoteWorkspace.listEnabledConnectedTargets': RemoteWorkspaceInventoryParams,
   'repo.add': RepoPath,
+  'repo.addDesktopLocal': DesktopRepoAddLocal,
+  'repo.addDesktopRemote': DesktopRepoAddRemote,
   'repo.baseRefDefault': RepoSelector,
   'repo.clone': RepoClone,
   'repo.create': RepoCreate,
+  'repo.createDesktopRemote': DesktopRepoCreateRemote,
   'repo.defaultProjectParent': null,
+  'repo.desktopLocalCloneCancel': DesktopLocalCloneRequest,
+  'repo.desktopLocalCloneResult': DesktopLocalCloneRequest,
+  'repo.desktopLocalCloneStart': DesktopLocalCloneStart,
+  'repo.desktopLocalCloneStatus': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneCancel': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneResult': DesktopLocalCloneRequest,
+  'repo.desktopRemoteCloneStart': DesktopRemoteCloneStart,
+  'repo.desktopRemoteCloneStatus': DesktopLocalCloneRequest,
   'repo.gitAvailable': null,
+  'repo.gitUsernameForHost': RepoHostGitUsername,
   'repo.hooks': RepoSelector,
   'repo.hooksCheck': RepoSelector,
   'repo.issueCommandRead': RepoSelector,
@@ -1601,6 +1765,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'repo.show': RepoSelector,
   'repo.sparsePresets': RepoSelector,
   'repo.update': RepoUpdate,
+  'repo.updateDesktop': DesktopRepoUpdate,
+  'repoFolderPicker.cancel': RepoFolderPickerRequest,
+  'repoFolderPicker.result': RepoFolderPickerRequest,
+  'repoFolderPicker.start': RepoFolderPickerStart,
+  'repoFolderPicker.status': RepoFolderPickerRequest,
+  'repoIconPicker.cancel': RepoFolderPickerRequest,
+  'repoIconPicker.result': RepoFolderPickerRequest,
+  'repoIconPicker.start': RepoIconPickerStart,
+  'repoIconPicker.status': RepoFolderPickerRequest,
   'resourceManager.viewer': ResourceManagerViewerParams,
   'runtime.browserDrivers': null,
   'runtime.clientCapabilities.update': ClientCapabilitiesUpdate,
@@ -1640,9 +1813,16 @@ export const RPC_PARAMS_BY_METHOD = {
   'settings.get': null,
   'settings.getTerminalQuickCommands': null,
   'settings.mutateNativeChatSessionOptions': NativeChatSessionOptionsMutation,
+  'settings.previewGhosttyImport': null,
+  'settings.previewWarpThemeAutoImport': null,
   'settings.update': SettingsUpdate,
   'settings.updatePRBotAuthorOverride': PRBotAuthorOverrideUpdate,
   'settings.updateTerminalQuickCommands': TerminalQuickCommandsUpdate,
+  'shell.copyDesktopDocumentFile': DesktopDocumentFileCopy,
+  'shell.openDesktopEditor': DesktopShellOpenEditor,
+  'shell.openDesktopFile': DesktopShellOpenFile,
+  'shell.openDesktopFileUri': DesktopShellOpenUri,
+  'shell.revealDesktopPath': DesktopShellOpenFile,
   'skills.acknowledgeUpdateRun': null,
   'skills.beginUpload': SkillUploadBeginRequestSchema,
   'skills.cancelInstall': SkillsCancelInstallParams,
@@ -1816,13 +1996,25 @@ export const RPC_PARAMS_BY_METHOD = {
   'workspaceCleanup.clearDismissals': null,
   'workspaceCleanup.dismiss': WorkspaceCleanupDismiss,
   'workspaceCleanup.getCachedScan': null,
+  'workspaceCleanup.scanCancel': DesktopCleanupScanRequest,
+  'workspaceCleanup.scanResult': DesktopCleanupScanRequest,
+  'workspaceCleanup.scanStart': DesktopCleanupScanStart,
+  'workspaceCleanup.scanStatus': DesktopCleanupScanRequest,
   'workspacePorts.kill': WorkspacePortKillParams,
+  'workspacePorts.registerDesktopLocalhostLabel': DesktopLocalhostLabel,
   'workspacePorts.scan': WorkspacePortScanParams,
   'workspaceSpace.getCachedAnalysis': null,
+  'workspaceSpace.scanCancel': WorkspaceSpaceScanRequest,
+  'workspaceSpace.scanResult': WorkspaceSpaceScanResult,
+  'workspaceSpace.scanStart': WorkspaceSpaceScanStart,
+  'workspaceSpace.scanStatus': WorkspaceSpaceScanRequest,
   'worktree.activate': WorktreeActivate,
+  'worktree.adoptDesktopProvisionedRoot': DesktopProvisionedRootAdopt,
   'worktree.create': WorktreeCreate,
+  'worktree.createDesktop': DesktopWorktreeCreate,
   'worktree.detectedList': WorktreeDetectedListParams,
   'worktree.forceDeleteBranch': WorktreeForceDeleteBranch,
+  'worktree.forgetDesktop': DesktopWorktreeForget,
   'worktree.lineageList': null,
   'worktree.list': WorktreeListParams,
   'worktree.listAllVisible': null,
@@ -1830,14 +2022,18 @@ export const RPC_PARAMS_BY_METHOD = {
   'worktree.listVisible': DesktopVisibleWorktrees,
   'worktree.persistSortOrder': WorktreeSortOrder,
   'worktree.prefetchCreateBase': WorktreePrefetchCreateBase,
+  'worktree.previewDesktopRemoval': DesktopWorktreeRemovalPreview,
   'worktree.ps': WorktreePsParams,
+  'worktree.removeDesktop': DesktopWorktreeRemove,
   'worktree.resolveMrBase': WorktreeResolveMrBase,
   'worktree.resolvePrBase': WorktreeResolvePrBase,
   'worktree.rm': WorktreeRemove,
   'worktree.set': WorktreeSet,
   'worktree.show': WorktreeSelectorOfWorktreeParams,
   'worktree.sleep': WorktreeSelectorOfWorktreeParams,
-  'worktree.teardownMissingTerminals': WorktreeTeardownMissingTerminalsParams
+  'worktree.teardownMissingTerminals': WorktreeTeardownMissingTerminalsParams,
+  'worktree.updateDesktopLineage': DesktopWorktreeLineageUpdate,
+  'worktree.updateDesktopMetadata': DesktopWorktreeMetaUpdate
 } as const
 
 // Why: these methods bind a schema the shared contract cannot hold because its value

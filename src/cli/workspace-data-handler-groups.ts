@@ -1,7 +1,126 @@
+import { WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS } from './workspace-remote-download-handler-groups'
+import { WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS } from './workspace-download-session-handler-groups'
+import { WORKSPACE_GIT_STATUS_HANDLER_GROUPS } from './workspace-git-status-handler-groups'
+import { WORKSPACE_LOG_TAIL_HANDLER_GROUPS } from './workspace-log-tail-handler-groups'
+import { WORKSPACE_NOTEBOOK_KERNEL_HANDLER_GROUPS } from './workspace-notebook-kernel-handler-groups'
+import { WORKSPACE_LOCAL_CLONE_HANDLER_GROUPS } from './workspace-local-clone-handler-groups'
+import { WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS } from './workspace-remote-clone-handler-groups'
+import { WORKSPACE_FILE_SEARCH_HANDLER_GROUPS } from './workspace-file-search-handler-groups'
+import { WORKSPACE_NESTED_SCAN_HANDLER_GROUPS } from './workspace-nested-scan-handler-groups'
+import { WORKSPACE_FILE_LIST_HANDLER_GROUPS } from './workspace-file-list-handler-groups'
+import { WORKSPACE_FILE_GIT_HANDLER_GROUPS } from './workspace-file-git-handler-groups'
+import { WORKSPACE_DESKTOP_ADOPT_HANDLER_GROUPS } from './workspace-desktop-adopt-handler-groups'
+import { WORKSPACE_DESKTOP_REMOVE_HANDLER_GROUPS } from './workspace-desktop-remove-handler-groups'
+import { WORKSPACE_DESKTOP_CREATE_HANDLER_GROUPS } from './workspace-desktop-create-handler-groups'
+import { WORKSPACE_LINEAGE_HANDLER_GROUPS } from './workspace-lineage-handler-groups'
+import { WORKSPACE_SPACE_SCAN_HANDLER_GROUPS } from './workspace-space-scan-handler-groups'
+import { WORKSPACE_REPO_REGISTRATION_HANDLER_GROUPS } from './workspace-repo-registration-handler-groups'
+import { WORKSPACE_LOCALHOST_LABEL_HANDLER_GROUPS } from './workspace-localhost-label-handler-groups'
+import { WORKSPACE_REPO_PICKER_HANDLER_GROUPS } from './workspace-repo-picker-handler-groups'
+import { WORKSPACE_CLEANUP_HANDLER_GROUPS } from './workspace-cleanup-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  {
+    name: 'workspace-work-item-notify',
+    keys: ['github notify-work-item-mutated'],
+    load: async () =>
+      (await import('./handlers/workspace-work-item-notify.js')).WORKSPACE_WORK_ITEM_NOTIFY_HANDLERS
+  },
+  {
+    name: 'workspace-file-watch',
+    keys: ['file watch-start', 'file watch-status', 'file watch-stop'],
+    load: async () =>
+      (await import('./handlers/workspace-file-watch.js')).WORKSPACE_FILE_WATCH_HANDLERS
+  },
+  {
+    name: 'workspace-jira-reads',
+    keys: [
+      'jira search-start',
+      'jira search-status',
+      'jira search-cancel',
+      'jira summary-start',
+      'jira summary-status',
+      'jira summary-cancel'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-jira-reads.js')).WORKSPACE_JIRA_READ_HANDLERS
+  },
+  ...WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS,
+  ...WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS,
+  ...WORKSPACE_GIT_STATUS_HANDLER_GROUPS,
+  ...WORKSPACE_LOG_TAIL_HANDLER_GROUPS,
+  ...WORKSPACE_NOTEBOOK_KERNEL_HANDLER_GROUPS,
+  ...WORKSPACE_LOCAL_CLONE_HANDLER_GROUPS,
+  ...WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS,
+  ...WORKSPACE_FILE_SEARCH_HANDLER_GROUPS,
+  ...WORKSPACE_NESTED_SCAN_HANDLER_GROUPS,
+  ...WORKSPACE_FILE_LIST_HANDLER_GROUPS,
+  ...WORKSPACE_REPO_REGISTRATION_HANDLER_GROUPS,
+  ...WORKSPACE_DESKTOP_ADOPT_HANDLER_GROUPS,
+  ...WORKSPACE_DESKTOP_REMOVE_HANDLER_GROUPS,
+  ...WORKSPACE_DESKTOP_CREATE_HANDLER_GROUPS,
+  ...WORKSPACE_LINEAGE_HANDLER_GROUPS,
+  ...WORKSPACE_SPACE_SCAN_HANDLER_GROUPS,
+  ...WORKSPACE_LOCALHOST_LABEL_HANDLER_GROUPS,
+  ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
+  ...WORKSPACE_REPO_PICKER_HANDLER_GROUPS,
+  {
+    name: 'workspace-diagnostic-preview',
+    keys: ['diagnostics open-retained-preview'],
+    load: async () =>
+      (await import('./handlers/workspace-diagnostic-preview.js'))
+        .WORKSPACE_DIAGNOSTIC_PREVIEW_HANDLERS
+  },
+  {
+    name: 'workspace-notebook-environments',
+    keys: [
+      'notebook environments',
+      'notebook describe-python',
+      'notebook create-venv',
+      'notebook install-ipykernel'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-notebook-environments.js'))
+        .WORKSPACE_NOTEBOOK_ENVIRONMENT_HANDLERS
+  },
+  {
+    name: 'workspace-shell-actions',
+    keys: [
+      'shell reveal',
+      'shell open-editor',
+      'shell open-file',
+      'shell open-file-uri',
+      'shell copy-document-file'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-shell-actions.js')).WORKSPACE_SHELL_ACTION_HANDLERS
+  },
+  {
+    name: 'workspace-import-previews',
+    keys: ['settings preview-ghostty-import', 'settings preview-warp-auto'],
+    load: async () =>
+      (await import('./handlers/workspace-import-previews.js')).WORKSPACE_IMPORT_PREVIEW_HANDLERS
+  },
+  {
+    name: 'workspace-repo-update',
+    keys: ['repo update-desktop'],
+    load: async () =>
+      (await import('./handlers/workspace-repo-update.js')).WORKSPACE_REPO_UPDATE_HANDLERS
+  },
+  {
+    name: 'workspace-repo-username',
+    keys: ['repo git-username-for-host'],
+    load: async () =>
+      (await import('./handlers/workspace-repo-username.js')).WORKSPACE_REPO_USERNAME_HANDLERS
+  },
+  {
+    name: 'workspace-desktop-meta',
+    keys: ['worktree update-desktop-meta'],
+    load: async () =>
+      (await import('./handlers/workspace-desktop-meta.js')).WORKSPACE_DESKTOP_META_HANDLERS
+  },
   {
     name: 'workspace-visible-worktrees',
     keys: ['worktree list-visible', 'worktree list-all-visible'],
@@ -32,13 +151,6 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['git await-environment'],
     load: async () =>
       (await import('./handlers/workspace-git-startup.js')).WORKSPACE_GIT_STARTUP_HANDLERS
-  },
-  {
-    name: 'workspace-cleanup-dismissals',
-    keys: ['workspace-cleanup dismiss', 'workspace-cleanup clear-dismissals'],
-    load: async () =>
-      (await import('./handlers/workspace-cleanup-dismissals.js'))
-        .WORKSPACE_CLEANUP_DISMISSAL_HANDLERS
   },
   {
     name: 'workspace-cached-scans',
@@ -101,67 +213,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
       (await import('./handlers/workspace-git-generation.js')).WORKSPACE_GIT_GENERATION_HANDLERS
   },
   ...WORKSPACE_PROVIDER_HANDLER_GROUPS,
-  {
-    name: 'workspace-file',
-    keys: [
-      'file list',
-      'file read',
-      'file preview',
-      'file read-chunk',
-      'file read-dir',
-      'file search',
-      'file search-paths',
-      'file list-all',
-      'file markdown-documents',
-      'file exists',
-      'file stat',
-      'file browse-server-dir',
-      'file read-doc-preview',
-      'file write',
-      'file write-base64',
-      'file append-base64',
-      'file create',
-      'file mkdir',
-      'file rename',
-      'file copy',
-      'file delete',
-      'file commit-upload'
-    ],
-    load: async () => (await import('./handlers/workspace-file.js')).WORKSPACE_FILE_HANDLERS
-  },
-  {
-    name: 'workspace-git',
-    keys: [
-      'git status',
-      'git history',
-      'git diff',
-      'git branch-compare',
-      'git commit-compare',
-      'git branch-diff',
-      'git commit-diff',
-      'git check-ignored',
-      'git submodule-status',
-      'git conflict-operation',
-      'git abort-merge',
-      'git abort-rebase',
-      'git checkout',
-      'git branches',
-      'git upstream-status',
-      'git fetch',
-      'git pull',
-      'git fast-forward',
-      'git rebase',
-      'git sync-fork',
-      'git push',
-      'git commit',
-      'git stage',
-      'git unstage',
-      'git discard',
-      'git remote-file-url',
-      'git remote-commit-url'
-    ],
-    load: async () => (await import('./handlers/workspace-git.js')).WORKSPACE_GIT_HANDLERS
-  },
+  ...WORKSPACE_FILE_GIT_HANDLER_GROUPS,
   {
     name: 'workspace-folder',
     keys: [

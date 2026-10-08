@@ -1,3 +1,4 @@
+import type { DesktopRepositoryCloneControl } from '../../desktop-repository-clone-control'
 import type { BrowserWindow } from 'electron'
 import type { Store } from '../../persistence'
 import type { Repo } from '../../../shared/repo-types'
@@ -33,8 +34,10 @@ export async function cloneRemoteRepo(
     connectionId: string
     url: string
     destination: string
-  }
+  },
+  controls?: DesktopRepositoryCloneControl
 ): Promise<Repo> {
+  controls?.validateHost()
   const gitProvider = getSshGitProvider(args.connectionId)
   if (!gitProvider) {
     throw new Error(`SSH connection "${args.connectionId}" not found or not connected`)
@@ -51,6 +54,7 @@ export async function cloneRemoteRepo(
   if (!isRuntimePathAbsolute(trimmedDestination, host.pathFlavor)) {
     throw new Error('Clone destination must be an absolute path on the SSH host')
   }
+  controls?.validateHost()
   const repoName = deriveCloneRepoNameFromUrl(args.url.trim())
   const clonePath = joinRemotePath(host, trimmedDestination, repoName)
   if (relativePathInsideRoot(trimmedDestination, clonePath) === null) {
@@ -72,17 +76,21 @@ export async function cloneRemoteRepo(
   if (remoteCloneInFlightByPath.has(remoteCloneKey)) {
     throw new Error('A clone is already in progress for this SSH destination')
   }
-  const controller = new AbortController()
+  const controller = controls?.controller ?? new AbortController()
   const metadata: ActiveRemoteCloneMetadata = {
     connectionId: args.connectionId,
     clonePath,
     controller
   }
-  activeRemoteClone = metadata
+  if (!controls) {
+    activeRemoteClone = metadata
+  }
   remoteCloneInFlightByPath.add(remoteCloneKey)
   try {
     // Why: match local clone by creating the parent first, or a fresh remote parent surfaces as spawn ENOENT.
+    controls?.validateHost()
     await fsProvider.createDir(trimmedDestination)
+    controls?.validateHost()
     // Why: the SSH relay runs git argv, not a shell; use the repo folder name so git creates it under the chosen parent.
     await gitProvider.clone(
       ['clone', '--progress', '--', args.url.trim(), repoName],
@@ -91,7 +99,9 @@ export async function cloneRemoteRepo(
         signal: controller.signal,
         timeoutMs: 10 * 60_000,
         onProgress: (progress) => {
-          if (!mainWindow.isDestroyed()) {
+          if (controls) {
+            controls.onProgress(progress)
+          } else if (!mainWindow.isDestroyed()) {
             mainWindow.webContents.send('repos:clone-progress', progress)
           }
         }
@@ -112,6 +122,7 @@ export async function cloneRemoteRepo(
     }
     remoteCloneInFlightByPath.delete(remoteCloneKey)
   }
+  controls?.validateHost()
   if (existing && isFolderRepo(existing)) {
     const updated = store.updateRepo(existing.id, {
       kind: 'git',
@@ -125,12 +136,16 @@ export async function cloneRemoteRepo(
       return updated
     }
   }
-  const result = await addRemoteRepoFromPath(store, {
-    connectionId: args.connectionId,
-    remotePath: clonePath,
-    kind: 'git',
-    setupMethod: 'cloned'
-  })
+  const result = await addRemoteRepoFromPath(
+    store,
+    {
+      connectionId: args.connectionId,
+      remotePath: clonePath,
+      kind: 'git',
+      setupMethod: 'cloned'
+    },
+    controls?.validateHost
+  )
   if ('error' in result) {
     throw new Error(result.error)
   }

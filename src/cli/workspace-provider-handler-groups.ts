@@ -2,6 +2,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const WORKSPACE_PROVIDER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-github-refresh',
+    keys: ['github refresh-pr-now', 'github enqueue-pr-refresh'],
+    load: async () =>
+      (await import('./handlers/workspace-github-refresh.js')).WORKSPACE_GITHUB_REFRESH_HANDLERS
+  },
+  {
     name: 'workspace-github-issue',
     keys: [
       'github issue',

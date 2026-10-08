@@ -1,3 +1,6 @@
+import type { Store } from '../persistence'
+import { registerRemoteFileDownloadForRpc } from '../remote-file-download-requests'
+import { registerRemoteFolderDownloadForRpc } from '../remote-folder-download-requests'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { rm, stat } from 'node:fs/promises'
@@ -46,7 +49,11 @@ async function cleanupLocalTransferDirectory(dirPath: string): Promise<void> {
 }
 
 // Why: keep folder-download IPC out of filesystem.ts — that module is already large.
-export function registerFilesystemDownloadFolderHandlers(): void {
+export function registerFilesystemDownloadFolderHandlers(store?: Store): void {
+  if (store) {
+    registerRemoteFolderDownloadForRpc(store)
+    registerRemoteFileDownloadForRpc(store)
+  }
   ipcMain.handle(
     'fs:downloadFolder',
     async (
