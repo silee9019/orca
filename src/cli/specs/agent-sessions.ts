@@ -20,6 +20,16 @@ const HISTORY_REQUEST_NOTES = [
 
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...TERMINAL_HOST_DETAILS_COMMAND_SPECS,
+  {
+    path: ['terminal', 'signal'],
+    summary: 'Send an explicit signal through the addressed execution provider',
+    usage: 'orca terminal signal --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    destructive: true,
+    notes: [
+      'Requires {terminal, signal, expectedIncarnationId?}. Delivery acceptance does not confirm process exit; inspect the target before retrying an uncertain result.'
+    ]
+  },
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
     path: ['terminal', 'workspace-hosts'],

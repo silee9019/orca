@@ -1,3 +1,4 @@
+import { TERMINAL_SIGNAL_METHODS } from '../../src/main/runtime/rpc/methods/terminal-signal'
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -55,7 +56,10 @@ beforeEach(async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 function bindRuntimeRpc(): void {
-  const rpc = new RpcDispatcher({ runtime, methods: TERMINAL_METHODS })
+  const rpc = new RpcDispatcher({
+    runtime,
+    methods: [...TERMINAL_METHODS, ...TERMINAL_SIGNAL_METHODS]
+  })
   state.call.mockImplementation(async (method: string, params: unknown) => {
     const response = await rpc.dispatch({ id: 'fixture', authToken: 'fixture', method, params })
     if (!response.ok) {
@@ -374,4 +378,77 @@ it('reads foreground and child-process facts from the addressed host provider', 
   expect(foreground).not.toHaveBeenCalled()
   expect(children).not.toHaveBeenCalled()
   expect(inspectProcess).not.toHaveBeenCalled()
+})
+
+it('delivers an explicit signal to the addressed provider without claiming process exit', async () => {
+  const sendSignal = vi.fn(async (_ptyId: string, _signal: string) => {})
+  runtime.setPtyController({
+    write: () => true,
+    kill: () => {
+      throw new Error('Unexpected kill')
+    },
+    getForegroundProcess: async () => null,
+    getSize: () => null,
+    sendSignal
+  })
+  const handle = (await runtime.listTerminals()).terminals[0].handle
+  const file = join(root, 'signal.json')
+  const request = { terminal: handle, signal: 'SIGINT' }
+  await writeFile(file, JSON.stringify(request))
+  expect((await command('signal', '--request-file', file)).result).toEqual({ accepted: true })
+  expect(sendSignal).toHaveBeenCalledExactlyOnceWith('pty-1', 'SIGINT')
+  expect(runtime.getPtyLivenessVerdict('pty-1')?.status).not.toBe('exited')
+  sendSignal.mockClear()
+  state.call.mockClear()
+  await writeFile(file, JSON.stringify({ ...request, signal: 'SIGINT;private-canary' }))
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(state.call).not.toHaveBeenCalled()
+  expect(sendSignal).not.toHaveBeenCalled()
+  expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain('private-canary')
+  process.exitCode = undefined
+  await writeFile(file, JSON.stringify({ ...request, expectedIncarnationId: 'retired' }))
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(sendSignal).not.toHaveBeenCalled()
+  process.exitCode = undefined
+  sendSignal.mockRejectedValueOnce(new Error('Provider refused signal delivery'))
+  await writeFile(file, JSON.stringify(request))
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(runtime.getPtyLivenessVerdict('pty-1')?.status).not.toBe('exited')
+  await runtime.onPtyExit('pty-1', 0)
+  sendSignal.mockClear()
+  process.exitCode = undefined
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(sendSignal).not.toHaveBeenCalled()
+})
+
+it('refuses signal delivery when the execution controller has no signal callback', async () => {
+  const handle = (await runtime.listTerminals()).terminals[0].handle
+  const file = join(root, 'unsupported-signal.json')
+  await writeFile(file, JSON.stringify({ terminal: handle, signal: 'SIGINT' }))
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(String(vi.mocked(console.log).mock.calls.at(-1)?.[0])).toContain(
+    'terminal_signal_unavailable'
+  )
+})
+it('returns an old-host signal error without a fallback', async () => {
+  state.call.mockReset().mockRejectedValue(
+    new RuntimeRpcFailureError({
+      id: 'old',
+      ok: false,
+      error: { code: 'method_not_found', message: 'Old host' }
+    })
+  )
+  const file = join(root, 'old-signal.json')
+  await writeFile(file, JSON.stringify({ terminal: 'fixture', signal: 'SIGINT' }))
+  await main(['terminal', 'signal', '--request-file', file, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(state.call).toHaveBeenCalledExactlyOnceWith('terminal.signal', {
+    terminal: 'fixture',
+    signal: 'SIGINT'
+  })
 })
