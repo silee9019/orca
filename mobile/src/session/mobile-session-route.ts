@@ -20,3 +20,8 @@ export function mobileSessionRouteTarget({
     params: { hostId, worktreeId, ...(name ? { name } : {}), ...(paneKey ? { paneKey } : {}) }
   }
 }
+
+/** The path a worktree row opens, shared by the host list and the session title dropdown. */
+export function worktreeSessionPath(hostId: string, worktreeId: string, name: string): string {
+  return `/h/${encodeURIComponent(hostId)}/session/${encodeURIComponent(worktreeId)}?name=${encodeURIComponent(name)}`
+}

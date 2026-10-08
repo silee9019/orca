@@ -54,6 +54,7 @@ function scopeWith(markdownDocs: Map<string, MarkdownDocState>): MobileSessionMa
   return {
     hostId: 'host-1',
     worktreeId: 'wt-1',
+    worktreeName: 'one',
     // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: the hook calls only canGoBack/back/replace; any other member is a TypeError here.
     router: router as unknown as MobileSessionMarkdownActionsScope['router'],
     client: null,

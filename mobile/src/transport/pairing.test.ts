@@ -73,3 +73,33 @@ describe('pairing deep links', () => {
     expect(parsePairingCode(code)).toEqual(proxiedOffer)
   })
 })
+
+// The Android Dev build registers `orca-dev://` (app.config.js), so the same parser has to take it.
+describe('pairing links for the Dev build scheme', () => {
+  it('extracts the code from orca-dev:// links like orca://', () => {
+    expect(extractPairingCodeFromUrl('orca-dev://pair#abc123')).toBe('abc123')
+    expect(extractPairingCodeFromUrl('orca-dev://pair?code=abc123')).toBe('abc123')
+    expect(extractPairingCodeFromUrl('  ORCA-DEV://PAIR?code=abc123\n')).toBe('abc123')
+  })
+
+  it('keeps rejecting lookalike routes and unrelated schemes', () => {
+    expect(extractPairingCodeFromUrl('orca-dev://pairing?code=abc123')).toBeNull()
+    expect(extractPairingCodeFromUrl('orca-dev://pair-extra?code=abc123')).toBeNull()
+    expect(extractPairingCodeFromUrl('orca-devx://pair?code=abc123')).toBeNull()
+    expect(extractPairingCodeFromUrl('orca-dev:pair?code=abc123')).toBeNull()
+    expect(extractPairingCodeFromUrl('https://pair?code=abc123')).toBeNull()
+  })
+
+  it('decodes and parses orca-dev:// payloads, and still rejects bad ones', () => {
+    expect(decodePairingUrl(`orca-dev://pair#${encodeOffer()}`)).toEqual(offer)
+    expect(parsePairingCode(`orca-dev://pair?code=${encodeOffer()}`)).toEqual(offer)
+    expect(parsePairingCode('orca-dev://pair?code=not-base64!')).toBeNull()
+    expect(parsePairingCode('orca-dev://pair')).toBeNull()
+  })
+
+  it('does not change the orca:// behaviour', () => {
+    expect(decodePairingUrl(`orca://pair#${encodeOffer()}`)).toEqual(offer)
+    expect(parsePairingCode(`orca://pair?code=${encodeOffer()}`)).toEqual(offer)
+    expect(parsePairingCode(encodeOffer())).toEqual(offer)
+  })
+})

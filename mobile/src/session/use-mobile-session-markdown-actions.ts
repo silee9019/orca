@@ -1,7 +1,9 @@
-import { useCallback } from 'react'
+import { useCallback, useContext, useRef } from 'react'
 import { Keyboard, Platform } from 'react-native'
 import { useClipboardWriter } from '../platform/clipboard'
 import { useBackClaim } from '../navigation/use-back-claim'
+import { SessionHistoryContext } from './session-history-context'
+import { historyAfterSwitch, historyBack, type SessionTarget } from './session-switch-history'
 import { markdownTabSave } from './mobile-session-write-operations'
 import { triggerSuccess, triggerError } from '../platform/haptics'
 import type { DirtyMarkdownDraft, MobileSessionTab } from './mobile-session-route-types'
@@ -19,6 +21,7 @@ export type MobileSessionMarkdownActionsScope = Pick<
   MobileSessionDiffCommentsModel,
   | 'hostId'
   | 'worktreeId'
+  | 'worktreeName'
   | 'router'
   | 'client'
   | 'sessionTabs'
@@ -37,6 +40,7 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
   const {
     hostId,
     worktreeId,
+    worktreeName,
     router,
     client,
     sessionTabs,
@@ -101,16 +105,50 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     return drafts
   }, [markdownDocs, sessionTabs])
 
+  // Set while the draft sheet is open for a session switch, so "Leave" there lands on the target.
+  const pendingSwitchRef = useRef<SessionTarget | null>(null)
+  const historyRef = useContext(SessionHistoryContext)
+
+  // Same route, new params: no navigation, so no slide and nothing is stacked. The screen is keyed
+  // on the worktree, which remounts the controller for the target.
+  const showSession = useCallback(
+    (target: SessionTarget) => {
+      router.setParams({
+        worktreeId: target.worktreeId,
+        name: target.name,
+        created: '',
+        warning: '',
+        paneKey: ''
+      })
+    },
+    [router]
+  )
+
   const leaveSession = useCallback(() => {
+    const pending = pendingSwitchRef.current
+    pendingSwitchRef.current = null
+    const current: SessionTarget = { worktreeId, name: worktreeName }
+    if (pending !== null) {
+      historyRef.current = historyAfterSwitch(historyRef.current, current, pending)
+      showSession(pending)
+      return
+    }
+    const back = historyBack(historyRef.current)
+    if (back !== null) {
+      historyRef.current = back.history
+      showSession(back.target)
+      return
+    }
     if (router.canGoBack()) {
       router.back()
       return
     }
     // Why: Android back can fire at the root route; replace avoids React Navigation's dev-only GO_BACK warning.
     router.replace(`/h/${hostId}`)
-  }, [hostId, router])
+  }, [historyRef, hostId, router, showSession, worktreeId, worktreeName])
 
   const requestLeaveSession = useCallback(() => {
+    pendingSwitchRef.current = null
     const dirtyDrafts = getDirtyMarkdownDrafts()
     if (dirtyDrafts.length === 0) {
       leaveSession()
@@ -119,6 +157,20 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     Keyboard.dismiss()
     setLeaveDrafts(dirtyDrafts)
   }, [getDirtyMarkdownDrafts, leaveSession])
+
+  const requestSwitchSession = useCallback(
+    (target: SessionTarget) => {
+      pendingSwitchRef.current = target
+      const dirtyDrafts = getDirtyMarkdownDrafts()
+      if (dirtyDrafts.length === 0) {
+        leaveSession()
+        return
+      }
+      Keyboard.dismiss()
+      setLeaveDrafts(dirtyDrafts)
+    },
+    [getDirtyMarkdownDrafts, leaveSession, setLeaveDrafts]
+  )
 
   // Native holds the key always: `leaveSession` replaces to the host at the root, where an
   // unclaimed press would exit the app. On the page an unclaimed press is the shell's own pop,
@@ -232,6 +284,7 @@ export function useMobileSessionMarkdownActions(scope: MobileSessionMarkdownActi
     getDirtyMarkdownDrafts,
     leaveSession,
     requestLeaveSession,
+    requestSwitchSession,
     discardMarkdownLocalContent,
     confirmDiscardMarkdown,
     saveMarkdownTab

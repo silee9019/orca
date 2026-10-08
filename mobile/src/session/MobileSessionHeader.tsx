@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
@@ -19,6 +20,7 @@ import {
   resolveMobileTerminalTabAgentId
 } from './mobile-terminal-tab-agent'
 import { colors } from '../theme/mobile-theme'
+import { MobileSessionTitleDropdown } from './MobileSessionTitleDropdown'
 import { QuickCommandsTabButton } from './QuickCommandsTabButton'
 import { styles } from './mobile-session-styles'
 import { useKeyboardPersistingTaps } from '../platform/keyboard-persisting-taps'
@@ -60,9 +62,10 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
     showHeaderMoreButton
   } = controller
   const tabBarKeepsKeyboard = useKeyboardPersistingTaps('handled')
+  const topBarRef = useRef<View>(null)
   return (
     <SafeAreaView style={styles.sessionChrome} edges={['top']}>
-      <View style={styles.sessionTopBar}>
+      <View ref={topBarRef} style={styles.sessionTopBar}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
           onPress={requestLeaveSession}
@@ -74,9 +77,13 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
         </Pressable>
 
         <View style={styles.sessionTitleBlock}>
-          <Text style={styles.sessionTitle} numberOfLines={1}>
-            {worktreeName || 'Terminal'}
-          </Text>
+          {isFloatingWorkspaceRoute ? (
+            <Text style={styles.sessionTitle} numberOfLines={1}>
+              {worktreeName || 'Terminal'}
+            </Text>
+          ) : (
+            <MobileSessionTitleDropdown controller={controller} anchorRef={topBarRef} />
+          )}
           <Pressable
             style={styles.sessionMetaRow}
             disabled={!showConnectionRetry}

@@ -11,8 +11,29 @@
 const APS_ENVIRONMENT =
   process.env.ORCA_IOS_APS_ENVIRONMENT === 'production' ? 'production' : 'development'
 
+// Android Dev build: a separate package, name and link scheme so it installs next to the store app
+// without touching its data. google-services.json only lists the store package, so the Dev build
+// drops it and has no FCM push.
+const ANDROID_DEV_BUILD = process.env.ORCA_ANDROID_DEV_BUILD === '1'
+
+function androidConfig(android) {
+  if (!ANDROID_DEV_BUILD) {
+    return android
+  }
+  const { googleServicesFile: _storeOnly, ...rest } = android ?? {}
+  return { ...rest, package: `${android.package}.dev` }
+}
+
 module.exports = ({ config }) => ({
   ...config,
+  ...(ANDROID_DEV_BUILD
+    ? {
+        name: 'Orca Dev',
+        scheme: 'orca-dev',
+        extra: { ...config.extra, androidDevBuild: true }
+      }
+    : {}),
+  android: androidConfig(config.android),
   ios: {
     ...config.ios,
     entitlements: { ...config.ios?.entitlements, 'aps-environment': APS_ENVIRONMENT }
