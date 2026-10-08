@@ -1,3 +1,4 @@
+import { agentSessionQuestionReceipt } from './agent-session-question-receipt'
 import { TerminalSignalParams } from '../../shared/rpc-contract/terminal-signal-params'
 import {
   TerminalMainBufferParams,
@@ -140,7 +141,11 @@ async function call(ctx: HandlerContext, method: string, params: unknown): Promi
   if (denied.success) {
     throw new RuntimeClientError(denied.data.refusal.code, denied.data.refusal.message)
   }
-  printResult(response, ctx.json, (value) => JSON.stringify(value, null, 2))
+  const output =
+    method === 'agentSession.respondToQuestion'
+      ? { ...response, result: agentSessionQuestionReceipt(response.result) }
+      : response
+  printResult(output, ctx.json, (value) => JSON.stringify(value, null, 2))
 }
 
 function request<T>(method: string, schema: z.ZodType<T>): CommandHandler {

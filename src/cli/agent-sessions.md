@@ -95,3 +95,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `orca agent status retire-tab --request-file <path|->` requires an explicit tab ID, `confirm:true` and its complete observed status row set (paneKey/receivedAt/stateStartedAt). The host rejects a changed set before invoking the existing tab teardown, which clears canonical rows, pane authority, aliases, caches and migration warnings and suppresses late status for the retired tab. This does not close a UI tab or stop a process.
 
 `terminal main-buffer --request-file <path|->`는 `{terminal, expectedIncarnationId?, scrollbackRows?}`를 받아 실행 호스트의 복원 snapshot과 미전달 데이터 시작 번호를 읽습니다. ANSI·scrollback은 비공개 터미널 내용을 포함합니다. provider 데이터 누락으로 authoritative snapshot을 얻지 못하거나 callback이 없으면 null을 반환하며, 종료한 대상과 조회 중 바뀐 실행 세대는 거부합니다. scrollbackRows는 기존 IPC와 같이 정수로 내림하고 0~50,000 범위로 제한합니다. 일반 terminal read의 tail과 구분됩니다.
+
+`agent session respond-question`의 성공 출력은 itemId·revision·resolution.state와 실행 fence·cursor·replay 여부만 담습니다. 자유 입력과 packed option ID는 재출력하지 않습니다. 제출한 답변을 읽으려면 명시적으로 history를 조회합니다. 호스트의 비정상 receipt도 원문을 출력하지 않고 실패합니다.
