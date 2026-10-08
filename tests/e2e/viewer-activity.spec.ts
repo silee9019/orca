@@ -1,3 +1,4 @@
+import { assertActivityContextMenuNavigation } from './helpers/activity-context-menu-navigation-assertions'
 import { assertActivityContextMenuClear } from './helpers/activity-context-menu-clear-assertions'
 import { assertActivityContextMenuRead } from './helpers/activity-context-menu-read-assertions'
 import { assertActivityContextMenu } from './helpers/activity-context-menu-assertions'
@@ -474,6 +475,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityContextMenu(orcaPage, call, testInfo)
   await assertActivityContextMenuRead(orcaPage, call, testInfo)
   await assertActivityContextMenuClear(orcaPage, call, testInfo)
+  await assertActivityContextMenuNavigation(orcaPage, call, testInfo)
   await assertActivityResize(orcaPage, call, testInfo)
   await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
   await assertActivityPageClose(orcaPage, call, testInfo)

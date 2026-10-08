@@ -118,14 +118,15 @@ afterEach(() => {
 })
 
 describe('ActivityThreadContextMenu', () => {
-  it('opens the thread', () => {
+  it('opens and jumps through the original items once', () => {
     const thread = makeThread()
     openMenu(thread)
-
     fireEvent.click(menuItem('Open'))
-    expect(handlers.onOpen).toHaveBeenCalledWith(thread)
+    expect(handlers.onOpen).toHaveBeenCalledExactlyOnceWith(thread)
+    fireEvent.contextMenu(screen.getByTestId('row'))
+    fireEvent.click(menuItem('Go to Workspace'))
+    expect(handlers.onJump).toHaveBeenCalledExactlyOnceWith(thread)
   })
-
   it('shows one read toggle that marks an unread thread read', () => {
     const thread = makeThread()
     openMenu(thread)
