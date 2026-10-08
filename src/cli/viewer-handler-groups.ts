@@ -2,6 +2,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'crash-report-viewer',
+    keys: ['ui crash-report open'],
+    load: async () => (await import('./handlers/crash-report-viewer.js')).CRASH_REPORT_HANDLERS
+  },
+  {
     name: 'setup-guide-viewer',
     keys: ['ui setup-guide open'],
     load: async () => (await import('./handlers/setup-guide-viewer.js')).SETUP_GUIDE_HANDLERS

@@ -1,13 +1,10 @@
+import { observeViewerDialogIdentity } from './viewer-dialog-identity'
 import { useAppStore } from '@/store'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { isActivityDestinationVisible } from './activity-workspace-destination'
 import { readSettingsViewerView } from './settings-viewer-view'
 
-export function acquireHelpModalOpenLease(
-  kind: 'feature-tour' | 'setup-guide',
-  expiresAt: number,
-  rootAvailable: () => boolean
-) {
+export function assertHelpModalOpenAvailable(expiresAt: number, rootAvailable: () => boolean) {
   if (Date.now() >= expiresAt) {
     throw new Error('request_expired')
   }
@@ -40,6 +37,15 @@ export function acquireHelpModalOpenLease(
   if (readSettingsViewerView()?.hasUnsavedChanges) {
     throw new Error('unsaved_settings_changes')
   }
+  return { initial, visible, overlays }
+}
+
+export function acquireHelpModalOpenLease(
+  kind: 'feature-tour' | 'setup-guide',
+  expiresAt: number,
+  rootAvailable: () => boolean
+) {
+  const { initial, visible, overlays } = assertHelpModalOpenAvailable(expiresAt, rootAvailable)
   const modal = kind === 'feature-tour' ? 'feature-wall' : 'setup-guide'
   const sourceKey = kind === 'feature-tour' ? 'source' : 'telemetrySource'
   const marker = kind === 'feature-tour' ? 'data-feature-tour-dialog' : 'data-setup-guide-dialog'
@@ -89,36 +95,13 @@ export function acquireHelpModalOpenLease(
       ? dialog
       : null
   }
-  const observer = new MutationObserver((records) => {
-    if (!ownedDialog) {
-      return
-    }
-    for (const record of records) {
-      if (
-        record.type === 'childList' &&
-        [...record.removedNodes].some((node) => node === ownedDialog || node.contains(ownedDialog))
-      ) {
-        superseded = true
-      }
-      if (record.type === 'attributes' && record.target === ownedDialog) {
-        superseded = true
-      }
-    }
-  })
-  observer.observe(document.body, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: [
-      'role',
-      marker,
-      sourceMarker,
-      'data-setup-guide-open',
-      'hidden',
-      'inert',
-      'aria-hidden'
-    ]
-  })
+  const observer = observeViewerDialogIdentity(
+    () => ownedDialog,
+    () => {
+      superseded = true
+    },
+    ['role', marker, sourceMarker, 'data-setup-guide-open', 'hidden', 'inert', 'aria-hidden']
+  )
   const unsubscribe = useAppStore.subscribe(observe)
   return {
     visible,
