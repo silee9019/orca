@@ -1,6 +1,13 @@
 import type { HandlerGroup } from './handler-group-manifest'
 export const AGENT_SESSION_WATCH_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'terminal-renderer-data-watch',
+    keys: ['terminal watch-renderer-data'],
+    load: async () =>
+      (await import('./handlers/terminal-renderer-data-watch.js'))
+        .TERMINAL_RENDERER_DATA_WATCH_HANDLERS
+  },
+  {
     name: 'renderer-delivery-resync-watch',
     keys: ['terminal watch-delivery-resync'],
     load: async () =>

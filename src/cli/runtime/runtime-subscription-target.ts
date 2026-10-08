@@ -1,3 +1,4 @@
+import type { TerminalRendererDataSubscriptionParams } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RendererResyncSubscriptionParams } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
 import type { TerminalControlSubscriptionParams } from '../../shared/rpc-contract/terminal-control-watch-params'
 import type { TerminalSpawnSubscriptionParams } from '../../shared/rpc-contract/terminal-spawn-watch-params'
@@ -18,6 +19,7 @@ export type StreamArgs<Params> = [
   signal: AbortSignal
 ]
 export type SubscriptionParams =
+  | TerminalRendererDataSubscriptionParams
   | RendererResyncSubscriptionParams
   | TerminalControlSubscriptionParams
   | TerminalSpawnSubscriptionParams
@@ -60,36 +62,39 @@ export function createCliRuntimeSubscriptionOptions(
 }
 
 export function resolveRuntimeEventCapability(method: RuntimeEventMethod) {
-  return method === 'renderer.deliveryResync.subscribe'
-    ? 'rendererDeliveryResyncStreaming'
-    : method === 'terminal.modelRestore.subscribe'
-      ? 'terminalModelRestoreStreaming'
-      : method === 'terminal.controlRequests.subscribe'
-        ? 'terminalControlStreaming'
-        : method === 'terminal.spawn.subscribe'
-          ? 'terminalSpawnStreaming'
-          : method === 'terminal.exit.subscribe'
-            ? 'terminalExitStreaming'
-            : method === 'terminal.effects.subscribe'
-              ? 'terminalEffectsStreaming'
-              : method === 'agentStatus.workerRecoverySubscribe'
-                ? 'agentWorkerRecoveryStreaming'
-                : method === 'agentStatus.migrationSubscribe'
-                  ? 'agentStatusMigrationStreaming'
-                  : method === 'agentStatus.subscribe'
-                    ? 'agentStatusStreaming'
-                    : method === 'structuredHeld.subscribe'
-                      ? 'structuredHeldStreaming'
-                      : method === 'nativeChat.subscribe'
-                        ? 'nativeChatStreaming'
-                        : method === 'agentAwake.subscribe'
-                          ? 'agentAwakeStreaming'
-                          : method === 'remoteWorkspace.subscribe'
-                            ? 'remoteWorkspaceStreaming'
-                            : 'terminalPresentationStreaming'
+  return method === 'terminal.rendererData.subscribe'
+    ? 'terminalRendererDataStreaming'
+    : method === 'renderer.deliveryResync.subscribe'
+      ? 'rendererDeliveryResyncStreaming'
+      : method === 'terminal.modelRestore.subscribe'
+        ? 'terminalModelRestoreStreaming'
+        : method === 'terminal.controlRequests.subscribe'
+          ? 'terminalControlStreaming'
+          : method === 'terminal.spawn.subscribe'
+            ? 'terminalSpawnStreaming'
+            : method === 'terminal.exit.subscribe'
+              ? 'terminalExitStreaming'
+              : method === 'terminal.effects.subscribe'
+                ? 'terminalEffectsStreaming'
+                : method === 'agentStatus.workerRecoverySubscribe'
+                  ? 'agentWorkerRecoveryStreaming'
+                  : method === 'agentStatus.migrationSubscribe'
+                    ? 'agentStatusMigrationStreaming'
+                    : method === 'agentStatus.subscribe'
+                      ? 'agentStatusStreaming'
+                      : method === 'structuredHeld.subscribe'
+                        ? 'structuredHeldStreaming'
+                        : method === 'nativeChat.subscribe'
+                          ? 'nativeChatStreaming'
+                          : method === 'agentAwake.subscribe'
+                            ? 'agentAwakeStreaming'
+                            : method === 'remoteWorkspace.subscribe'
+                              ? 'remoteWorkspaceStreaming'
+                              : 'terminalPresentationStreaming'
 }
 
 export type RuntimeEventMethod =
+  | 'terminal.rendererData.subscribe'
   | 'renderer.deliveryResync.subscribe'
   | 'terminal.modelRestore.subscribe'
   | 'terminal.controlRequests.subscribe'

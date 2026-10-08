@@ -1,4 +1,7 @@
-import { sendModelRestoreNeededMarker } from '../../src/main/ipc/pty/delivery/payload'
+import {
+  sendModelRestoreNeededMarker,
+  sendPtyDataToRenderer
+} from '../../src/main/ipc/pty/delivery/payload'
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -234,8 +237,12 @@ it.each([
       )
       expect(sendModelRestoreNeededMarker(session, id, 'delivery-heal', 17)).toBe(markerSent)
       expect(sendModelRestoreNeededMarker(session, id, 'unhide', undefined)).toBe(markerSent)
+      sendPtyDataToRenderer(session, id, {
+        id,
+        data: 'private renderer data excluded from control and model watchers'
+      })
       expect(selected.webContents.send).toHaveBeenCalledTimes(
-        variant === 'no-window' ? 0 : variant === 'destroyed-window' ? 4 : 7
+        variant === 'no-window' ? 0 : variant === 'destroyed-window' ? 5 : 8
       )
       expect(providers.getProviderForPty).toHaveBeenCalledTimes(3)
       expect(await serialization).toBeNull()

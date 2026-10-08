@@ -1,7 +1,11 @@
+import type { TerminalRendererDataSignal } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RendererDeliveryResyncSignal } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
 import type { TerminalControlRequestSignal } from '../../shared/rpc-contract/terminal-control-watch-params'
 
-export type PtyControlRequest = TerminalControlRequestSignal | RendererDeliveryResyncSignal
+export type PtyControlRequest =
+  | TerminalControlRequestSignal
+  | RendererDeliveryResyncSignal
+  | TerminalRendererDataSignal
 type Observer = { changed: (request: PtyControlRequest) => void; failed: () => void }
 const observers = new WeakMap<object, Set<Observer>>()
 export function subscribePtyControlRequests(
@@ -30,9 +34,11 @@ export function publishPtyControlRequest(
   for (const observer of observers.get(owner) ?? []) {
     try {
       observer.changed(
-        request.kind === 'serialize-buffer'
-          ? { ...request, ...(request.opts ? { opts: { ...request.opts } } : {}) }
-          : { ...request }
+        request.kind === 'renderer-data'
+          ? { ...request, payload: { ...request.payload } }
+          : request.kind === 'serialize-buffer'
+            ? { ...request, ...(request.opts ? { opts: { ...request.opts } } : {}) }
+            : { ...request }
       )
     } catch {
       observers.get(owner)?.delete(observer)

@@ -54,3 +54,32 @@ it('isolates runtimes, nested options and failing readers without changing the p
   expect(getPtyControlRequestObserverCount(owner)).toBe(0)
   expect(getPtyControlRequestObserverCount(other)).toBe(0)
 })
+
+it('isolates private renderer payload objects between observers', () => {
+  const owner = {},
+    changed = vi.fn()
+  const first = subscribePtyControlRequests(
+    owner,
+    (request) => {
+      if (request.kind === 'renderer-data') {
+        request.payload.data = 'mutated'
+        request.payload.id = 'other'
+      }
+    },
+    vi.fn()
+  )
+  const second = subscribePtyControlRequests(owner, changed, vi.fn())
+  const request = {
+    kind: 'renderer-data' as const,
+    ptyId: 'fixture',
+    rendererId: 421,
+    origin: 'pty-output' as const,
+    payload: { id: 'fixture', data: 'private original output', seq: 17 }
+  }
+  publishPtyControlRequest(owner, request)
+  expect(changed).toHaveBeenCalledWith(request)
+  expect(request.payload).toEqual({ id: 'fixture', data: 'private original output', seq: 17 })
+  first()
+  second()
+  expect(getPtyControlRequestObserverCount(owner)).toBe(0)
+})

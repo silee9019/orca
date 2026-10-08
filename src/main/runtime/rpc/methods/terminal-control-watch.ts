@@ -1,3 +1,4 @@
+import { TerminalRendererDataSignal } from '../../../../shared/rpc-contract/terminal-renderer-data-watch-params'
 import type { RpcContext } from '../core'
 import { defineStreamingMethod } from '../core'
 import {
@@ -8,11 +9,11 @@ import { resolveLiveTerminalDetailsTarget } from './terminal-host-details'
 import { createRuntimeJsonEventSubscription } from '../../runtime-json-event-subscription'
 import { subscribePtyControlRequests } from '../../pty-control-request-observers'
 
-async function watchRequests(
+export async function watchTerminalRendererRequests(
   params: TerminalControlSubscriptionParams,
   context: RpcContext,
   emit: (event: unknown) => void,
-  modelRestoreOnly: boolean
+  mode: 'control' | 'model' | 'data'
 ): Promise<void> {
   const { runtime, signal } = context,
     identity = runtime.getTerminalProcessIncarnation(params.terminal)
@@ -56,13 +57,21 @@ async function watchRequests(
         (request) => {
           if (
             !('ptyId' in request) ||
-            (request.kind === 'model-restore-needed') !== modelRestoreOnly ||
+            !(mode === 'model'
+              ? request.kind === 'model-restore-needed'
+              : mode === 'data'
+                ? request.kind === 'renderer-data'
+                : ['clear-buffer', 'reset-input-modes', 'serialize-buffer'].includes(
+                    request.kind
+                  )) ||
             request.ptyId !== params.expectedPtyId ||
             request.rendererId !== params.expectedRendererId
           ) {
             return
           }
-          const parsed = TerminalControlRequestSignal.safeParse(request)
+          const parsed = (
+            mode === 'data' ? TerminalRendererDataSignal : TerminalControlRequestSignal
+          ).safeParse(request)
           if (!parsed.success) {
             fail()
             return
@@ -84,11 +93,13 @@ export const TERMINAL_CONTROL_WATCH_METHODS = [
   defineStreamingMethod({
     name: 'terminal.controlRequests.subscribe',
     params: TerminalControlSubscriptionParams,
-    handler: (params, context, emit) => watchRequests(params, context, emit, false)
+    handler: (params, context, emit) =>
+      watchTerminalRendererRequests(params, context, emit, 'control')
   }),
   defineStreamingMethod({
     name: 'terminal.modelRestore.subscribe',
     params: TerminalControlSubscriptionParams,
-    handler: (params, context, emit) => watchRequests(params, context, emit, true)
+    handler: (params, context, emit) =>
+      watchTerminalRendererRequests(params, context, emit, 'model')
   })
 ]
