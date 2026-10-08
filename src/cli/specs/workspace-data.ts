@@ -1,3 +1,4 @@
+import { WORKSPACE_WORKTREE_FORGET_COMMAND_SPECS } from './workspace-worktree-forget'
 import { WORKSPACE_CLEANUP_SCAN_COMMAND_SPECS } from './workspace-cleanup-scan'
 import { WORKSPACE_REPO_ICON_PICKER_COMMAND_SPECS } from './workspace-repo-icon-picker'
 import { WORKSPACE_DIAGNOSTIC_PREVIEW_COMMAND_SPECS } from './workspace-diagnostic-preview'
@@ -47,6 +48,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_WORKTREE_FORGET_COMMAND_SPECS,
   ...WORKSPACE_CLEANUP_SCAN_COMMAND_SPECS,
   ...WORKSPACE_REPO_ICON_PICKER_COMMAND_SPECS,
   ...WORKSPACE_DIAGNOSTIC_PREVIEW_COMMAND_SPECS,
