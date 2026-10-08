@@ -12,7 +12,8 @@ export async function dispatchLocalNativeChatStream(
 ): Promise<RpcResponse | undefined> {
   const meta = { runtimeId: runtime.getRuntimeId() }
   if (
-    (request.method !== 'nativeChat.subscribe' &&
+    (request.method !== 'terminal.effects.subscribe' &&
+      request.method !== 'nativeChat.subscribe' &&
       request.method !== 'terminal.presentation.subscribe' &&
       request.method !== 'agentAwake.subscribe' &&
       request.method !== 'remoteWorkspace.subscribe' &&

@@ -5,6 +5,7 @@ const active = new WeakMap<OrcaRuntimeService, Set<string>>()
 export function getActiveRuntimeJsonEventStreamCount(
   runtime: OrcaRuntimeService,
   namespace:
+    | 'terminalEffects'
     | 'terminalPresentation'
     | 'agentAwake'
     | 'remoteWorkspace'
@@ -18,6 +19,7 @@ export function getActiveRuntimeJsonEventStreamCount(
 export function createRuntimeJsonEventSubscription(
   context: RpcContext,
   namespace:
+    | 'terminalEffects'
     | 'terminalPresentation'
     | 'agentAwake'
     | 'remoteWorkspace'
@@ -74,19 +76,21 @@ export function createRuntimeJsonEventSubscription(
       emit({
         type: 'error',
         code:
-          namespace === 'terminalPresentation'
-            ? 'terminal_presentation_owner_changed'
-            : namespace === 'agentAwake'
-              ? 'agent_awake_unavailable'
-              : namespace === 'structuredHeld'
-                ? 'structured_held_unavailable'
-                : namespace === 'agentStatus'
-                  ? 'agent_status_unavailable'
-                  : namespace === 'agentStatusMigration'
-                    ? 'agent_migration_unavailable'
-                    : namespace === 'agentWorkerRecovery'
-                      ? 'agent_worker_recovery_unavailable'
-                      : 'remote_workspace_unavailable'
+          namespace === 'terminalEffects'
+            ? 'terminal_effects_owner_changed'
+            : namespace === 'terminalPresentation'
+              ? 'terminal_presentation_owner_changed'
+              : namespace === 'agentAwake'
+                ? 'agent_awake_unavailable'
+                : namespace === 'structuredHeld'
+                  ? 'structured_held_unavailable'
+                  : namespace === 'agentStatus'
+                    ? 'agent_status_unavailable'
+                    : namespace === 'agentStatusMigration'
+                      ? 'agent_migration_unavailable'
+                      : namespace === 'agentWorkerRecovery'
+                        ? 'agent_worker_recovery_unavailable'
+                        : 'remote_workspace_unavailable'
       })
       aborted()
       return
