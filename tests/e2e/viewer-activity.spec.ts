@@ -6,9 +6,10 @@ import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
 import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
+import { retryTransientMainEvaluate } from './helpers/electron-main-evaluate-retry'
 import { ActivityViewerResultSchema } from '../../src/shared/activity-viewer-command'
 
-test('Activity CLI applies the existing group, read, density and child preferences', async ({
+test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
 }, testInfo) => {
   const orcaPage = await electronApp.firstWindow()
@@ -20,8 +21,19 @@ test('Activity CLI applies the existing group, read, density and child preferenc
       window.__store?.getState().startupWorktreeRefreshCompleted
   )
 
-  const userData = await electronApp.evaluate(({ app }) => app.getPath('userData'))
-  const pid = await electronApp.evaluate(() => process.pid)
+  const { userData, pid } = await retryTransientMainEvaluate(() =>
+    electronApp.evaluate(({ app }) => ({ userData: app.getPath('userData'), pid: process.pid }))
+  )
+  const assertHidden = async () =>
+    expect(
+      await retryTransientMainEvaluate(() =>
+        electronApp.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().every(
+            (window) => !window.isVisible() && !window.isFocused()
+          )
+        )
+      )
+    ).toBe(true)
   writeFileSync(
     testInfo.outputPath('process-manifest.json'),
     JSON.stringify({ pid, userData, backgroundLaunch: process.env.ORCA_BACKGROUND_LAUNCH }, null, 2)
@@ -71,11 +83,7 @@ test('Activity CLI applies the existing group, read, density and child preferenc
     expect(envelope._meta.runtimeId).toBeTruthy()
     return ActivityViewerResultSchema.parse(envelope.result)
   }
-  expect(
-    await electronApp.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows().every((window) => !window.isVisible() && !window.isFocused())
-    )
-  ).toBe(true)
+  await assertHidden()
   await orcaPage.evaluate(() => {
     window.__store?.setState({
       fetchAllWorktrees: async () => {},
@@ -262,6 +270,24 @@ test('Activity CLI applies the existing group, read, density and child preferenc
       )
       throw error
     })
+  const pageSearch = list.getByRole('textbox')
+  expect(await call(['activity', 'search', '--query', 'Activity task a'])).toMatchObject({
+    applied: true,
+    persisted: null,
+    writeOutcome: 'not_requested',
+    rendered: { query: 'Activity task a', querySettled: true }
+  })
+  await expect(pageSearch).toHaveValue('Activity task a')
+  await expect(rows).toHaveCount(1)
+  await expect(rows.first()).toContainText('Activity task a')
+  await list.screenshot({ path: testInfo.outputPath('page-search.png') })
+  expect(await call(['activity', 'search', '--query', '없는 검색어'])).toMatchObject({
+    applied: true
+  })
+  await expect(rows).toHaveCount(0)
+  expect(await call(['activity', 'search', '--query', ''])).toMatchObject({ applied: true })
+  await expect(pageSearch).toHaveValue('')
+  await expect(rows).toHaveCount(3)
   await list.screenshot({ path: testInfo.outputPath('before.png') })
   for (const by of ['none', 'status', 'project', 'worktree', 'agent']) {
     expect(await call(['activity', 'group', '--by', by])).toMatchObject({
@@ -318,6 +344,48 @@ test('Activity CLI applies the existing group, read, density and child preferenc
   const sidebar = orcaPage.locator('[data-activity-viewer="sidebar-agents"]')
   const sidebarRows = sidebar.getByRole('listitem')
   await expect(sidebarRows).toHaveCount(3)
+  const sidebarSearch = orcaPage.locator('[data-viewer-sidebar="left"]').getByRole('textbox')
+  expect(
+    await call(['activity', 'search-visible', '--enabled', 'true'], 'sidebar-agents')
+  ).toMatchObject({
+    applied: true,
+    persisted: true,
+    writeOutcome: 'accepted'
+  })
+  await expect(sidebarSearch).toBeFocused()
+  expect(
+    await call(['activity', 'search', '--query', 'Activity task b'], 'sidebar-agents')
+  ).toMatchObject({
+    applied: true,
+    persisted: null,
+    rendered: { query: 'Activity task b', querySettled: true }
+  })
+  await expect(sidebarSearch).toHaveValue('Activity task b')
+  await expect(sidebarRows).toHaveCount(1)
+  await expect(sidebarRows.first()).toContainText('Activity task b')
+  await orcaPage
+    .locator('[data-viewer-sidebar="left"]')
+    .screenshot({ path: testInfo.outputPath('sidebar-search.png') })
+  expect(
+    await call(['activity', 'search-visible', '--enabled', 'false'], 'sidebar-agents')
+  ).toMatchObject({
+    applied: true,
+    persisted: true,
+    writeOutcome: 'accepted'
+  })
+  await expect(sidebarSearch).toHaveCount(0)
+  await expect(sidebarRows).toHaveCount(3)
+  await orcaPage
+    .locator('[data-viewer-sidebar="left"]')
+    .screenshot({ path: testInfo.outputPath('sidebar-search-hidden.png') })
+  await expect(
+    call(['activity', 'search', '--query', 'unavailable'], 'sidebar-agents')
+  ).rejects.toThrow()
+  expect(
+    await call(['activity', 'search-visible', '--enabled', 'true'], 'sidebar-agents')
+  ).toMatchObject({ applied: true })
+  await expect(sidebarSearch).toBeFocused()
+  await expect(sidebarSearch).toHaveValue('')
   expect(await call(['activity', 'group', '--by', 'project'], 'sidebar-agents')).toMatchObject({
     applied: true,
     persisted: true
@@ -349,9 +417,5 @@ test('Activity CLI applies the existing group, read, density and child preferenc
     rendered: null,
     reason: 'activity_surface_unavailable'
   })
-  expect(
-    await electronApp.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows().every((window) => !window.isVisible() && !window.isFocused())
-    )
-  ).toBe(true)
+  await assertHidden()
 })

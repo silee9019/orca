@@ -19,7 +19,13 @@ export function useActivityViewerPublication(
   rows: readonly ActivityVirtualItemDescriptor[],
   preferences: Pick<
     ActivityViewerSnapshot,
-    'groupBy' | 'readFilter' | 'compact' | 'showChildAgents' | 'querySettled' | 'selectedPaneKey'
+    | 'groupBy'
+    | 'readFilter'
+    | 'compact'
+    | 'showChildAgents'
+    | 'querySettled'
+    | 'query'
+    | 'selectedPaneKey'
   >
 ): void {
   const context = useAppStore(
@@ -28,10 +34,12 @@ export function useActivityViewerPublication(
       defaultHostId: getSettingsFocusedExecutionHostId(state.settings)
     }))
   )
-  const { groupBy, readFilter, compact, showChildAgents, querySettled, selectedPaneKey } =
+  const { groupBy, readFilter, compact, showChildAgents, querySettled, query, selectedPaneKey } =
     preferences
   useLayoutEffect(() => {
-    if (!surface) {return}
+    if (!surface) {
+      return
+    }
     publishActivityViewerView(surface, {
       surface,
       runtimeContextKey: context.runtimeContextKey,
@@ -40,6 +48,7 @@ export function useActivityViewerPublication(
       compact,
       showChildAgents,
       querySettled,
+      query,
       selectedPaneKey,
       densityMeasured: false,
       renderedRows: [],
@@ -67,6 +76,7 @@ export function useActivityViewerPublication(
     compact,
     showChildAgents,
     querySettled,
+    query,
     selectedPaneKey
   ])
 }

@@ -8,7 +8,9 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'ui activity group',
       'ui activity read',
       'ui activity compact',
-      'ui activity children'
+      'ui activity children',
+      'ui activity search',
+      'ui activity search-visible'
     ],
     load: async () => (await import('./handlers/activity-viewer.js')).ACTIVITY_VIEWER_HANDLERS
   },

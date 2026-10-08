@@ -9,33 +9,72 @@ import type {
   ActivityViewerResponse
 } from '../../../shared/activity-viewer-command'
 import { readActivityViewerView } from './activity-viewer-view'
+import { captureActivitySearchControl } from './activity-search-controls'
 
 export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const command = ActivityViewerParams.parse(request.command)
-  if (Date.now() >= request.expiresAt) {throw new Error('request_expired')}
+  if (Date.now() >= request.expiresAt) {
+    throw new Error('request_expired')
+  }
   const initial = useAppStore.getState()
-  if (!initial.persistedUIReady || !initial.settings) {throw new Error('viewer_not_ready')}
-  if (initial.settings.activeRuntimeEnvironmentId) {throw new Error('viewer_runtime_mismatch')}
-  if (command.operation !== 'get' && !window.api.ui.setWithAck)
-    {throw new Error('persistence_ack_unavailable')}
+  if (!initial.persistedUIReady || !initial.settings) {
+    throw new Error('viewer_not_ready')
+  }
+  if (initial.settings.activeRuntimeEnvironmentId) {
+    throw new Error('viewer_runtime_mismatch')
+  }
+  if (command.operation !== 'get' && command.operation !== 'search' && !window.api.ui.setWithAck) {
+    throw new Error('persistence_ack_unavailable')
+  }
   const runtime = getProviderRuntimeContextKey(initial.settings)
   const sameRuntime = (): boolean => {
     const settings = useAppStore.getState().settings
     return settings !== null && getProviderRuntimeContextKey(settings) === runtime
   }
+  const searchControl =
+    command.operation === 'search' || command.operation === 'search-visible'
+      ? captureActivitySearchControl(command.surface)
+      : null
+  if (searchControl && !readActivityViewerView(command.surface)) {
+    throw new Error('activity_surface_unavailable')
+  }
+  if (command.operation === 'search') {
+    const input = searchControl?.getInput()
+    if (!input || !input.isConnected || input.getBoundingClientRect().width <= 0) {
+      throw new Error('activity_search_unavailable')
+    }
+    searchControl?.setQuery(command.query)
+  }
   let saving: Promise<void> | undefined
-  if (command.operation === 'group') {saving = initial.setAgentsGroupBy(command.by)}
-  else if (command.operation === 'read') {saving = initial.setAgentsReadFilter(command.filter)}
-  else if (command.operation === 'compact') {saving = initial.setAgentsCompactMode(command.enabled)}
-  else if (command.operation === 'children')
-    {saving = initial.setAgentsShowChildAgents(command.enabled)}
+  if (command.operation === 'search-visible') {
+    if (!searchControl?.setShowSearch) {
+      throw new Error('activity_search_unavailable')
+    }
+    saving = searchControl.setShowSearch(command.enabled)
+  }
+  if (command.operation === 'group') {
+    saving = initial.setAgentsGroupBy(command.by)
+  } else if (command.operation === 'read') {
+    saving = initial.setAgentsReadFilter(command.filter)
+  } else if (command.operation === 'compact') {
+    saving = initial.setAgentsCompactMode(command.enabled)
+  } else if (command.operation === 'children') {
+    saving = initial.setAgentsShowChildAgents(command.enabled)
+  }
   const expected = useAppStore.getState()
   const groupBy = expected.agentsGroupBy
   const readFilter = expected.agentsReadFilter
   const compact = expected.agentsCompactMode
   const showChildAgents = expected.agentsShowChildAgents
+  const showSearch = expected.agentsShowSearch
+  const requestedQuery =
+    command.operation === 'search'
+      ? command.query
+      : command.operation === 'search-visible' && !command.enabled
+        ? ''
+        : undefined
   const stillExpected = (): boolean => {
     const state = useAppStore.getState()
     return (
@@ -43,7 +82,8 @@ export async function applyActivityViewerRequest(
       state.agentsGroupBy === groupBy &&
       state.agentsReadFilter === readFilter &&
       state.agentsCompactMode === compact &&
-      state.agentsShowChildAgents === showChildAgents
+      state.agentsShowChildAgents === showChildAgents &&
+      (command.operation !== 'search-visible' || state.agentsShowSearch === showSearch)
     )
   }
   const writeOutcome: ActivityViewerResult['writeOutcome'] = saving
@@ -56,13 +96,14 @@ export async function applyActivityViewerRequest(
         'unknown'
       )
     : 'not_requested'
-  const ui = sameRuntime()
-    ? await withTimeout<PersistedUIState | null>(
-        window.api.ui.get(),
-        Math.max(0, request.expiresAt - Date.now() - 50),
-        null
-      )
-    : null
+  const ui =
+    sameRuntime() && command.operation !== 'search'
+      ? await withTimeout<PersistedUIState | null>(
+          window.api.ui.get(),
+          Math.max(0, request.expiresAt - Date.now() - 50),
+          null
+        )
+      : null
   const persisted =
     sameRuntime() && ui !== null
       ? writeOutcome !== 'rejected' &&
@@ -74,10 +115,12 @@ export async function applyActivityViewerRequest(
               ? ui.agentsCompactMode === compact
               : command.operation === 'children'
                 ? ui.agentsShowChildAgents === showChildAgents
-                : ui.agentsGroupBy === groupBy &&
-                  ui.agentsReadFilter === readFilter &&
-                  ui.agentsCompactMode === compact &&
-                  ui.agentsShowChildAgents === showChildAgents)
+                : command.operation === 'search-visible'
+                  ? ui.agentsShowSearch === showSearch
+                  : ui.agentsGroupBy === groupBy &&
+                    ui.agentsReadFilter === readFilter &&
+                    ui.agentsCompactMode === compact &&
+                    ui.agentsShowChildAgents === showChildAgents)
       : null
   const matches = (): boolean => {
     const view = readActivityViewerView(command.surface)
@@ -91,6 +134,14 @@ export async function applyActivityViewerRequest(
       view.compact === compact &&
       view.showChildAgents === showChildAgents &&
       view.querySettled &&
+      (requestedQuery === undefined ||
+        (view.query === requestedQuery && searchControl?.getQuery() === requestedQuery)) &&
+      (searchControl === null || captureActivitySearchControl(command.surface) === searchControl) &&
+      (command.operation !== 'search' || searchControl?.getInput()?.value === command.query) &&
+      (command.operation !== 'search-visible' ||
+        (command.enabled
+          ? searchControl?.getInput() === document.activeElement
+          : searchControl?.getInput() === null)) &&
       (command.operation !== 'compact' || (view.densityMeasured && view.renderedRows.length > 0))
     )
   }
@@ -100,8 +151,9 @@ export async function applyActivityViewerRequest(
     readActivityViewerView(command.surface) !== null &&
     !matches() &&
     Date.now() < deadline
-  )
-    {await new Promise<void>((resolve) => setTimeout(resolve, 25))}
+  ) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 25))
+  }
   const rendered = sameRuntime() ? readActivityViewerView(command.surface) : null
   const applied = Date.now() < request.expiresAt && matches()
   const reason = !sameRuntime()
@@ -110,9 +162,9 @@ export async function applyActivityViewerRequest(
       ? ('viewer_surface_superseded' as const)
       : writeOutcome === 'rejected'
         ? ('persistence_failed' as const)
-        : persisted === null
+        : persisted === null && command.operation !== 'search'
           ? ('persistence_unverifiable' as const)
-          : !persisted
+          : persisted === false
             ? ('persistence_superseded' as const)
             : !rendered
               ? ('activity_surface_unavailable' as const)
@@ -124,7 +176,7 @@ export async function applyActivityViewerRequest(
   return {
     viewer: 'host',
     surface: command.surface,
-    dispatched: saving !== undefined,
+    dispatched: saving !== undefined || command.operation === 'search',
     applied,
     persisted,
     writeOutcome,

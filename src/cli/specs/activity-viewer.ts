@@ -4,11 +4,13 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'group',
   'read',
   'compact',
-  'children'
+  'children',
+  'search',
+  'search-visible'
 ].map((operation) => ({
   path: ['ui', 'activity', operation],
-  summary: 'Read or apply the existing Activity list preference',
-  usage: `orca ui activity ${operation} --viewer host --surface <sidebar-agents|activity-page>${operation === 'group' ? ' --by <none|status|project|worktree|agent>' : operation === 'read' ? ' --filter <all|unread>' : operation === 'get' ? '' : ' --enabled <true|false>'} [--json]`,
+  summary: 'Read or apply an existing Activity list control',
+  usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : '<sidebar-agents|activity-page>'}${operation === 'group' ? ' --by <none|status|project|worktree|agent>' : operation === 'read' ? ' --filter <all|unread>' : operation === 'get' ? '' : operation === 'search' ? ' --query <text>' : ' --enabled <true|false>'} [--json]`,
   allowedFlags: [
     ...GLOBAL_FLAGS,
     'viewer',
@@ -17,11 +19,14 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
       ? ['by']
       : operation === 'read'
         ? ['filter']
-        : operation === 'get'
-          ? []
-          : ['enabled'])
+        : operation === 'search'
+          ? ['query']
+          : operation === 'get'
+            ? []
+            : ['enabled'])
   ],
   notes: [
+    'Search changes only the requested surface local query and requires its visible input. Search-visible is sidebar-only; showing focuses the input and hiding clears its query.',
     'The requested surface must already be visible for applied=true. Compact requires measured thread rows. Persistence acknowledges the current host preference, not a disk flush. No thread is selected or marked read.'
   ]
 }))

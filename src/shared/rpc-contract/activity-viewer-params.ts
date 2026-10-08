@@ -21,6 +21,15 @@ export const ActivityViewerParams = z.discriminatedUnion('operation', [
     })
     .strict(),
   z.object({ ...target, operation: z.literal('compact'), enabled: z.boolean() }).strict(),
-  z.object({ ...target, operation: z.literal('children'), enabled: z.boolean() }).strict()
+  z.object({ ...target, operation: z.literal('children'), enabled: z.boolean() }).strict(),
+  z.object({ ...target, operation: z.literal('search'), query: z.string() }).strict(),
+  z
+    .object({
+      ...target,
+      surface: z.literal('sidebar-agents'),
+      operation: z.literal('search-visible'),
+      enabled: z.boolean()
+    })
+    .strict()
 ])
 export type ActivityViewerCommand = z.infer<typeof ActivityViewerParams>

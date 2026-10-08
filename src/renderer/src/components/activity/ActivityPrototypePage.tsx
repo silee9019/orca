@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
+import { useActivitySearchControls } from '@/runtime/use-activity-search-controls'
 import { useSidebarResize } from '@/hooks/useSidebarResize'
 import {
   setActivityTerminalPortals,
@@ -27,6 +28,7 @@ export * from './activity-prototype-page-exports'
 export default function ActivityPrototypePage(): React.JSX.Element {
   const [query, setQuery] = useState('')
   const activityFilterInputRef = useRef<HTMLInputElement | null>(null)
+  useActivitySearchControls('activity-page', query, setQuery, activityFilterInputRef)
   // Why: bounds auto mark-read to one acknowledgement per selected thread turn.
   const autoAcknowledgedTurnRef = useRef<string | null>(null)
   // Why store-backed: persisted preferences shared with the sidebar agents list.

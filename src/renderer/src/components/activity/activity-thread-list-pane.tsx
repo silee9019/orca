@@ -161,12 +161,10 @@ export function ActivityThreadListPane({
       }
       const scrollTop = event.currentTarget.scrollTop
       // A clamp-to-0 fired before the deferred restore must not wipe the saved offset.
-      if (!hasRestoredScrollRef.current) {
-        if (scrollTop === 0) {
-          return
-        }
-        hasRestoredScrollRef.current = true
+      if (!hasRestoredScrollRef.current && scrollTop === 0) {
+        return
       }
+      hasRestoredScrollRef.current = true
       scrollTopRef.current = scrollTop
     },
     [scrollTopRef]
@@ -186,6 +184,7 @@ export function ActivityThreadListPane({
     compact: compactMode,
     showChildAgents: showChildAgents ?? false,
     querySettled,
+    query,
     selectedPaneKey
   })
   const headerItemIndexes = useMemo(

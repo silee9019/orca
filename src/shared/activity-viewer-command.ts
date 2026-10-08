@@ -14,6 +14,7 @@ export const ActivityViewerSnapshotSchema = z
     compact: z.boolean(),
     showChildAgents: z.boolean(),
     querySettled: z.boolean(),
+    query: z.string().optional(),
     densityMeasured: z.boolean(),
     selectedPaneKey: z.string().nullable(),
     logicalRows: z.array(
