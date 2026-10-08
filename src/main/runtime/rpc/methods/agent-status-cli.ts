@@ -99,6 +99,13 @@ export const AGENT_STATUS_CLI_METHODS = [
         agentType: row.agentType,
         state: row.state,
         mainAgent: row.mainAgent,
+        observation: row.observation
+          ? {
+              authorityId: row.observation.authorityId,
+              incarnation: row.observation.incarnation,
+              revision: row.observation.revision
+            }
+          : undefined,
         receivedAt: row.receivedAt,
         evidenceObservedAt: row.evidenceObservedAt,
         stateStartedAt: row.stateStartedAt,

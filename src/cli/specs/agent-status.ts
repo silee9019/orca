@@ -5,6 +5,18 @@ const REQUEST_FLAGS = [...GLOBAL_FLAGS, 'request-file']
 
 export const AGENT_STATUS_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['agent', 'status', 'reconcile-ended'],
+    summary:
+      'Reconcile one observed agent status after the host freshly confirms a shell foreground',
+    usage: 'orca agent status reconcile-ended --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    destructive: true,
+    notes: [
+      'Requires {terminal,expectedIncarnationId,paneKey,receivedAt,stateStartedAt,expectedObservation:{authorityId,incarnation,revision},confirm:true}. Use metadata from agent status list and the terminal identity. The host rechecks both identities after a fresh provider foreground query; unknown, nonshell, missing observation or changed status is refused.',
+      'Uses canonical ended-process cleanup, preserving resume identity for the surviving shell. Does not stop the PTY or establish that background processes exited. Structured-session rows are refused.'
+    ]
+  },
+  {
     path: ['agent', 'status', 'retire-tab'],
     summary: 'Retire canonical status and authority for one explicitly confirmed tab',
     usage: 'orca agent status retire-tab --request-file <path|-> [--json]',

@@ -20,7 +20,13 @@ export async function resolveLiveTerminalDetailsTarget(
   ) {
     throw new Error('terminal_gone')
   }
-  return { ptyId: target.ptyId, incarnationId: target.incarnationId }
+  return {
+    ptyId: target.ptyId,
+    incarnationId: target.incarnationId,
+    tabId: target.tabId,
+    leafId: target.leafId,
+    worktreeId: target.worktreeId
+  }
 }
 
 export const TERMINAL_HOST_DETAILS_METHODS = [
