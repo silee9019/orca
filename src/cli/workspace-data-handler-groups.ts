@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-keybinding-file',
+    keys: ['keybindings ensure-file', 'keybindings open-file', 'keybindings reveal-file'],
+    load: async () =>
+      (await import('./handlers/workspace-keybinding-file.js')).WORKSPACE_KEYBINDING_FILE_HANDLERS
+  },
+  {
     name: 'workspace-git-ignore',
     keys: ['git ignore-candidates', 'git ignore-folder'],
     load: async () =>
