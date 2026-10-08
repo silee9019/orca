@@ -11,12 +11,16 @@ export async function dispatchLocalNativeChatStream(
   dispatcher: RpcDispatcher
 ): Promise<RpcResponse | undefined> {
   const meta = { runtimeId: runtime.getRuntimeId() }
-  if (request.method !== 'nativeChat.subscribe' || !context?.stream) {
+  if (
+    (request.method !== 'nativeChat.subscribe' &&
+      request.method !== 'terminal.presentation.subscribe') ||
+    !context?.stream
+  ) {
     return errorResponse(
       request.id,
       meta,
       'method_not_supported',
-      'Local streaming is supported only for nativeChat.subscribe'
+      'Local streaming is unsupported for this method'
     )
   }
   if (!context.stream.begin()) {
