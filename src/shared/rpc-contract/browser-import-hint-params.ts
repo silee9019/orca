@@ -7,6 +7,8 @@ export const BrowserImportHintCommand = z
     confirm: z.literal('hide-browser-import-hint').optional(),
     filePath: z.string().min(1).max(32768).optional(),
     confirmProfile: z.string().min(1).optional(),
+    browserFamily: z.string().min(1).max(256).optional(),
+    sourceProfile: z.string().min(1).max(256).optional(),
     action: z.enum([
       'status',
       'open',
@@ -15,7 +17,8 @@ export const BrowserImportHintCommand = z
       'menu-close',
       'settings',
       'hide',
-      'import-file'
+      'import-file',
+      'import-browser'
     ])
   })
   .refine((command) => command.action !== 'hide' || command.confirm === 'hide-browser-import-hint')
@@ -25,6 +28,11 @@ export const BrowserImportHintCommand = z
       (command.hostId === 'local' &&
         !!command.filePath &&
         command.confirmProfile === command.profileId)
+  )
+  .refine(
+    (command) =>
+      command.action !== 'import-browser' ||
+      (!!command.browserFamily && command.confirmProfile === command.profileId)
   )
 export type BrowserImportHintCommand = z.infer<typeof BrowserImportHintCommand>
 export const BrowserImportHintState = z.object({

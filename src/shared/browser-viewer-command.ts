@@ -1,3 +1,5 @@
+import { BrowserClientNavigationReceipt } from './rpc-contract/browser-client-navigation-params'
+import { BrowserGrabToastState } from './rpc-contract/browser-grab-toast-params'
 import { BrowserWebAuthnFocusState } from './rpc-contract/browser-webauthn-focus-params'
 import { BrowserEgressState } from './rpc-contract/browser-egress-params'
 import { BrowserViewportPanReceipt } from './rpc-contract/browser-viewport-pan-params'
@@ -44,6 +46,8 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  clientNavigation: BrowserClientNavigationReceipt.optional(),
+  grabToast: BrowserGrabToastState.optional(),
   egress: BrowserEgressState.optional(),
   viewportPan: BrowserViewportPanReceipt.optional(),
   markupHint: BrowserMarkupHintState.optional(),

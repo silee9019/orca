@@ -141,14 +141,22 @@ export async function browserImportHintOwnerSocketFixture() {
   }
   await renderOwner()
   runtime.setNotifier({
-    browserViewer: async (command) => ({
-      ...(await applyBrowserViewerRequest({
-        id: 'reset-fixture',
-        expiresAt: Date.now() + 3000,
-        command
-      })),
-      viewerId: 9
-    })
+    browserViewer: async (command) => {
+      const pending: { value?: ReturnType<typeof applyBrowserViewerRequest> } = {}
+      await act(async () => {
+        pending.value = applyBrowserViewerRequest({
+          id: 'reset-fixture',
+          expiresAt: Date.now() + 3000,
+          command
+        })
+        void pending.value.catch(() => {})
+        await Promise.resolve()
+      })
+      if (!pending.value) {
+        throw new Error('fixture bridge did not start')
+      }
+      return { ...(await pending.value), viewerId: 9 }
+    }
   })
   const dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_VIEWER_METHODS })
   const sockets = new Set<Socket>()

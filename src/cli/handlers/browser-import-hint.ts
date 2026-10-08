@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { z } from 'zod'
 import type { CommandHandler } from '../dispatch'
-import { getRequiredStringFlag } from '../flags'
+import { getOptionalStringFlag, getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
 import { RuntimeClientError } from '../runtime-client'
 import {
@@ -18,6 +18,13 @@ export const BROWSER_IMPORT_HINT_HANDLERS: Record<string, CommandHandler> = {
   'browser import-hint': async (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const command = BrowserImportHintCommand.safeParse({
+      ...(action === 'import-browser'
+        ? {
+            browserFamily: getRequiredStringFlag(ctx.flags, 'browser'),
+            sourceProfile: getOptionalStringFlag(ctx.flags, 'source-profile'),
+            confirmProfile: getRequiredStringFlag(ctx.flags, 'confirm-profile')
+          }
+        : {}),
       ...(action === 'import-file'
         ? {
             filePath: resolve(ctx.cwd, getRequiredStringFlag(ctx.flags, 'file')),
@@ -44,7 +51,8 @@ export const BROWSER_IMPORT_HINT_HANDLERS: Record<string, CommandHandler> = {
     const reply = publicReply.safeParse(response)
     if (
       !reply.success ||
-      (action === 'import-file' && !reply.data.result.browserImportHint.imported) ||
+      ((action === 'import-file' || action === 'import-browser') &&
+        !reply.data.result.browserImportHint.imported) ||
       (action === 'hide' &&
         (!reply.data.result.browserImportHint.hidden ||
           !reply.data.result.browserImportHint.persisted))

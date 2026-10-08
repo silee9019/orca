@@ -1,3 +1,5 @@
+import { applyBrowserClientNavigationRequest } from './browser-client-navigation-request'
+import { requestBrowserGrabToast } from './browser-grab-toast-request'
 import { requestBrowserWebAuthnFocus } from './browser-webauthn-focus-request'
 import { requestBrowserEgress } from './browser-egress-request'
 import { requestBrowserViewportPan } from './browser-viewport-pan-request'
@@ -41,11 +43,13 @@ export async function applyBrowserPlacementViewerAction(
         | 'browser-setup-guide'
         | 'browser-feature-wall'
         | 'client-hosted-row'
+        | 'client-navigation'
         | 'client-markup'
         | 'take-back'
         | 'observe-page'
         | 'computer-permissions'
         | 'load-failure'
+        | 'grab-toast'
         | 'webauthn-dialog-focus'
         | 'webauthn-dialog'
         | 'workspace-file-open'
@@ -59,6 +63,10 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'grab-toast') {
+    const grabToast = await requestBrowserGrabToast(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, grabToast }
+  }
   if (command.operation === 'webauthn-dialog-focus') {
     const webAuthnFocus = await requestBrowserWebAuthnFocus(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, webAuthnFocus }
@@ -112,6 +120,9 @@ export async function applyBrowserPlacementViewerAction(
   if (command.operation === 'client-hosted-row') {
     const clientHostedRow = await requestClientHostedBrowserRow(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, clientHostedRow }
+  }
+  if (command.operation === 'client-navigation') {
+    return applyBrowserClientNavigationRequest(command, expiresAt)
   }
   if (command.operation === 'client-markup') {
     return await applyBrowserClientMarkupRequest(command, expiresAt)

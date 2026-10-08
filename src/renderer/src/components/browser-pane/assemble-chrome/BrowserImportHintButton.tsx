@@ -96,7 +96,7 @@ export function BrowserImportHintButton({
   )
 
   const handleImportFromBrowser = useCallback(
-    async (browserFamily: string, browserProfile?: string): Promise<void> => {
+    async (browserFamily: string, browserProfile?: string): Promise<BrowserCookieImportResult> => {
       revision.current += 1
       setOpen(false)
       setImportMenuOpen(false)
@@ -120,9 +120,10 @@ export function BrowserImportHintButton({
           ),
           result
         )
-        return
+        return result
       }
       toast.error(result.reason)
+      return result
     },
     [detectedBrowsers, effectiveProfileId, importCookiesFromBrowser, setImportMenuOpen]
   )
@@ -198,7 +199,8 @@ export function BrowserImportHintButton({
     changeMenu: setImportMenuOpen,
     openSettings: handleOpenBrowserSettings,
     hide: handleHideHint,
-    importFile: handleImportFromFile
+    importFile: handleImportFromFile,
+    importBrowser: handleImportFromBrowser
   })
 
   if (!shouldShow) {

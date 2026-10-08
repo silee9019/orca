@@ -1,41 +1,13 @@
+import { isBrowserClientPageViewerTargetCurrent as isBrowserClientMarkupTargetCurrent } from './browser-client-page-viewer-target'
+export { isBrowserClientPageViewerTargetCurrent as isBrowserClientMarkupTargetCurrent } from './browser-client-page-viewer-target'
 import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
 import type { BrowserViewerResult } from '../../../shared/browser-viewer-command'
-import { useAppStore } from '@/store'
-import { findPage } from '@/store/slices/browser-page-records'
-import { matchesBrowserClientPageCommandTarget } from './browser-client-page-command-target'
 import { requestBrowserMarkup } from './browser-markup-request'
-import type { RuntimeBrowserClientPlacement } from '../../../shared/runtime-browser-placement'
 import type {
   BrowserClientMarkupTarget,
   BrowserClientMarkupAction,
   BrowserClientMarkupReceipt
 } from '../../../shared/rpc-contract/browser-client-markup-params'
-export function isBrowserClientMarkupTargetCurrent(
-  target: BrowserClientMarkupTarget,
-  placement?: RuntimeBrowserClientPlacement | null
-): boolean {
-  const state = useAppStore.getState()
-  const page = findPage(state.browserPagesByWorkspace, target.page)
-  const workspace = state.browserTabsByWorktree[target.worktreeId]?.find(
-    (workspace) => workspace.id === page?.workspaceId
-  )
-  return Boolean(
-    state.persistedUIReady &&
-    state.settings?.activeRuntimeEnvironmentId === target.environmentId &&
-    state.activeModal === 'none' &&
-    state.activeWorktreeId === target.worktreeId &&
-    page?.worktreeId === target.worktreeId &&
-    page.browserRuntimeEnvironmentId === target.environmentId &&
-    workspace?.activePageId === target.page &&
-    state.activeBrowserTabIdByWorktree[target.worktreeId] === workspace.id &&
-    matchesBrowserClientPageCommandTarget(
-      state.remoteBrowserPageHandlesByPageId[target.page],
-      target.environmentId,
-      target,
-      placement
-    )
-  )
-}
 export async function requestBrowserClientMarkup(
   target: BrowserClientMarkupTarget,
   action: BrowserClientMarkupAction,

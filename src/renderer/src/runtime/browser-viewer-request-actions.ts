@@ -58,10 +58,12 @@ export async function applyBrowserViewerRequest(
     command.operation === 'egress' ||
     command.operation === 'overlay-focus' ||
     command.operation === 'client-hosted-row' ||
+    command.operation === 'client-navigation' ||
     command.operation === 'client-markup' ||
     command.operation === 'take-back' ||
     command.operation === 'observe-page' ||
     command.operation === 'computer-permissions' ||
+    command.operation === 'grab-toast' ||
     command.operation === 'webauthn-dialog-focus' ||
     command.operation === 'webauthn-dialog' ||
     command.operation === 'load-failure' ||

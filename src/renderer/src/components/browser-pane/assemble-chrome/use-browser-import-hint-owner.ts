@@ -1,3 +1,4 @@
+import { completeBrowserImportHintCookie } from '@/runtime/browser-import-hint-cookie-receipt'
 import { watchBrowserImportHintBinding } from '@/runtime/browser-import-hint-binding-watch'
 import type { BrowserCookieImportResult } from '../../../../../shared/browser-workspace-types'
 import type { BrowserImportHintState } from '../../../../../shared/rpc-contract/browser-import-hint-params'
@@ -23,6 +24,7 @@ type ImportHintOwner = {
   openSettings: () => void
   hide: () => Promise<ImportHintPersistenceReceipt>
   importFile: (filePath: string) => Promise<BrowserCookieImportResult>
+  importBrowser: (family: string, profile?: string) => Promise<BrowserCookieImportResult>
 }
 export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
   const current = useRef(owner)
@@ -152,6 +154,20 @@ export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
               ) {
                 throw new Error('browser_import_hint_persistence_unacknowledged')
               }
+            })
+          } else if (command.action === 'import-browser') {
+            const family = command.browserFamily
+            if (!family) {
+              throw new Error('browser_import_hint_browser_required')
+            }
+            expectedOpen = false
+            expectedMenu = false
+            completion = completeBrowserImportHintCookie(
+              command,
+              () => initial.importBrowser(family, command.sourceProfile),
+              command.hostId === 'local'
+            ).then((summary) => {
+              imported = summary
             })
           } else if (command.action === 'import-file') {
             expectedOpen = false
