@@ -73,3 +73,7 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `terminal side-effects --request-file <path|->`는 `{terminal}` 대상의 현재 제목 snapshot을 실행 호스트에서 읽습니다. 과거 벨·알림은 재생하지 않으며 종료가 확인된 대상은 거부합니다.
 
 `terminal workspace-hosts`는 지정한 실행 호스트의 영속화 Store에서 workspace session partition의 host ID를 읽습니다. Git 저장소가 없는 SSH folder partition도 포함하며 연결 상태를 뜻하지 않습니다. Store가 없는 호스트는 오류로 응답합니다.
+
+`terminal size`와 `terminal cwd`는 `--request-file <path|->`의 `{terminal, expectedIncarnationId?}` 대상으로 실행 provider의 크기·현재 디렉터리를 읽습니다. 조회할 수 없는 값은 null이며 로컬 호스트 값으로 대체하지 않습니다. 종료·incarnation 불일치 및 디렉터리 조회 중 대상 변경은 거부합니다.
+
+크기는 기존 UI와 같이 provider의 적용값을 우선합니다. provider가 없거나 조회에 실패하면 실행 호스트의 요청 크기 캐시를 사용하며, provider가 명시한 null은 보존합니다. 크기 응답은 프로세스 생존의 증거로 쓰지 않습니다.

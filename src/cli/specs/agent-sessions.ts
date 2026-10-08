@@ -20,6 +20,20 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['terminal', 'size'],
+    summary: 'Read the addressed terminal’s current provider dimensions',
+    usage: 'orca terminal size --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: ['Requires {terminal, expectedIncarnationId?}. Unknown dimensions are null.']
+  },
+  {
+    path: ['terminal', 'cwd'],
+    summary: 'Read the addressed terminal’s current execution directory',
+    usage: 'orca terminal cwd --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: ['Requires {terminal, expectedIncarnationId?}. Reads the execution provider.']
+  },
+  {
     path: ['terminal', 'workspace-hosts'],
     summary: 'List execution host IDs with persisted workspace session partitions',
     usage: 'orca terminal workspace-hosts [--json]',

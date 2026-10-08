@@ -1,3 +1,4 @@
+import { TerminalHostDetailsParams } from '../../shared/rpc-contract/terminal-host-details-params'
 import { TerminalSideEffectSnapshotParams } from '../../shared/rpc-contract/terminal-side-effect-snapshot-params'
 import {
   CreateAgentSessionParams,
@@ -172,6 +173,8 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent terminal ensure': request('terminal.ensureAgentSession', EnsureAgentSessionParams),
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
+  'terminal size': request('terminal.size', TerminalHostDetailsParams),
+  'terminal cwd': request('terminal.cwd', TerminalHostDetailsParams),
   'terminal workspace-hosts': async (ctx) => call(ctx, 'session.listHostIds', {}),
   'terminal fit-overrides': async (ctx) => call(ctx, 'terminal.fitOverrides', {}),
   'terminal drivers': async (ctx) => call(ctx, 'terminal.drivers', {}),
