@@ -69,3 +69,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `orca agent awake status --json`은 실행 호스트의 기존 Awake 서비스가 가진 `mode`와 `active`를 읽습니다. 조회는 모드나 절전 방지 상태를 변경하지 않습니다. 서비스가 없는 호스트에서는 `agent_awake_unavailable`로 실패합니다.
 
 `orca terminal fit-overrides --json`은 실행 호스트의 현재 fit 크기를 읽고, `orca terminal drivers --json`은 입력·크기 제어권 소유자를 읽습니다. 두 조회는 터미널 크기나 제어권을 변경하지 않습니다.
+
+`terminal side-effects --request-file <path|->`는 `{terminal}` 대상의 현재 제목 snapshot을 실행 호스트에서 읽습니다. 과거 벨·알림은 재생하지 않으며 종료가 확인된 대상은 거부합니다.

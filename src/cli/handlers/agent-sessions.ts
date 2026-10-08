@@ -1,3 +1,4 @@
+import { TerminalSideEffectSnapshotParams } from '../../shared/rpc-contract/terminal-side-effect-snapshot-params'
 import {
   CreateAgentSessionParams,
   EnsureAgentSessionParams
@@ -154,6 +155,7 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'terminal daemon list': async (ctx) => call(ctx, 'daemon.sessions.list', {}),
   'terminal daemon stop': request('daemon.sessions.stop', DaemonManagementStopParams),
   'terminal daemon stop-many': request('daemon.sessions.stopMany', DaemonManagementStopManyParams),
+  'terminal side-effects': request('terminal.sideEffectSnapshot', TerminalSideEffectSnapshotParams),
   'terminal clear': request('terminal.clearBuffer', TerminalHandle),
   'terminal reset-input': request('terminal.resetInputModes', TerminalHandle),
   'terminal inspect-process': request('terminal.inspectProcess', TerminalInspectProcess),

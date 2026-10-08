@@ -20,6 +20,13 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['terminal', 'side-effects'],
+    summary: 'Read the terminal’s current title without replaying past notifications',
+    usage: 'orca terminal side-effects --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: ['Requires {terminal}. Reads host-owned title state; an exited target fails.']
+  },
+  {
     path: ['terminal', 'fit-overrides'],
     summary: 'Read the execution host’s current terminal fit overrides',
     usage: 'orca terminal fit-overrides [--json]',

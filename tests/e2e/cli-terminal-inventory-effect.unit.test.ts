@@ -1,5 +1,6 @@
+import { TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS } from '../../src/main/runtime/rpc/methods/terminal-side-effect-snapshot'
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -47,7 +48,11 @@ beforeEach(async () => {
   syncSinglePty(runtime)
   rpc = new RpcDispatcher({
     runtime,
-    methods: [...TERMINAL_METHODS, ...TERMINAL_HOST_INVENTORY_METHODS]
+    methods: [
+      ...TERMINAL_METHODS,
+      ...TERMINAL_HOST_INVENTORY_METHODS,
+      ...TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS
+    ]
   })
   state.call.mockImplementation(async (method: string, params: unknown) => {
     const response = await rpc.dispatch({ id: 'inventory', authToken: 'fixture', method, params })
@@ -66,9 +71,9 @@ afterEach(async () => {
   process.exitCode = undefined
   await rm(root, { recursive: true, force: true })
 })
-async function command(name: string) {
+async function command(...args: string[]) {
   vi.mocked(console.log).mockClear()
-  await main(['terminal', name, '--json'], root)
+  await main(['terminal', ...args, '--json'], root)
   const output = vi.mocked(console.log).mock.calls.at(-1)?.[0]
   expect(process.exitCode, String(output)).toBeUndefined()
   return JSON.parse(String(output)).result
@@ -107,7 +112,42 @@ it('fails against an older host without changing fit or control state', async ()
     })
     expect(state.call).toHaveBeenCalledTimes(1)
   }
+  await writeFile(join(root, 'old-host.json'), JSON.stringify({ terminal: 'fixture' }))
+  state.call.mockClear()
+  vi.mocked(console.log).mockClear()
+  await main(
+    ['terminal', 'side-effects', '--request-file', join(root, 'old-host.json'), '--json'],
+    root
+  )
+  expect(process.exitCode).toBe(1)
+  expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
+    ok: false,
+    error: { code: 'method_not_found' }
+  })
+  expect(state.call).toHaveBeenCalledTimes(1)
   expect(resize).not.toHaveBeenCalled()
   expect(runtime.getAllTerminalFitOverrides().size).toBe(0)
   expect(runtime.getAllTerminalDrivers().size).toBe(0)
+})
+
+it('reads only the current title side effect without replaying attention and rejects an exited target', async () => {
+  const handle = (await runtime.listTerminals()).terminals[0].handle
+  const path = join(root, 'target.json')
+  await writeFile(path, JSON.stringify({ terminal: handle }))
+  expect(await command('side-effects', '--request-file', path)).toEqual({ snapshot: null })
+  runtime.onPtyData('pty-1', '\x1b]0;fixture title\x07\x07', 1)
+  const expected = runtime.getTerminalSideEffectSnapshot('pty-1')
+  expect(expected).toMatchObject({ replay: true, facts: [{ kind: 'title' }] })
+  expect(expected?.facts).toHaveLength(1)
+  runtime.markPtyLivenessUnverifiable('pty-1')
+  expect((await command('side-effects', '--request-file', path)).snapshot).toEqual(expected)
+  expect(runtime.getTerminalSideEffectSnapshot('pty-1')).toEqual(expected)
+  await runtime.onPtyExit('pty-1', 0)
+  vi.mocked(console.log).mockClear()
+  await main(['terminal', 'side-effects', '--request-file', path, '--json'], root)
+  expect(process.exitCode).toBe(1)
+  expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
+    ok: false,
+    error: { code: 'terminal_gone' }
+  })
 })
