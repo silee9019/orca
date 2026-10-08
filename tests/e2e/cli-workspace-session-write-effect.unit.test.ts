@@ -197,3 +197,47 @@ it('retains explicit old-host refusal without retrying locally', async () => {
   expect(await command('set-session', request())).toMatchObject({ ok: false })
   expect(mocks.call).toHaveBeenCalledTimes(1)
 })
+
+it('patches only the requested slice through the canonical partial setter and persists it', async () => {
+  const baseline = request()
+  const partial = vi.spyOn(store, 'patchWorkspaceSession')
+  expect(
+    await command('patch-session', {
+      hostId: 'local',
+      expected: baseline.expected,
+      patch: { activeWorktreeId: 'folder:patched' },
+      confirm: true
+    })
+  ).toMatchObject({ ok: true, result: { applied: true, durable: true } })
+  expect(partial).toHaveBeenCalledWith({ activeWorktreeId: 'folder:patched' }, 'local')
+  expect(readProfileStateDomain(databasePath, profileId, 'workspaceSession')).toMatchObject({
+    kind: 'value',
+    value: { activeWorktreeId: 'folder:patched' }
+  })
+})
+it('refuses a stale partial write while preserving unrelated newer fields', async () => {
+  const baseline = request()
+  store.patchWorkspaceSession({ activeTabId: 'newer-tab' })
+  expect(
+    await command('patch-session', {
+      hostId: 'local',
+      expected: baseline.expected,
+      patch: { activeWorktreeId: 'folder:patched' },
+      confirm: true
+    })
+  ).toMatchObject({ ok: false })
+  expect(store.getWorkspaceSession().activeTabId).toBe('newer-tab')
+  expect(store.getWorkspaceSession().activeWorktreeId).toBe(baseline.expected.activeWorktreeId)
+})
+it('validates partial fields against the lossless full session before RPC', async () => {
+  const baseline = request()
+  expect(
+    await command('patch-session', {
+      hostId: 'local',
+      expected: baseline.expected,
+      patch: { activeTabId: 42 },
+      confirm: true
+    })
+  ).toMatchObject({ ok: false })
+  expect(mocks.call).not.toHaveBeenCalled()
+})

@@ -2,6 +2,17 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const WORKSPACE_SESSION_WRITE_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['terminal', 'patch-session'],
+    summary: 'Patch selected session fields after comparing the complete observed session',
+    usage: 'orca terminal patch-session --request-file <path|-> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'request-file'],
+    destructive: true,
+    notes: [
+      'Strict JSON requires {hostId,expected,patch,confirm:true}. The full expected snapshot and the resulting merged state must pass the existing schema without repair or removal. Stale snapshots are refused inside the durable mutation queue.',
+      'Calls the canonical partial setter with only supplied fields; its topology preservation rules remain active. Receipt and failure semantics match set-session, including normalized:true and indeterminate persistence. No session content is echoed and no rendered viewer application is claimed.'
+    ]
+  },
+  {
     path: ['terminal', 'set-session'],
     summary:
       'Replace an explicitly selected workspace session after comparing its entire observed state',

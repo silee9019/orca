@@ -9,3 +9,7 @@ export const WorkspaceSessionWriteParams = z
     confirm: z.literal(true)
   })
   .strict()
+
+export const WorkspaceSessionPatchParams = WorkspaceSessionWriteParams.omit({ next: true })
+  .extend({ patch: z.unknown() })
+  .strict()

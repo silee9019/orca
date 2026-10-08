@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from 'node:util'
 import { safeParseWorkspaceSession } from './workspace-session-schema'
-import type { WorkspaceSessionState } from './workspace-session-state-types'
+import type { WorkspaceSessionState, WorkspaceSessionPatch } from './workspace-session-state-types'
 
 export function requireLosslessWorkspaceSession(value: unknown): WorkspaceSessionState {
   const parsed = safeParseWorkspaceSession(value)
@@ -11,4 +11,31 @@ export function requireLosslessWorkspaceSession(value: unknown): WorkspaceSessio
     )
   }
   return parsed.data
+}
+
+function isLosslessSessionPatch(
+  value: unknown,
+  expected: WorkspaceSessionState
+): value is WorkspaceSessionPatch {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false
+  }
+  try {
+    requireLosslessWorkspaceSession({ ...expected, ...value })
+    return true
+  } catch {
+    return false
+  }
+}
+export function requireLosslessWorkspaceSessionPatch(
+  value: unknown,
+  expected: WorkspaceSessionState
+): WorkspaceSessionPatch {
+  if (!isLosslessSessionPatch(value, expected)) {
+    throw Object.assign(
+      new Error('Invalid session patch; values would require repair or removal.'),
+      { code: 'invalid_argument' }
+    )
+  }
+  return value
 }

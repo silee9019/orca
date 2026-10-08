@@ -1,18 +1,23 @@
 import { isDeepStrictEqual } from 'node:util'
+import type { WorkspaceSessionState } from '../../shared/workspace-session-state-types'
 import type { RuntimeStore } from './runtime-store-contract'
-import { requireLosslessWorkspaceSession } from '../../shared/node-workspace-session-validation'
+import {
+  requireLosslessWorkspaceSession,
+  requireLosslessWorkspaceSessionPatch
+} from '../../shared/node-workspace-session-validation'
 import { rollbackWorkspaceSessionAfterFailedAsyncWrite } from '../persistence/restoring-sessions/workspace-session-write-rollback'
 
 type Receipt =
   | { applied: true; durable: true; normalized: boolean }
   | { applied: false; reason: 'changed' | 'cancelled' }
-export async function replaceWorkspaceSessionState(
+function commitWorkspaceSessionMutation(
   store: RuntimeStore,
-  params: { hostId: string; expected: unknown; next: unknown },
+  hostId: string,
+  expected: WorkspaceSessionState,
+  next: WorkspaceSessionState,
+  apply: () => void,
   signal?: AbortSignal
 ): Promise<Receipt> {
-  const expected = requireLosslessWorkspaceSession(params.expected)
-  const next = requireLosslessWorkspaceSession(params.next)
   const { getWorkspaceSession, setWorkspaceSession } = store
   if (!getWorkspaceSession || !setWorkspaceSession || !store.runDurableMutation) {
     throw new Error('workspace_session_write_store_unavailable')
@@ -21,12 +26,12 @@ export async function replaceWorkspaceSessionState(
     if (signal?.aborted) {
       return { persist: false, value: { applied: false, reason: 'cancelled' } }
     }
-    const before = structuredClone(getWorkspaceSession.call(store, params.hostId))
+    const before = structuredClone(getWorkspaceSession.call(store, hostId))
     if (!isDeepStrictEqual(before, expected)) {
       return { persist: false, value: { applied: false, reason: 'changed' } }
     }
-    setWorkspaceSession.call(store, next, params.hostId)
-    const staged = structuredClone(getWorkspaceSession.call(store, params.hostId))
+    apply()
+    const staged = structuredClone(getWorkspaceSession.call(store, hostId))
     return {
       value: { applied: true, durable: true, normalized: !isDeepStrictEqual(staged, next) },
       rollback: () =>
@@ -35,10 +40,50 @@ export async function replaceWorkspaceSessionState(
           rollbackWorkspaceSessionAfterFailedAsyncWrite(
             before,
             staged,
-            getWorkspaceSession.call(store, params.hostId)
+            getWorkspaceSession.call(store, hostId)
           ),
-          params.hostId
+          hostId
         )
     }
   })
+}
+export async function replaceWorkspaceSessionState(
+  store: RuntimeStore,
+  params: { hostId: string; expected: unknown; next: unknown },
+  signal?: AbortSignal
+): Promise<Receipt> {
+  const expected = requireLosslessWorkspaceSession(params.expected)
+  const next = requireLosslessWorkspaceSession(params.next)
+  const { setWorkspaceSession } = store
+  if (!setWorkspaceSession) {
+    throw new Error('workspace_session_write_store_unavailable')
+  }
+  return commitWorkspaceSessionMutation(
+    store,
+    params.hostId,
+    expected,
+    next,
+    () => setWorkspaceSession.call(store, next, params.hostId),
+    signal
+  )
+}
+export async function patchWorkspaceSessionState(
+  store: RuntimeStore,
+  params: { hostId: string; expected: unknown; patch: unknown },
+  signal?: AbortSignal
+): Promise<Receipt> {
+  const expected = requireLosslessWorkspaceSession(params.expected)
+  const patch = requireLosslessWorkspaceSessionPatch(params.patch, expected)
+  const { patchWorkspaceSession } = store
+  if (!patchWorkspaceSession) {
+    throw new Error('workspace_session_patch_store_unavailable')
+  }
+  return commitWorkspaceSessionMutation(
+    store,
+    params.hostId,
+    expected,
+    { ...expected, ...patch },
+    () => patchWorkspaceSession.call(store, patch, params.hostId),
+    signal
+  )
 }
