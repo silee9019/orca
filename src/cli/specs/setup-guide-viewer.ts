@@ -1,6 +1,15 @@
 import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const SETUP_GUIDE_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['ui', 'setup-guide', 'hide-sidebar'],
+    summary: 'Use the open Help guide to hide its sidebar checklist',
+    usage: 'orca ui setup-guide hide-sidebar --viewer host [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer'],
+    notes: [
+      'Requires the original visible hide button in the open Help guide. Keeps its current step and dialog open. Completion reports optimistic dismissal only; host write and disk persistence remain unverified.'
+    ]
+  },
+  {
     path: ['ui', 'setup-guide', 'select-step'],
     summary: 'Select an original checklist step in the open Help setup guide',
     usage: 'orca ui setup-guide select-step --step <step-id> --viewer host [--json]',

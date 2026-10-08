@@ -152,6 +152,7 @@ function SetupGuideModalContent({
           variant="ghost"
           size="xs"
           onClick={handleHideFromSidebar}
+          data-setup-guide-hide-sidebar="true"
           className="absolute right-11 top-3.5 hidden sm:inline-flex"
         >
           {translate(

@@ -97,3 +97,25 @@ it('increments the original callback revision for both another and the same targ
       ?.getAttribute('data-setup-guide-selection-revision')
   ).toBe('2')
 })
+
+it('uses the original hide setter once while keeping the modal and selected step', () => {
+  const hide = vi.fn()
+  useAppStore.setState({ setSetupGuideSidebarDismissed: hide })
+  render(<SetupGuideModal />)
+  act(() => screen.getByText('Select browser').click())
+  const modalData = useAppStore.getState().modalData
+  const button = document.querySelector('[data-setup-guide-hide-sidebar="true"]')
+  if (!(button instanceof HTMLButtonElement)) {
+    throw new Error('missing original hide button')
+  }
+  act(() => button.click())
+  expect(hide).toHaveBeenCalledExactlyOnceWith(true)
+  expect(useAppStore.getState().activeModal).toBe('setup-guide')
+  expect(useAppStore.getState().modalData).toBe(modalData)
+  expect(screen.getByTestId('content').dataset.step).toBe('browser')
+  expect(
+    document
+      .querySelector('[data-setup-guide-selection-revision]')
+      ?.getAttribute('data-setup-guide-selection-revision')
+  ).toBe('1')
+})

@@ -1,5 +1,6 @@
 import { readSetupGuideContent } from './setup-guide-rendered-content'
 import { applySetupGuideStepRequest } from './setup-guide-step-command'
+import { applySetupGuideHideRequest } from './setup-guide-hide-command'
 import { SetupGuideParams } from '../../../shared/rpc-contract/setup-guide-params'
 import type { SetupGuideRequest, SetupGuideResult } from '../../../shared/setup-guide-command'
 import { openSetupGuideFromHelp } from './setup-guide-open'
@@ -10,6 +11,9 @@ export async function applySetupGuideRequest(
   rootAvailable: () => boolean
 ): Promise<Omit<SetupGuideResult, 'viewerId'>> {
   const command = SetupGuideParams.parse(request.command)
+  if (command.operation === 'hide-sidebar') {
+    return applySetupGuideHideRequest({ ...request, command }, rootAvailable)
+  }
   if (command.operation === 'select-step') {
     return applySetupGuideStepRequest({ ...request, command }, rootAvailable)
   }

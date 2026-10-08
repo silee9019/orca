@@ -1,10 +1,13 @@
 import { SetupGuideParams } from '../../shared/rpc-contract/setup-guide-params'
-import { SetupGuideResultSchema } from '../../shared/setup-guide-command'
+import {
+  SetupGuideHideResultSchema,
+  SetupGuideResultSchema
+} from '../../shared/setup-guide-command'
 import type { CommandHandler } from '../dispatch'
 import { getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
 import { RuntimeClientError } from '../runtime-client'
-function setupGuideHandler(operation: 'open' | 'select-step'): CommandHandler {
+function setupGuideHandler(operation: 'open' | 'select-step' | 'hide-sidebar'): CommandHandler {
   return async ({ client, flags, json }) => {
     const parsed = SetupGuideParams.safeParse({
       viewer: getRequiredStringFlag(flags, 'viewer'),
@@ -19,7 +22,10 @@ function setupGuideHandler(operation: 'open' | 'select-step'): CommandHandler {
     }
     try {
       const response = await client.call('ui.setupGuideViewer', parsed.data)
-      const result = SetupGuideResultSchema.parse(response.result)
+      const result =
+        operation === 'hide-sidebar'
+          ? SetupGuideHideResultSchema.parse(response.result)
+          : SetupGuideResultSchema.parse(response.result)
       printResult({ ...response, result }, json, (value) => JSON.stringify(value))
     } catch (error) {
       if (error instanceof RuntimeClientError && error.code === 'method_not_found') {
@@ -34,6 +40,7 @@ function setupGuideHandler(operation: 'open' | 'select-step'): CommandHandler {
 }
 
 export const SETUP_GUIDE_HANDLERS: Record<string, CommandHandler> = {
+  'ui setup-guide hide-sidebar': setupGuideHandler('hide-sidebar'),
   'ui setup-guide open': setupGuideHandler('open'),
   'ui setup-guide select-step': setupGuideHandler('select-step')
 }

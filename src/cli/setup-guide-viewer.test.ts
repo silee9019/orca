@@ -119,3 +119,69 @@ it('rejects arbitrary steps and preserves an older peer refusal without fallback
   ).rejects.toThrow('unsupported operation')
   expect(call).toHaveBeenCalledTimes(1)
 })
+
+it('dispatches fixed hide-sidebar and preserves optimistic-only acknowledgement', async () => {
+  const parsed = parseArgs(
+    ['ui', 'setup-guide', 'hide-sidebar', '--viewer', 'host'],
+    SETUP_GUIDE_COMMAND_SPECS.map((spec) => spec.path),
+    SETUP_GUIDE_COMMAND_SPECS
+  )
+  call.mockResolvedValue({
+    id: 'r',
+    ok: true,
+    _meta: { runtimeId: 'target' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      applied: true,
+      source: 'help_menu',
+      dialogPresent: true,
+      contentPresent: true,
+      stepId: 'browser',
+      sidebarDismissed: true,
+      changed: true,
+      writeOutcome: 'unverified',
+      diskPersistence: 'unverified',
+      reportText: 'strip'
+    }
+  })
+  await SETUP_GUIDE_HANDLERS['ui setup-guide hide-sidebar']({
+    client,
+    flags: parsed.flags,
+    cwd: '/unused',
+    json: true
+  })
+  expect(call).toHaveBeenCalledExactlyOnceWith('ui.setupGuideViewer', {
+    viewer: 'host',
+    operation: 'hide-sidebar'
+  })
+  const response = JSON.parse(output.mock.calls.at(-1)?.[0])
+  expect(response.result).toMatchObject({
+    sidebarDismissed: true,
+    writeOutcome: 'unverified',
+    diskPersistence: 'unverified'
+  })
+  expect(response.result).not.toHaveProperty('reportText')
+})
+it('rejects an incomplete hide acknowledgement and keeps an old peer refusal', async () => {
+  const handler = SETUP_GUIDE_HANDLERS['ui setup-guide hide-sidebar']
+  const context = { client, flags: new Map([['viewer', 'host']]), cwd: '/unused', json: true }
+  call.mockResolvedValueOnce({
+    id: 'r',
+    ok: true,
+    _meta: { runtimeId: 'target' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      applied: true,
+      source: 'help_menu',
+      dialogPresent: true,
+      contentPresent: true,
+      stepId: 'browser'
+    }
+  })
+  await expect(handler(context)).rejects.toThrow()
+  call.mockRejectedValueOnce(new RuntimeClientError('invalid_params', 'unsupported operation'))
+  await expect(handler(context)).rejects.toThrow('unsupported operation')
+  expect(call).toHaveBeenCalledTimes(2)
+})
