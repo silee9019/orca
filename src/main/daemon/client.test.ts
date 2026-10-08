@@ -70,6 +70,7 @@ describe('DaemonClient', () => {
     rejectVersion?: boolean
     suppressHelloResponse?: boolean
     omitHelloIdentity?: boolean
+    capabilities?: unknown
     helloIdentity?: (role: 'control' | 'stream') => {
       pid: number
       startedAtMs: number
@@ -117,6 +118,7 @@ describe('DaemonClient', () => {
                 encodeNdjson({
                   type: 'hello',
                   ok: true,
+                  ...(opts?.capabilities === undefined ? {} : { capabilities: opts.capabilities }),
                   ...(!opts?.omitHelloIdentity
                     ? {
                         daemonIdentity: opts?.helloIdentity
@@ -141,6 +143,22 @@ describe('DaemonClient', () => {
   }
 
   describe('connect', () => {
+    it('keeps capabilities connection-scoped and absent on an older hello', async () => {
+      await startMockDaemon({ capabilities: ['session.incarnation-fenced-kill.v1', 42] })
+      client = new DaemonClient({ socketPath, tokenPath })
+      await client.ensureConnected()
+      expect(client.hasCapability('session.incarnation-fenced-kill.v1')).toBe(true)
+      client.disconnect()
+      expect(client.hasCapability('session.incarnation-fenced-kill.v1')).toBe(false)
+    })
+
+    it('does not infer fenced kill support from the protocol version', async () => {
+      await startMockDaemon()
+      client = new DaemonClient({ socketPath, tokenPath })
+      await client.ensureConnected()
+      expect(client.hasCapability('session.incarnation-fenced-kill.v1')).toBe(false)
+    })
+
     it('captures one matching endpoint identity from both authenticated sockets', async () => {
       const identity = {
         pid: 123,

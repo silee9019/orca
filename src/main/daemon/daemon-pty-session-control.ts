@@ -1,3 +1,4 @@
+import { DAEMON_INCARNATION_FENCED_KILL_CAPABILITY } from './daemon-hello-protocol'
 import type { ColdRestorePayload } from './cold-restore-payload-cache'
 import { isUnknownRequestTypeError } from './daemon-endpoint-errors'
 import { GET_SIZE_PROTOCOL_VERSION } from './daemon-protocol-version'
@@ -87,9 +88,18 @@ export abstract class DaemonPtySessionControl extends DaemonPtySessionInput {
     }
   }
 
+  supportsIncarnationFencedKill(): boolean {
+    return this.client.hasCapability(DAEMON_INCARNATION_FENCED_KILL_CAPABILITY)
+  }
+
   async shutdown(
     id: string,
-    opts: { immediate?: boolean; keepHistory?: boolean; deadlineMs?: number }
+    opts: {
+      immediate?: boolean
+      keepHistory?: boolean
+      deadlineMs?: number
+      expectedIncarnationId?: string
+    }
   ): Promise<void> {
     if (opts.keepHistory && this.disconnectOnlyPromise) {
       throw new Error('Cannot keep history after daemon disconnect has started')
@@ -109,7 +119,12 @@ export abstract class DaemonPtySessionControl extends DaemonPtySessionInput {
 
   protected async shutdownWithHistoryLock(
     id: string,
-    opts: { immediate?: boolean; keepHistory?: boolean; deadlineMs?: number }
+    opts: {
+      immediate?: boolean
+      keepHistory?: boolean
+      deadlineMs?: number
+      expectedIncarnationId?: string
+    }
   ): Promise<void> {
     // Why: shutdown can be the first lazy-client operation after restart; connect
     // before killing so a healthy daemon session is not orphaned (#7742). Connect,
@@ -118,6 +133,9 @@ export abstract class DaemonPtySessionControl extends DaemonPtySessionInput {
     // the whole teardown budget before the kill even starts. Only the waits are
     // bounded — the checkpoint itself stays deadline-free and lossless (STA-4228).
     await this.ensureConnected(opts.deadlineMs)
+    if (opts.expectedIncarnationId !== undefined && !this.supportsIncarnationFencedKill()) {
+      throw new Error('incarnation_fenced_kill_unsupported')
+    }
     // Why: sleep/exact-stop kills the live PTY before the periodic checkpoint may run.
     // Force a final snapshot so wake can restore the pane users left.
     if (opts.keepHistory) {
@@ -164,7 +182,13 @@ export abstract class DaemonPtySessionControl extends DaemonPtySessionInput {
     }
     await this.client.request(
       'kill',
-      { sessionId: id, immediate: opts.immediate ?? false },
+      {
+        sessionId: id,
+        immediate: opts.immediate ?? false,
+        ...(opts.expectedIncarnationId !== undefined
+          ? { expectedIncarnationId: opts.expectedIncarnationId }
+          : {})
+      },
       remainingDaemonRequestTimeoutMs(opts.deadlineMs)
     )
     this.activeSessionIds.delete(id)

@@ -4,6 +4,10 @@ import {
 } from '../../shared/rpc-contract/agent-session-params'
 import { AgentStatusDismissParams } from '../../shared/rpc-contract/agent-status-cli-params'
 import {
+  DaemonManagementStopManyParams,
+  DaemonManagementStopParams
+} from '../../shared/rpc-contract/daemon-management-params'
+import {
   AiVaultDeleteSessionParams,
   AiVaultSubagentSessionsParams
 } from '../../shared/rpc-contract/ai-vault-session-actions-params'
@@ -63,6 +67,20 @@ const refusal = z.object({
 
 async function call(ctx: HandlerContext, method: string, params: unknown): Promise<void> {
   const response = await ctx.client.call<unknown>(method, params)
+  if (method === 'daemon.sessions.stop' || method === 'daemon.sessions.stopMany') {
+    const stopped = z.object({ verdict: z.object({ status: z.literal('exited') }) })
+    const complete =
+      method === 'daemon.sessions.stop'
+        ? stopped.safeParse(response.result).success
+        : z.object({ results: z.array(stopped).min(1) }).safeParse(response.result).success
+    if (!complete) {
+      throw new RuntimeClientError(
+        'daemon_stop_unconfirmed',
+        'The owning daemon did not confirm every requested process exited.',
+        response.result
+      )
+    }
+  }
   if (method === 'aiVault.deleteSession') {
     const result = z
       .discriminatedUnion('outcome', [
@@ -104,6 +122,9 @@ function sessionRead(method: string): CommandHandler {
 }
 
 export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
+  'terminal daemon list': async (ctx) => call(ctx, 'daemon.sessions.list', {}),
+  'terminal daemon stop': request('daemon.sessions.stop', DaemonManagementStopParams),
+  'terminal daemon stop-many': request('daemon.sessions.stopMany', DaemonManagementStopManyParams),
   'terminal clear': request('terminal.clearBuffer', TerminalHandle),
   'terminal reset-input': request('terminal.resetInputModes', TerminalHandle),
   'terminal inspect-process': request('terminal.inspectProcess', TerminalInspectProcess),

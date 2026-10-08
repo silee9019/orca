@@ -1,3 +1,4 @@
+import { DAEMON_INCARNATION_FENCED_KILL_CAPABILITY } from './daemon-hello-protocol'
 import type { Socket } from 'node:net'
 import { StringDecoder } from 'node:string_decoder'
 import type { DaemonFileLog } from './daemon-file-log'
@@ -145,6 +146,7 @@ export class DaemonClientConnections {
       encodeNdjson({
         type: 'hello',
         ok: true,
+        capabilities: [DAEMON_INCARNATION_FENCED_KILL_CAPABILITY],
         ...(identity.launchNonce && identity.startedAtMs
           ? {
               daemonIdentity: {

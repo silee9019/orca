@@ -49,3 +49,9 @@
 터미널 상세 요청도 `--request-file`을 사용합니다. `terminal clear`·`reset-input`·`identity`·`agent-status`·`restore-fit`·`display-mode`는 `{terminal}`을 받습니다. clear와 reset-input은 프로세스를 종료하지 않습니다. `inspect-process`는 `{terminal, expectedIncarnationId?, scanChildProcesses?}`로 실행 호스트의 `live`·`unverifiable`·`exited` 증거를 조회합니다. `set-display-mode`는 `{terminal, mode: "auto"|"desktop", client?, viewport?}`를 받습니다.
 
 `terminal tabs`는 `{worktree}`를 받습니다. `move-tab`은 `{worktree, tabId, targetGroupId}`에 `kind: "reorder"`와 tabOrder, `kind: "move-to-group"`과 선택 index, 또는 `kind: "split"`과 splitDirection을 지정합니다. `set-tab`은 `{worktree, tabId, color?, isPinned?, viewMode?}`이며 null color는 색을 해제합니다. `set-layout`은 `{worktree, tabId, root, expandedLeafId?, chatLeafId?, titlesByLeafId?}`를 받습니다. root는 null 또는 leaf/split tree이며 기존 깊이·노드 상한을 적용합니다. 기존 session.tabs 서비스의 수락 응답은 desktop viewer 반영 확인을 제공하지 않으므로 화면 반영 완료의 근거로 사용하지 않습니다.
+
+`terminal daemon list --json`은 주소 지정한 runtime의 native·WSL daemon 목록을 읽습니다. SSH relay 프로세스는 이 목록에 포함되지 않습니다. 응답의 observations에는 각 protocolVersion의 조회 상태가 있으며 연결 실패는 `unverifiable`로 남습니다. `complete:false`인 목록을 빈 호스트의 증거로 사용하지 않습니다. agent ownership record와 credential은 출력하지 않습니다.
+
+`terminal daemon stop --request-file <path|->`는 조회한 `{sessionId, incarnationId, protocolVersion, confirm:true}`를 받습니다. 해당 daemon이 생성 식별값 검증 기능을 협상하지 않았거나 식별값이 바뀌었으면 거부하며 다른 daemon으로 대체하지 않습니다. 종료 후 소유 daemon을 다시 조회해 `live`·`unverifiable`·`exited`를 구분합니다. `exited`가 아니면 종료 코드 1과 error.data에 판정 근거를 반환합니다.
+
+`terminal daemon stop-many --request-file <path|->`는 `{targets: [...]}`로 1–256개의 명시적 종료 대상을 받습니다. 각 대상에 같은 식별값과 확인 필드가 필요합니다. 새로 생긴 세션은 자동으로 추가하지 않습니다. 일부 거부나 연락 두절이 있어도 각 대상의 판정을 보존하고 전체 성공으로 출력하지 않습니다. 이 명령들은 daemon 자체를 재시작하지 않습니다.

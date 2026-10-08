@@ -30,3 +30,12 @@ export function listLiveTerminalHostSessions(
   }
   return result
 }
+
+export function hasLiveTerminalHostSessions(sessions: ReadonlyMap<string, Session>): boolean {
+  let hasLive = false
+  // Read every session to preserve the inventory's error order.
+  for (const session of sessions.values()) {
+    hasLive = session.isAlive || hasLive
+  }
+  return hasLive
+}

@@ -20,6 +20,35 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['terminal', 'daemon', 'list'],
+    summary: 'List daemon-owned sessions and preserve unreachable daemon observations',
+    usage: 'orca terminal daemon list [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: [
+      'The addressed runtime lists its own native and WSL daemon adapters; SSH relay processes are outside this inventory.'
+    ]
+  },
+  {
+    path: ['terminal', 'daemon', 'stop'],
+    destructive: true,
+    summary: 'End exactly one observed daemon session incarnation',
+    usage: 'orca terminal daemon stop --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires sessionId, incarnationId, protocolVersion and confirm:true from a fresh daemon list. Daemons without negotiated incarnation checks are refused.'
+    ]
+  },
+  {
+    path: ['terminal', 'daemon', 'stop-many'],
+    destructive: true,
+    summary: 'End an explicit snapshot of daemon session incarnations',
+    usage: 'orca terminal daemon stop-many --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    notes: [
+      'Requires targets containing 1–256 confirmed exact-session requests. Newly created sessions are never selected implicitly; a partial or unverifiable result exits unsuccessfully.'
+    ]
+  },
+  {
     path: ['agent', 'terminal', 'create'],
     summary: 'Launch an agent through the host-owned idempotent session service',
     usage: 'orca agent terminal create --request-file <path|-> [--json]',

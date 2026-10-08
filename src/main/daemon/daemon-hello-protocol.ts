@@ -1,3 +1,5 @@
+export const DAEMON_INCARNATION_FENCED_KILL_CAPABILITY = 'session.incarnation-fenced-kill.v1'
+
 export type HelloMessage = {
   type: 'hello'
   version: number
@@ -21,4 +23,5 @@ export type HelloResponse = {
   ok: boolean
   error?: string
   daemonIdentity?: DaemonEndpointIdentity
+  capabilities?: readonly string[]
 }
