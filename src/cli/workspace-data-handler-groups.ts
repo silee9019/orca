@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-cached-scans',
+    keys: ['workspace-cleanup cached-scan', 'workspace-space cached-analysis'],
+    load: async () =>
+      (await import('./handlers/workspace-cached-scans.js')).WORKSPACE_CACHED_SCAN_HANDLERS
+  },
+  {
     name: 'workspace-github-account',
     keys: [
       'github viewer',
@@ -148,6 +154,9 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'repo clone',
       'repo rm',
       'repo reorder',
+      'repo default-project-parent',
+      'repo remove-for-host',
+      'repo reorder-for-host',
       'repo base-ref-default'
     ],
     load: async () =>

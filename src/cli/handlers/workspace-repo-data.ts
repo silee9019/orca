@@ -1,4 +1,9 @@
 import type { CommandHandler } from '../dispatch'
+import { RuntimeClientError } from '../runtime-client'
+import {
+  RepoHostRemoval,
+  RepoHostReorder
+} from '../../shared/rpc-contract/workspace-repo-host-params'
 import { printWorkspaceCommandResult } from '../workspace-command-result'
 import { readWorkspaceCommandInput, confirmWorkspaceCommand } from '../workspace-command-input'
 import { RepoSelector } from '../../shared/rpc-contract/github-repo-target-params'
@@ -10,6 +15,21 @@ import {
 } from '../../shared/rpc-contract/repo-params'
 
 export const WORKSPACE_REPO_DATA_HANDLERS: Record<string, CommandHandler> = {
+  'repo default-project-parent': async (ctx) => {
+    const result = await ctx.client.call('repo.defaultProjectParent')
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
+  'repo remove-for-host': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, RepoHostRemoval)
+    confirmWorkspaceCommand(ctx, `${params.hostId}:${params.repoId}`)
+    const result = await ctx.client.call('repo.removeForHost', params)
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
+  'repo reorder-for-host': async (ctx) => {
+    const params = await readWorkspaceCommandInput(ctx, RepoHostReorder)
+    const result = await ctx.client.call('repo.reorderForHost', params)
+    printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
+  },
   'repo sparse-presets': async (ctx) => {
     const params = await readWorkspaceCommandInput(ctx, RepoSelector)
     const result = await ctx.client.call('repo.sparsePresets', params)
@@ -42,7 +62,13 @@ export const WORKSPACE_REPO_DATA_HANDLERS: Record<string, CommandHandler> = {
   },
   'repo reorder': async (ctx) => {
     const params = await readWorkspaceCommandInput(ctx, RepoReorder)
-    const result = await ctx.client.call('repo.reorder', params)
+    const result = await ctx.client.call<{ status: 'applied' | 'rejected' }>('repo.reorder', params)
+    if (result.result.status !== 'applied') {
+      throw new RuntimeClientError(
+        'operation_failed',
+        'The selected host rejected the repository order.'
+      )
+    }
     printWorkspaceCommandResult(result, ctx.json, (value) => JSON.stringify(value, null, 2))
   },
   'repo base-ref-default': async (ctx) => {

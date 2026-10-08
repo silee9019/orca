@@ -1,4 +1,5 @@
 import { WORKSPACE_LINEAR_ISSUE_COMMAND_SPECS } from './workspace-linear-issues'
+import { WORKSPACE_CACHED_SCAN_COMMAND_SPECS } from './workspace-cached-scans'
 import { WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS } from './workspace-github-account'
 import { WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS } from './workspace-gitlab-inspection'
 import { WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS } from './workspace-keybinding-file'
@@ -33,6 +34,7 @@ import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
   ...WORKSPACE_LINEAR_ISSUE_COMMAND_SPECS,
+  ...WORKSPACE_CACHED_SCAN_COMMAND_SPECS,
   ...WORKSPACE_GITHUB_ACCOUNT_COMMAND_SPECS,
   ...WORKSPACE_GITLAB_INSPECTION_COMMAND_SPECS,
   ...WORKSPACE_KEYBINDING_FILE_COMMAND_SPECS,
