@@ -1,3 +1,4 @@
+import { assertActivityPageClose } from './helpers/activity-page-close-assertions'
 import type { Repo } from '../../src/shared/repo-types'
 import type { Worktree } from '../../src/shared/worktree/types'
 import type { TerminalTab } from '../../src/shared/terminal-tab-types'
@@ -446,5 +447,6 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityGroupCollapse(orcaPage, call, testInfo)
   await assertActivityJump(orcaPage, call, testInfo)
   await assertActivitySelect(orcaPage, call, testInfo)
+  await assertActivityPageClose(orcaPage, call, testInfo)
   await assertHidden()
 })

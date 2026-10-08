@@ -88,6 +88,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 }
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
+  'ui activity close': handler('close'),
   'ui activity jump': handler('jump'),
   'ui activity select': handler('select'),
   'ui activity group-toggle': handler('group-toggle'),

@@ -7,6 +7,9 @@ export type ActivityViewerSurface = z.infer<typeof ActivityViewerSurfaceSchema>
 const target = { viewer: z.literal('host'), surface: ActivityViewerSurfaceSchema }
 export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
+  z
+    .object({ ...target, surface: z.literal('activity-page'), operation: z.literal('close') })
+    .strict(),
   z.object({ ...target, operation: z.literal('jump'), paneKey: z.string().min(1) }).strict(),
   z.object({ ...target, operation: z.literal('select'), paneKey: z.string().min(1) }).strict(),
   z

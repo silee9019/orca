@@ -102,3 +102,14 @@ it('requires an explicit group key for a surface-local group toggle', () => {
   expect(ActivityViewerParams.safeParse({ ...target, groupKey: '' }).success).toBe(false)
   expect(ActivityViewerParams.safeParse({ ...target, collapsed: true }).success).toBe(false)
 })
+
+it('accepts page-only close and rejects sidebar or extra destination fields', () => {
+  const command = { viewer: 'host', surface: 'activity-page', operation: 'close' }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  expect(ActivityViewerParams.safeParse({ ...command, surface: 'sidebar-agents' }).success).toBe(
+    false
+  )
+  expect(ActivityViewerParams.safeParse({ ...command, destination: 'terminal' }).success).toBe(
+    false
+  )
+})

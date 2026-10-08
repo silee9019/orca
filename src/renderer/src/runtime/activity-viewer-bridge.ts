@@ -1,3 +1,4 @@
+import { applyActivityPageCloseRequest } from './activity-page-close-command'
 import { readActivityViewerCommandContext } from './activity-viewer-command-context'
 import { applyActivityGroupCollapseRequest } from './activity-group-collapse-command'
 import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
@@ -49,6 +50,9 @@ export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const { command, initial } = readActivityViewerCommandContext(request)
+  if (command.operation === 'close') {
+    return applyActivityPageCloseRequest(request)
+  }
   if (command.operation === 'group-toggle') {
     return applyActivityGroupCollapseRequest(request, command)
   }

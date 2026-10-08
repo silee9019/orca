@@ -56,6 +56,10 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    pageAction: z
+      .object({ requestedView: z.string(), reachedView: z.string().nullable() })
+      .strip()
+      .optional(),
     groupAction: z
       .object({
         key: z.string(),

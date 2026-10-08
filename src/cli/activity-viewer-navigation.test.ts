@@ -194,3 +194,46 @@ it('dispatches a surface-local group key and preserves its acknowledged collapse
     currentCollapsed: true
   })
 })
+
+it('dispatches page-only close and preserves its local destination result', async () => {
+  call.mockResolvedValue({
+    id: 'close',
+    ok: true,
+    _meta: { runtimeId: 'host' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      surface: 'activity-page',
+      dispatched: true,
+      applied: true,
+      persisted: null,
+      writeOutcome: 'not_requested',
+      groupBy: 'none',
+      readFilter: 'all',
+      compact: false,
+      showChildAgents: true,
+      rendered: null,
+      pageAction: { requestedView: 'settings', reachedView: 'settings', future: true }
+    }
+  })
+  const parsed = parseArgs(
+    ['ui', 'activity', 'close', '--viewer', 'host', '--surface', 'activity-page'],
+    COMMAND_SPECS.map((spec) => spec.path),
+    COMMAND_SPECS
+  )
+  await dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+  expect(call).toHaveBeenCalledExactlyOnceWith('ui.activityViewer', {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'close'
+  })
+  expect(JSON.parse(String(printed.mock.calls.at(-1)?.[0])).result.pageAction).toEqual({
+    requestedView: 'settings',
+    reachedView: 'settings'
+  })
+  parsed.flags.set('surface', 'sidebar-agents')
+  await expect(
+    dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+  ).rejects.toThrow()
+  expect(call).toHaveBeenCalledTimes(1)
+})

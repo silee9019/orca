@@ -5,6 +5,7 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     name: 'activity-viewer',
     keys: [
       'ui activity get',
+      'ui activity close',
       'ui activity jump',
       'ui activity select',
       'ui activity group-toggle',
