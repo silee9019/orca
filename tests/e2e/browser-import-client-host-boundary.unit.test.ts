@@ -8,6 +8,9 @@ import { resetClientRouteCookieImportSourcesForTests } from '../../src/main/brow
 import { useAppStore } from '../../src/renderer/src/store'
 import { act } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 let fixture: Awaited<ReturnType<typeof browserImportClientHostOwnerFixture>> | undefined
 afterEach(async () => {
   await fixture?.close()

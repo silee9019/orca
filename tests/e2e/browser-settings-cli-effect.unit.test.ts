@@ -42,6 +42,9 @@ import { resetSkillDiscoveryCacheForTests } from '../../src/renderer/src/hooks/i
 import { ORCA_CLI_SKILL_NAME } from '../../src/renderer/src/lib/agent-feature-install-commands'
 import type { SkillDiscoveryTarget } from '../../src/shared/skills'
 import { useAppStore } from '../../src/renderer/src/store'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 vi.mock('../../src/renderer/src/hooks/useActiveProjectSkillRuntime', () => ({
   useActiveProjectSkillRuntime: () => ({
     installDisabledReason: null,

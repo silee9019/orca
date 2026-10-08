@@ -4,6 +4,9 @@ import { browserImportHintCookieOwnerFixture } from './browser-import-hint-cooki
 import { browserSessionRegistry } from '../../src/main/browser/browser-session-registry'
 import { toast } from 'sonner'
 import { afterEach, expect, it, vi } from 'vitest'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 let fixture: Awaited<ReturnType<typeof browserImportHintCookieOwnerFixture>> | undefined
 afterEach(async () => {
   await fixture?.owner.close()

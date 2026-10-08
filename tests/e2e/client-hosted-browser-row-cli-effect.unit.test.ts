@@ -36,6 +36,16 @@ import {
 } from '../../src/main/runtime/orca-runtime-browser'
 import { RuntimeBrowserPageRegistry } from '../../src/main/runtime/runtime-browser-page-registry'
 import { BrowserHostLeaseRegistry } from '../../src/main/runtime/browser-host-lease-registry'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
+vi.mock('../../src/main/browser/browser-cookie-import', () => ({
+  detectInstalledBrowsers: () => [],
+  selectBrowserProfile: () => null,
+  importCookiesFromBrowser: vi.fn(),
+  importCookiesFromFile: vi.fn(),
+  pickCookieFile: vi.fn()
+}))
 const initial = useAppStore.getInitialState()
 const originalApi = Object.getOwnPropertyDescriptor(window, 'api')
 afterEach(() => {

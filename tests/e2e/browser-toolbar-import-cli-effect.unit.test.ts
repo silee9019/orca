@@ -8,6 +8,9 @@ import { act } from 'react'
 import { fireEvent } from '@testing-library/react'
 import { callRuntimeRpc } from '../../src/renderer/src/runtime/runtime-rpc-client'
 import type { BrowserCookieImportResult } from '../../src/shared/browser-workspace-types'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 
 let fixture: Awaited<ReturnType<typeof browserToolbarImportOwnerFixture>> | undefined
 afterEach(async () => {

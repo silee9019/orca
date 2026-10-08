@@ -4,6 +4,9 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '../../src/renderer/src/store'
 import type { ComponentProps } from 'react'
 import type { BrowserChromeToolbar } from '../../src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 
 vi.mock(
   '../../src/renderer/src/components/browser-pane/assemble-chrome/browser-chrome-toolbar',

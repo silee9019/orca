@@ -25,6 +25,9 @@ import { VOICE_VIEWER_HANDLERS } from '../../src/cli/handlers/voice-viewer'
 import { VOICE_VIEWER_METHODS } from '../../src/main/runtime/rpc/methods/voice-viewer'
 import { applyVoiceViewerRequest } from '../../src/renderer/src/runtime/voice-viewer-bridge'
 import type { VoiceSettings } from '../../src/shared/speech-types'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 const viewerFixture = vi.hoisted(() => ({ getState: () => ({}) }))
 vi.mock('@/store', () => ({
   useAppStore: Object.assign(

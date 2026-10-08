@@ -5,7 +5,10 @@ import { browserSessionRegistry } from '../../src/main/browser/browser-session-r
 import { useAppStore } from '../../src/renderer/src/store'
 import { currentBrowserRoutePartitionBindingStore } from '../../src/main/browser/browser-route-partition-binding-runtime'
 import { resetClientRouteCookieImportSourcesForTests } from '../../src/main/browser/client-route-cookie-import-source-store'
-import { afterEach, expect, it } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 let fixture: Awaited<ReturnType<typeof browserImportClientHostOwnerFixture>> | undefined
 afterEach(async () => {
   await fixture?.close()

@@ -7,6 +7,9 @@ import { useAppStore } from '../../src/renderer/src/store'
 import { act } from 'react'
 import { toast } from 'sonner'
 import { afterEach, expect, it, vi } from 'vitest'
+vi.mock('../../src/main/browser/browser-cookie-staged-import', async () =>
+  (await import('./browser-cookie-staged-import.fixture')).browserCookieStagedImportStub()
+)
 
 let fixture: Awaited<ReturnType<typeof browserImportHintOwnerSocketFixture>> | undefined
 afterEach(async () => {
