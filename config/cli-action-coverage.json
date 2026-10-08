@@ -3901,7 +3901,7 @@
       ],
       "rule": "control",
       "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
-      "command": "agent-permissions status",
+      "command": "agent-permissions set",
       "evidencePaths": [
         "src/main/startup/main-process-account-settings.test.ts",
         "config/scripts/agent-permission-mode-cli-effects.test.ts"
