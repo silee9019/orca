@@ -7,7 +7,7 @@ import {
   TerminalHostDetailsParams
 } from '../../../../shared/rpc-contract/terminal-host-details-params'
 
-async function resolveLiveTerminalDetailsTarget(
+export async function resolveLiveTerminalDetailsTarget(
   runtime: OrcaRuntimeService,
   handle: string,
   expectedIncarnationId?: string

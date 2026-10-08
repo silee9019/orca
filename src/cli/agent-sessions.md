@@ -97,3 +97,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `terminal main-buffer --request-file <path|->`는 `{terminal, expectedIncarnationId?, scrollbackRows?}`를 받아 실행 호스트의 복원 snapshot과 미전달 데이터 시작 번호를 읽습니다. ANSI·scrollback은 비공개 터미널 내용을 포함합니다. provider 데이터 누락으로 authoritative snapshot을 얻지 못하거나 callback이 없으면 null을 반환하며, 종료한 대상과 조회 중 바뀐 실행 세대는 거부합니다. scrollbackRows는 기존 IPC와 같이 정수로 내림하고 0~50,000 범위로 제한합니다. 일반 terminal read의 tail과 구분됩니다.
 
 `agent session respond-question`의 성공 출력은 itemId·revision·resolution.state와 실행 fence·cursor·replay 여부만 담습니다. 자유 입력과 packed option ID는 재출력하지 않습니다. 제출한 답변을 읽으려면 명시적으로 history를 조회합니다. 호스트의 비정상 receipt도 원문을 출력하지 않고 실패합니다.
+
+`agent codex-server status --request-file <path|->`는 `{terminal, expectedIncarnationId?}`로 기존 local non-WSL pane의 공유 서버 참여 여부를 조회합니다. `joined:false`는 서버 부재의 증거가 아닙니다. `disable-auto-start`와 `stop`에는 `confirm:true`가 추가로 필요하며 그 pane의 CODEX_HOME을 공유하는 모든 클라이언트에 영향을 줍니다. 자동 시작 해제는 기존 설정 읽기 확인 뒤 성공하고, 중지는 기존 probe가 absent를 확인한 경우만 성공합니다. 접촉 불명은 실패로 반환하므로 재시도 전에 상태를 확인합니다. SSH·WSL pane은 기존 local 경계에서 거부하며 다른 호스트나 사용자의 default home으로 대체하지 않습니다.
