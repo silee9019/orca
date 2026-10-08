@@ -59,3 +59,22 @@ it('keeps Activity scope origins and targets explicit and closed', () => {
     expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(false)
   }
 })
+
+it('accepts an explicit Activity workspace jump and rejects empty targets', () => {
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: 'tab:leaf'
+    }).success
+  ).toBe(true)
+  expect(
+    ActivityViewerParams.safeParse({
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'jump',
+      paneKey: ''
+    }).success
+  ).toBe(false)
+})

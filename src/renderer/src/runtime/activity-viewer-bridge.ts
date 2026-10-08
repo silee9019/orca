@@ -1,3 +1,5 @@
+import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
+import { applyActivityJumpRequest } from './activity-jump-command'
 import {
   readActivityViewerPersistence,
   readActivityPersistenceWriteOutcome
@@ -55,6 +57,9 @@ export async function applyActivityViewerRequest(
   }
   if (initial.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
+  }
+  if (command.operation === 'jump') {
+    return applyActivityJumpRequest(request, command)
   }
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
   const markAllRead = command.operation === 'mark-all-read'
@@ -122,21 +127,14 @@ export async function applyActivityViewerRequest(
     }
     button.click()
   }
-  let saving = scopeCommand ? applyActivityScopeCommand(command, initial) : undefined
+  let saving = scopeCommand
+    ? applyActivityScopeCommand(command, initial)
+    : applyActivityListPreferenceCommand(command, initial)
   if (command.operation === 'search-visible') {
     if (!searchControl?.setShowSearch) {
       throw new Error('activity_search_unavailable')
     }
     saving = searchControl.setShowSearch(command.enabled)
-  }
-  if (command.operation === 'group') {
-    saving = initial.setAgentsGroupBy(command.by)
-  } else if (command.operation === 'read') {
-    saving = initial.setAgentsReadFilter(command.filter)
-  } else if (command.operation === 'compact') {
-    saving = initial.setAgentsCompactMode(command.enabled)
-  } else if (command.operation === 'children') {
-    saving = initial.setAgentsShowChildAgents(command.enabled)
   }
   const expected = useAppStore.getState()
   const expectedScope =

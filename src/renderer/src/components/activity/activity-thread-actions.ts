@@ -67,7 +67,7 @@ export function createActivityThreadActions({
   markThreadsRead: (threads: readonly AgentPaneThread[]) => void
   markThreadsUnread: (threads: readonly AgentPaneThread[]) => void
   selectThread: (thread: AgentPaneThread) => void
-  jumpToWorkspace: (thread: AgentPaneThread) => void
+  jumpToWorkspace: (thread: AgentPaneThread) => boolean
   markAllThreadsRead: () => void
 } {
   const markThreadsRead = (threads: readonly AgentPaneThread[]): void => {
@@ -133,13 +133,13 @@ export function createActivityThreadActions({
     activateThreadTarget(thread)
   }
 
-  const jumpToWorkspace = (thread: AgentPaneThread): void => {
+  const jumpToWorkspace = (thread: AgentPaneThread): boolean => {
     const catalog = readActivityThreadWorkspaceCatalog()
     if (!hasActivityThreadWorkspace(thread, catalog)) {
-      return
+      return false
     }
     markThreadRead(thread)
-    jumpToWorktreeFromSidebar(thread.worktree.id, {
+    return jumpToWorktreeFromSidebar(thread.worktree.id, {
       executionHostId: getActivityThreadExecutionHostId(thread, catalog.defaultHostId)
     })
   }

@@ -45,6 +45,21 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    navigationAction: z
+      .object({
+        operation: openEnum(['jump', 'select', 'unknown'], 'unknown'),
+        paneKey: z.string(),
+        workspaceId: z.string(),
+        executionHostId: z.string(),
+        requestAccepted: z.boolean().nullable(),
+        reached: openEnum(
+          ['none', 'workspace', 'terminal-pane', 'structured-tab', 'unknown'],
+          'unknown'
+        ),
+        remoteAck: openEnum(['unknown', 'accepted', 'rejected'], 'unknown')
+      })
+      .strip()
+      .optional(),
     completedAction: z
       .object({ paneKeys: z.array(z.string()), remainingPaneKeys: z.array(z.string()) })
       .strip()

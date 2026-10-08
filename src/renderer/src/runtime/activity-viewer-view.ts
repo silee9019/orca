@@ -14,6 +14,12 @@ export type ActivityThreadReadControl = ActivityThreadReadCallbacks & {
   visibleThreads: readonly AgentPaneThread[]
 }
 
+export type ActivityNavigationControl = {
+  visibleThreads: readonly AgentPaneThread[]
+  jump: (thread: AgentPaneThread) => boolean | void
+  canJump: (thread: AgentPaneThread) => boolean
+}
+
 export type ActivityCompletedControl = {
   run: () => void
   hasCompletedThreads: boolean
@@ -30,6 +36,7 @@ const committed: Partial<
         markAllRead?: () => void
         threadReads?: ActivityThreadReadControl
         completed?: ActivityCompletedControl
+        navigation?: ActivityNavigationControl
       }
     }
   >
@@ -41,6 +48,7 @@ export function publishActivityViewerView(
     markAllRead?: () => void
     threadReads?: ActivityThreadReadControl
     completed?: ActivityCompletedControl
+    navigation?: ActivityNavigationControl
   }
 ): void {
   if (view) {
@@ -103,4 +111,10 @@ export function readActivityCompletedControl(
   surface: ActivityViewerSurface
 ): ActivityCompletedControl | null {
   return committed[surface]?.controls?.completed ?? null
+}
+
+export function readActivityNavigationControl(
+  surface: ActivityViewerSurface
+): ActivityNavigationControl | null {
+  return committed[surface]?.controls?.navigation ?? null
 }

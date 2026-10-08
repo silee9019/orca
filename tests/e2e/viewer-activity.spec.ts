@@ -3,7 +3,7 @@ import type { Worktree } from '../../src/shared/worktree/types'
 import type { TerminalTab } from '../../src/shared/terminal-tab-types'
 import type { RetainedAgentEntry } from '../../src/renderer/src/store/slices/agent-status-contract'
 import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
 import { retryTransientMainEvaluate } from './helpers/electron-main-evaluate-retry'
@@ -13,6 +13,7 @@ import { assertActivityMarkAllRead } from './helpers/activity-mark-all-read-asse
 import { assertActivityReadToggle } from './helpers/activity-read-toggle-assertions'
 import { assertActivityCompleted } from './helpers/activity-completed-assertions'
 import { assertActivityThreadClear } from './helpers/activity-thread-clear-assertions'
+import { assertActivityJump } from './helpers/activity-jump-assertions'
 
 test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
@@ -53,6 +54,9 @@ test('Activity CLI applies list preferences and local search controls', async ({
       args: ['-nP', '-a', '-p', String(pid), '-iTCP', '-sTCP:LISTEN']
     })
     writeFileSync(testInfo.outputPath('process-isolation.txt'), `${processState}\n${listeners}`)
+  }
+  for (const id of ['a', 'b']) {
+    mkdirSync(path.join(userData, 'activity-fixture', id, 'worktree'), { recursive: true })
   }
   const results: unknown[] = []
   const call = async (args: string[], surface = 'activity-page') => {
@@ -437,5 +441,6 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityReadToggle(orcaPage, call, testInfo)
   await assertActivityCompleted(orcaPage, call, testInfo)
   await assertActivityThreadClear(orcaPage, call, testInfo)
+  await assertActivityJump(orcaPage, call, testInfo)
   await assertHidden()
 })

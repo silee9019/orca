@@ -43,7 +43,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'read-toggle' || operation === 'clear-thread'
+      ...(operation === 'read-toggle' || operation === 'clear-thread' || operation === 'jump'
         ? { paneKey: getRequiredStringFlag(flags, 'pane') }
         : {}),
       ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
@@ -82,6 +82,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 }
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
+  'ui activity jump': handler('jump'),
   'ui activity mark-all-read': handler('mark-all-read'),
   'ui activity clear-completed': handler('clear-completed'),
   'ui activity clear-thread': handler('clear-thread'),

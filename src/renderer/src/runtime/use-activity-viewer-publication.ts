@@ -1,4 +1,7 @@
-import type { ActivityThreadGroup } from '@/components/activity/activity-thread-types'
+import type {
+  AgentPaneThread,
+  ActivityThreadGroup
+} from '@/components/activity/activity-thread-types'
 import { readActivityScope } from './activity-scope-preferences'
 import { useLayoutEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
@@ -30,6 +33,10 @@ export function useActivityViewerPublication(
     | 'selectedPaneKey'
   > & {
     markAllRead?: { run?: () => void; hasUnreadThreads: boolean }
+    navigation?: {
+      jump: (thread: AgentPaneThread) => boolean | void
+      canJump: (thread: AgentPaneThread) => boolean
+    }
     threadReads?: ActivityThreadReadCallbacks
     completed?: {
       run?: () => void
@@ -55,6 +62,8 @@ export function useActivityViewerPublication(
   const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
   const { allThreads, markRead, markUnread, markManyRead, markManyUnread, canMarkUnread } =
     preferences.threadReads ?? {}
+  const navigationJump = preferences.navigation?.jump
+  const navigationCanJump = preferences.navigation?.canJump
   const completedRun = preferences.completed?.run
   const completedThreads = preferences.completed?.groups
   const hasCompletedThreads = preferences.completed?.hasCompletedThreads
@@ -94,6 +103,14 @@ export function useActivityViewerPublication(
       },
       {
         markAllRead,
+        navigation:
+          navigationJump && navigationCanJump
+            ? {
+                jump: navigationJump,
+                canJump: navigationCanJump,
+                visibleThreads: rows.flatMap((row) => (row.type === 'thread' ? [row.thread] : []))
+              }
+            : undefined,
         completed:
           completedRun && completedThreads && allThreads && hasCompletedThreads !== undefined
             ? {
@@ -137,6 +154,8 @@ export function useActivityViewerPublication(
     markManyRead,
     markManyUnread,
     canMarkUnread,
+    navigationJump,
+    navigationCanJump,
     completedRun,
     completedThreads,
     hasCompletedThreads

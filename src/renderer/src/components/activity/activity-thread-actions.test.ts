@@ -254,7 +254,7 @@ describe('activity thread host routing', () => {
   it('jumps to and probes the matching host-qualified workspace', () => {
     expect(hasActivityThreadWorkspace(thread)).toBe(true)
 
-    makeActions().jumpToWorkspace(thread)
+    expect(makeActions().jumpToWorkspace(thread)).toBe(true)
 
     expect(acknowledgeAgents).toHaveBeenCalledWith([thread.paneKey])
     expect(mocks.activateAndRevealWorkspace).toHaveBeenCalledWith(thread.worktree.id, {
@@ -262,6 +262,13 @@ describe('activity thread host routing', () => {
       showWorkspaceList: true,
       executionHostId: REMOTE_HOST
     })
+  })
+
+  it('returns a rejected activation while preserving the original read-before-jump order', () => {
+    mocks.activateAndRevealWorkspace.mockReturnValue(false)
+    expect(makeActions().jumpToWorkspace(thread)).toBe(false)
+    expect(acknowledgeAgents).toHaveBeenCalledExactlyOnceWith([thread.paneKey])
+    expect(mocks.activateAndRevealWorkspace).toHaveBeenCalledTimes(1)
   })
 
   it('marks all unread threads in the mark-all set, reading it at call time', () => {

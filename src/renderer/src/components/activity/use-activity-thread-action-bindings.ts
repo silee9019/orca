@@ -9,7 +9,7 @@ type ActivityThreadActionBindings = {
   markThreadsRead: (threads: readonly AgentPaneThread[]) => void
   markThreadsUnread: (threads: readonly AgentPaneThread[]) => void
   selectThread: (thread: AgentPaneThread) => void
-  jumpToWorkspace: (thread: AgentPaneThread) => void
+  jumpToWorkspace: (thread: AgentPaneThread) => boolean
   markAllThreadsRead: () => void
   hasUnreadThreads: boolean
   hasCompletedThreads: boolean

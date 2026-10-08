@@ -182,6 +182,7 @@ export function ActivityThreadListPane({
     query,
     selectedPaneKey,
     markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads },
+    navigation: { jump: onJumpToWorkspace, canJump: canJumpToWorkspace },
     completed: { run: onClearCompleted, hasCompletedThreads, groups: visibleThreadGroups },
     threadReads: allThreads
       ? {
