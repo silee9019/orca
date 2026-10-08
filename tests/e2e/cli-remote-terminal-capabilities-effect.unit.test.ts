@@ -25,7 +25,10 @@ vi.mock('../../src/cli/runtime-client', async () => {
     ...errors
   }
 })
-vi.mock('../../src/main/ssh/ssh-target-registry', () => ({ getActiveMultiplexer: mocks.mux }))
+vi.mock('../../src/main/ssh/ssh-target-registry', () => ({
+  getActiveMultiplexer: mocks.mux,
+  setSshActiveMultiplexerResolver: vi.fn()
+}))
 let root: string
 let path: string
 beforeEach(async () => {

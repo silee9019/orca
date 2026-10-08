@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { RuntimeClient } from '../runtime-client'
 import { AGENT_SESSION_HANDLERS } from './agent-sessions'
+import { AGENT_STATUS_RECONCILE_HANDLERS } from './agent-status-reconcile'
 import { AGENT_SESSION_COMMAND_SPECS } from '../specs/agent-sessions'
 import { parseArgs, validateCommandAndFlags } from '../args'
 
@@ -60,7 +61,7 @@ async function run(command: string, flags: Map<string, string | boolean>) {
 describe('agent session CLI', () => {
   it('exposes each named handler through its spec', () => {
     expect(AGENT_SESSION_COMMAND_SPECS.map((spec) => spec.path.join(' ')).sort()).toEqual(
-      Object.keys(AGENT_SESSION_HANDLERS).sort()
+      Object.keys({ ...AGENT_SESSION_HANDLERS, ...AGENT_STATUS_RECONCILE_HANDLERS }).sort()
     )
     for (const spec of AGENT_SESSION_COMMAND_SPECS) {
       const parsed = parseArgs([...spec.path, '--json'], [], AGENT_SESSION_COMMAND_SPECS)
