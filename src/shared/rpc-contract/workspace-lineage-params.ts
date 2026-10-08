@@ -5,19 +5,21 @@ const LineageTargetFields = {
   worktreeId: z.string().min(1).max(2048),
   executionHostId: ExecutionHostId
 }
-const LineageTarget = z.union([
+export const DesktopWorktreeInstanceTarget = z.union([
   z.object({ ...LineageTargetFields, identityKey: z.string().min(1).max(4096) }).strict(),
   z.object({ ...LineageTargetFields, instanceId: z.string().min(1).max(512) }).strict()
 ])
 
-export function getDesktopLineageTargetConfirmation(target: z.infer<typeof LineageTarget>): string {
+export function getDesktopLineageTargetConfirmation(
+  target: z.infer<typeof DesktopWorktreeInstanceTarget>
+): string {
   return 'identityKey' in target ? target.identityKey : `${target.worktreeId}:${target.instanceId}`
 }
 
 export const DesktopWorktreeLineageUpdate = z
   .object({
-    target: LineageTarget,
-    parent: LineageTarget.optional(),
+    target: DesktopWorktreeInstanceTarget,
+    parent: DesktopWorktreeInstanceTarget.optional(),
     noParent: z.literal(true).optional()
   })
   .strict()
