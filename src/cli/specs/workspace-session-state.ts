@@ -18,7 +18,7 @@ export const WORKSPACE_SESSION_STATE_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: [...GLOBAL_FLAGS, 'request-file'],
     destructive: true,
     notes: [
-      'Requires {confirm:true}. Flushes all pending profile state on the addressed host, including session partitions. Returns success only after the canonical SQLite durability barrier; frozen or failed writes are errors.'
+      'Requires {confirm:true}. Flushes all pending profile state on the addressed host, including session partitions. Returns success only after the canonical SQLite durability barrier; frozen or failed SQLite writes are errors. GitHub cache sidecar writes are best-effort and are not covered by this SQLite durability receipt.'
     ]
   }
 ]
