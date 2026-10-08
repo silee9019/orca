@@ -1,3 +1,4 @@
+import { AGENT_AWAKE_WATCH_COMMAND_SPECS } from './specs/agent-awake-watch'
 import { AI_VAULT_LIST_CANCEL_COMMAND_SPECS } from './specs/ai-vault-list-cancel'
 import { AGENT_PANE_AUTHORITY_COMMAND_SPECS } from './specs/agent-pane-authority'
 import { specPaths } from './args'
@@ -12,6 +13,7 @@ import { WORKSPACE_REVIEW_CACHE_WRITE_COMMAND_SPECS } from './specs/workspace-re
 import { NATIVE_CHAT_WATCH_COMMAND_SPECS } from './specs/native-chat-watch'
 
 const runtimeCommands = [
+  ...AGENT_AWAKE_WATCH_COMMAND_SPECS,
   ...AI_VAULT_LIST_CANCEL_COMMAND_SPECS,
   ...AGENT_PANE_AUTHORITY_COMMAND_SPECS,
   ...AGENT_SESSION_COMMAND_SPECS,

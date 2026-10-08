@@ -73,7 +73,7 @@ it('bounds continuous subscriptions and isolates replacement and disconnect clea
         () => {},
         () => {}
       )
-    ).toThrow('terminal_presentation_stream_capacity')
+    ).toThrow('runtime_event_stream_capacity')
     expect(disposals).toHaveLength(66)
     runtime.cleanupSubscriptionsForConnection('budget')
     expect(getActiveTerminalPresentationStreamCount(runtime)).toBe(1)

@@ -1,5 +1,3 @@
-import type { RemoteRuntimeCompatGate } from './remote-runtime-compat-gate'
-import { markEnvironmentUsed } from './environments'
 import type { PairingOffer } from '../../shared/pairing'
 import type { RuntimeStatus } from '../../shared/runtime-types'
 import type { RuntimeRpcResponse, RuntimeRpcSuccess } from './types'
@@ -28,7 +26,7 @@ export async function subscribeCliRuntimeJson(
   request: {
     method: string
     params: unknown
-    localCapability: 'nativeChatStreaming' | 'terminalPresentationStreaming'
+    localCapability: 'nativeChatStreaming' | 'terminalPresentationStreaming' | 'agentAwakeStreaming'
   },
   callbacks: NativeChatSubscriptionCallbacks,
   signal: AbortSignal
@@ -86,27 +84,5 @@ export async function subscribeCliRuntimeJson(
     )
   } catch (error) {
     throw error instanceof Error ? translate(error) : error
-  }
-}
-
-export function createCliRuntimeSubscriptionOptions(
-  userDataPath: string,
-  pairing: PairingOffer | null,
-  timeoutMs: number,
-  remoteCompat: RemoteRuntimeCompatGate,
-  environmentSelector: string | null
-) {
-  return {
-    userDataPath,
-    pairing,
-    timeoutMs,
-    validateStatus: (response: RuntimeRpcSuccess<RuntimeStatus>) => {
-      remoteCompat.noteVerifiedStatus(response.result)
-      if (environmentSelector) {
-        markEnvironmentUsed(userDataPath, environmentSelector, {
-          runtimeId: response._meta.runtimeId
-        })
-      }
-    }
   }
 }

@@ -13,7 +13,8 @@ export async function dispatchLocalNativeChatStream(
   const meta = { runtimeId: runtime.getRuntimeId() }
   if (
     (request.method !== 'nativeChat.subscribe' &&
-      request.method !== 'terminal.presentation.subscribe') ||
+      request.method !== 'terminal.presentation.subscribe' &&
+      request.method !== 'agentAwake.subscribe') ||
     !context?.stream
   ) {
     return errorResponse(
