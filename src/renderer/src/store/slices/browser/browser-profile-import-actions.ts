@@ -60,7 +60,7 @@ export function createBrowserProfileImportActions(
             )
           : await window.api.browser.sessionImportCookies({ profileId })
         if (result.ok) {
-          get().recordFeatureInteraction?.('cookie-import')
+          await get().recordFeatureInteraction?.('cookie-import')
           set((state) =>
             browserImportStateForHostUpdate(state, hostId, {
               profileId,

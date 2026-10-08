@@ -62,6 +62,7 @@ export async function applyBrowserViewerRequest(
     command.operation === 'take-back' ||
     command.operation === 'observe-page' ||
     command.operation === 'computer-permissions' ||
+    command.operation === 'webauthn-dialog-focus' ||
     command.operation === 'webauthn-dialog' ||
     command.operation === 'load-failure' ||
     command.operation === 'workspace-file-open' ||

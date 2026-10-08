@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { z } from 'zod'
 import type { CommandHandler } from '../dispatch'
 import { getRequiredStringFlag } from '../flags'
@@ -17,6 +18,12 @@ export const BROWSER_IMPORT_HINT_HANDLERS: Record<string, CommandHandler> = {
   'browser import-hint': async (ctx) => {
     const action = getRequiredStringFlag(ctx.flags, 'action')
     const command = BrowserImportHintCommand.safeParse({
+      ...(action === 'import-file'
+        ? {
+            filePath: resolve(ctx.cwd, getRequiredStringFlag(ctx.flags, 'file')),
+            confirmProfile: getRequiredStringFlag(ctx.flags, 'confirm-profile')
+          }
+        : {}),
       ...(action === 'hide' ? { confirm: getRequiredStringFlag(ctx.flags, 'confirm') } : {}),
       hostId: getRequiredStringFlag(ctx.flags, 'host'),
       pageId: getRequiredStringFlag(ctx.flags, 'page'),
@@ -37,6 +44,7 @@ export const BROWSER_IMPORT_HINT_HANDLERS: Record<string, CommandHandler> = {
     const reply = publicReply.safeParse(response)
     if (
       !reply.success ||
+      (action === 'import-file' && !reply.data.result.browserImportHint.imported) ||
       (action === 'hide' &&
         (!reply.data.result.browserImportHint.hidden ||
           !reply.data.result.browserImportHint.persisted))

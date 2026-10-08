@@ -47,7 +47,17 @@ async function readReply(result: unknown): Promise<string> {
 it('projects only public envelope and nested import hint fields', async () => {
   const output = await readReply({
     applied: true,
-    browserImportHint: { ...publicState, privateProvider: 'private-state' },
+    browserImportHint: {
+      ...publicState,
+      imported: {
+        totalCookies: 1,
+        importedCookies: 1,
+        skippedCookies: 0,
+        domains: ['private-domain'],
+        cookies: 'private-cookie'
+      },
+      privateProvider: 'private-state'
+    },
     privateResult: 'private-result',
     command: 'private-command'
   })
@@ -55,7 +65,13 @@ it('projects only public envelope and nested import hint fields', async () => {
     id: 'reply',
     ok: true,
     _meta: { runtimeId: 'runtime-1' },
-    result: { applied: true, browserImportHint: publicState }
+    result: {
+      applied: true,
+      browserImportHint: {
+        ...publicState,
+        imported: { totalCookies: 1, importedCookies: 1, skippedCookies: 0 }
+      }
+    }
   })
   expect(output).not.toContain('private-')
 })
@@ -87,4 +103,21 @@ it('accepts an older public status reply without the optional hidden field', asy
     detectionSettled: false,
     settingsOpened: false
   })
+})
+it('rejects malformed cookie counts without printing provider data', async () => {
+  await expect(
+    readReply({
+      applied: true,
+      browserImportHint: {
+        ...publicState,
+        imported: {
+          totalCookies: -1,
+          importedCookies: 1,
+          skippedCookies: 0,
+          cookies: 'private-cookie'
+        }
+      }
+    })
+  ).rejects.toMatchObject({ code: 'runtime_error' })
+  expect(vi.mocked(console.log)).not.toHaveBeenCalled()
 })

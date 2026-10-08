@@ -1,3 +1,7 @@
+import { watchBrowserImportHintBinding } from '@/runtime/browser-import-hint-binding-watch'
+import type { BrowserCookieImportResult } from '../../../../../shared/browser-workspace-types'
+import type { BrowserImportHintState } from '../../../../../shared/rpc-contract/browser-import-hint-params'
+import { completeBrowserImportHintFile } from '@/runtime/browser-import-hint-file-completion'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { useAppStore } from '@/store'
 import {
@@ -18,6 +22,7 @@ type ImportHintOwner = {
   changeMenu: (value: boolean) => void
   openSettings: () => void
   hide: () => Promise<ImportHintPersistenceReceipt>
+  importFile: (filePath: string) => Promise<BrowserCookieImportResult>
 }
 export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
   const current = useRef(owner)
@@ -93,60 +98,9 @@ export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
               availabilityCurrent
             )
           }
-          let hiddenDeparture = false
-          let settingsDeparture = false
-          const checkStore = (): void => {
-            if (request.isSettled()) {
-              cleanupStore()
-              return
-            }
-            try {
-              requireBrowserImportHintIdentity(command)
-              const state = useAppStore.getState()
-              const hiding = command.action === 'hide'
-              if (state.activeModal !== 'none' || (state.browserImportHintHidden && !hiding)) {
-                throw new Error('surface_changed')
-              }
-              if (command.action === 'settings') {
-                if (state.activeView === 'settings') {
-                  if (
-                    state.settingsNavigationTarget?.pane !== 'browser' ||
-                    state.settingsNavigationTarget.repoId !== null
-                  ) {
-                    throw new Error('settings_changed')
-                  }
-                  settingsDeparture = true
-                } else if (state.activeView !== 'terminal' || settingsDeparture) {
-                  throw new Error('surface_changed')
-                }
-              } else {
-                if (state.activeView !== 'terminal') {
-                  throw new Error('surface_changed')
-                }
-                if (command.action === 'hide') {
-                  if (state.browserImportHintHidden) {
-                    hiddenDeparture = true
-                  } else if (hiddenDeparture) {
-                    throw new Error('hide_changed')
-                  }
-                }
-              }
-            } catch {
-              storeCurrent = false
-              request.finish(new Error('browser_import_hint_effect_unknown'))
-              cleanupStore()
-            }
-          }
-          const unsubscribe = useAppStore.subscribe(checkStore)
-          const expiryTimer = window.setTimeout(
-            () => cleanupStore(),
-            Math.max(0, Math.min(1500, request.expiresAt - Date.now()))
-          )
-          cleanupStore = () => {
-            unsubscribe()
-            window.clearTimeout(expiryTimer)
-          }
-          checkStore()
+          cleanupStore = watchBrowserImportHintBinding(request, () => {
+            storeCurrent = false
+          })
           if (!storeCurrent) {
             return
           }
@@ -155,6 +109,7 @@ export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
           let expectedOpen = initial.open
           let expectedMenu = initial.menuOpen
           let persistence: ImportHintPersistenceReceipt | undefined
+          let imported: BrowserImportHintState['imported']
           let completion: Promise<void> = Promise.resolve()
           if (command.action === 'open' || command.action === 'close') {
             expectedOpen = command.action === 'open'
@@ -198,6 +153,14 @@ export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
                 throw new Error('browser_import_hint_persistence_unacknowledged')
               }
             })
+          } else if (command.action === 'import-file') {
+            expectedOpen = false
+            expectedMenu = false
+            completion = completeBrowserImportHintFile(command, initial.importFile).then(
+              (summary) => {
+                imported = summary
+              }
+            )
           } else if (command.action === 'settings') {
             expectedOpen = false
             expectedMenu = false
@@ -263,6 +226,7 @@ export function useBrowserImportHintOwner(owner: ImportHintOwner): void {
                     detectionSettled: state.detectedBrowsersLoaded,
                     settingsOpened: command.action === 'settings',
                     hidden: state.browserImportHintHidden,
+                    ...(imported ? { imported } : {}),
                     ...(command.action === 'hide' ? { persisted: true } : {})
                   })
                   return

@@ -1,3 +1,4 @@
+import { requestBrowserWebAuthnFocus } from './browser-webauthn-focus-request'
 import { requestBrowserEgress } from './browser-egress-request'
 import { requestBrowserViewportPan } from './browser-viewport-pan-request'
 import { requestBrowserMarkupHint } from './browser-markup-hint-request'
@@ -45,6 +46,7 @@ export async function applyBrowserPlacementViewerAction(
         | 'observe-page'
         | 'computer-permissions'
         | 'load-failure'
+        | 'webauthn-dialog-focus'
         | 'webauthn-dialog'
         | 'workspace-file-open'
         | 'workspace-port-open'
@@ -57,6 +59,10 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'webauthn-dialog-focus') {
+    const webAuthnFocus = await requestBrowserWebAuthnFocus(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, webAuthnFocus }
+  }
   if (command.operation === 'browser-import-hint') {
     const browserImportHint = await applyBrowserImportHintAction(command.command, expiresAt)
     return { ...base, applied: true, browserImportHint }

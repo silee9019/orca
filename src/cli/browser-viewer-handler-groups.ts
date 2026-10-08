@@ -1,3 +1,4 @@
+import { BROWSER_WEBAUTHN_FOCUS_HANDLER_GROUPS } from './browser-webauthn-focus-handler-groups'
 import { BROWSER_EGRESS_HANDLER_GROUPS } from './browser-egress-handler-groups'
 import { BROWSER_IMPORT_HINT_HANDLER_GROUPS } from './browser-import-hint-handler-groups'
 import { BROWSER_BANNER_HANDLER_GROUPS } from './browser-banner-handler-groups'
@@ -10,6 +11,7 @@ import { BROWSER_TAKE_BACK_HANDLER_GROUPS } from './browser-take-back-handler-gr
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...BROWSER_WEBAUTHN_FOCUS_HANDLER_GROUPS,
   ...BROWSER_EGRESS_HANDLER_GROUPS,
   ...BROWSER_IMPORT_HINT_HANDLER_GROUPS,
   ...BROWSER_BANNER_HANDLER_GROUPS,

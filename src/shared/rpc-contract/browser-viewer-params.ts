@@ -1,3 +1,4 @@
+import { BrowserWebAuthnFocusTarget } from './browser-webauthn-focus-params'
 import { BrowserEgressCommand } from './browser-egress-params'
 import { BrowserViewportPanDelta } from './browser-viewport-pan-params'
 import { BrowserMarkupHintAction } from './browser-markup-hint-params'
@@ -70,6 +71,11 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({
+    viewer,
+    operation: z.literal('webauthn-dialog-focus'),
+    command: BrowserWebAuthnFocusTarget
+  }),
   z.object({ viewer, operation: z.literal('egress'), command: BrowserEgressCommand }),
   z.object({ viewer, operation: z.literal('viewport-pan'), page, delta: BrowserViewportPanDelta }),
   z.object({ viewer, operation: z.literal('markup-hint'), page, action: BrowserMarkupHintAction }),

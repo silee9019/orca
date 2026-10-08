@@ -1,3 +1,4 @@
+import { BrowserWebAuthnFocusState } from './rpc-contract/browser-webauthn-focus-params'
 import { BrowserEgressState } from './rpc-contract/browser-egress-params'
 import { BrowserViewportPanReceipt } from './rpc-contract/browser-viewport-pan-params'
 import { BrowserMarkupHintState } from './rpc-contract/browser-markup-hint-params'
@@ -82,6 +83,7 @@ export const BrowserViewerResultSchema = z.object({
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),
   failureState: BrowserFailureState.optional(),
+  webAuthnFocus: BrowserWebAuthnFocusState.optional(),
   webAuthnDialog: BrowserWebAuthnDialogState.optional(),
   settings: BrowserSettingsState.optional(),
   annotationTray: BrowserAnnotationTrayState.optional(),

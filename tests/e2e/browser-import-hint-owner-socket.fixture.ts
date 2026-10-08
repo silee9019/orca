@@ -234,6 +234,8 @@ export async function browserImportHintOwnerSocketFixture() {
     await pending
   }
   return {
+    directory,
+    runtime,
     detect,
     writeUI,
     readUI,

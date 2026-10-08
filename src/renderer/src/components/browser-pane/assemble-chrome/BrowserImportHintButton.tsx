@@ -2,6 +2,7 @@ import {
   useBrowserImportHintOwner,
   type ImportHintPersistenceReceipt
 } from './use-browser-import-hint-owner'
+import type { BrowserCookieImportResult } from '../../../../../shared/browser-workspace-types'
 import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Import } from 'lucide-react'
 import { toast } from 'sonner'
@@ -126,27 +127,31 @@ export function BrowserImportHintButton({
     [detectedBrowsers, effectiveProfileId, importCookiesFromBrowser, setImportMenuOpen]
   )
 
-  const handleImportFromFile = useCallback(async (): Promise<void> => {
-    revision.current += 1
-    setOpen(false)
-    setImportMenuOpen(false)
-    const result = await importCookiesToProfile(effectiveProfileId)
-    if (result.ok) {
-      emitBrowserCookieImportToast(
-        result.summary,
-        translate(
-          'auto.components.browser.pane.BrowserImportHintButton.d40d584769',
-          'Imported {{value0}} cookies from file.',
-          { value0: result.summary.importedCookies }
-        ),
-        result
-      )
-      return
-    }
-    if (result.reason !== 'canceled') {
-      toast.error(result.reason)
-    }
-  }, [effectiveProfileId, importCookiesToProfile, setImportMenuOpen])
+  const handleImportFromFile = useCallback(
+    async (filePath?: string): Promise<BrowserCookieImportResult> => {
+      revision.current += 1
+      setOpen(false)
+      setImportMenuOpen(false)
+      const result = await importCookiesToProfile(effectiveProfileId, filePath)
+      if (result.ok) {
+        emitBrowserCookieImportToast(
+          result.summary,
+          translate(
+            'auto.components.browser.pane.BrowserImportHintButton.d40d584769',
+            'Imported {{value0}} cookies from file.',
+            { value0: result.summary.importedCookies }
+          ),
+          result
+        )
+        return result
+      }
+      if (result.reason !== 'canceled') {
+        toast.error(result.reason)
+      }
+      return result
+    },
+    [effectiveProfileId, importCookiesToProfile, setImportMenuOpen]
+  )
 
   const handleOpenBrowserSettings = useCallback((): void => {
     revision.current += 1
@@ -192,7 +197,8 @@ export function BrowserImportHintButton({
     changeOpen: handleOpenChange,
     changeMenu: setImportMenuOpen,
     openSettings: handleOpenBrowserSettings,
-    hide: handleHideHint
+    hide: handleHideHint,
+    importFile: handleImportFromFile
   })
 
   if (!shouldShow) {

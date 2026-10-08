@@ -1,5 +1,5 @@
 import { KeyRound } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useBrowserWebAuthnDialogOwner } from './use-browser-webauthn-dialog-owner'
 
 import { Button } from '@/components/ui/button'
@@ -28,8 +28,25 @@ function accountLabels(
 }
 
 export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
-  const { requests, respondingRequestId, respond } = useBrowserWebAuthnDialogOwner()
   const firstAccountRef = useRef<HTMLButtonElement | null>(null)
+  const firstAccountBinding = useRef<{ requestId: string; accountId: string } | null>(null)
+  const focusFirstAccount = useCallback((requestId?: string, accountId?: string): boolean => {
+    const button = firstAccountRef.current
+    const binding = firstAccountBinding.current
+    if (
+      !button ||
+      button.disabled ||
+      !binding ||
+      (requestId !== undefined && requestId !== binding.requestId) ||
+      (accountId !== undefined && accountId !== binding.accountId)
+    ) {
+      return false
+    }
+    button.focus()
+    return document.activeElement === button
+  }, [])
+  const { requests, respondingRequestId, respond } =
+    useBrowserWebAuthnDialogOwner(focusFirstAccount)
   const setContextualToursBlockingSurfaceVisible = useAppStore(
     (state) => state.setContextualToursBlockingSurfaceVisible
   )
@@ -52,9 +69,9 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
     if (!activeRequest) {
       return
     }
-    const focusTimer = setTimeout(() => firstAccountRef.current?.focus())
+    const focusTimer = setTimeout(() => focusFirstAccount())
     return () => clearTimeout(focusTimer)
-  }, [activeRequest])
+  }, [activeRequest, focusFirstAccount])
 
   return (
     <Dialog open={activeRequest !== null} onOpenChange={(open) => !open && respond(null)}>
@@ -63,7 +80,7 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
         className="sm:max-w-md"
         onOpenAutoFocus={(event) => {
           event.preventDefault()
-          firstAccountRef.current?.focus()
+          focusFirstAccount()
         }}
       >
         <DialogHeader>
@@ -84,7 +101,19 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
             return (
               <Button
                 key={account.credentialId}
-                ref={index === 0 ? firstAccountRef : undefined}
+                ref={
+                  index === 0
+                    ? (button) => {
+                        firstAccountRef.current = button
+                        firstAccountBinding.current = button
+                          ? {
+                              requestId: displayedRequest.requestId,
+                              accountId: account.credentialId
+                            }
+                          : null
+                      }
+                    : undefined
+                }
                 autoFocus={index === 0}
                 type="button"
                 variant="outline"

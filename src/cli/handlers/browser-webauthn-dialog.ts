@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises'
+import { readBrowserWebAuthnCredentialFile } from '../browser-webauthn-credential-file'
 import type { CommandHandler } from '../dispatch'
 import { getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
@@ -24,17 +24,7 @@ export const BROWSER_WEBAUTHN_DIALOG_HANDLERS: Record<string, CommandHandler> = 
     }
     let credentialId: string | null = null
     if (typeof file === 'string') {
-      try {
-        if ((await stat(file)).size > 4096) {
-          throw new Error('too large')
-        }
-        credentialId = (await readFile(file, 'utf8')).trim()
-      } catch {
-        throw new RuntimeClientError(
-          'invalid_argument',
-          'Could not read credential file (maximum 4096 bytes).'
-        )
-      }
+      credentialId = await readBrowserWebAuthnCredentialFile(file)
     }
     const target = BrowserWebAuthnDialogTarget.safeParse({
       clientTarget: ctx.flags.has('remote-page')
