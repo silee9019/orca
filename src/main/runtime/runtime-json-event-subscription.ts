@@ -4,13 +4,23 @@ import type { RpcContext } from './rpc/core'
 const active = new WeakMap<OrcaRuntimeService, Set<string>>()
 export function getActiveRuntimeJsonEventStreamCount(
   runtime: OrcaRuntimeService,
-  namespace: 'terminalPresentation' | 'agentAwake' | 'remoteWorkspace' | 'structuredHeld'
+  namespace:
+    | 'terminalPresentation'
+    | 'agentAwake'
+    | 'remoteWorkspace'
+    | 'structuredHeld'
+    | 'agentStatus'
 ): number {
   return [...(active.get(runtime) ?? [])].filter((key) => key.startsWith(`${namespace}:`)).length
 }
 export function createRuntimeJsonEventSubscription(
   context: RpcContext,
-  namespace: 'terminalPresentation' | 'agentAwake' | 'remoteWorkspace' | 'structuredHeld',
+  namespace:
+    | 'terminalPresentation'
+    | 'agentAwake'
+    | 'remoteWorkspace'
+    | 'structuredHeld'
+    | 'agentStatus',
   subscriptionId: string,
   emit: (event: unknown) => void,
   assertOwner: () => void
@@ -66,7 +76,9 @@ export function createRuntimeJsonEventSubscription(
               ? 'agent_awake_unavailable'
               : namespace === 'structuredHeld'
                 ? 'structured_held_unavailable'
-                : 'remote_workspace_unavailable'
+                : namespace === 'agentStatus'
+                  ? 'agent_status_unavailable'
+                  : 'remote_workspace_unavailable'
       })
       aborted()
       return
