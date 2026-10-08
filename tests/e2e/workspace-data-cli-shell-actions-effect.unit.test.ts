@@ -2,13 +2,14 @@ import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { mkdtemp, rm, writeFile, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { HandlerContext } from '../../src/cli/dispatch'
 import type * as EditorLaunch from '../../src/main/external-editor-launch'
-const fixture = vi.hoisted(() => ({ reveal: vi.fn(), launch: vi.fn() }))
+const fixture = vi.hoisted(() => ({ reveal: vi.fn(), launch: vi.fn(), openPath: vi.fn() }))
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
-  shell: { showItemInFolder: fixture.reveal },
+  shell: { showItemInFolder: fixture.reveal, openPath: fixture.openPath },
   dialog: { showOpenDialog: vi.fn() }
 }))
 vi.mock('../../src/main/external-editor-launch', async (original) => ({
@@ -54,6 +55,8 @@ beforeEach(async () => {
   authority = new ProfileStateSqliteAuthority(join(directory, 'profile.db'), 'fixture')
   vi.spyOn(authority, 'scheduleBackup').mockImplementation(() => {})
   store = new Store({ dataFile: join(directory, 'data.json'), profileStateAuthority: authority })
+  fixture.openPath.mockReset()
+  fixture.openPath.mockResolvedValue('')
   fixture.reveal.mockReset()
   fixture.launch.mockReset()
   fixture.launch.mockResolvedValue(undefined)
@@ -196,5 +199,49 @@ it('fails on absent desktop services and old peers without invoking the OS', asy
   ).rejects.toMatchObject({ code: 'method_not_found' })
   expect(fixture.launch).not.toHaveBeenCalled()
   expect(fixture.reveal).not.toHaveBeenCalled()
+  expect(console.log).not.toHaveBeenCalled()
+})
+
+it('opens an isolated existing file through the original default application callback', async () => {
+  const path = join(directory, 'target folder')
+  await writeFile(path, 'unchanged')
+  await invoke('shell open-file', { path, expectedExecutionHostId: 'local' })
+  expect(lastResult()).toEqual({ opened: true })
+  expect(fixture.openPath).toHaveBeenCalledWith(path)
+  expect(await readFile(path, 'utf8')).toBe('unchanged')
+})
+it('opens only local file URIs and confirms the exact URI before invoking the desktop', async () => {
+  const path = join(directory, 'target folder')
+  await writeFile(path, 'unchanged')
+  const uri = pathToFileURL(path).href
+  const file = join(directory, 'input.json')
+  await writeFile(file, JSON.stringify({ uri, expectedExecutionHostId: 'local' }))
+  ctx.flags.set('params-file', file)
+  ctx.flags.set('confirm', uri)
+  await WORKSPACE_SHELL_ACTION_HANDLERS['shell open-file-uri'](ctx)
+  expect(lastResult()).toEqual({ opened: true })
+  expect(fixture.openPath).toHaveBeenCalledWith(path)
+  expect(await readFile(path, 'utf8')).toBe('unchanged')
+})
+it('rejects invalid or nonlocal URIs and default-application failures without a success output', async () => {
+  const file = join(directory, 'input.json')
+  for (const uri of [
+    'not a URI',
+    'https://fixture.invalid',
+    'file://remote.invalid/share/file',
+    'file:///tmp/%ZZ'
+  ]) {
+    await writeFile(file, JSON.stringify({ uri, expectedExecutionHostId: 'local' }))
+    ctx.flags.set('params-file', file)
+    ctx.flags.set('confirm', uri)
+    await expect(WORKSPACE_SHELL_ACTION_HANDLERS['shell open-file-uri'](ctx)).rejects.toThrow()
+  }
+  expect(fixture.openPath).not.toHaveBeenCalled()
+  const path = join(directory, 'target folder')
+  await writeFile(path, 'unchanged')
+  fixture.openPath.mockResolvedValue('private-native-error-canary')
+  await expect(
+    invoke('shell open-file', { path, expectedExecutionHostId: 'local' })
+  ).rejects.toThrow('Desktop file open failed.')
   expect(console.log).not.toHaveBeenCalled()
 })

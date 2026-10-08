@@ -4,12 +4,16 @@ import type {
   ShellOpenLocalPathResult
 } from '../../../../shared/shell-open-types'
 import {
+  DesktopShellOpenFile,
+  DesktopShellOpenUri,
   DesktopShellReveal,
   DesktopShellOpenEditor
 } from '../../../../shared/rpc-contract/workspace-shell-action-params'
 import { defineMethod } from '../core'
+import { parseDesktopFileUri } from '../../../shell-file-uri'
 
 type DesktopShellActions = {
+  openFile: (path: string) => Promise<boolean>
   reveal: (path: string) => Promise<ShellOpenLocalPathResult>
   openEditor: (request: ShellOpenExternalEditorRequest) => Promise<ShellOpenExternalEditorResult>
 }
@@ -23,7 +27,33 @@ function requireDesktopShellActions(): DesktopShellActions {
   }
   return desktopShellActions
 }
+async function openDesktopFile(path: string): Promise<{ opened: true }> {
+  const actions = requireDesktopShellActions()
+  try {
+    if (await actions.openFile(path)) {
+      return { opened: true }
+    }
+  } catch {}
+  throw new Error('Desktop file open failed.')
+}
 export const WORKSPACE_SHELL_ACTION_METHODS = [
+  defineMethod({
+    name: 'shell.openDesktopFile',
+    params: DesktopShellOpenFile,
+    handler: (params) => openDesktopFile(params.path)
+  }),
+  defineMethod({
+    name: 'shell.openDesktopFileUri',
+    params: DesktopShellOpenUri,
+    handler: (params) => {
+      requireDesktopShellActions()
+      const path = parseDesktopFileUri(params.uri)
+      if (path === null) {
+        throw new Error('Use a local file URI.')
+      }
+      return openDesktopFile(path)
+    }
+  }),
   defineMethod({
     name: 'shell.revealDesktopPath',
     params: DesktopShellReveal,

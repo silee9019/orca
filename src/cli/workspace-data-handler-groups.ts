@@ -4,7 +4,7 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'workspace-shell-actions',
-    keys: ['shell reveal', 'shell open-editor'],
+    keys: ['shell reveal', 'shell open-editor', 'shell open-file', 'shell open-file-uri'],
     load: async () =>
       (await import('./handlers/workspace-shell-actions.js')).WORKSPACE_SHELL_ACTION_HANDLERS
   },

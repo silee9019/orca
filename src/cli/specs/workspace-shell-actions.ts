@@ -2,6 +2,26 @@ import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 export const WORKSPACE_SHELL_ACTION_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['shell', 'open-file'],
+    summary: 'Open an existing file with the desktop default application',
+    usage: 'orca shell open-file --params-file <file|-> --confirm <path> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
+    notes: [
+      'JSON: {path, expectedExecutionHostId:"local"}. Confirms the exact path and reuses the desktop native absolute/existing path validation and default-application callback. Can open or focus an application.',
+      'A failed native open is an error with no success output or native error text. No SSH or client-filesystem fallback. Missing desktop service and old peers fail explicitly. Success is native acceptance, not document rendering or application readiness.'
+    ]
+  },
+  {
+    path: ['shell', 'open-file-uri'],
+    summary: 'Open a local file URI with the desktop default application',
+    usage: 'orca shell open-file-uri --params-file <file|-> --confirm <uri> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
+    notes: [
+      'JSON: {uri, expectedExecutionHostId:"local"}. Confirms the exact URI. Reuses the original file URI decoding policy: file: only, empty or localhost hostname, valid native decoding, then absolute/existing desktop path validation.',
+      'Rejects malformed and remote-host URIs; never downloads or opens an HTTP URL. Can open or focus the default application. Success is native acceptance; old peers, absent desktop services and failed opens do not produce success. No client or SSH fallback.'
+    ]
+  },
+  {
     path: ['shell', 'reveal'],
     summary: 'Reveal an existing path in the desktop host file manager',
     usage: 'orca shell reveal --params-file <file|-> --confirm <path> [--json]',

@@ -18,3 +18,11 @@ export const DesktopShellOpenEditor = DesktopShellReveal.extend({
   command: z.string().optional(),
   connectionId: z.string().min(1).optional()
 }).strict()
+
+export const DesktopShellOpenFile = DesktopShellReveal
+export const DesktopShellOpenUri = z
+  .object({
+    uri: z.string().min(1),
+    expectedExecutionHostId: z.literal('local')
+  })
+  .strict()
