@@ -1,3 +1,4 @@
+import { WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS } from './workspace-remote-download-handler-groups'
 import { WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS } from './workspace-download-session-handler-groups'
 import { WORKSPACE_GIT_STATUS_HANDLER_GROUPS } from './workspace-git-status-handler-groups'
 import { WORKSPACE_LOG_TAIL_HANDLER_GROUPS } from './workspace-log-tail-handler-groups'
@@ -21,17 +22,6 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
-  {
-    name: 'workspace-remote-folder-download',
-    keys: [
-      'file remote-folder-download-start',
-      'file remote-folder-download-status',
-      'file remote-folder-download-cancel'
-    ],
-    load: async () =>
-      (await import('./handlers/workspace-remote-folder-download.js'))
-        .WORKSPACE_REMOTE_FOLDER_DOWNLOAD_HANDLERS
-  },
   {
     name: 'workspace-work-item-notify',
     keys: ['github notify-work-item-mutated'],
@@ -57,6 +47,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () =>
       (await import('./handlers/workspace-jira-reads.js')).WORKSPACE_JIRA_READ_HANDLERS
   },
+  ...WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS,
   ...WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS,
   ...WORKSPACE_GIT_STATUS_HANDLER_GROUPS,
   ...WORKSPACE_LOG_TAIL_HANDLER_GROUPS,

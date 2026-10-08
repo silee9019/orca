@@ -2,13 +2,13 @@ import { mkdtemp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:f
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { RemoteFolderDownloadController } from './remote-folder-download-controller'
+import { RemoteDownloadController } from './remote-download-controller'
 import * as promotion from './local-downloaded-folder-promotion'
-let directory: string, destination: string, controller: RemoteFolderDownloadController
+let directory: string, destination: string, controller: RemoteDownloadController
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), 'orca-folder-download-'))
   destination = join(directory, 'saved')
-  controller = new RemoteFolderDownloadController()
+  controller = new RemoteDownloadController('remote_folder_download_busy')
 })
 afterEach(async () => {
   await controller.dispose()
@@ -174,4 +174,97 @@ it('rejects a symbolic destination without changing its target', async () => {
   expect(await settled(request.requestId)).toMatchObject({ state: 'failed', cleanupPending: false })
   expect(download).not.toHaveBeenCalled()
   expect(await readFile(join(original, 'sentinel'), 'utf8')).toBe('keep')
+})
+it('keeps a polled request alive past fifteen minutes and cancels an unpolled one', async () => {
+  let signal: AbortSignal | undefined
+  let release: (() => void) | undefined
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const request = controller.start(
+    async () => destination,
+    async (_temp, value) => {
+      signal = value
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+    }
+  )
+  try {
+    await vi.waitFor(() => expect(signal).toBeDefined())
+    for (let minute = 0; minute < 30; minute += 10) {
+      await vi.advanceTimersByTimeAsync(10 * 60 * 1000)
+      controller.status(request.requestId)
+    }
+    expect(signal?.aborted).toBe(false)
+    await vi.advanceTimersByTimeAsync(16 * 60 * 1000)
+    expect(signal?.aborted).toBe(true)
+  } finally {
+    release?.()
+    vi.useRealTimers()
+  }
+  expect(await settled(request.requestId)).toMatchObject({ state: 'cancelled' })
+})
+it('returns cancel_requested when the provider cannot settle within the bounded wait', async () => {
+  let finish: (() => void) | undefined
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+  const request = controller.start(
+    async () => destination,
+    async (temp) => {
+      await new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      await writeFile(join(temp, 'late'), 'late provider write')
+    }
+  )
+  try {
+    await vi.waitFor(() => expect(finish).toBeDefined())
+    const cancel = controller.cancel(request.requestId)
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(await cancel).toMatchObject({ state: 'cancel_requested' })
+    expect(() =>
+      controller.start(
+        async () => join(directory, 'next'),
+        async () => {}
+      )
+    ).toThrow('remote_folder_download_busy')
+  } finally {
+    finish?.()
+    vi.useRealTimers()
+  }
+  expect(await settled(request.requestId)).toMatchObject({
+    state: 'cancelled',
+    cleanupPending: false
+  })
+  expect(await readdir(directory)).toEqual([])
+})
+it('uses the injected staging and busy code for single-file transfers', async () => {
+  const fileController = new RemoteDownloadController('remote_file_download_busy')
+  const target = join(directory, 'file.bin')
+  const reserved = join(directory, '.reserved.download')
+  let release: (() => void) | undefined
+  const request = fileController.start(
+    async () => target,
+    async (temp) => {
+      expect(temp).toBe(reserved)
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await writeFile(temp, 'bytes')
+    },
+    () => ({
+      create: async () => reserved,
+      promote: () => rename(reserved, target),
+      cleanup: async () => true
+    })
+  )
+  await vi.waitFor(() => expect(release).toBeDefined())
+  expect(() =>
+    fileController.start(
+      async () => target,
+      async () => {}
+    )
+  ).toThrow('remote_file_download_busy')
+  release?.()
+  await vi.waitFor(() => expect(fileController.status(request.requestId).state).toBe('completed'))
+  expect(await readFile(target, 'utf8')).toBe('bytes')
+  await fileController.dispose()
 })

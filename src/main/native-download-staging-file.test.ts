@@ -53,3 +53,38 @@ it('preserves the destination and repeatable cleanup when the original promotion
   expect(await file.cleanup()).toBe(true)
   expect(await readFile(path, 'utf8')).toBe('sentinel')
 })
+it('reserves an absent sibling path so an exclusive provider can create it, then promotes and cleans', async () => {
+  const temp = await file.reserve(false)
+  expect(await readdir(directory)).toEqual([])
+  await writeFile(temp, 'provider bytes', { flag: 'wx' })
+  await file.promote(new AbortController().signal)
+  expect(await readFile(path, 'utf8')).toBe('provider bytes')
+  expect(await file.cleanup()).toBe(true)
+  expect(await readdir(directory)).toEqual(['destination'])
+})
+it('removes a reserved file the provider created but keeps a symbolic link planted at the path', async () => {
+  const temp = await file.reserve(false)
+  await writeFile(temp, 'partial')
+  expect(await file.cleanup()).toBe(true)
+  expect(await readdir(directory)).toEqual([])
+  file = new NativeDownloadStagingFile(path)
+  const planted = await file.reserve(false)
+  await writeFile(join(directory, 'target'), 'keep')
+  await symlink(join(directory, 'target'), planted)
+  expect(await file.cleanup()).toBe(false)
+  expect(await readFile(join(directory, 'target'), 'utf8')).toBe('keep')
+})
+it('rejects promotion when the provider produced nothing and still honors overwrite rules', async () => {
+  await file.reserve(false)
+  await expect(file.promote(new AbortController().signal)).rejects.toThrow(
+    'Owned temporary download changed.'
+  )
+  expect(await file.cleanup()).toBe(true)
+  await writeFile(path, 'existing')
+  await expect(file.reserve(false)).rejects.toThrow('Selected destination cannot be replaced.')
+  await symlink(join(directory, 'missing'), join(directory, 'link'))
+  await expect(
+    new NativeDownloadStagingFile(join(directory, 'link')).reserve(true)
+  ).rejects.toThrow()
+  expect(await readFile(path, 'utf8')).toBe('existing')
+})

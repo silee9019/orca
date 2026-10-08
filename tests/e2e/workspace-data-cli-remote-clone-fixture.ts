@@ -1,6 +1,6 @@
 import '../../src/main/runtime/rpc/unused-default-rpc-methods.test-fixture'
 import { BrowserWindow } from 'electron'
-import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { devNull, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -93,9 +93,20 @@ export const gitProvider: Pick<SshGitProvider, 'clone' | 'getHostPlatform' | 'is
     getRemoteHostPlatform(process.platform === 'win32' ? 'win32-x64' : 'linux-x64'),
   isGitRepoAsync: (path) => probe(path)
 }
-export const fsProvider: Pick<IFilesystemProvider, 'createDir' | 'downloadFolder'> = {
+export const fsProvider: Pick<
+  IFilesystemProvider,
+  'createDir' | 'downloadFile' | 'downloadFolder' | 'stat'
+> = {
   createDir: async (path) => {
     await mkdir(path, { recursive: true })
+  },
+  stat: async (path) => {
+    const stats = await stat(path)
+    return {
+      size: stats.size,
+      type: stats.isDirectory() ? 'directory' : 'file',
+      mtime: stats.mtimeMs
+    }
   }
 }
 export async function git(args: string[], cwd: string, signal?: AbortSignal) {
@@ -178,6 +189,7 @@ beforeEach(async () => {
   url = pathToFileURL(source).href
   spawnOverride = null
   connected = true
+  fsProvider.downloadFile = undefined
   fsProvider.downloadFolder = undefined
   vi.mocked(gitProvider.clone).mockClear()
   cloneOperation = async (args, cwd, options) => {

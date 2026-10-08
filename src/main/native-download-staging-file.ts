@@ -30,6 +30,19 @@ export class NativeDownloadStagingFile {
   private cleaning: Promise<boolean> | null = null
   constructor(private readonly destinationPath: string) {}
   async create(overwrite: boolean): Promise<void> {
+    await this.inspectDestination(overwrite)
+    const path = createSiblingTransferPath(this.destinationPath, 'download')
+    this.handle = await open(path, 'wx')
+    this.tempPath = path
+    this.tempIdentity = identity(await this.handle.stat())
+  }
+  // Why: system SSH downloads create their target exclusively, so it must not exist yet.
+  async reserve(overwrite: boolean): Promise<string> {
+    await this.inspectDestination(overwrite)
+    this.tempPath = createSiblingTransferPath(this.destinationPath, 'download')
+    return this.tempPath
+  }
+  private async inspectDestination(overwrite: boolean): Promise<void> {
     const { existed } = await inspectDownloadDestination(this.destinationPath)
     const destination = await inspect(this.destinationPath)
     if (existed && (!overwrite || !destination?.isFile() || destination.isSymbolicLink())) {
@@ -40,10 +53,6 @@ export class NativeDownloadStagingFile {
     }
     this.destinationExisted = existed
     this.destinationIdentity = destination ? identity(destination) : null
-    const path = createSiblingTransferPath(this.destinationPath, 'download')
-    this.handle = await open(path, 'wx')
-    this.tempPath = path
-    this.tempIdentity = identity(await this.handle.stat())
   }
   async append(bytes: Buffer): Promise<void> {
     if (!this.handle) {
@@ -108,6 +117,6 @@ export class NativeDownloadStagingFile {
   }
   private async ownsTemp(): Promise<boolean> {
     const stat = this.tempPath ? await inspect(this.tempPath) : null
-    return Boolean(stat?.isFile() && identity(stat) === this.tempIdentity)
+    return Boolean(stat?.isFile() && (!this.tempIdentity || identity(stat) === this.tempIdentity))
   }
 }

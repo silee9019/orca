@@ -10,7 +10,7 @@ export const WORKSPACE_REMOTE_FOLDER_DOWNLOAD_SPECS: CommandSpec[] = [
     notes: [
       'Input: expectedExecutionHostId:local, expectedWriteHostId:local, connectionId, expectedReadHostId:ssh:<connectionId>, absolute dirPath and native destinationPath. Folder workspaces may supply their remote directory directly.',
       'Requires the existing connected SSH filesystem provider and original native user-file write permission. Returns a separate pending UUID; status reports actual completion after original no-clobber promotion. Existing or symbolic destinations are preserved. No dialog, local fallback or overwrite.',
-      'One active or cleanup-pending request per desktop profile. Fifteen-minute inactivity requests cancellation; provider termination is awaited. Output contains state and cleanupPending, never file bytes or provider errors. Old peers fail explicitly.'
+      'One active or cleanup-pending request per desktop profile; status polling keeps it alive and fifteen minutes without polling requests cancellation. Cancel waits up to 20 seconds for the provider, then reports cancel_requested and cleans once the provider settles. Output contains state and cleanupPending, never file bytes or provider errors. Old peers fail explicitly.'
     ]
   },
   {
@@ -29,7 +29,7 @@ export const WORKSPACE_REMOTE_FOLDER_DOWNLOAD_SPECS: CommandSpec[] = [
       'orca file remote-folder-download-cancel --params-file <file|-> --confirm <requestId> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'params-file', 'confirm'],
     notes: [
-      'Input: expectedExecutionHostId:local, server requestId. Waits for the provider promise before removing the original private staging directory. Changed identities remain untouched with cleanupPending:true for exact retry. Completed destinations remain intact. Renderer transfer IDs are rejected.'
+      'Input: expectedExecutionHostId:local, server requestId. Removes the original private staging directory once the provider promise settles. Changed identities remain untouched with cleanupPending:true for exact retry. Completed destinations remain intact. Renderer transfer IDs are rejected.'
     ]
   }
 ]

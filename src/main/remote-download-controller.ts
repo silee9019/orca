@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { NativeDownloadStagingDirectory } from './native-download-staging-directory'
+type Staging = {
+  create(): Promise<string>
+  promote(signal: AbortSignal): Promise<void>
+  cleanup(): Promise<boolean>
+}
 type Request = {
   id: string
   state:
@@ -11,7 +16,7 @@ type Request = {
     | 'cancelled'
     | 'failed'
   controller: AbortController
-  staging: NativeDownloadStagingDirectory | null
+  staging: Staging | null
   operation: Promise<void>
   busy: boolean
   cancelling: number
@@ -19,8 +24,21 @@ type Request = {
   timer: ReturnType<typeof setTimeout> | null
 }
 const TTL = 15 * 60 * 1000
-export class RemoteFolderDownloadController {
+// Why: stays under the CLI's 60s request timeout; the operation finishes cleanup when it settles.
+const CANCEL_WAIT = 20 * 1000
+function settledWithin(operation: Promise<void>, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), ms)
+    timer.unref()
+    void operation.then(() => {
+      clearTimeout(timer)
+      resolve(true)
+    })
+  })
+}
+export class RemoteDownloadController {
   private request: Request | null = null
+  constructor(private readonly busyCode: string) {}
   hasUnfinishedWork(): boolean {
     return (
       !!this.request &&
@@ -29,13 +47,12 @@ export class RemoteFolderDownloadController {
   }
   start(
     authorize: () => Promise<string>,
-    download: (tempPath: string, signal: AbortSignal) => Promise<void>
+    download: (tempPath: string, signal: AbortSignal) => Promise<void>,
+    createStaging: (destination: string) => Staging = (destination) =>
+      new NativeDownloadStagingDirectory(destination)
   ) {
-    if (
-      this.request &&
-      (this.request.busy || this.request.cleanupPending || this.request.cancelling > 0)
-    ) {
-      throw new Error('remote_folder_download_busy')
+    if (this.hasUnfinishedWork()) {
+      throw new Error(this.busyCode)
     }
     if (this.request?.timer) {
       clearTimeout(this.request.timer)
@@ -56,7 +73,7 @@ export class RemoteFolderDownloadController {
       .then(authorize)
       .then(async (destination) => {
         request.controller.signal.throwIfAborted()
-        request.staging = new NativeDownloadStagingDirectory(destination)
+        request.staging = createStaging(destination)
         request.cleanupPending = true
         const tempPath = await request.staging.create()
         request.controller.signal.throwIfAborted()
@@ -83,6 +100,8 @@ export class RemoteFolderDownloadController {
   }
   status(id: string) {
     const request = this.get(id)
+    // Why: polling is the activity the inactivity timer measures.
+    this.arm(request)
     return { requestId: id, state: request.state, cleanupPending: request.cleanupPending }
   }
   async cancel(id: string) {
@@ -93,7 +112,10 @@ export class RemoteFolderDownloadController {
         request.controller.abort()
         request.state = 'cancel_requested'
       }
-      await request.operation
+      if (!(await settledWithin(request.operation, CANCEL_WAIT))) {
+        this.arm(request)
+        return this.status(id)
+      }
       if (request.cleanupPending && request.staging) {
         request.cleanupPending = !(await request.staging.cleanup())
       }
@@ -115,7 +137,7 @@ export class RemoteFolderDownloadController {
     if (request.timer) {
       clearTimeout(request.timer)
     }
-    if (!request.cleanupPending && this.request === request) {
+    if (!request.busy && !request.cleanupPending && this.request === request) {
       this.request = null
     }
   }

@@ -5,19 +5,19 @@ import type { RemoteFolderDownloadStart } from '../shared/rpc-contract/workspace
 import { isWslUncPath } from '../shared/wsl-paths'
 import { resolveLocalWriteRequestPath } from './ipc/local-file-access-resolution'
 import { requireSshFilesystemProvider } from './providers/ssh-filesystem-dispatch'
-import { RemoteFolderDownloadController } from './remote-folder-download-controller'
+import { RemoteDownloadController } from './remote-download-controller'
 import { setRemoteFolderDownloadForRpc } from './runtime/rpc/methods/workspace-remote-folder-download'
 export type RemoteFolderDownloadService = {
-  controller: RemoteFolderDownloadController
+  controller: RemoteDownloadController
   start: (
     params: z.infer<typeof RemoteFolderDownloadStart>
-  ) => ReturnType<RemoteFolderDownloadController['start']>
+  ) => ReturnType<RemoteDownloadController['start']>
 }
-const controllers = new WeakMap<Store, RemoteFolderDownloadController>()
+const controllers = new WeakMap<Store, RemoteDownloadController>()
 export function registerRemoteFolderDownloadForRpc(store: Store): void {
   let controller = controllers.get(store)
   if (!controller) {
-    controller = new RemoteFolderDownloadController()
+    controller = new RemoteDownloadController('remote_folder_download_busy')
     controllers.set(store, controller)
   }
   const requests = controller
