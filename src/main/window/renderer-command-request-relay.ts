@@ -14,7 +14,13 @@ export type RendererCommandWindow = ViewerLifecycle & {
 
 export function requestRendererCommand<T extends { viewerId: number }>(
   window: RendererCommandWindow,
-  domain: 'workspaceFilter' | 'settingsViewer' | 'sidebarViewer' | 'cardViewer' | 'statusBarViewer',
+  domain:
+    | 'workspaceFilter'
+    | 'settingsViewer'
+    | 'sidebarViewer'
+    | 'cardViewer'
+    | 'statusBarViewer'
+    | 'workspaceListViewer',
   command: unknown,
   resultSchema: z.ZodType<T>,
   timeoutError: 'renderer_timeout_persistence_unknown' | 'renderer_timeout_applied_unknown'
