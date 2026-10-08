@@ -1,3 +1,4 @@
+import { BrowserOverlayFocusCommand } from './browser-overlay-focus-params'
 import { BrowserSetupGuideCommand } from './browser-setup-guide-params'
 import { ClientHostedBrowserRowCommand } from './client-hosted-browser-row-params'
 import {
@@ -64,6 +65,7 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('overlay-focus'), command: BrowserOverlayFocusCommand }),
   z.object({
     viewer,
     operation: z.literal('browser-setup-guide'),

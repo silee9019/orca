@@ -1,3 +1,4 @@
+import { requestBrowserOverlayFocus } from './browser-overlay-focus-request'
 import { applyBrowserSetupGuideAction } from './browser-setup-guide-actions'
 import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
 import { requestClientHostedBrowserRow } from './client-hosted-browser-row-request'
@@ -21,6 +22,7 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'overlay-focus'
         | 'browser-setup-guide'
         | 'browser-feature-wall'
         | 'client-hosted-row'
@@ -41,6 +43,13 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'overlay-focus') {
+    return {
+      ...base,
+      applied: true,
+      overlayFocus: requestBrowserOverlayFocus(command.command, expiresAt)
+    }
+  }
   if (command.operation === 'browser-setup-guide') {
     const browserSetupGuide = await applyBrowserSetupGuideAction(command.command, expiresAt)
     return { ...base, applied: true, browserSetupGuide }

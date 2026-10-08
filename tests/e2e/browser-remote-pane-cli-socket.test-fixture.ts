@@ -270,6 +270,7 @@ export async function createRemotePaneCliSocket(
     })
   }
   return {
+    client: new RuntimeClient(dir),
     runBrowserReader: createBrowserReaderCli(dir),
     runClientRow,
     runTakeBack,

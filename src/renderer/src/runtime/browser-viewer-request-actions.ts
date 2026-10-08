@@ -55,6 +55,7 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'overlay-focus' ||
     command.operation === 'client-hosted-row' ||
     command.operation === 'client-markup' ||
     command.operation === 'take-back' ||

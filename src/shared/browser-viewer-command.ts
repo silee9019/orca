@@ -1,3 +1,4 @@
+import { BrowserOverlayFocusState } from './rpc-contract/browser-overlay-focus-params'
 import { BrowserSetupGuideState } from './rpc-contract/browser-setup-guide-params'
 import { ClientHostedBrowserRowState } from './rpc-contract/client-hosted-browser-row-params'
 import { BrowserClientMarkupReceipt } from './rpc-contract/browser-client-markup-params'
@@ -49,6 +50,7 @@ export const BrowserViewerResultSchema = z.object({
   linkedBrowser: LinkedBrowserState.optional(),
   remotePicker: RemoteFilePickerState.optional(),
   applied: z.boolean(),
+  overlayFocus: BrowserOverlayFocusState.optional(),
   persisted: z.literal(false),
   rendered: z.literal(false),
   fileOpenState: WorkspaceFileOpenState.optional(),
