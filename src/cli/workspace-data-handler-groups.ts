@@ -1,3 +1,4 @@
+import { WORKSPACE_NESTED_SCAN_HANDLER_GROUPS } from './workspace-nested-scan-handler-groups'
 import { WORKSPACE_FILE_LIST_HANDLER_GROUPS } from './workspace-file-list-handler-groups'
 import { WORKSPACE_FILE_GIT_HANDLER_GROUPS } from './workspace-file-git-handler-groups'
 import { WORKSPACE_DESKTOP_ADOPT_HANDLER_GROUPS } from './workspace-desktop-adopt-handler-groups'
@@ -13,6 +14,7 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...WORKSPACE_NESTED_SCAN_HANDLER_GROUPS,
   ...WORKSPACE_FILE_LIST_HANDLER_GROUPS,
   ...WORKSPACE_REPO_REGISTRATION_HANDLER_GROUPS,
   ...WORKSPACE_DESKTOP_ADOPT_HANDLER_GROUPS,
