@@ -18,7 +18,7 @@ export function applyActivityViewerDirectRequest(
   if (command.operation === 'preview') {
     return applyActivityThreadPreviewRequest(request, command)
   }
-  if (command.operation === 'copy') {
+  if (command.operation === 'copy' || command.operation === 'preview-copy-path') {
     return applyActivityThreadCopyRequest(request, command)
   }
   if (command.operation === 'scroll') {

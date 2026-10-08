@@ -46,6 +46,35 @@ export async function assertActivityPreview(
     )
     await expect(portal).toHaveAttribute('data-activity-preview-host', logical?.hostId ?? '')
     await expect(portal).toContainText('Activity task a')
+    const copy = portal.locator('[data-activity-preview-copy-path] button')
+    await expect(copy).toBeVisible()
+    await page.evaluate(() => window.api.ui.writeClipboardText('fixture-before-preview-button'))
+    const toast = page.locator('[data-sonner-toast][data-type="success"]')
+    await expect(toast).toHaveCount(0, { timeout: 15000 })
+    await copy.click()
+    await expect
+      .poll(() => page.evaluate(() => window.api.ui.readClipboardText()))
+      .not.toBe('fixture-before-preview-button')
+    const original = await page.evaluate(() => window.api.ui.readClipboardText())
+    await expect(toast).toHaveCount(1)
+    await expect(toast).toBeVisible()
+    const originalToast = await toast.innerText()
+    await expect(toast).toHaveCount(0, { timeout: 15000 })
+    await page.evaluate(() => window.api.ui.writeClipboardText('fixture-before-preview-cli'))
+    expect(await call(['activity', 'preview-copy-path', '--pane', paneKey], surface)).toMatchObject(
+      {
+        applied: true,
+        persisted: null,
+        writeOutcome: 'not_requested',
+        copyAction: { paneKey, kind: 'path', writeAcknowledged: true, verified: true }
+      }
+    )
+    expect(await page.evaluate(() => window.api.ui.readClipboardText())).toBe(original)
+    await expect(toast).toHaveCount(1)
+    await expect(toast).toBeVisible()
+    await expect(toast).toHaveText(originalToast)
+    await page.screenshot({ path: testInfo.outputPath(`${surface}-preview-copy-toast.png`) })
+    await portal.screenshot({ path: testInfo.outputPath(`${surface}-preview-copy-verified.png`) })
     await portal.screenshot({ path: testInfo.outputPath(`${surface}-preview-open.png`) })
     expect(
       await call(['activity', 'preview', '--pane', paneKey, '--enabled', 'false'], surface)

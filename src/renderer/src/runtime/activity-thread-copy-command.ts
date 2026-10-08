@@ -1,5 +1,7 @@
+import { captureActivityPreviewCopyTarget } from './activity-preview-copy-target'
 import { useAppStore } from '@/store'
 import {
+  copyActivityThreadPreviewPath,
   getActivityThreadCopyTargets,
   writeActivityThreadCopyTarget
 } from '@/components/activity/activity-thread-copy'
@@ -14,13 +16,18 @@ import { captureActivityThreadCommandTarget } from './activity-thread-command-ta
 
 export async function applyActivityThreadCopyRequest(
   request: ActivityViewerRequest,
-  command: Extract<ActivityViewerCommand, { operation: 'copy' }>
+  command: Extract<ActivityViewerCommand, { operation: 'copy' | 'preview-copy-path' }>
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const context = captureActivityThreadCommandTarget(command.surface, command.paneKey)
   const { initial, thread, control, sameRuntime, observe } = context
-  const target = getActivityThreadCopyTargets(thread, control.canJump(thread)).find(
-    (candidate) => candidate.key === command.kind
-  )
+  const preview =
+    command.operation === 'preview-copy-path' ? captureActivityPreviewCopyTarget(context) : null
+  const kind = command.operation === 'copy' ? command.kind : 'path'
+  const target =
+    preview?.target ??
+    getActivityThreadCopyTargets(thread, control.canJump(thread)).find(
+      (candidate) => candidate.key === kind
+    )
   if (!target) {
     throw new Error('activity_copy_unavailable')
   }
@@ -30,16 +37,21 @@ export async function applyActivityThreadCopyRequest(
     return (
       context.stillExpected() &&
       current !== null &&
-      getActivityThreadCopyTargets(current.thread, current.control.canJump(current.thread)).some(
-        (candidate) => candidate.key === command.kind && candidate.value === value
-      )
+      (preview
+        ? preview.stillExpected() && current.thread.worktree.path === value
+        : getActivityThreadCopyTargets(
+            current.thread,
+            current.control.canJump(current.thread)
+          ).some((candidate) => candidate.key === kind && candidate.value === value))
     )
   }
   const unsubscribe = useAppStore.subscribe(observe)
   try {
     const remaining = (): number => Math.max(0, Math.min(5000, request.expiresAt - Date.now()))
     const written = await withTimeout(
-      writeActivityThreadCopyTarget(target).then(() => true),
+      preview
+        ? copyActivityThreadPreviewPath(value)
+        : writeActivityThreadCopyTarget(target).then(() => true),
       remaining(),
       false
     )
@@ -69,7 +81,7 @@ export async function applyActivityThreadCopyRequest(
       rendered: sameRuntime() ? readActivityViewerView(command.surface) : null,
       copyAction: {
         paneKey: command.paneKey,
-        kind: command.kind,
+        kind,
         writeAcknowledged: written,
         verified
       },
@@ -83,5 +95,6 @@ export async function applyActivityThreadCopyRequest(
     }
   } finally {
     unsubscribe()
+    preview?.dispose()
   }
 }

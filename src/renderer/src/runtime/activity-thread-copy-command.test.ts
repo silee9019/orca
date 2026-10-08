@@ -34,6 +34,8 @@ const fixture = vi.hoisted(() => ({
     agentsHideCliCreatedWorkspaces: false
   }
 }))
+const notify = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
+vi.mock('sonner', () => ({ toast: notify }))
 let thread: AgentPaneThread
 const write = vi.fn<(value: string) => Promise<void>>()
 const read = vi.fn<() => Promise<string>>()
@@ -118,6 +120,8 @@ afterEach(() => {
   expect(fixture.listeners.size).toBe(0)
   document.body.replaceChildren()
   vi.restoreAllMocks()
+  notify.success.mockReset()
+  notify.error.mockReset()
   write.mockReset()
   read.mockReset()
 })
@@ -217,4 +221,119 @@ it('fences committed query departure and return during the write', async () => {
     fixture.queryRevision += 2
   })
   expect(await run()).toMatchObject({ applied: false, reason: 'viewer_surface_superseded' })
+})
+
+const previewCopy = () =>
+  applyActivityViewerRequest({
+    id: 'preview-copy',
+    expiresAt: Date.now() + 200,
+    command: {
+      viewer: 'host',
+      surface: 'activity-page',
+      operation: 'preview-copy-path',
+      paneKey: 'thread'
+    }
+  })
+function previewPortal(): HTMLElement {
+  const row = document.createElement('div')
+  row.dataset.activityViewerThread = 't:thread'
+  const trigger = document.createElement('div')
+  trigger.dataset.activityPreviewTrigger = 'owner'
+  trigger.dataset.state = 'open'
+  trigger.setAttribute('role', 'listitem')
+  row.append(trigger)
+  document.body.firstElementChild?.append(row)
+  const portal = document.createElement('div')
+  portal.dataset.activityPreviewOwner = 'owner'
+  portal.dataset.activityPreviewPane = 'thread'
+  portal.dataset.activityPreviewWorkspace = thread.worktree.id
+  portal.dataset.activityPreviewHost = 'local'
+  portal.dataset.state = 'open'
+  const action = document.createElement('div')
+  action.dataset.activityPreviewCopyPath = ''
+  action.append(document.createElement('button'))
+  portal.append(action)
+  document.body.append(portal)
+  return portal
+}
+it('copies an opened preview path even when workspace jump is unavailable', async () => {
+  fixture.canJump = false
+  previewPortal()
+  expect(await previewCopy()).toMatchObject({
+    applied: true,
+    copyAction: { kind: 'path', writeAcknowledged: true, verified: true }
+  })
+  expect(write).toHaveBeenCalledExactlyOnceWith(thread.worktree.path)
+})
+it('rejects a closed preview without implicitly opening it', async () => {
+  await expect(previewCopy()).rejects.toThrow('activity_preview_copy_unavailable')
+  expect(write).not.toHaveBeenCalled()
+})
+it('fences replacement of the preview portal during its clipboard write', async () => {
+  const portal = previewPortal()
+  write.mockImplementation(async () => {
+    portal.replaceWith(portal.cloneNode(true))
+  })
+  expect(await previewCopy()).toMatchObject({ applied: false, reason: 'viewer_surface_superseded' })
+  expect(read).not.toHaveBeenCalled()
+})
+
+it('preserves preview failure toast and does not read after a rejected write', async () => {
+  previewPortal()
+  write.mockRejectedValue(new Error('denied'))
+  expect(await previewCopy()).toMatchObject({
+    applied: false,
+    copyAction: { writeAcknowledged: false, verified: false }
+  })
+  expect(notify.error).toHaveBeenCalledExactlyOnceWith('Failed to copy path')
+  expect(read).not.toHaveBeenCalled()
+})
+it('preserves preview success toast and read-back mismatch reporting', async () => {
+  previewPortal()
+  read.mockResolvedValue('different')
+  expect(await previewCopy()).toMatchObject({
+    applied: false,
+    copyAction: { writeAcknowledged: true, verified: false }
+  })
+  expect(notify.success).toHaveBeenCalledExactlyOnceWith('Path copied to clipboard')
+})
+it('fences a preview close and reopen before the write resolves', async () => {
+  const portal = previewPortal()
+  write.mockImplementation(async () => {
+    portal.dataset.state = 'closed'
+    portal.dataset.state = 'open'
+  })
+  expect(await previewCopy()).toMatchObject({ applied: false, reason: 'viewer_surface_superseded' })
+})
+it('rejects a foreign portal host before copying', async () => {
+  previewPortal().dataset.activityPreviewHost = 'ssh:other'
+  await expect(previewCopy()).rejects.toThrow('activity_preview_copy_unavailable')
+  expect(write).not.toHaveBeenCalled()
+})
+it('preserves an unnormalized Windows preview path without workspace availability', async () => {
+  thread = {
+    ...thread,
+    worktree: { ...thread.worktree, path: String.raw`C:\folder workspace\task` }
+  }
+  fixture.canJump = false
+  previewPortal()
+  expect(await previewCopy()).toMatchObject({ applied: true })
+  expect(write).toHaveBeenCalledExactlyOnceWith(thread.worktree.path)
+})
+it('rejects a preview without a path before clipboard access', async () => {
+  thread = { ...thread, worktree: { ...thread.worktree, path: '' } }
+  previewPortal()
+  await expect(previewCopy()).rejects.toThrow('activity_preview_copy_unavailable')
+  expect(write).not.toHaveBeenCalled()
+})
+
+it('rejects a path action clipped outside the preview viewport', async () => {
+  previewPortal()
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement
+  ) {
+    return this.tagName === 'BUTTON' ? new DOMRect(0, 400, 20, 20) : new DOMRect(0, 0, 300, 200)
+  })
+  await expect(previewCopy()).rejects.toThrow('activity_preview_copy_unavailable')
+  expect(write).not.toHaveBeenCalled()
 })

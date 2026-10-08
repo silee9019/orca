@@ -95,3 +95,51 @@ it.each(['issue', 'text', ''])('rejects unsupported copy kind %s before RPC', as
   ).rejects.toThrow()
   expect(call).not.toHaveBeenCalled()
 })
+
+it.each(['activity-page', 'sidebar-agents'])(
+  'routes preview path copy on %s without a caller path',
+  async (surface) => {
+    call.mockResolvedValue({
+      id: 'preview-copy',
+      ok: true,
+      _meta: { runtimeId: 'host' },
+      result: {
+        viewer: 'host',
+        viewerId: 1,
+        surface,
+        dispatched: true,
+        applied: true,
+        persisted: null,
+        writeOutcome: 'not_requested',
+        groupBy: 'none',
+        readFilter: 'all',
+        compact: false,
+        showChildAgents: true,
+        rendered: null,
+        copyAction: { paneKey: 'thread', kind: 'path', writeAcknowledged: true, verified: true }
+      }
+    })
+    const parsed = parseArgs(
+      [
+        'ui',
+        'activity',
+        'preview-copy-path',
+        '--pane',
+        'thread',
+        '--viewer',
+        'host',
+        '--surface',
+        surface
+      ],
+      COMMAND_SPECS.map((spec) => spec.path),
+      COMMAND_SPECS
+    )
+    await dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+    expect(call).toHaveBeenCalledExactlyOnceWith('ui.activityViewer', {
+      viewer: 'host',
+      surface,
+      operation: 'preview-copy-path',
+      paneKey: 'thread'
+    })
+  }
+)

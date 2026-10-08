@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { activityThreadRowCopy } from './activity-thread-presentation'
 import type { AgentPaneThread } from './activity-thread-types'
@@ -28,4 +29,28 @@ export function getActivityThreadCopyTargets(
 
 export function writeActivityThreadCopyTarget(target: ActivityThreadCopyTarget): Promise<void> {
   return window.api.ui.writeClipboardText(target.value)
+}
+
+export async function copyActivityThreadPreviewPath(path: string): Promise<boolean> {
+  if (!path) {
+    return false
+  }
+  try {
+    await window.api.ui.writeClipboardText(path)
+    toast.success(
+      translate(
+        'auto.components.activity.ActivityThreadHoverCard.pathCopied',
+        'Path copied to clipboard'
+      )
+    )
+    return true
+  } catch {
+    toast.error(
+      translate(
+        'auto.components.activity.ActivityThreadHoverCard.copyPathFailed',
+        'Failed to copy path'
+      )
+    )
+    return false
+  }
 }
