@@ -2,6 +2,18 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  {
+    name: 'workspace-git-generation',
+    keys: [
+      'git generate-commit-message',
+      'git discover-commit-models',
+      'git cancel-commit-message',
+      'git generate-review-fields',
+      'git cancel-review-fields'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-git-generation.js')).WORKSPACE_GIT_GENERATION_HANDLERS
+  },
   ...WORKSPACE_PROVIDER_HANDLER_GROUPS,
   {
     name: 'workspace-file',

@@ -1,3 +1,4 @@
+import type * as SshFilesystemDispatch from '../../src/main/providers/ssh-filesystem-dispatch'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
@@ -5,6 +6,10 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { createRuntimeFileCommands } from '../../src/main/runtime/orca-runtime-files-test-harness'
 import { RuntimeClient } from '../../src/cli/runtime-client'
 import { WORKSPACE_FILE_HANDLERS } from '../../src/cli/handlers/workspace-file'
+import {
+  resetSshConnectionGenerations,
+  setSshConnectionGeneration
+} from '../../src/main/ssh/ssh-connection-generation'
 import type { HandlerContext } from '../../src/cli/dispatch'
 import {
   FileCopy,
@@ -18,9 +23,25 @@ vi.mock('../../src/main/ipc/filesystem-auth', () => ({
   resolveAuthorizedPath: async (path: string) => path
 }))
 
+const remote = vi.hoisted(() => ({ connected: false, files: new Map<string, string>() }))
+vi.mock('../../src/main/providers/ssh-filesystem-dispatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof SshFilesystemDispatch>()),
+  getSshFilesystemProvider: () =>
+    remote.connected
+      ? {
+          writeFile: async (path: string, content: string) => {
+            remote.files.set(path, content)
+          }
+        }
+      : undefined
+}))
+
 let directory: string | undefined
 afterEach(async () => {
   vi.restoreAllMocks()
+  remote.connected = false
+  remote.files.clear()
+  resetSshConnectionGenerations()
   if (directory) {
     await rm(directory, { recursive: true, force: true })
   }
@@ -174,4 +195,65 @@ it('persists CLI create, write, copy, rename and delete through the existing run
   expect(await readFile(join(directory, 'notes.md'), 'utf8')).toBe('CLI 효과')
   expect(call).toHaveBeenCalledTimes(7)
   expect(relative(tmpdir(), directory)).not.toMatch(/^\.\./)
+})
+
+it('writes only to the SSH provider and rejects stale host, reconnect and missing provider without touching a local shadow', async () => {
+  directory = await mkdtemp(join(tmpdir(), 'orca-cli-ssh-file-effect-'))
+  resetSshConnectionGenerations()
+  remote.connected = true
+  const shadow = join(directory, 'notes.md')
+  await writeFile(shadow, 'local shadow')
+  const { commands } = createRuntimeFileCommands({ path: directory, hostId: 'ssh:fixture' })
+  const input = join(directory, 'input.json')
+  const client = new RuntimeClient(directory)
+  const ctx: HandlerContext = {
+    client,
+    cwd: directory,
+    json: true,
+    flags: new Map([['params-file', input]])
+  }
+  vi.spyOn(console, 'log').mockImplementation(() => {})
+  vi.spyOn(client, 'call').mockImplementation(async (method, payload) => {
+    expect(method).toBe('files.write')
+    const p = FileWrite.parse(payload)
+    const result = await commands.writeFileExplorerFile(
+      p.worktree,
+      p.relativePath,
+      p.content,
+      p.expectedSshConnectionGeneration,
+      p.expectedSshTargetId,
+      p.expectedExecutionHostId
+    )
+    return { id: 'ssh-fixture', ok: true, result, _meta: { runtimeId: 'isolated-fixture' } }
+  })
+  const params = {
+    worktree: 'id:folder:fixture',
+    relativePath: 'notes.md',
+    content: 'remote effect',
+    expectedExecutionHostId: 'ssh:fixture',
+    expectedSshTargetId: 'fixture',
+    expectedSshConnectionGeneration: 0
+  }
+  await writeFile(input, JSON.stringify(params))
+  await WORKSPACE_FILE_HANDLERS['file write'](ctx)
+  expect(remote.files.get(shadow)).toBe('remote effect')
+  expect(await readFile(shadow, 'utf8')).toBe('local shadow')
+  await writeFile(
+    input,
+    JSON.stringify({ ...params, content: 'wrong host', expectedExecutionHostId: 'local' })
+  )
+  await expect(WORKSPACE_FILE_HANDLERS['file write'](ctx)).rejects.toThrow('Workspace host changed')
+  setSshConnectionGeneration('fixture', 1)
+  await writeFile(input, JSON.stringify({ ...params, content: 'stale generation' }))
+  await expect(WORKSPACE_FILE_HANDLERS['file write'](ctx)).rejects.toThrow('SSH connection changed')
+  remote.connected = false
+  await writeFile(
+    input,
+    JSON.stringify({ ...params, content: 'unreachable', expectedSshConnectionGeneration: 1 })
+  )
+  await expect(WORKSPACE_FILE_HANDLERS['file write'](ctx)).rejects.toThrow(
+    'Remote connection dropped'
+  )
+  expect(remote.files.get(shadow)).toBe('remote effect')
+  expect(await readFile(shadow, 'utf8')).toBe('local shadow')
 })

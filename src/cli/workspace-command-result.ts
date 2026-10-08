@@ -7,7 +7,11 @@ export function printWorkspaceCommandResult<TResult>(
   formatter: (value: TResult) => string
 ): void {
   const result = response.result
-  if (result && typeof result === 'object' && 'ok' in result && result.ok === false) {
+  if (
+    result &&
+    typeof result === 'object' &&
+    (('ok' in result && result.ok === false) || ('success' in result && result.success === false))
+  ) {
     throw new RuntimeClientError(
       'operation_failed',
       'The selected host reported that the operation failed.'

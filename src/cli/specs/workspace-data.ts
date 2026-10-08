@@ -1,3 +1,4 @@
+import { WORKSPACE_GIT_GENERATION_COMMAND_SPECS } from './workspace-git-generation'
 import type { CommandSpec } from '../args'
 import { WORKSPACE_HOSTED_REVIEW_COMMAND_SPECS } from './workspace-hosted-review'
 import { WORKSPACE_BITBUCKET_COMMAND_SPECS } from './workspace-bitbucket'
@@ -26,6 +27,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_GIT_GENERATION_COMMAND_SPECS,
   ...WORKSPACE_HOSTED_REVIEW_COMMAND_SPECS,
   ...WORKSPACE_BITBUCKET_COMMAND_SPECS,
   ...WORKSPACE_CATALOG_COMMAND_SPECS,
