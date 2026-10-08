@@ -4,6 +4,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...AGENT_SESSION_WATCH_HANDLER_GROUPS,
   {
+    name: 'terminal-listener-count',
+    keys: ['terminal data-listener-count'],
+    load: async () =>
+      (await import('./handlers/terminal-listener-count.js')).TERMINAL_LISTENER_COUNT_HANDLERS
+  },
+  {
     name: 'terminal-host-viewport',
     keys: ['terminal claim-host-viewport'],
     load: async () =>
