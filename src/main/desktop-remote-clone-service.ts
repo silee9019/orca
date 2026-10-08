@@ -8,15 +8,15 @@ import { cloneRemoteRepo } from './ipc/repos/remote-repo-clone'
 import { getSshGitProvider } from './providers/ssh-git-dispatch'
 import { getSshFilesystemProvider } from './providers/ssh-filesystem-dispatch'
 import { getSshProviderAuthority } from './ssh/ssh-provider-authority'
-import { DesktopRemoteCloneController } from './desktop-remote-clone-controller'
+import { DesktopRepositoryCloneController } from './desktop-repository-clone-controller'
 import { setDesktopRemoteCloneForRpc } from './runtime/rpc/methods/workspace-remote-clone'
 export type DesktopRemoteCloneService = {
-  controller: DesktopRemoteCloneController
+  controller: DesktopRepositoryCloneController
   start: (
     params: z.infer<typeof DesktopRemoteCloneStart>
-  ) => ReturnType<DesktopRemoteCloneController['start']>
+  ) => ReturnType<DesktopRepositoryCloneController['start']>
 }
-const controllers = new WeakMap<Store, DesktopRemoteCloneController>()
+const controllers = new WeakMap<Store, DesktopRepositoryCloneController>()
 export function registerDesktopRemoteCloneForRpc(
   store: Store,
   mainWindow: BrowserWindow,
@@ -24,7 +24,7 @@ export function registerDesktopRemoteCloneForRpc(
 ): void {
   let controller = controllers.get(store)
   if (!controller) {
-    controller = new DesktopRemoteCloneController()
+    controller = new DesktopRepositoryCloneController()
     controllers.set(store, controller)
   }
   const clones = controller

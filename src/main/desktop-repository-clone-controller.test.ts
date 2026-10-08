@@ -1,18 +1,18 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { DesktopRemoteCloneController } from './desktop-remote-clone-controller'
+import { DesktopRepositoryCloneController } from './desktop-repository-clone-controller'
 const receipt = {
   repoId: 'fixture',
   path: '/fixture',
   executionHostId: 'ssh:fixture',
   kind: 'git' as const
 }
-let controller: DesktopRemoteCloneController | undefined
+let controller: DesktopRepositoryCloneController | undefined
 afterEach(() => {
   controller?.dispose()
   vi.useRealTimers()
 })
 it('holds the slot until cancelled work settles and discards late progress and receipts', async () => {
-  controller = new DesktopRemoteCloneController()
+  controller = new DesktopRepositoryCloneController()
   let progress: ((value: { phase: string; percent: number }) => void) | undefined
   let finish: ((value: typeof receipt) => void) | undefined
   let signal: AbortSignal | undefined
@@ -46,7 +46,7 @@ it('holds the slot until cancelled work settles and discards late progress and r
   await vi.waitFor(() => expect(controller?.status(replacement.requestId).state).toBe('completed'))
 })
 it('copies completed receipts, rejects unrelated handles, and drops callbacks after completion', async () => {
-  controller = new DesktopRemoteCloneController()
+  controller = new DesktopRepositoryCloneController()
   let progress: ((value: { phase: string; percent: number }) => void) | undefined
   const request = controller.start(async (_abort, onProgress) => {
     progress = onProgress
@@ -64,7 +64,7 @@ it('copies completed receipts, rejects unrelated handles, and drops callbacks af
 })
 it('expires settled metadata after fifteen minutes and suppresses raw failure details', async () => {
   vi.useFakeTimers()
-  controller = new DesktopRemoteCloneController()
+  controller = new DesktopRepositoryCloneController()
   const request = controller.start(async () => {
     throw new Error('private credential')
   })

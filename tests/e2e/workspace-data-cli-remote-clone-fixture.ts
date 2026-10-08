@@ -5,10 +5,23 @@ import { devNull, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, vi } from 'vitest'
+import type * as GitRunner from '../../src/main/git/runner'
 import type * as SshTargetRegistry from '../../src/main/ssh/ssh-target-registry'
 import type { SshGitProvider } from '../../src/main/providers/ssh-git-provider'
 import type { IFilesystemProvider } from '../../src/main/providers/types'
 import type { HandlerContext } from '../../src/cli/dispatch'
+vi.mock('../../src/main/git/runner', async (importOriginal) => {
+  const original = await importOriginal<typeof GitRunner>()
+  return {
+    ...original,
+    gitSpawnAfterWindowsEnvironmentReady: (
+      ...args: Parameters<typeof GitRunner.gitSpawnAfterWindowsEnvironmentReady>
+    ) =>
+      spawnOverride
+        ? spawnOverride(...args)
+        : original.gitSpawnAfterWindowsEnvironmentReady(...args)
+  }
+})
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
   BrowserWindow: class {
@@ -64,6 +77,7 @@ export let directory: string,
   ctx: HandlerContext
 export let connected = true
 let generation = 2000
+let spawnOverride: typeof GitRunner.gitSpawnAfterWindowsEnvironmentReady | null = null
 let cloneOperation: SshGitProvider['clone']
 let probe: SshGitProvider['isGitRepoAsync']
 export const gitProvider: Pick<SshGitProvider, 'clone' | 'getHostPlatform' | 'isGitRepoAsync'> = {
@@ -155,6 +169,7 @@ beforeEach(async () => {
   await git(['init'], source)
   await git(['commit', '--allow-empty', '-m', 'Fixture'], source)
   url = pathToFileURL(source).href
+  spawnOverride = null
   connected = true
   vi.mocked(gitProvider.clone).mockClear()
   cloneOperation = async (args, cwd, options) => {
@@ -217,4 +232,9 @@ export function setDestination(path: string) {
 }
 export function disconnect() {
   connected = false
+}
+export function setCloneSpawn(
+  operation: typeof GitRunner.gitSpawnAfterWindowsEnvironmentReady | null
+) {
+  spawnOverride = operation
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-export type DesktopRemoteCloneReceipt = {
+export type DesktopRepositoryCloneReceipt = {
   repoId: string
   path: string
   executionHostId: string
@@ -10,19 +10,19 @@ type Request = {
   state: 'pending' | 'cancel_requested' | 'completed' | 'cancelled' | 'failed'
   controller: AbortController
   percent: number | null
-  receipt: DesktopRemoteCloneReceipt | null
+  receipt: DesktopRepositoryCloneReceipt | null
   settledAt: number | null
   expiry: ReturnType<typeof setTimeout> | null
 }
 const TTL = 15 * 60 * 1000
-export class DesktopRemoteCloneController {
+export class DesktopRepositoryCloneController {
   private active = false
   private request: Request | null = null
   start(
     clone: (
       controller: AbortController,
       onProgress: (progress: { phase: string; percent: number }) => void
-    ) => Promise<DesktopRemoteCloneReceipt>
+    ) => Promise<DesktopRepositoryCloneReceipt>
   ) {
     if (this.active) {
       throw new Error('desktop_remote_clone_busy')
