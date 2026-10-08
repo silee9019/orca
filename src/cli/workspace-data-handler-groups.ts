@@ -4,6 +4,11 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  {
+    name: 'workspace-repo-add',
+    keys: ['repo add-desktop-local', 'repo add-desktop-remote'],
+    load: async () => (await import('./handlers/workspace-repo-add.js')).WORKSPACE_REPO_ADD_HANDLERS
+  },
   ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
   ...WORKSPACE_REPO_PICKER_HANDLER_GROUPS,
   {
