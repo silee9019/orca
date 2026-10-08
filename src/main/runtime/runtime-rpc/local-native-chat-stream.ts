@@ -14,7 +14,8 @@ export async function dispatchLocalNativeChatStream(
   if (
     (request.method !== 'nativeChat.subscribe' &&
       request.method !== 'terminal.presentation.subscribe' &&
-      request.method !== 'agentAwake.subscribe') ||
+      request.method !== 'agentAwake.subscribe' &&
+      request.method !== 'remoteWorkspace.subscribe') ||
     !context?.stream
   ) {
     return errorResponse(

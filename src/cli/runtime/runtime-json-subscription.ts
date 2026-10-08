@@ -26,7 +26,11 @@ export async function subscribeCliRuntimeJson(
   request: {
     method: string
     params: unknown
-    localCapability: 'nativeChatStreaming' | 'terminalPresentationStreaming' | 'agentAwakeStreaming'
+    localCapability:
+      | 'nativeChatStreaming'
+      | 'terminalPresentationStreaming'
+      | 'agentAwakeStreaming'
+      | 'remoteWorkspaceStreaming'
   },
   callbacks: NativeChatSubscriptionCallbacks,
   signal: AbortSignal

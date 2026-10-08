@@ -1,3 +1,4 @@
+import { createRuntimeJsonEventSubscription } from '../../src/main/runtime/runtime-json-event-subscription'
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
 import { randomUUID } from 'node:crypto'
 import { expect, it, vi } from 'vitest'
@@ -70,6 +71,15 @@ it('bounds continuous subscriptions and isolates replacement and disconnect clea
       subscribeTerminalPresentationStream(
         { ...params, subscriptionId: randomUUID() },
         { runtime, connectionId: 'overflow' },
+        () => {},
+        () => {}
+      )
+    ).toThrow('runtime_event_stream_capacity')
+    expect(() =>
+      createRuntimeJsonEventSubscription(
+        { runtime, connectionId: 'cross-domain' },
+        'remoteWorkspace',
+        randomUUID(),
         () => {},
         () => {}
       )

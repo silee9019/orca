@@ -1,3 +1,4 @@
+import type { RemoteWorkspaceSubscriptionParams } from '../../shared/rpc-contract/remote-workspace-watch-params'
 import type { NativeChatSubscriptionCallbacks } from './native-chat-subscription'
 import type { NativeChatSubscriptionParams } from '../../shared/rpc-contract/native-chat-watch'
 import type { TerminalPresentationSubscriptionParams } from '../../shared/rpc-contract/terminal-presentation-watch-params'
@@ -11,6 +12,7 @@ export type SubscriptionParams =
   | NativeChatSubscriptionParams
   | TerminalPresentationSubscriptionParams
   | AgentAwakeSubscriptionParams
+  | RemoteWorkspaceSubscriptionParams
 import type { RemoteRuntimeCompatGate } from './remote-runtime-compat-gate'
 import { markEnvironmentUsed } from './environments'
 import type { PairingOffer } from '../../shared/pairing'
@@ -39,12 +41,31 @@ export function createCliRuntimeSubscriptionOptions(
   }
 }
 
-export function resolveRuntimeEventCapability(
-  method: 'nativeChat.subscribe' | 'terminal.presentation.subscribe' | 'agentAwake.subscribe'
-) {
+export function resolveRuntimeEventCapability(method: RuntimeEventMethod) {
   return method === 'nativeChat.subscribe'
     ? 'nativeChatStreaming'
     : method === 'agentAwake.subscribe'
       ? 'agentAwakeStreaming'
-      : 'terminalPresentationStreaming'
+      : method === 'remoteWorkspace.subscribe'
+        ? 'remoteWorkspaceStreaming'
+        : 'terminalPresentationStreaming'
+}
+
+export type RuntimeEventMethod =
+  | 'nativeChat.subscribe'
+  | 'terminal.presentation.subscribe'
+  | 'agentAwake.subscribe'
+  | 'remoteWorkspace.subscribe'
+export async function subscribeCliRuntimeEvent(
+  options: ReturnType<typeof createCliRuntimeSubscriptionOptions>,
+  method: RuntimeEventMethod,
+  ...[params, callbacks, signal]: StreamArgs<SubscriptionParams>
+) {
+  const { subscribeCliRuntimeJson } = await import('./runtime-json-subscription.js')
+  return subscribeCliRuntimeJson(
+    options,
+    { method, params, localCapability: resolveRuntimeEventCapability(method) },
+    callbacks,
+    signal
+  )
 }
