@@ -1,3 +1,4 @@
+import { WORKSPACE_JIRA_READ_SPECS } from './workspace-jira-reads'
 import { WORKSPACE_DOWNLOAD_SESSION_COMMAND_SPECS } from './workspace-download-session'
 import { WORKSPACE_GIT_STATUS_COMMAND_SPECS } from './workspace-git-status'
 import { WORKSPACE_LOG_TAIL_COMMAND_SPECS } from './workspace-log-tail'
@@ -67,6 +68,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_JIRA_READ_SPECS,
   ...WORKSPACE_DOWNLOAD_SESSION_COMMAND_SPECS,
   ...WORKSPACE_GIT_STATUS_COMMAND_SPECS,
   ...WORKSPACE_LOG_TAIL_COMMAND_SPECS,
