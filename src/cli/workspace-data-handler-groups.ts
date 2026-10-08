@@ -1,3 +1,4 @@
+import { WORKSPACE_LOCALHOST_LABEL_HANDLER_GROUPS } from './workspace-localhost-label-handler-groups'
 import { WORKSPACE_REPO_PICKER_HANDLER_GROUPS } from './workspace-repo-picker-handler-groups'
 import { WORKSPACE_CLEANUP_HANDLER_GROUPS } from './workspace-cleanup-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
@@ -16,6 +17,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
       (await import('./handlers/workspace-repo-create-remote.js'))
         .WORKSPACE_REPO_CREATE_REMOTE_HANDLERS
   },
+  ...WORKSPACE_LOCALHOST_LABEL_HANDLER_GROUPS,
   ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
   ...WORKSPACE_REPO_PICKER_HANDLER_GROUPS,
   {
