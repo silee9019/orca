@@ -185,3 +185,73 @@ it('rejects an incomplete hide acknowledgement and keeps an old peer refusal', a
   await expect(handler(context)).rejects.toThrow('unsupported operation')
   expect(call).toHaveBeenCalledTimes(2)
 })
+
+it('parses an explicit sidebar-entry hide and validates its separate ACK', async () => {
+  const parsed = parseArgs(
+    ['ui', 'setup-guide', 'hide-sidebar-entry', '--viewer', 'host'],
+    SETUP_GUIDE_COMMAND_SPECS.map((spec) => spec.path),
+    SETUP_GUIDE_COMMAND_SPECS
+  )
+  call.mockResolvedValue({
+    id: 'r',
+    ok: true,
+    _meta: { runtimeId: 'target' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      applied: true,
+      source: 'sidebar',
+      dialogPresent: false,
+      contentPresent: false,
+      stepId: null,
+      sidebarDismissed: true,
+      changed: true,
+      sidebarEntryPresent: false,
+      menuPresent: false,
+      writeOutcome: 'unverified',
+      diskPersistence: 'unverified'
+    }
+  })
+  await SETUP_GUIDE_HANDLERS['ui setup-guide hide-sidebar-entry']({
+    client,
+    flags: parsed.flags,
+    cwd: '/unused',
+    json: true
+  })
+  expect(call).toHaveBeenCalledExactlyOnceWith('ui.setupGuideViewer', {
+    viewer: 'host',
+    operation: 'hide-sidebar-entry'
+  })
+  expect(JSON.parse(output.mock.calls.at(-1)?.[0]).result).toMatchObject({
+    source: 'sidebar',
+    sidebarEntryPresent: false,
+    menuPresent: false,
+    writeOutcome: 'unverified'
+  })
+})
+it('does not accept a modal ACK as a sidebar-entry hide or retry an old peer', async () => {
+  const handler = SETUP_GUIDE_HANDLERS['ui setup-guide hide-sidebar-entry']
+  const context = { client, flags: new Map([['viewer', 'host']]), cwd: '/unused', json: true }
+  call.mockResolvedValueOnce({
+    id: 'r',
+    ok: true,
+    _meta: { runtimeId: 'target' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      applied: true,
+      source: 'help_menu',
+      dialogPresent: true,
+      contentPresent: true,
+      stepId: 'browser',
+      sidebarDismissed: true,
+      changed: true,
+      writeOutcome: 'unverified',
+      diskPersistence: 'unverified'
+    }
+  })
+  await expect(handler(context)).rejects.toThrow()
+  call.mockRejectedValueOnce(new RuntimeClientError('invalid_params', 'unsupported operation'))
+  await expect(handler(context)).rejects.toThrow('unsupported operation')
+  expect(call).toHaveBeenCalledTimes(2)
+})

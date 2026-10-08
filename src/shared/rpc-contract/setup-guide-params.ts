@@ -4,6 +4,7 @@ import { isFeatureWallSetupStepId, type FeatureWallSetupStepId } from '../featur
 export const SetupGuideParams = z.discriminatedUnion('operation', [
   z.object({ viewer: z.literal('host'), operation: z.literal('open') }).strict(),
   z.object({ viewer: z.literal('host'), operation: z.literal('hide-sidebar') }).strict(),
+  z.object({ viewer: z.literal('host'), operation: z.literal('hide-sidebar-entry') }).strict(),
   z
     .object({
       viewer: z.literal('host'),
