@@ -1,14 +1,14 @@
-import type { RepoIconPickerRequests } from '../../../repo-icon-picker-requests'
+import type { RepoPickerRequests } from '../../../repo-picker-requests'
 import {
   RepoIconPickerStart,
   RepoIconPickerRequest
 } from '../../../../shared/rpc-contract/workspace-repo-icon-picker-params'
 import { defineMethod } from '../core'
-let repoIconPicker: RepoIconPickerRequests | null = null
-export function setDesktopRepoIconPickerForRpc(picker: RepoIconPickerRequests | null): void {
+let repoIconPicker: RepoPickerRequests | null = null
+export function setDesktopRepoIconPickerForRpc(picker: RepoPickerRequests | null): void {
   repoIconPicker = picker
 }
-function requireRepoIconPicker(): RepoIconPickerRequests {
+function requireRepoIconPicker(): RepoPickerRequests {
   if (!repoIconPicker) {
     throw new Error('runtime_unavailable')
   }
@@ -23,12 +23,12 @@ export const WORKSPACE_REPO_ICON_PICKER_METHODS = [
   defineMethod({
     name: 'repoIconPicker.status',
     params: RepoIconPickerRequest,
-    handler: (params) => requireRepoIconPicker().status(params.requestId)
+    handler: (params) => requireRepoIconPicker().status(params.requestId, 'icon')
   }),
   defineMethod({
     name: 'repoIconPicker.cancel',
     params: RepoIconPickerRequest,
-    handler: (params) => requireRepoIconPicker().cancel(params.requestId)
+    handler: (params) => requireRepoIconPicker().cancel(params.requestId, 'icon')
   }),
   defineMethod({
     name: 'repoIconPicker.result',

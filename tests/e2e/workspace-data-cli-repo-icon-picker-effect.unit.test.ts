@@ -28,11 +28,11 @@ import {
   setDesktopRepoIconPickerForRpc
 } from '../../src/main/runtime/rpc/methods/workspace-repo-icon-picker'
 import { registerRepoIconPickerHandlers } from '../../src/main/repo-icon-picker-handlers'
-import type { RepoIconPickerRequests } from '../../src/main/repo-icon-picker-requests'
+import type { RepoPickerRequests } from '../../src/main/repo-picker-requests'
 const png =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII='
 let imageFile: string
-let picker: RepoIconPickerRequests
+let picker: RepoPickerRequests
 let resolveDialog: ((value: OpenDialogReturnValue) => void) | null = null
 let directory: string
 let store: Store

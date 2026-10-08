@@ -1,20 +1,11 @@
+import { WORKSPACE_REPO_PICKER_HANDLER_GROUPS } from './workspace-repo-picker-handler-groups'
 import { WORKSPACE_CLEANUP_HANDLER_GROUPS } from './workspace-cleanup-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...WORKSPACE_CLEANUP_HANDLER_GROUPS,
-  {
-    name: 'workspace-repo-icon-picker',
-    keys: [
-      'repo icon-picker-start',
-      'repo icon-picker-status',
-      'repo icon-picker-cancel',
-      'repo icon-picker-result'
-    ],
-    load: async () =>
-      (await import('./handlers/workspace-repo-icon-picker.js')).WORKSPACE_REPO_ICON_PICKER_HANDLERS
-  },
+  ...WORKSPACE_REPO_PICKER_HANDLER_GROUPS,
   {
     name: 'workspace-diagnostic-preview',
     keys: ['diagnostics open-retained-preview'],
