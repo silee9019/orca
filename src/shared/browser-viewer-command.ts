@@ -1,3 +1,8 @@
+import { BrowserEgressState } from './rpc-contract/browser-egress-params'
+import { BrowserViewportPanReceipt } from './rpc-contract/browser-viewport-pan-params'
+import { BrowserMarkupHintState } from './rpc-contract/browser-markup-hint-params'
+import { BrowserImportHintState } from './rpc-contract/browser-import-hint-params'
+import { BrowserBannerState } from './rpc-contract/browser-banner-params'
 import { BrowserOverlayFocusState } from './rpc-contract/browser-overlay-focus-params'
 import { BrowserSetupGuideState } from './rpc-contract/browser-setup-guide-params'
 import { ClientHostedBrowserRowState } from './rpc-contract/client-hosted-browser-row-params'
@@ -38,6 +43,11 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  egress: BrowserEgressState.optional(),
+  viewportPan: BrowserViewportPanReceipt.optional(),
+  markupHint: BrowserMarkupHintState.optional(),
+  browserImportHint: BrowserImportHintState.optional(),
+  banner: BrowserBannerState.optional(),
   browserSetupGuide: BrowserSetupGuideState.optional(),
   clientHostedRow: ClientHostedBrowserRowState.optional(),
   clientMarkup: BrowserClientMarkupReceipt.optional(),

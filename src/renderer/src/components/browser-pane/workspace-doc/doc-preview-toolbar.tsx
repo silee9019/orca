@@ -1,3 +1,4 @@
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import {
   BrowserChromeToolbar,
@@ -32,6 +33,7 @@ export function DocPreviewToolbar({
   onOpenExternally,
   elementTools,
   markupActive,
+  markupCommandOwner,
   onToggleMarkup,
   markupDisabled
 }: {
@@ -54,6 +56,7 @@ export function DocPreviewToolbar({
   onOpenExternally: () => void
   elementTools: BrowserChromeElementTools
   markupActive: boolean
+  markupCommandOwner?: BrowserMarkupEditorOwner
   onToggleMarkup: () => void
   markupDisabled: boolean
 }): React.JSX.Element {
@@ -102,6 +105,7 @@ export function DocPreviewToolbar({
       importControl={null}
       elementTools={elementTools}
       markup={{
+        commandOwner: markupCommandOwner,
         active: markupActive,
         disabled: markupDisabled,
         onToggle: onToggleMarkup,

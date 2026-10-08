@@ -1,3 +1,8 @@
+import { BrowserEgressCommand } from './browser-egress-params'
+import { BrowserViewportPanDelta } from './browser-viewport-pan-params'
+import { BrowserMarkupHintAction } from './browser-markup-hint-params'
+import { BrowserImportHintCommand } from './browser-import-hint-params'
+import { BrowserBannerCommand } from './browser-banner-params'
 import { BrowserOverlayFocusCommand } from './browser-overlay-focus-params'
 import { BrowserSetupGuideCommand } from './browser-setup-guide-params'
 import { ClientHostedBrowserRowCommand } from './client-hosted-browser-row-params'
@@ -65,6 +70,15 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  z.object({ viewer, operation: z.literal('egress'), command: BrowserEgressCommand }),
+  z.object({ viewer, operation: z.literal('viewport-pan'), page, delta: BrowserViewportPanDelta }),
+  z.object({ viewer, operation: z.literal('markup-hint'), page, action: BrowserMarkupHintAction }),
+  z.object({
+    viewer,
+    operation: z.literal('browser-import-hint'),
+    command: BrowserImportHintCommand
+  }),
+  z.object({ viewer, operation: z.literal('banner'), command: BrowserBannerCommand }),
   z.object({ viewer, operation: z.literal('overlay-focus'), command: BrowserOverlayFocusCommand }),
   z.object({
     viewer,

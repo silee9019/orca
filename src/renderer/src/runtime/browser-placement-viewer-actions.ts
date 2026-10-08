@@ -1,3 +1,10 @@
+import { requestBrowserEgress } from './browser-egress-request'
+import { requestBrowserViewportPan } from './browser-viewport-pan-request'
+import { requestBrowserMarkupHint } from './browser-markup-hint-request'
+import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
+import { requestBrowserMarkup } from './browser-markup-request'
+import { applyBrowserImportHintAction } from './browser-import-hint-actions'
+import { requestBrowserBanner } from './browser-banner-request'
 import { requestBrowserOverlayFocus } from './browser-overlay-focus-request'
 import { applyBrowserSetupGuideAction } from './browser-setup-guide-actions'
 import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
@@ -22,6 +29,13 @@ export async function applyBrowserPlacementViewerAction(
     BrowserViewerCommand,
     {
       operation:
+        | 'browser-import-hint'
+        | 'egress'
+        | 'banner'
+        | 'viewport-pan'
+        | 'markup-hint'
+        | 'markup-editor'
+        | 'markup'
         | 'overlay-focus'
         | 'browser-setup-guide'
         | 'browser-feature-wall'
@@ -43,6 +57,37 @@ export async function applyBrowserPlacementViewerAction(
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'browser-import-hint') {
+    const browserImportHint = await applyBrowserImportHintAction(command.command, expiresAt)
+    return { ...base, applied: true, browserImportHint }
+  }
+  if (command.operation === 'egress') {
+    const egress = await requestBrowserEgress(command.command, expiresAt)
+    return { ...base, applied: true, egress }
+  }
+  if (command.operation === 'banner') {
+    return {
+      ...base,
+      applied: true,
+      banner: await requestBrowserBanner(command.command, expiresAt)
+    }
+  }
+  if (command.operation === 'viewport-pan') {
+    const viewportPan = await requestBrowserViewportPan(command.page, command.delta, expiresAt)
+    return { ...base, page: command.page, applied: true, viewportPan }
+  }
+  if (command.operation === 'markup-hint') {
+    const markupHint = await requestBrowserMarkupHint(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markupHint }
+  }
+  if (command.operation === 'markup-editor') {
+    const markupEditor = await requestBrowserMarkupEditor(command.page, command.command, expiresAt)
+    return { ...base, page: command.page, applied: true, markupEditor }
+  }
+  if (command.operation === 'markup') {
+    const markup = await requestBrowserMarkup(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markup }
+  }
   if (command.operation === 'overlay-focus') {
     return {
       ...base,

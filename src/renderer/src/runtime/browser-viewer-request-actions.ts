@@ -20,8 +20,6 @@ import {
   browserViewportPresetToOverride,
   getBrowserViewportPreset
 } from '../../../shared/browser-viewport-presets'
-import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
-import { requestBrowserMarkup } from './browser-markup-request'
 import { requestBrowserAnnotationDraft } from './browser-annotation-draft-request'
 import { requestBrowserToolbar } from './browser-toolbar-request'
 import { requestBrowserFind } from './browser-find-request'
@@ -55,6 +53,9 @@ export async function applyBrowserViewerRequest(
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
+    command.operation === 'browser-import-hint' ||
+    command.operation === 'banner' ||
+    command.operation === 'egress' ||
     command.operation === 'overlay-focus' ||
     command.operation === 'client-hosted-row' ||
     command.operation === 'client-markup' ||
@@ -244,13 +245,13 @@ export async function applyBrowserViewerRequest(
     const address = await requestBrowserAddress(page.id, command.command, request.expiresAt)
     return { ...base, page: page.id, applied: true, address }
   }
-  if (command.operation === 'markup-editor') {
-    const editor = await requestBrowserMarkupEditor(page.id, command.command, request.expiresAt)
-    return { ...base, page: page.id, applied: true, markupEditor: editor }
-  }
-  if (command.operation === 'markup') {
-    const markup = await requestBrowserMarkup(page.id, command.action, request.expiresAt)
-    return { ...base, page: page.id, applied: true, markup }
+  if (
+    command.operation === 'viewport-pan' ||
+    command.operation === 'markup-hint' ||
+    command.operation === 'markup-editor' ||
+    command.operation === 'markup'
+  ) {
+    return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   const before = state.browserAnnotationsByPageId[page.id] ?? []
   if (command.operation === 'annotation-update' || command.operation === 'annotation-delete') {

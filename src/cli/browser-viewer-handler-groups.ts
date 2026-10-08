@@ -1,3 +1,6 @@
+import { BROWSER_EGRESS_HANDLER_GROUPS } from './browser-egress-handler-groups'
+import { BROWSER_IMPORT_HINT_HANDLER_GROUPS } from './browser-import-hint-handler-groups'
+import { BROWSER_BANNER_HANDLER_GROUPS } from './browser-banner-handler-groups'
 import { BROWSER_OVERLAY_FOCUS_HANDLER_GROUPS } from './browser-overlay-focus-handler-groups'
 import { BROWSER_READER_HANDLER_GROUPS } from './browser-reader-handler-groups'
 import { BROWSER_SETUP_GUIDE_HANDLER_GROUPS } from './browser-setup-guide-handler-groups'
@@ -7,6 +10,9 @@ import { BROWSER_TAKE_BACK_HANDLER_GROUPS } from './browser-take-back-handler-gr
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...BROWSER_EGRESS_HANDLER_GROUPS,
+  ...BROWSER_IMPORT_HINT_HANDLER_GROUPS,
+  ...BROWSER_BANNER_HANDLER_GROUPS,
   ...BROWSER_OVERLAY_FOCUS_HANDLER_GROUPS,
   ...BROWSER_READER_HANDLER_GROUPS,
   ...BROWSER_SETUP_GUIDE_HANDLER_GROUPS,
@@ -57,6 +63,8 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'browser new-ui',
       'browser download-ui',
       'browser grab-action',
+      'browser viewport-pan',
+      'browser markup-hint',
       'browser reload-menu',
       'browser annotation tray',
       'browser address',

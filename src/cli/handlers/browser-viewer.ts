@@ -1,3 +1,5 @@
+import { runBrowserViewportPan } from './browser-viewport-pan'
+import { runBrowserMarkupHint } from './browser-markup-hint'
 import { runBrowserGrabAction } from './browser-grab-action'
 import { runBrowserDownloadUi } from './browser-download-ui'
 import { runBrowserNewTab } from './browser-new-tab'
@@ -57,6 +59,8 @@ function runMarkupEditor(ctx: HandlerContext, command: unknown): Promise<void> {
 
 export const BROWSER_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'browser new-ui': runBrowserNewTab,
+  'browser viewport-pan': runBrowserViewportPan,
+  'browser markup-hint': runBrowserMarkupHint,
   'browser reload-menu': runBrowserReloadMenu,
   'browser annotation row': runBrowserAnnotationRow,
   'browser context-menu': runBrowserContextMenu,

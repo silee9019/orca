@@ -11,6 +11,7 @@ export type BrowserGrabEvent = {
   action: BrowserGrabViewerAction | 'intent-start' | 'await-ready'
   intent?: 'copy' | 'annotate'
   expiresAt: number
+  offer: (active: boolean, execute: () => void) => void
   claim: (active?: boolean) => boolean
   isSettled: () => boolean
   finish: (error?: Error, state?: BrowserGrabState) => void
@@ -29,6 +30,7 @@ export function requestBrowserGrab(
   intent?: 'copy' | 'annotate'
 ): Promise<BrowserGrabState> {
   return new Promise((resolve, reject) => {
+    const offers: (() => void)[] = []
     let inactive = false
     let claimed = false
     let settled = false
@@ -56,6 +58,13 @@ export function requestBrowserGrab(
           intent,
           expiresAt,
           isSettled: () => settled,
+          offer: (active: boolean, execute: () => void) => {
+            if (active) {
+              offers.push(execute)
+            } else {
+              inactive = true
+            }
+          },
           claim: (active = true) => {
             if (!active) {
               inactive = true
@@ -71,6 +80,18 @@ export function requestBrowserGrab(
         }
       })
     )
+    if (action === 'toggle' || action === 'intent-start') {
+      if (Date.now() >= expiresAt) {
+        finish(new Error('request_expired'))
+      } else if (offers.length > 1) {
+        finish(new Error('browser_grab_owner_ambiguous'))
+      } else if (offers.length === 1) {
+        offers[0]?.()
+      } else {
+        finish(new Error(inactive ? 'browser_grab_viewer_inactive' : 'browser_grab_ui_unavailable'))
+      }
+      return
+    }
     if (!claimed) {
       finish(new Error(inactive ? 'browser_grab_viewer_inactive' : 'browser_grab_ui_unavailable'))
     }

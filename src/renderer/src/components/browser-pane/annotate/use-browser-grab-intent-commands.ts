@@ -8,7 +8,8 @@ export function useBrowserGrabIntentCommands(
   grab: GrabModeHook,
   intent: GrabIntent,
   start: (intent: GrabIntent) => void | Promise<boolean>,
-  blocked = false
+  blocked = false,
+  disabled = false
 ): void {
   const pending = useRef<{
     request: BrowserGrabEvent
@@ -37,7 +38,7 @@ export function useBrowserGrabIntentCommands(
       pending.current = null
       return
     }
-    if (blocked || !isActive || Date.now() >= operation.request.expiresAt) {
+    if (blocked || disabled || !isActive || Date.now() >= operation.request.expiresAt) {
       operation.request.finish(new Error('browser_grab_toggle_owner_unavailable_effect_unknown'))
       pending.current = null
       return
@@ -61,85 +62,90 @@ export function useBrowserGrabIntentCommands(
       const request = event.detail
       if (
         request.page !== page ||
-        (request.action !== 'intent-start' && request.action !== 'toggle') ||
-        !request.claim(isActive)
+        (request.action !== 'intent-start' && request.action !== 'toggle')
       ) {
         return
       }
-      if (Date.now() >= request.expiresAt) {
-        request.finish(new Error('request_expired'))
-        return
-      }
-      if (blocked) {
-        request.finish(new Error('browser_grab_markup_active'))
-        return
-      }
-      if (!isActive) {
-        request.finish(new Error('browser_grab_viewer_inactive'))
-        return
-      }
-      if (pending.current && !pending.current.request.isSettled()) {
-        request.finish(new Error('browser_grab_busy'))
-        return
-      }
-      if (request.action === 'intent-start' && grab.state !== 'idle' && grab.state !== 'error') {
-        request.finish(new Error('browser_grab_already_active'))
-        return
-      }
-      if (request.intent !== 'copy' && request.intent !== 'annotate') {
-        request.finish(new Error('invalid_grab_intent'))
-        return
-      }
-      const operation: NonNullable<typeof pending.current> = {
-        request,
-        intent: request.intent,
-        idle: grab.state !== 'idle' && grab.state !== 'error' && intent === request.intent,
-        nativeAccepted: null
-      }
-      try {
-        if (request.action === 'toggle') {
-          pending.current = operation
-        }
-        const accepted = start(request.intent)
-        if (request.action === 'intent-start') {
-          request.finish(undefined, snapshot())
+      request.offer(isActive, () => {
+        if (Date.now() >= request.expiresAt) {
+          request.finish(new Error('request_expired'))
           return
         }
-        if (operation.idle) {
-          if (!accepted) {
-            request.finish(new Error('browser_grab_toggle_native_ack_unavailable_effect_unknown'))
-            pending.current = null
-          } else {
-            void accepted.then(
-              (value) => {
-                if (pending.current !== operation || request.isSettled()) {
-                  return
-                }
-                operation.nativeAccepted = value
-                update((value) => value + 1)
-              },
-              () => {
-                if (pending.current !== operation) {
-                  return
-                }
-                operation.nativeAccepted = false
-                update((value) => value + 1)
-              }
-            )
+        if (disabled) {
+          request.finish(new Error('browser_grab_control_disabled'))
+          return
+        }
+        if (blocked) {
+          request.finish(new Error('browser_grab_markup_active'))
+          return
+        }
+        if (!isActive) {
+          request.finish(new Error('browser_grab_viewer_inactive'))
+          return
+        }
+        if (pending.current && !pending.current.request.isSettled()) {
+          request.finish(new Error('browser_grab_busy'))
+          return
+        }
+        if (request.action === 'intent-start' && grab.state !== 'idle' && grab.state !== 'error') {
+          request.finish(new Error('browser_grab_already_active'))
+          return
+        }
+        if (request.intent !== 'copy' && request.intent !== 'annotate') {
+          request.finish(new Error('invalid_grab_intent'))
+          return
+        }
+        const operation: NonNullable<typeof pending.current> = {
+          request,
+          intent: request.intent,
+          idle: grab.state !== 'idle' && grab.state !== 'error' && intent === request.intent,
+          nativeAccepted: null
+        }
+        try {
+          if (request.action === 'toggle') {
+            pending.current = operation
           }
-        } else {
-          update((value) => value + 1)
+          const accepted = start(request.intent)
+          if (request.action === 'intent-start') {
+            request.finish(undefined, snapshot())
+            return
+          }
+          if (operation.idle) {
+            if (!accepted) {
+              request.finish(new Error('browser_grab_toggle_native_ack_unavailable_effect_unknown'))
+              pending.current = null
+            } else {
+              void accepted.then(
+                (value) => {
+                  if (pending.current !== operation || request.isSettled()) {
+                    return
+                  }
+                  operation.nativeAccepted = value
+                  update((value) => value + 1)
+                },
+                () => {
+                  if (pending.current !== operation) {
+                    return
+                  }
+                  operation.nativeAccepted = false
+                  update((value) => value + 1)
+                }
+              )
+            }
+          } else {
+            update((value) => value + 1)
+          }
+        } catch {
+          request.finish(new Error('browser_grab_start_failed'))
+          if (pending.current === operation) {
+            pending.current = null
+          }
         }
-      } catch {
-        request.finish(new Error('browser_grab_start_failed'))
-        if (pending.current === operation) {
-          pending.current = null
-        }
-      }
+      })
     }
     window.addEventListener(BROWSER_GRAB_COMMAND_EVENT, receive)
     return () => window.removeEventListener(BROWSER_GRAB_COMMAND_EVENT, receive)
-  }, [page, isActive, grab, intent, start, blocked])
+  }, [page, isActive, grab, intent, start, blocked, disabled])
   useEffect(
     () => () => {
       pending.current?.request.finish(

@@ -75,6 +75,11 @@ export function RemoteBrowserPageToolbar({
             <RemoteRuntimeEgressIndicator
               runtimeEnvironmentId={runtimeEnvironmentId}
               presentation="streamed"
+              commandOwner={
+                commandOwner
+                  ? { page: commandOwner.page, isActive: commandOwner.active }
+                  : undefined
+              }
             />
           }
         />

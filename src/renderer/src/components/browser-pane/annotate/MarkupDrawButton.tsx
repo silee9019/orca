@@ -1,3 +1,5 @@
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
+import { useBrowserMarkupHintCommands } from './use-browser-markup-hint-commands'
 import React, { useEffect } from 'react'
 import { PenTool } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +11,7 @@ import { translate } from '@/i18n/i18n'
 import { useMarkupDrawHint } from './use-markup-draw-hint'
 
 export type MarkupDrawButtonProps = {
+  commandOwner?: BrowserMarkupEditorOwner
   onClick: () => void
   disabled?: boolean
   active?: boolean
@@ -24,6 +27,7 @@ export type MarkupDrawButtonProps = {
 // Toolbar toggle that enters screenshot-markup mode. Shared by the local and
 // remote browser panes so both expose the same affordance.
 export function MarkupDrawButton({
+  commandOwner,
   onClick,
   disabled,
   active,
@@ -55,6 +59,15 @@ export function MarkupDrawButton({
     dismissHint()
     onClick()
   }
+
+  useBrowserMarkupHintCommands(
+    commandOwner,
+    showHint,
+    !!active,
+    !!disabled,
+    dismissHint,
+    startMarkup
+  )
 
   const button = (
     <Button

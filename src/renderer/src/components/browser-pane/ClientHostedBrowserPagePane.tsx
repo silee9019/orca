@@ -365,15 +365,14 @@ export function ClientHostedBrowserPagePane({
               onChange={setAddressBarValue}
               onSubmit={() => navigateToUrl(addressBarValue)}
               onNavigate={navigateToUrl}
-              onOpenWorkspaceDoc={(docLocation) =>
-                convertBrowserPageToWorkspaceDoc(browserTab.id, docLocation)
-              }
+              onOpenWorkspaceDoc={(doc) => convertBrowserPageToWorkspaceDoc(browserTab.id, doc)}
               inputRef={addressBarInputRef}
               editSession={addressBarEditSession}
               leadingIcon={
                 <RemoteRuntimeEgressIndicator
                   runtimeEnvironmentId={runtimeEnvironmentId}
                   presentation="client-hosted"
+                  commandOwner={{ page: browserTab.id, isActive, clientPlacement: placement }}
                 />
               }
             />
