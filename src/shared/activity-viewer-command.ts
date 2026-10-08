@@ -45,6 +45,10 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    completedAction: z
+      .object({ paneKeys: z.array(z.string()), remainingPaneKeys: z.array(z.string()) })
+      .strip()
+      .optional(),
     readAction: z
       .object({
         operation: openEnum(['read', 'unread', 'unknown'], 'unknown'),

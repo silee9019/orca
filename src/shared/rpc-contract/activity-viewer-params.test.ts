@@ -5,6 +5,7 @@ it('requires an explicit host and activity surface with existing preference doma
     for (const command of [
       { operation: 'get' },
       { operation: 'mark-all-read' },
+      { operation: 'clear-completed' },
       { operation: 'read-toggle', paneKey: 'tab:leaf' },
       { operation: 'read-toggle-many', paneKeys: ['tab:one', 'tab:two'] },
       { operation: 'group', by: 'project' },
@@ -45,6 +46,7 @@ it('keeps Activity scope origins and targets explicit and closed', () => {
     { operation: 'origin', kind: 'cli', hidden: 'true' },
     { operation: 'host-toggle', host: '' },
     { operation: 'scope-reset', repo: 'unexpected' },
+    { operation: 'clear-completed', paneKey: 'unexpected' },
     { operation: 'read-toggle', paneKey: '' },
     { operation: 'read-toggle-many', paneKeys: ['one'] },
     { operation: 'read-toggle-many', paneKeys: ['one', 'one'] }

@@ -1,3 +1,4 @@
+import type { ActivityThreadGroup } from '@/components/activity/activity-thread-types'
 import { readActivityScope } from './activity-scope-preferences'
 import { useLayoutEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
@@ -30,6 +31,11 @@ export function useActivityViewerPublication(
   > & {
     markAllRead?: { run?: () => void; hasUnreadThreads: boolean }
     threadReads?: ActivityThreadReadCallbacks
+    completed?: {
+      run?: () => void
+      hasCompletedThreads?: boolean
+      groups: readonly ActivityThreadGroup[]
+    }
   }
 ): void {
   const context = useAppStore(
@@ -49,6 +55,9 @@ export function useActivityViewerPublication(
   const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
   const { allThreads, markRead, markUnread, markManyRead, markManyUnread, canMarkUnread } =
     preferences.threadReads ?? {}
+  const completedRun = preferences.completed?.run
+  const completedThreads = preferences.completed?.groups
+  const hasCompletedThreads = preferences.completed?.hasCompletedThreads
   useLayoutEffect(() => {
     if (!surface) {
       return
@@ -85,6 +94,15 @@ export function useActivityViewerPublication(
       },
       {
         markAllRead,
+        completed:
+          completedRun && completedThreads && allThreads && hasCompletedThreads !== undefined
+            ? {
+                run: completedRun,
+                visibleThreads: completedThreads.flatMap((group) => group.threads),
+                allThreads,
+                hasCompletedThreads
+              }
+            : undefined,
         threadReads:
           allThreads && markRead && markUnread && markManyRead && markManyUnread && canMarkUnread
             ? {
@@ -118,6 +136,9 @@ export function useActivityViewerPublication(
     markUnread,
     markManyRead,
     markManyUnread,
-    canMarkUnread
+    canMarkUnread,
+    completedRun,
+    completedThreads,
+    hasCompletedThreads
   ])
 }

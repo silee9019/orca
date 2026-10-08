@@ -81,6 +81,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity mark-all-read': handler('mark-all-read'),
+  'ui activity clear-completed': handler('clear-completed'),
   'ui activity read-toggle': handler('read-toggle'),
   'ui activity read-toggle-many': handler('read-toggle-many'),
   'ui activity origin': handler('origin'),

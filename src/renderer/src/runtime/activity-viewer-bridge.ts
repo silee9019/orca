@@ -1,4 +1,14 @@
 import {
+  readActivityViewerPersistence,
+  readActivityPersistenceWriteOutcome
+} from './activity-viewer-persistence'
+import {
+  captureActivityCompletedCommand,
+  activityCompletedApplied,
+  activityCompletedStillExpected,
+  readActivityCompletedResult
+} from './activity-completed-command'
+import {
   attachActivityViewerRequestQueue,
   type ActivityViewerBridgeApi
 } from './activity-viewer-request-queue'
@@ -7,7 +17,6 @@ import {
   applyActivityScopeCommand,
   isActivityScopeCommand,
   readActivityScope,
-  readPersistedActivityScope,
   sameActivityScope
 } from './activity-scope-preferences'
 import { useAppStore } from '@/store'
@@ -20,6 +29,7 @@ import type {
   ActivityViewerResult
 } from '../../../shared/activity-viewer-command'
 import {
+  readActivityCompletedControl,
   readActivityMarkAllReadControl,
   readActivityThreadReadControl,
   readActivityViewerView
@@ -49,18 +59,20 @@ export async function applyActivityViewerRequest(
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
   const markAllRead = command.operation === 'mark-all-read'
   const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
-  const localOnly = localSearch || markAllRead || threadRead
+  const completed = command.operation === 'clear-completed'
+  const localOnly = localSearch || markAllRead || threadRead || completed
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
   }
   const runtime = getProviderRuntimeContextKey(initial.settings)
   const scopeCommand = isActivityScopeCommand(command)
-  if (scopeCommand || markAllRead || threadRead) {
+  if (scopeCommand || markAllRead || threadRead || completed) {
     const view = readActivityViewerView(command.surface)
     if (!view || view.surface !== command.surface || view.runtimeContextKey !== runtime) {
       throw new Error('activity_surface_unavailable')
     }
   }
+  const completedAction = completed ? captureActivityCompletedCommand(command.surface) : null
   const readControl = threadRead ? readActivityThreadReadControl(command.surface) : null
   if (threadRead && !readControl) {
     throw new Error('activity_read_control_unavailable')
@@ -124,7 +136,8 @@ export async function applyActivityViewerRequest(
     saving = initial.setAgentsShowChildAgents(command.enabled)
   }
   const expected = useAppStore.getState()
-  const expectedScope = scopeCommand || threadRead ? readActivityScope(expected) : undefined
+  const expectedScope =
+    scopeCommand || threadRead || completed ? readActivityScope(expected) : undefined
   const groupBy = expected.agentsGroupBy
   const readFilter = expected.agentsReadFilter
   const compact = expected.agentsCompactMode
@@ -141,6 +154,8 @@ export async function applyActivityViewerRequest(
     const state = useAppStore.getState()
     return (
       sameRuntime() &&
+      (completedAction === null ||
+        activityCompletedStillExpected(command.surface, completedAction)) &&
       (readAction === null ||
         (sameActivityThreadReadCallbacks(
           readActivityThreadReadControl(command.surface),
@@ -158,16 +173,8 @@ export async function applyActivityViewerRequest(
       (command.operation !== 'search-visible' || state.agentsShowSearch === showSearch)
     )
   }
-  const writeOutcome: ActivityViewerResult['writeOutcome'] = saving
-    ? await withTimeout<ActivityViewerResult['writeOutcome']>(
-        saving.then(
-          () => 'accepted',
-          () => 'rejected'
-        ),
-        Math.max(0, Math.min(request.expiresAt - 100, Date.now() + 5000) - Date.now()),
-        'unknown'
-      )
-    : 'not_requested'
+  const expectedPreferences = { groupBy, readFilter, compact, showChildAgents, showSearch }
+  const writeOutcome = await readActivityPersistenceWriteOutcome(saving, request.expiresAt)
   const ui =
     sameRuntime() && !localOnly
       ? await withTimeout<PersistedUIState | null>(
@@ -176,27 +183,13 @@ export async function applyActivityViewerRequest(
           null
         )
       : null
-  const persistedScope = scopeCommand && ui !== null ? readPersistedActivityScope(ui) : null
-  const persisted =
-    sameRuntime() && ui !== null && (!scopeCommand || persistedScope !== null)
-      ? writeOutcome !== 'rejected' &&
-        (expectedScope !== undefined
-          ? sameActivityScope(persistedScope, expectedScope)
-          : command.operation === 'group'
-            ? ui.agentsGroupBy === groupBy
-            : command.operation === 'read'
-              ? ui.agentsReadFilter === readFilter
-              : command.operation === 'compact'
-                ? ui.agentsCompactMode === compact
-                : command.operation === 'children'
-                  ? ui.agentsShowChildAgents === showChildAgents
-                  : command.operation === 'search-visible'
-                    ? ui.agentsShowSearch === showSearch
-                    : ui.agentsGroupBy === groupBy &&
-                      ui.agentsReadFilter === readFilter &&
-                      ui.agentsCompactMode === compact &&
-                      ui.agentsShowChildAgents === showChildAgents)
-      : null
+  const { persisted, persistedScope } = readActivityViewerPersistence(
+    command,
+    sameRuntime() ? ui : null,
+    expectedPreferences,
+    expectedScope,
+    writeOutcome
+  )
   const matches = (): boolean => {
     const view = readActivityViewerView(command.surface)
     return (
@@ -204,6 +197,8 @@ export async function applyActivityViewerRequest(
       view !== null &&
       view.surface === command.surface &&
       view.runtimeContextKey === runtime &&
+      (completedAction === null ||
+        activityCompletedApplied(readActivityCompletedControl(command.surface), completedAction)) &&
       (readAction === null ||
         activityThreadReadApplied(readActivityThreadReadControl(command.surface), readAction)) &&
       (!markAllRead || view.hasUnreadThreads === false) &&
@@ -262,10 +257,19 @@ export async function applyActivityViewerRequest(
       saving !== undefined ||
       localSearch ||
       markAllDispatched ||
+      (completedAction !== null && completedAction.targets.length > 0) ||
       (readAction !== null && readAction.targets.length > 0),
     applied,
     persisted,
     ...(scopeCommand ? { persistedScope } : {}),
+    ...(completedAction
+      ? {
+          completedAction: readActivityCompletedResult(
+            sameRuntime() ? readActivityCompletedControl(command.surface) : null,
+            completedAction
+          )
+        }
+      : {}),
     ...(readAction
       ? {
           readAction: {

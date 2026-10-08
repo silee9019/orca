@@ -11,6 +11,7 @@ import { ActivityViewerResultSchema } from '../../src/shared/activity-viewer-com
 import { assertActivityScopeControls } from './helpers/activity-scope-assertions'
 import { assertActivityMarkAllRead } from './helpers/activity-mark-all-read-assertions'
 import { assertActivityReadToggle } from './helpers/activity-read-toggle-assertions'
+import { assertActivityCompleted } from './helpers/activity-completed-assertions'
 
 test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
@@ -433,5 +434,6 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityScopeControls(orcaPage, call, testInfo)
   await assertActivityMarkAllRead(orcaPage, call, testInfo)
   await assertActivityReadToggle(orcaPage, call, testInfo)
+  await assertActivityCompleted(orcaPage, call, testInfo)
   await assertHidden()
 })
