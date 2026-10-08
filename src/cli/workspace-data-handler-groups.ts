@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-repo-update',
+    keys: ['repo update-desktop'],
+    load: async () =>
+      (await import('./handlers/workspace-repo-update.js')).WORKSPACE_REPO_UPDATE_HANDLERS
+  },
+  {
     name: 'workspace-repo-username',
     keys: ['repo git-username-for-host'],
     load: async () =>
