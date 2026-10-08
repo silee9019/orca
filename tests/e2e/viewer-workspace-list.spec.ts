@@ -89,6 +89,28 @@ test('workspace list CLI acknowledges grouping and existing persisted sort', asy
     'aria-expanded',
     'true'
   )
+  const published = (await call(['workspace-list', 'get'])).rendered
+  const groupKey = published?.rows.find(
+    (row) => row.type === 'header' && published.collapsibleKeys?.includes(row.key)
+  )?.key
+  expect(groupKey).toBeTruthy()
+  const groupHeader = list.locator(
+    `[id="worktree-list-option-${encodeURIComponent(groupKey ?? '')}"]`
+  )
+  await expect(groupHeader).toHaveAttribute('aria-expanded', 'true')
+  const toggleGroup = () => call(['workspace-list', 'group-toggle', '--group-key', groupKey ?? ''])
+  expect(await toggleGroup()).toMatchObject({
+    dispatched: true,
+    applied: true,
+    persisted: true,
+    collapsedGroups: [groupKey]
+  })
+  await expect(groupHeader).toHaveAttribute('aria-expanded', 'false')
+  expect(await toggleGroup()).toMatchObject({ applied: true, persisted: true, collapsedGroups: [] })
+  await expect(groupHeader).toHaveAttribute('aria-expanded', 'true')
+  await expect(
+    call(['workspace-list', 'group-toggle', '--group-key', 'not-a-published-key'])
+  ).rejects.toMatchObject({ stdout: expect.stringContaining('workspace_list_group_unavailable') })
   for (const by of ['none', 'workspace-status', 'pr-status', 'repo']) {
     const result = await call(['workspace-list', 'group', '--by', by])
     expect(result).toMatchObject({
@@ -100,6 +122,26 @@ test('workspace list CLI acknowledges grouping and existing persisted sort', asy
     expect(result.rendered?.rows.length).toBeGreaterThan(0)
     await list.screenshot({ path: testInfo.outputPath(`group-${by}.png`) })
   }
+  // Headers without a chevron still collapse on click, so the CLI must reach them too.
+  let chevronlessToggles = 0
+  for (const by of ['none', 'pr-status']) {
+    const view = (await call(['workspace-list', 'group', '--by', by])).rendered
+    const headerKey = view?.rows.find((row) => row.type === 'header')?.key
+    if (!headerKey) {
+      continue
+    }
+    expect(view?.collapsibleKeys).toContain(headerKey)
+    const cards = list.locator('[data-worktree-card-viewer-id]')
+    const expanded = await cards.count()
+    const toggle = () => call(['workspace-list', 'group-toggle', '--group-key', headerKey])
+    expect(await toggle()).toMatchObject({ applied: true, persisted: true })
+    await expect.poll(() => cards.count()).toBeLessThan(expanded)
+    expect(await toggle()).toMatchObject({ applied: true, persisted: true, collapsedGroups: [] })
+    await expect.poll(() => cards.count()).toBe(expanded)
+    chevronlessToggles += 1
+  }
+  expect(chevronlessToggles).toBeGreaterThan(0)
+  await call(['workspace-list', 'group', '--by', 'repo'])
   for (const by of ['name', 'manual', 'smart', 'recent', 'repo']) {
     const result = await call(['workspace-list', 'sort', '--by', by])
     expect(result).toMatchObject({

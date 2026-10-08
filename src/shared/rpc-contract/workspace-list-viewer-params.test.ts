@@ -5,7 +5,8 @@ it('accepts only explicit workspace list options and host viewer', () => {
     { operation: 'get' },
     { operation: 'group', by: 'none' },
     { operation: 'sort', by: 'smart' },
-    { operation: 'project-order', by: 'recent' }
+    { operation: 'project-order', by: 'recent' },
+    { operation: 'group-toggle', groupKey: 'repo:one' }
   ]) {
     expect(WorkspaceListViewerParams.safeParse({ viewer: 'host', ...command }).success).toBe(true)
   }
@@ -15,7 +16,10 @@ it('accepts only explicit workspace list options and host viewer', () => {
     { viewer: 'host', operation: 'project-order', by: 'name' },
     { operation: 'get' },
     { viewer: 'peer', operation: 'get' },
-    { viewer: 'host', operation: 'get', code: 'anything' }
+    { viewer: 'host', operation: 'get', code: 'anything' },
+    { viewer: 'host', operation: 'group-toggle' },
+    { viewer: 'host', operation: 'group-toggle', groupKey: '' },
+    { viewer: 'host', operation: 'group-toggle', groupKey: 'repo:one', by: 'repo' }
   ]) {
     expect(WorkspaceListViewerParams.safeParse(command).success).toBe(false)
   }

@@ -8,6 +8,8 @@ const fixture = vi.hoisted(() => {
   const settings: { activeRuntimeEnvironmentId: string | null } = {
     activeRuntimeEnvironmentId: null
   }
+  const noControl = (): { toggle: (key: string) => void } | null => null
+  const noRuntimeKey = (): string | null => null
   return {
     state: {
       settings,
@@ -23,14 +25,18 @@ const fixture = vi.hoisted(() => {
       setProjectOrderBy: vi.fn()
     },
     rendered: true,
+    empty: false,
+    viewRuntimeContextKey: noRuntimeKey(),
     committed: 'repo',
     durableGroup: 'repo',
     durableCollapsed: ['repo:one'],
-    durableSort: 'recent'
+    durableSort: 'recent',
+    control: noControl()
   }
 })
 vi.mock('@/store', () => ({ useAppStore: { getState: () => fixture.state } }))
 vi.mock('./workspace-list-viewer-view', () => ({
+  readWorkspaceListCollapseControl: () => fixture.control,
   readWorkspaceListViewerView: () =>
     fixture.rendered
       ? {
@@ -38,8 +44,10 @@ vi.mock('./workspace-list-viewer-view', () => ({
           sortBy: fixture.state.sortBy,
           projectOrderBy: fixture.state.projectOrderBy,
           collapsedGroups: [...fixture.state.collapsedGroups],
-          runtimeContextKey: getProviderRuntimeContextKey(fixture.state.settings),
-          empty: false,
+          collapsibleKeys: ['repo:one', 'repo:two'],
+          runtimeContextKey:
+            fixture.viewRuntimeContextKey ?? getProviderRuntimeContextKey(fixture.state.settings),
+          empty: fixture.empty,
           rows: [{ type: 'item', key: 'host-qualified-row', hostId: null }]
         }
       : null
@@ -68,10 +76,22 @@ beforeEach(() => {
   })
   Object.assign(fixture, {
     rendered: true,
+    empty: false,
+    viewRuntimeContextKey: null,
     committed: 'repo',
     durableGroup: 'repo',
     durableCollapsed: ['repo:one'],
-    durableSort: 'recent'
+    durableSort: 'recent',
+    control: {
+      toggle: vi.fn((key: string) => {
+        const next = new Set(fixture.state.collapsedGroups)
+        if (!next.delete(key)) {
+          next.add(key)
+        }
+        fixture.state.collapsedGroups = next
+        fixture.durableCollapsed = [...next]
+      })
+    }
   })
   fixture.state.setGroupBy.mockImplementation(async (by) => {
     fixture.state.groupBy = by
@@ -268,4 +288,116 @@ it('waits on the requested field for a same-value dirty mirror without adding a 
     applied: true
   })
   expect(window.api.ui.setWithAck).not.toHaveBeenCalled()
+})
+it('toggles a published group through the original control and reads back host state', async () => {
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({
+    dispatched: true,
+    applied: true,
+    persisted: true,
+    writeOutcome: 'unknown',
+    collapsedGroups: ['repo:one', 'repo:two']
+  })
+  expect(fixture.control?.toggle).toHaveBeenCalledExactlyOnceWith('repo:two')
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:one' })
+    )
+  ).toMatchObject({ applied: true, persisted: true, collapsedGroups: ['repo:two'] })
+  expect(window.api.ui.set).not.toHaveBeenCalled()
+})
+it('refuses a group key that the committed list does not publish', async () => {
+  await expect(
+    applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:missing' })
+    )
+  ).rejects.toThrow('workspace_list_group_unavailable')
+  expect(fixture.control?.toggle).not.toHaveBeenCalled()
+})
+it('refuses a group toggle when no list control is mounted or the list is not rendered', async () => {
+  const command = { viewer: 'host', operation: 'group-toggle', groupKey: 'repo:one' } as const
+  fixture.control = null
+  await expect(applyWorkspaceListViewerRequest(request(command))).rejects.toThrow(
+    'workspace_list_group_unavailable'
+  )
+  fixture.control = { toggle: vi.fn() }
+  fixture.rendered = false
+  await expect(applyWorkspaceListViewerRequest(request(command))).rejects.toThrow(
+    'workspace_list_group_unavailable'
+  )
+  expect(fixture.control.toggle).not.toHaveBeenCalled()
+})
+it('does not claim a group toggle that the host never persisted', async () => {
+  fixture.control = {
+    toggle: vi.fn((key: string) => {
+      fixture.state.collapsedGroups = new Set([...fixture.state.collapsedGroups, key])
+    })
+  }
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({ applied: true, persisted: false, reason: 'persistence_superseded' })
+})
+it('keeps the toggle fenced to the provider runtime and the host readback', async () => {
+  vi.spyOn(window.api.ui, 'get').mockImplementationOnce(async () => {
+    bumpProviderRuntimeSessionGeneration()
+    return makePersistedUI()
+  })
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({ applied: false, persisted: null, reason: 'viewer_runtime_changed' })
+})
+it('waits for the host to show a delayed toggle write before claiming persistence', async () => {
+  fixture.control = {
+    toggle: vi.fn((key: string) => {
+      fixture.state.collapsedGroups = new Set([...fixture.state.collapsedGroups, key])
+      setTimeout(() => {
+        fixture.durableCollapsed = [...fixture.state.collapsedGroups]
+      }, 60)
+    })
+  }
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({ applied: true, persisted: true, collapsedGroups: ['repo:one', 'repo:two'] })
+  expect(vi.mocked(window.api.ui.get).mock.calls.length).toBeGreaterThan(1)
+})
+it('reports a toggle as unverifiable when the host read never answers', async () => {
+  vi.mocked(window.api.ui.get).mockImplementation(() => new Promise<never>(() => undefined))
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({ applied: true, persisted: null, reason: 'persistence_unverifiable' })
+})
+it('stops waiting when the sidebar changes the groups again during the toggle', async () => {
+  vi.mocked(window.api.ui.get).mockImplementationOnce(async () => {
+    fixture.state.collapsedGroups = new Set(['repo:one', 'repo:two', 'repo:other'])
+    return makePersistedUI()
+  })
+  expect(
+    await applyWorkspaceListViewerRequest(
+      request({ viewer: 'host', operation: 'group-toggle', groupKey: 'repo:two' })
+    )
+  ).toMatchObject({ applied: false, reason: 'viewer_surface_superseded' })
+})
+it('refuses a group toggle for an empty list or a list from another runtime', async () => {
+  const command = { viewer: 'host', operation: 'group-toggle', groupKey: 'repo:one' } as const
+  fixture.empty = true
+  await expect(applyWorkspaceListViewerRequest(request(command))).rejects.toThrow(
+    'workspace_list_group_unavailable'
+  )
+  fixture.empty = false
+  fixture.viewRuntimeContextKey = 'other#1'
+  await expect(applyWorkspaceListViewerRequest(request(command))).rejects.toThrow(
+    'workspace_list_group_unavailable'
+  )
+  expect(fixture.control?.toggle).not.toHaveBeenCalled()
 })

@@ -15,6 +15,7 @@ export const WorkspaceListViewerParams = z.discriminatedUnion('operation', [
       operation: z.literal('project-order'),
       by: UiUpdateFields.shape.projectOrderBy.unwrap()
     })
-    .strict()
+    .strict(),
+  z.object({ viewer, operation: z.literal('group-toggle'), groupKey: z.string().min(1) }).strict()
 ])
 export type WorkspaceListViewerCommand = z.infer<typeof WorkspaceListViewerParams>

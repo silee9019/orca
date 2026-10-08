@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useLayoutEffect, useMemo } from 'react'
 import type React from 'react'
 import { VIRTUALIZED_SCROLL_ANCHOR_RECORD_EVENT } from '@/hooks/useVirtualizedScrollAnchor'
+import { publishWorkspaceListCollapseControl } from '@/runtime/workspace-list-viewer-view'
 import { createLineageToggleHandlerCache } from '../../worktree-lineage-toggle-handler-cache'
 
 // Collapsing a section changes total height, so snapshot the anchor first or the viewport jumps.
@@ -19,6 +20,10 @@ export function useGroupToggleWithScrollAnchor(args: {
     },
     [recordCurrentScrollAnchor, toggleGroup]
   )
+  useLayoutEffect(() => {
+    publishWorkspaceListCollapseControl({ toggle: toggleGroupWithScrollAnchor })
+    return () => publishWorkspaceListCollapseControl(null)
+  }, [toggleGroupWithScrollAnchor])
   // Why: memo'd WorktreeCard needs a per-group-key stable onLineageToggle
   // identity to bail out of re-renders; see worktree-lineage-toggle-handler-cache.
   const getLineageToggleHandler = useMemo(

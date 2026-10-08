@@ -80,7 +80,8 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'ui workspace-list get',
       'ui workspace-list group',
       'ui workspace-list sort',
-      'ui workspace-list project-order'
+      'ui workspace-list project-order',
+      'ui workspace-list group-toggle'
     ],
     load: async () =>
       (await import('./handlers/workspace-list-viewer.js')).WORKSPACE_LIST_VIEWER_HANDLERS
