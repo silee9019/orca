@@ -5,7 +5,7 @@ import type { captureActivityThreadCommandTarget } from './activity-thread-comma
 
 export function captureActivityThreadPreviewAction(
   context: ReturnType<typeof captureActivityThreadCommandTarget>,
-  field: 'copy-path' | 'issue' | 'comment' | 'issue-menu'
+  field: 'copy-path' | 'issue' | 'comment' | 'issue-menu' | 'review-menu'
 ): {
   action: HTMLButtonElement
   portal: HTMLElement
@@ -24,21 +24,32 @@ export function captureActivityThreadPreviewAction(
   const portal = [...document.querySelectorAll<HTMLElement>('[data-activity-preview-owner]')].find(
     (node) => node.dataset.activityPreviewOwner === owner
   )
-  const label =
-    field === 'copy-path'
-      ? translate('auto.components.activity.ActivityThreadHoverCard.copyPath', 'Copy path')
-      : field === 'issue-menu'
-        ? translate(
-            'auto.components.sidebar.WorktreeCardMeta.moreIssueActions',
-            'More issue actions'
+  const labels =
+    field === 'review-menu'
+      ? ['PR', 'MR'].map((value0) =>
+          translate(
+            'auto.components.sidebar.WorktreeCardMeta.dbe2d18972',
+            'More {{value0}} actions',
+            { value0 }
           )
-        : field === 'issue'
-          ? translate('auto.components.sidebar.WorktreeCardMeta.807b13b9ec', 'Edit issue')
-          : translate('auto.components.sidebar.WorktreeCardMeta.c7fa72ead0', 'Edit notes')
+        )
+      : [
+          field === 'copy-path'
+            ? translate('auto.components.activity.ActivityThreadHoverCard.copyPath', 'Copy path')
+            : field === 'issue-menu'
+              ? translate(
+                  'auto.components.sidebar.WorktreeCardMeta.moreIssueActions',
+                  'More issue actions'
+                )
+              : field === 'issue'
+                ? translate('auto.components.sidebar.WorktreeCardMeta.807b13b9ec', 'Edit issue')
+                : translate('auto.components.sidebar.WorktreeCardMeta.c7fa72ead0', 'Edit notes')
+        ]
   const actions = [...(portal?.querySelectorAll<HTMLButtonElement>('button') ?? [])].filter(
-    (node) => node.getAttribute('aria-label') === label
+    (node) => labels.includes(node.getAttribute('aria-label') ?? '')
   )
   const action = actions.length === 1 ? actions[0] : undefined
+  const label = action?.getAttribute('aria-label')
   const actionIntersectsPreview = (): boolean => {
     if (!portal || !action) {
       return false
@@ -82,7 +93,9 @@ export function captureActivityThreadPreviewAction(
         ? 'activity_preview_copy_unavailable'
         : field === 'issue-menu'
           ? 'activity_preview_issue_menu_unavailable'
-          : 'activity_preview_edit_unavailable'
+          : field === 'review-menu'
+            ? 'activity_preview_review_menu_unavailable'
+            : 'activity_preview_edit_unavailable'
     )
   }
   const recordChanges = (records: MutationRecord[]): void => {

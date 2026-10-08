@@ -22,6 +22,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       }
     }
     const enabled =
+      operation === 'preview-review-menu' ||
       operation === 'preview-issue-menu' ||
       operation === 'preview' ||
       operation === 'compact' ||
@@ -48,6 +49,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
       ...(operation === 'preview-copy-issue-link' ||
+      operation === 'preview-review-menu' ||
       operation === 'preview-issue-menu' ||
       operation === 'preview-edit' ||
       operation === 'preview-copy-path' ||
@@ -107,6 +109,7 @@ export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity preview-copy-path': handler('preview-copy-path'),
   'ui activity preview': handler('preview'),
   'ui activity preview-edit': handler('preview-edit'),
+  'ui activity preview-review-menu': handler('preview-review-menu'),
   'ui activity preview-issue-menu': handler('preview-issue-menu'),
   'ui activity close': handler('close'),
   'ui activity resize': handler('resize'),

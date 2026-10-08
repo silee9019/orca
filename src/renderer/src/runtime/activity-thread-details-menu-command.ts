@@ -9,12 +9,20 @@ import type {
 } from '../../../shared/activity-viewer-command'
 import type { ActivityViewerCommand } from '../../../shared/rpc-contract/activity-viewer-params'
 
-export async function applyActivityThreadIssueMenuRequest(
+export async function applyActivityThreadDetailsMenuRequest(
   request: ActivityViewerRequest,
-  command: Extract<ActivityViewerCommand, { operation: 'preview-issue-menu' }>
+  command: Extract<
+    ActivityViewerCommand,
+    { operation: 'preview-issue-menu' | 'preview-review-menu' }
+  >
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const context = captureActivityThreadCommandTarget(command.surface, command.paneKey)
-  const preview = captureActivityThreadPreviewAction(context, 'issue-menu')
+  const field = command.operation === 'preview-review-menu' ? 'review-menu' : 'issue-menu'
+  const unavailable =
+    field === 'review-menu'
+      ? 'activity_preview_review_menu_unavailable'
+      : 'activity_preview_issue_menu_unavailable'
+  const preview = captureActivityThreadPreviewAction(context, field)
   const { action, portal } = preview
   const triggerId = action.id
   const expanded = action.getAttribute('aria-expanded')
@@ -23,7 +31,7 @@ export async function applyActivityThreadIssueMenuRequest(
   ].find((node) => node.dataset.activityPreviewTrigger === portal.dataset.activityPreviewOwner)
   if (!triggerId || !outer || (expanded !== 'true' && expanded !== 'false')) {
     preview.dispose()
-    throw new Error('activity_preview_issue_menu_unavailable')
+    throw new Error(unavailable)
   }
   const initialOpen = expanded === 'true'
   const originalMenuId = action.getAttribute('aria-controls')
@@ -47,6 +55,17 @@ export async function applyActivityThreadIssueMenuRequest(
     node.dataset.slot === 'tooltip-trigger' &&
     tooltipStates.has(node.dataset.state ?? '')
   const recordChanges = (records: MutationRecord[]): void => {
+    if (
+      records.some(
+        (record) =>
+          record.type === 'attributes' &&
+          record.attributeName === 'aria-label' &&
+          record.target instanceof HTMLButtonElement &&
+          (record.target === action || record.target.id === triggerId)
+      )
+    ) {
+      invalidated = true
+    }
     if (
       records.some(
         (record) =>
@@ -101,7 +120,7 @@ export async function applyActivityThreadIssueMenuRequest(
     }
   }
   const observer = new MutationObserver(recordChanges)
-  observer.observe(document.body, {
+  const observation = {
     subtree: true,
     childList: true,
     attributes: true,
@@ -121,6 +140,16 @@ export async function applyActivityThreadIssueMenuRequest(
       'data-activity-preview-workspace',
       'data-activity-preview-host'
     ]
+  }
+  for (const node of [document.body, portal, outer, originalMenu]) {
+    if (node) {
+      observer.observe(node, observation)
+    }
+  }
+  observer.observe(action, {
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: ['aria-label']
   })
   const unsubscribe = useAppStore.subscribe(context.observe)
   let visible: boolean | null = null
@@ -136,7 +165,7 @@ export async function applyActivityThreadIssueMenuRequest(
     ) {
       invalidated = true
     }
-    if (invalidated || !immutableSource() || !context.stillOwned()) {
+    if (invalidated || !immutableSource() || !context.stillExpected()) {
       return false
     }
     if (!portal.isConnected) {
@@ -146,7 +175,7 @@ export async function applyActivityThreadIssueMenuRequest(
     let current: ReturnType<typeof captureActivityThreadPreviewAction> | null = null
     if (command.enabled) {
       try {
-        current = captureActivityThreadPreviewAction(context, 'issue-menu')
+        current = captureActivityThreadPreviewAction(context, field)
       } catch {
         return false
       }
@@ -159,7 +188,11 @@ export async function applyActivityThreadIssueMenuRequest(
       if (!next || next.disabled) {
         return false
       }
-      if ((current && current.portal !== portal) || next.id !== triggerId) {
+      if (
+        (current && current.portal !== portal) ||
+        next.id !== triggerId ||
+        next.getAttribute('aria-label') !== sourceLabel
+      ) {
         invalidated = true
         return false
       }
@@ -207,7 +240,7 @@ export async function applyActivityThreadIssueMenuRequest(
   }
   try {
     if (!preview.stillExpected() || !context.stillExpected() || Date.now() >= request.expiresAt) {
-      throw new Error('activity_preview_issue_menu_unavailable')
+      throw new Error(unavailable)
     }
     if (
       initialOpen &&
@@ -216,7 +249,7 @@ export async function applyActivityThreadIssueMenuRequest(
         originalMenu.getAttribute('aria-labelledby') !== triggerId ||
         !isActivityDestinationVisible(originalMenu))
     ) {
-      throw new Error('activity_preview_issue_menu_unavailable')
+      throw new Error(unavailable)
     }
     if (initialOpen !== command.enabled) {
       action.dispatchEvent(
@@ -250,7 +283,9 @@ export async function applyActivityThreadIssueMenuRequest(
       compact: initial.agentsCompactMode,
       showChildAgents: initial.agentsShowChildAgents,
       rendered: context.sameRuntime() ? readActivityViewerView(command.surface) : null,
-      issueMenuAction: { paneKey: command.paneKey, enabled: command.enabled, visible },
+      ...(field === 'review-menu'
+        ? { reviewMenuAction: { paneKey: command.paneKey, enabled: command.enabled, visible } }
+        : { issueMenuAction: { paneKey: command.paneKey, enabled: command.enabled, visible } }),
       ...(!context.sameRuntime()
         ? { reason: 'viewer_runtime_changed' as const }
         : !context.stillOwned() || invalidated
