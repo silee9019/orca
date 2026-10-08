@@ -4,6 +4,7 @@ import { classifyActionSources } from './cli-action-classification.mjs'
 
 test('workspace command declarations keep workspace ownership without moving existing provider or app actions', () => {
   const input = [
+    ['file desktop-list-start', 'workspace-file-list', 'workspace-data'],
     ['folder-workspace create', 'workspace-folder', 'workspace-data'],
     ['workspace-ports kill', 'workspace-ports', 'workspace-data'],
     ['repo sparse-presets', 'workspace-repo-data', 'workspace-data'],
