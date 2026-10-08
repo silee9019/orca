@@ -36,6 +36,7 @@ import {
   setDesktopLineageForRpc
 } from '../../src/main/runtime/rpc/methods/workspace-lineage'
 import { registerWorktreeMetadataHandlers } from '../../src/main/ipc/worktrees/metadata/register-worktree-metadata-handlers'
+import { createFolderWorkspace } from '../../src/main/ipc/worktrees/create/folder-workspace-creation'
 type Params = z.infer<typeof DesktopWorktreeLineageUpdate>
 let directory: string
 let store: Store
@@ -43,8 +44,8 @@ let authority: ProfileStateSqliteAuthority
 let runtime: OrcaRuntimeService
 let window: BrowserWindow
 let ctx: HandlerContext
-let child: Params['target']
-let parent: Params['target']
+let child: Extract<Params['target'], { identityKey: string }>
+let parent: Extract<Params['target'], { identityKey: string }>
 async function git(args: string[], cwd: string) {
   const result = await runProcess({
     program: 'git',
@@ -193,6 +194,20 @@ it('rejects cycles, wrong host, stale identity and ambiguous repository owners w
   await expect(
     invoke({ target: child, parent: { ...parent, executionHostId: 'ssh:absent' } })
   ).rejects.toThrow()
+  const gitRecord = await runtime.showManagedWorktree(`identity:${child.identityKey}`)
+  await expect(
+    invoke(
+      {
+        target: {
+          worktreeId: child.worktreeId,
+          executionHostId: 'local',
+          instanceId: gitRecord.instanceId
+        },
+        noParent: true
+      },
+      `${child.worktreeId}:${gitRecord.instanceId}`
+    )
+  ).rejects.toThrow()
   store.addRepo({ ...store.getRepos()[0], connectionId: 'fixture' })
   await expect(invoke({ target: child, noParent: true })).rejects.toThrow()
   expect(store.getWorktreeLineage(child.worktreeId)?.parentWorktreeId).toBe(parent.worktreeId)
@@ -228,6 +243,73 @@ it('rejects a folder workspace without a resolvable instance identity and preser
   expect(store.getWorktreeLineage(folder.id)).toBeUndefined()
   expect(store.getWorktreeMetaForHost(folder.id, 'local')).toEqual(before)
 })
+it('sets and clears a real folder instance parent without inventing a runtime identity key', async () => {
+  const path = join(directory, 'folder-instances')
+  await mkdir(path)
+  const repo = {
+    id: 'folder-instances',
+    path,
+    kind: 'folder' as const,
+    displayName: 'Folder',
+    badgeColor: 'blue',
+    addedAt: 1
+  }
+  store.addRepo(repo)
+  const created = createFolderWorkspace(
+    { repoId: repo.id, name: 'Folder child', baseBranch: 'HEAD' },
+    repo,
+    store
+  )
+  const root = await runtime.showManagedWorktree(`path:${path}`)
+  if (!root.instanceId || !created.worktree.instanceId) {
+    throw new Error('Missing persisted folder instance')
+  }
+  const target = {
+    worktreeId: created.worktree.id,
+    instanceId: created.worktree.instanceId,
+    executionHostId: 'local'
+  }
+  const folderParent = {
+    worktreeId: root.id,
+    instanceId: root.instanceId,
+    executionHostId: 'local'
+  }
+  const confirm = `${target.worktreeId}:${target.instanceId}`
+  expect(await invoke({ target, parent: folderParent }, confirm)).toMatchObject({
+    updated: true,
+    instanceId: target.instanceId,
+    lineage: { parentWorktreeId: root.id }
+  })
+  expect(
+    JSON.stringify(
+      readProfileStateDomain(join(directory, 'profile.db'), 'fixture', 'worktreeLineageById')
+    )
+  ).toContain(target.worktreeId)
+  await expect(
+    invoke({ target: folderParent, parent: target }, `${root.id}:${root.instanceId}`)
+  ).rejects.toThrow()
+  await expect(
+    invoke(
+      { target: { ...target, instanceId: 'stale' }, noParent: true },
+      `${target.worktreeId}:stale`
+    )
+  ).rejects.toThrow()
+  expect(store.getWorktreeLineage(target.worktreeId)?.worktreeInstanceId).toBe(target.instanceId)
+  store.setWorktreeMetaForHost(target.worktreeId, 'local', { instanceId: 'replacement' })
+  await expect(invoke({ target, noParent: true }, confirm)).rejects.toThrow()
+  expect(store.getWorktreeLineage(target.worktreeId)?.worktreeInstanceId).toBe(target.instanceId)
+  store.setWorktreeMetaForHost(target.worktreeId, 'local', { instanceId: target.instanceId })
+  expect(await invoke({ target, noParent: true }, confirm)).toMatchObject({
+    updated: true,
+    lineage: null
+  })
+  expect(
+    JSON.stringify(
+      readProfileStateDomain(join(directory, 'profile.db'), 'fixture', 'worktreeLineageById')
+    )
+  ).not.toContain(target.worktreeId)
+  expect(store.getWorkspaceLineage(worktreeWorkspaceKey(target.worktreeId))).toBeUndefined()
+})
 it('preserves the original IPC parent and no-parent return and notification', async () => {
   const callback = vi
     .mocked(ipcMain.handle)
@@ -253,7 +335,8 @@ it('rejects invalid input and confirmation before RPC and reports service/save/o
   for (const params of [
     { target: child },
     { target: child, parent, noParent: true },
-    { target: child, noParent: true, extra: 'ignored' }
+    { target: child, noParent: true, extra: 'ignored' },
+    { target: { ...child, instanceId: 'both-identities' }, noParent: true }
   ]) {
     await expect(invoke(params)).rejects.toMatchObject({ code: 'invalid_argument' })
   }

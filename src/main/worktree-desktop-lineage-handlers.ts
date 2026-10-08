@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import type { z } from 'zod'
 import type { DesktopWorktreeLineageUpdate } from '../shared/rpc-contract/workspace-lineage-params'
 import { getRepoIdFromWorktreeId } from '../shared/worktree/id'
+import { getRepoExecutionHostId } from '../shared/execution-host'
 import { getRepoForExecutionHost } from './repo-execution-host-selection'
 import { notifyWorktreesChanged } from './ipc/worktree-remote'
 import { parseWorktreeId } from './ipc/worktree-logic'
@@ -12,20 +13,40 @@ type Context = Pick<WorktreeIpcContext, 'store' | 'runtime' | 'mainWindow'>
 type Target = z.infer<typeof DesktopWorktreeLineageUpdate>['target']
 type DesktopArgs = { worktreeId: string; parentWorktreeId?: string; noParent?: boolean }
 
+function lineageTargetSelector(target: Target): string {
+  return 'identityKey' in target ? `identity:${target.identityKey}` : `id:${target.worktreeId}`
+}
+
 async function requireLineageTarget({ store, runtime }: Context, target: Target) {
   const repoId = getRepoIdFromWorktreeId(target.worktreeId)
+  const owner = getRepoForExecutionHost(store, repoId, target.executionHostId)
   if (
     target.executionHostId.startsWith('runtime:') ||
     store.getRepos().filter((repo) => repo.id === repoId).length !== 1 ||
-    !getRepoForExecutionHost(store, repoId, target.executionHostId)
+    !owner
   ) {
     throw new Error('Workspace lineage owner is unavailable or ambiguous.')
   }
-  const worktree = await runtime.showManagedWorktree(`identity:${target.identityKey}`)
+  if ('instanceId' in target && owner.kind !== 'folder') {
+    throw new Error('Instance-only lineage selection requires a folder repository.')
+  }
+  const worktree = await runtime.showManagedWorktree(lineageTargetSelector(target))
+  if (
+    'instanceId' in target &&
+    store.getWorktreeMetaForHost(target.worktreeId, target.executionHostId)?.instanceId !==
+      target.instanceId
+  ) {
+    throw new Error('Persisted folder instance changed.')
+  }
+  const hostId =
+    worktree.identity?.executionHostId ?? worktree.hostId ?? getRepoExecutionHostId(owner)
   if (
     worktree.id !== target.worktreeId ||
-    worktree.identity?.key !== target.identityKey ||
-    worktree.identity.executionHostId !== target.executionHostId ||
+    worktree.repoId !== owner.id ||
+    ('identityKey' in target
+      ? worktree.identity?.key !== target.identityKey
+      : worktree.instanceId !== target.instanceId) ||
+    hostId !== target.executionHostId ||
     !worktree.instanceId
   ) {
     throw new Error('Workspace lineage instance changed.')
@@ -64,8 +85,8 @@ export function registerDesktopWorktreeLineageHandlers(context: Context): void {
       }
       const lineage = await update(
         { worktreeId: child.id, noParent: args.noParent },
-        `identity:${args.target.identityKey}`,
-        args.parent ? `identity:${args.parent.identityKey}` : undefined
+        lineageTargetSelector(args.target),
+        args.parent ? lineageTargetSelector(args.parent) : undefined
       )
       await store.flushPendingOrThrowAsync()
       return lineage

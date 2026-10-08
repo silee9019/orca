@@ -25,7 +25,9 @@ export const WORKSPACE_LINEAGE_METHODS = [
         updated: true,
         worktreeId: params.target.worktreeId,
         executionHostId: params.target.executionHostId,
-        identityKey: params.target.identityKey,
+        ...('identityKey' in params.target
+          ? { identityKey: params.target.identityKey }
+          : { instanceId: params.target.instanceId }),
         lineage
       }
     }

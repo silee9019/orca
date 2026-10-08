@@ -1,13 +1,18 @@
 import { z } from 'zod'
 import { ExecutionHostId } from './automation-params'
 
-const LineageTarget = z
-  .object({
-    worktreeId: z.string().min(1).max(2048),
-    executionHostId: ExecutionHostId,
-    identityKey: z.string().min(1).max(4096)
-  })
-  .strict()
+const LineageTargetFields = {
+  worktreeId: z.string().min(1).max(2048),
+  executionHostId: ExecutionHostId
+}
+const LineageTarget = z.union([
+  z.object({ ...LineageTargetFields, identityKey: z.string().min(1).max(4096) }).strict(),
+  z.object({ ...LineageTargetFields, instanceId: z.string().min(1).max(512) }).strict()
+])
+
+export function getDesktopLineageTargetConfirmation(target: z.infer<typeof LineageTarget>): string {
+  return 'identityKey' in target ? target.identityKey : `${target.worktreeId}:${target.instanceId}`
+}
 
 export const DesktopWorktreeLineageUpdate = z
   .object({
