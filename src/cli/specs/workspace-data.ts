@@ -1,3 +1,4 @@
+import { WORKSPACE_LINEAGE_COMMAND_SPECS } from './workspace-lineage'
 import { WORKSPACE_SPACE_SCAN_COMMAND_SPECS } from './workspace-space-scan'
 import { WORKSPACE_LOCALHOST_LABEL_COMMAND_SPECS } from './workspace-localhost-label'
 import { WORKSPACE_GITHUB_REFRESH_COMMAND_SPECS } from './workspace-github-refresh'
@@ -54,6 +55,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_LINEAGE_COMMAND_SPECS,
   ...WORKSPACE_SPACE_SCAN_COMMAND_SPECS,
   ...WORKSPACE_LOCALHOST_LABEL_COMMAND_SPECS,
   ...WORKSPACE_GITHUB_REFRESH_COMMAND_SPECS,
