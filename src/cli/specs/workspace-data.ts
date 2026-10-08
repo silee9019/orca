@@ -1,3 +1,4 @@
+import { WORKSPACE_EXTERNAL_PATH_IMPORT_SPECS } from './workspace-external-path-import'
 import { WORKSPACE_REMOTE_FILE_DOWNLOAD_SPECS } from './workspace-remote-file-download'
 import { WORKSPACE_REMOTE_FOLDER_DOWNLOAD_SPECS } from './workspace-remote-folder-download'
 import { WORKSPACE_WORK_ITEM_NOTIFY_SPECS } from './workspace-work-item-notify'
@@ -72,6 +73,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_EXTERNAL_PATH_IMPORT_SPECS,
   ...WORKSPACE_REMOTE_FILE_DOWNLOAD_SPECS,
   ...WORKSPACE_REMOTE_FOLDER_DOWNLOAD_SPECS,
   ...WORKSPACE_WORK_ITEM_NOTIFY_SPECS,

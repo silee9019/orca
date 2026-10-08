@@ -1,3 +1,4 @@
+import { WORKSPACE_EXTERNAL_PATH_IMPORT_HANDLER_GROUPS } from './workspace-external-path-import-handler-groups'
 import { WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS } from './workspace-remote-download-handler-groups'
 import { WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS } from './workspace-download-session-handler-groups'
 import { WORKSPACE_GIT_STATUS_HANDLER_GROUPS } from './workspace-git-status-handler-groups'
@@ -47,6 +48,7 @@ export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () =>
       (await import('./handlers/workspace-jira-reads.js')).WORKSPACE_JIRA_READ_HANDLERS
   },
+  ...WORKSPACE_EXTERNAL_PATH_IMPORT_HANDLER_GROUPS,
   ...WORKSPACE_REMOTE_DOWNLOAD_HANDLER_GROUPS,
   ...WORKSPACE_DOWNLOAD_SESSION_HANDLER_GROUPS,
   ...WORKSPACE_GIT_STATUS_HANDLER_GROUPS,
