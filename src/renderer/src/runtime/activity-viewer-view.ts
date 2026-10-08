@@ -1,5 +1,6 @@
 import type { ActivityViewerSurface } from '../../../shared/rpc-contract/activity-viewer-params'
 import type { ActivityViewerSnapshot } from '../../../shared/activity-viewer-command'
+import type { ActivityThreadSelectionOutcome } from '@/components/activity/activity-thread-actions'
 import type { AgentPaneThread } from '@/components/activity/activity-thread-types'
 
 export type ActivityThreadReadCallbacks = {
@@ -16,6 +17,7 @@ export type ActivityThreadReadControl = ActivityThreadReadCallbacks & {
 
 export type ActivityNavigationControl = {
   visibleThreads: readonly AgentPaneThread[]
+  select?: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
   jump: (thread: AgentPaneThread) => boolean | void
   canJump: (thread: AgentPaneThread) => boolean
 }

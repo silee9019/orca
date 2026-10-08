@@ -11,30 +11,37 @@ export function readActivityWorkspaceDestination(
       ) {
         return false
       }
-      const bounds = root.getBoundingClientRect()
-      if (
-        !Number.isFinite(bounds.width) ||
-        !Number.isFinite(bounds.height) ||
-        bounds.width <= 0 ||
-        bounds.height <= 0
-      ) {
-        return false
-      }
-      for (let element: HTMLElement | null = root; element; element = element.parentElement) {
-        const style = getComputedStyle(element)
-        if (
-          element.hidden ||
-          element.inert ||
-          element.getAttribute('aria-hidden') === 'true' ||
-          style.display === 'none' ||
-          style.visibility === 'hidden' ||
-          style.visibility === 'collapse' ||
-          Number.parseFloat(style.opacity) === 0
-        ) {
-          return false
-        }
-      }
-      return true
+      return isActivityDestinationVisible(root)
     }
   )
+}
+
+export function isActivityDestinationVisible(root: HTMLElement): boolean {
+  if (!root.isConnected) {
+    return false
+  }
+  const bounds = root.getBoundingClientRect()
+  if (
+    !Number.isFinite(bounds.width) ||
+    !Number.isFinite(bounds.height) ||
+    bounds.width <= 0 ||
+    bounds.height <= 0
+  ) {
+    return false
+  }
+  for (let element: HTMLElement | null = root; element; element = element.parentElement) {
+    const style = getComputedStyle(element)
+    if (
+      element.hidden ||
+      element.inert ||
+      element.getAttribute('aria-hidden') === 'true' ||
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      style.visibility === 'collapse' ||
+      Number.parseFloat(style.opacity) === 0
+    ) {
+      return false
+    }
+  }
+  return true
 }

@@ -78,3 +78,15 @@ it('accepts an explicit Activity workspace jump and rejects empty targets', () =
     }).success
   ).toBe(false)
 })
+
+it('requires an explicit target for select and rejects unsupported modifiers', () => {
+  const target = {
+    viewer: 'host',
+    surface: 'activity-page',
+    operation: 'select',
+    paneKey: 'tab:leaf'
+  }
+  expect(ActivityViewerParams.parse(target)).toEqual(target)
+  expect(ActivityViewerParams.safeParse({ ...target, paneKey: '' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...target, ctrlKey: true }).success).toBe(false)
+})

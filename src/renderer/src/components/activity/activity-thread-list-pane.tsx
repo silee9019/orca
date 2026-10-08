@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-virtual'
 import { cn } from '@/lib/utils'
 import type { ActivityViewerSurface } from '../../../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityThreadSelectionOutcome } from './activity-thread-actions'
 import { useActivityViewerPublication } from '@/runtime/use-activity-viewer-publication'
 import { useActivityThreadDensity } from './use-activity-thread-density'
 import { translate } from '@/i18n/i18n'
@@ -110,7 +111,7 @@ export function ActivityThreadListPane({
   allThreads?: readonly AgentPaneThread[]
   visibleThreadCount: number
   selectedPaneKey: string | null
-  onSelectThread: (thread: AgentPaneThread) => void
+  onSelectThread: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
   onJumpToWorkspace: (thread: AgentPaneThread) => void
   onMarkThreadRead: (thread: AgentPaneThread) => void
   onMarkThreadUnread: (thread: AgentPaneThread) => void
@@ -182,7 +183,7 @@ export function ActivityThreadListPane({
     query,
     selectedPaneKey,
     markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads },
-    navigation: { jump: onJumpToWorkspace, canJump: canJumpToWorkspace },
+    navigation: { jump: onJumpToWorkspace, select: onSelectThread, canJump: canJumpToWorkspace },
     completed: { run: onClearCompleted, hasCompletedThreads, groups: visibleThreadGroups },
     threadReads: allThreads
       ? {

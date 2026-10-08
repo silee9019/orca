@@ -5,6 +5,7 @@ function options(operation: string): { flags: string[]; usage: string } {
     case 'read-toggle':
     case 'clear-thread':
     case 'jump':
+    case 'select':
       return { flags: ['pane'], usage: ' --pane <pane-key>' }
     case 'read-toggle-many':
     case 'clear-threads':
@@ -33,6 +34,7 @@ function options(operation: string): { flags: string[]; usage: string } {
 export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
   'jump',
+  'select',
   'mark-all-read',
   'clear-completed',
   'clear-thread',
@@ -56,6 +58,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Select invokes the original open action once. Closed retained tabs report workspace-only with applied=false. Terminal arrival requires the exact visible leaf and its input focus; structured arrival reports local content state, never a remote activation acknowledgement.',
     'Jump uses the original workspace action and read acknowledgement. Applied confirms the visible destination workspace and its resolved host, not terminal readiness or a remote activation acknowledgement.',
     'Search-clear clicks the visible page clear button and focuses its input. Search changes only the requested surface local query and requires its visible input. Search-visible is sidebar-only; showing focuses the input and hiding clears its query.',
     'Origin uses the existing other-client availability gate. Host toggles use the current host catalog and preserve the last selected host. Scope-reset clears host and project scope together, preserving origin/read/search preferences.',

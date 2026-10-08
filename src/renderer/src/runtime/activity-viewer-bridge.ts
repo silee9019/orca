@@ -1,5 +1,5 @@
 import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
-import { applyActivityJumpRequest } from './activity-jump-command'
+import { applyActivityNavigationRequest } from './activity-navigation-command'
 import {
   readActivityViewerPersistence,
   readActivityPersistenceWriteOutcome
@@ -58,8 +58,8 @@ export async function applyActivityViewerRequest(
   if (initial.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
   }
-  if (command.operation === 'jump') {
-    return applyActivityJumpRequest(request, command)
+  if (command.operation === 'jump' || command.operation === 'select') {
+    return applyActivityNavigationRequest(request, command)
   }
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
   const markAllRead = command.operation === 'mark-all-read'

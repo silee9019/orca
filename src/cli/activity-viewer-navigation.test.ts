@@ -83,3 +83,59 @@ it('preserves an observed workspace outcome without inventing a remote acknowled
     expect(ActivityViewerResultSchema.parse(legacy).navigationAction).toBeUndefined()
   }
 })
+
+it('parses and dispatches explicit select without interpreting a partial reply as success', async () => {
+  for (const surface of ['activity-page', 'sidebar-agents']) {
+    call.mockResolvedValue({
+      id: 's',
+      ok: true,
+      _meta: { runtimeId: 'host' },
+      result: {
+        viewer: 'host',
+        viewerId: 7,
+        surface,
+        dispatched: true,
+        applied: false,
+        persisted: null,
+        writeOutcome: 'not_requested',
+        groupBy: 'none',
+        readFilter: 'all',
+        compact: false,
+        showChildAgents: true,
+        rendered: null,
+        navigationAction: {
+          operation: 'select',
+          paneKey: 'tab:leaf',
+          workspaceId: 'workspace',
+          executionHostId: 'local',
+          requestAccepted: true,
+          requestOutcome: 'workspace-only',
+          contentState: 'unknown',
+          reached: 'workspace',
+          remoteAck: 'unknown'
+        }
+      }
+    })
+    const parsed = parseArgs(
+      ['ui', 'activity', 'select', '--pane', 'tab:leaf', '--viewer', 'host', '--surface', surface],
+      COMMAND_SPECS.map((spec) => spec.path),
+      COMMAND_SPECS
+    )
+    await dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+    expect(call).toHaveBeenLastCalledWith('ui.activityViewer', {
+      viewer: 'host',
+      surface,
+      operation: 'select',
+      paneKey: 'tab:leaf'
+    })
+    expect(JSON.parse(String(printed.mock.calls.at(-1)?.[0])).result).toMatchObject({
+      applied: false,
+      navigationAction: {
+        operation: 'select',
+        requestOutcome: 'workspace-only',
+        reached: 'workspace',
+        remoteAck: 'unknown'
+      }
+    })
+  }
+})

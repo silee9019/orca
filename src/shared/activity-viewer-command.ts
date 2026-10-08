@@ -52,6 +52,20 @@ export const ActivityViewerResultSchema = z
         workspaceId: z.string(),
         executionHostId: z.string(),
         requestAccepted: z.boolean().nullable(),
+        requestOutcome: openEnum(
+          [
+            'workspace-unavailable',
+            'workspace-only',
+            'structured-requested',
+            'terminal-focus-requested',
+            'unknown'
+          ],
+          'unknown'
+        ).optional(),
+        contentState: openEnum(
+          ['ready', 'empty', 'loading', 'error', 'unknown'],
+          'unknown'
+        ).optional(),
         reached: openEnum(
           ['none', 'workspace', 'terminal-pane', 'structured-tab', 'unknown'],
           'unknown'

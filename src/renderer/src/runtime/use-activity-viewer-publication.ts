@@ -1,3 +1,4 @@
+import type { ActivityThreadSelectionOutcome } from '@/components/activity/activity-thread-actions'
 import type {
   AgentPaneThread,
   ActivityThreadGroup
@@ -34,6 +35,7 @@ export function useActivityViewerPublication(
   > & {
     markAllRead?: { run?: () => void; hasUnreadThreads: boolean }
     navigation?: {
+      select?: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome | void
       jump: (thread: AgentPaneThread) => boolean | void
       canJump: (thread: AgentPaneThread) => boolean
     }
@@ -62,6 +64,7 @@ export function useActivityViewerPublication(
   const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
   const { allThreads, markRead, markUnread, markManyRead, markManyUnread, canMarkUnread } =
     preferences.threadReads ?? {}
+  const navigationSelect = preferences.navigation?.select
   const navigationJump = preferences.navigation?.jump
   const navigationCanJump = preferences.navigation?.canJump
   const completedRun = preferences.completed?.run
@@ -106,6 +109,7 @@ export function useActivityViewerPublication(
         navigation:
           navigationJump && navigationCanJump
             ? {
+                select: navigationSelect,
                 jump: navigationJump,
                 canJump: navigationCanJump,
                 visibleThreads: rows.flatMap((row) => (row.type === 'thread' ? [row.thread] : []))
@@ -154,6 +158,7 @@ export function useActivityViewerPublication(
     markManyRead,
     markManyUnread,
     canMarkUnread,
+    navigationSelect,
     navigationJump,
     navigationCanJump,
     completedRun,
