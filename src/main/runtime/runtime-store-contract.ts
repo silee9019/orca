@@ -49,6 +49,7 @@ export type RuntimeStore = {
   getWorkspaceSessionHostIds?: Store['getWorkspaceSessionHostIds']
   readTerminalScrollbackSnapshot?: Store['readTerminalScrollbackSnapshot']
   setWorkspaceSession?: Store['setWorkspaceSession']
+  patchWorkspaceSession?: Store['patchWorkspaceSession']
   runDurableMutation?: Store['runDurableMutation']
   flushOrThrow?: Store['flushOrThrow']
   flushPendingOrThrowAsync?: Store['flushPendingOrThrowAsync']

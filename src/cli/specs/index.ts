@@ -1,3 +1,4 @@
+import { AGENT_SESSION_RUNTIME_COMMAND_SPECS } from './agent-session-runtime-command-specs'
 import { PROJECT_FILTER_COMMAND_SPECS } from './project-filter'
 import { SETTINGS_COMMAND_SPECS } from './settings'
 import { TCC_THRESHOLD_OBSERVE_COMMAND_SPECS } from './tcc-threshold-observe'
@@ -132,6 +133,7 @@ import { PROFILE_STATE_COMMAND_SPECS } from './profile-state'
 import { AGENT_SESSION_COMMAND_SPECS } from './agent-sessions'
 
 export const COMMAND_SPECS: CommandSpec[] = [
+  ...AGENT_SESSION_RUNTIME_COMMAND_SPECS,
   ...PROJECT_FILTER_COMMAND_SPECS,
   ...SETTINGS_COMMAND_SPECS,
   ...TCC_THRESHOLD_OBSERVE_COMMAND_SPECS,

@@ -227,7 +227,7 @@ describe('command aliases dispatch to the canonical handler', () => {
   })
 
   it('still runs `terminal focus` after the handler de-duplication', async () => {
-    queueFixtures(callMock, okFixture('req', { focus: { ok: true } }))
+    queueFixtures(callMock, okFixture('req', { focus: { ok: true, navigated: true } }))
 
     await main(['terminal', 'focus', '--terminal', 'term_abc', '--json'], '/tmp/repo')
 

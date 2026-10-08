@@ -50,9 +50,9 @@ export class RuntimeRpcLifecycle extends RuntimeRpcWebSocketDispatch {
       if (
         !('error' in parsed) &&
         parsed.request.method === 'runtime.clientEvents.subscribe' &&
-        context?.stream
+        context?.clientEventStream
       ) {
-        const stream = context.stream
+        const stream = context.clientEventStream
         context.startKeepalive()
         void this.dispatcher
           .dispatchStreaming(parsed.request, stream.emit, {
@@ -64,7 +64,9 @@ export class RuntimeRpcLifecycle extends RuntimeRpcWebSocketDispatch {
       }
       void this.handleMessage(msg, context)
         .then((response) => {
-          reply(JSON.stringify(response))
+          if (response !== undefined) {
+            reply(JSON.stringify(response))
+          }
         })
         .catch((error) => {
           const message = error instanceof Error ? error.message : String(error)

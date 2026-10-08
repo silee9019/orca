@@ -67,8 +67,15 @@ import {
 } from './accounts-params'
 import { AccountsViewerParams } from './accounts-viewer-params'
 import { ActivityViewerParams } from './activity-viewer-params'
+import { AgentAwakeSubscriptionParams } from './agent-awake-watch-params'
 import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
+import { AgentMigrationSubscriptionParams } from './agent-migration-watch-params'
+import {
+  AgentPaneRestoreParams,
+  AgentPaneRetireParams,
+  AgentPaneTransferParams
+} from './agent-pane-authority-params'
 import { AgentPermissionModeParams } from './agent-permission-mode-params'
 import { CreateAgentSessionParams, EnsureAgentSessionParams } from './agent-session-params'
 import {
@@ -79,6 +86,12 @@ import {
   AgentStatusRetireTabParams
 } from './agent-status-cli-params'
 import { AgentStatusReconcileParams } from './agent-status-reconcile-params'
+import { AgentStatusSubscriptionParams } from './agent-status-watch-params'
+import { AgentWorkerRecoverySubscriptionParams } from './agent-worker-recovery-watch-params'
+import {
+  AiVaultListCancelParams,
+  AiVaultListCapabilitiesParams
+} from './ai-vault-list-cancel-params'
 import {
   AiVaultListSessionsParams,
   AiVaultPrepareSessionResumeParams,
@@ -233,10 +246,18 @@ import {
 import { ConnectionsViewerParams } from './connections-viewer-params'
 import { CrashReportParams } from './crash-report-params'
 import {
+  DaemonFolderAccessCancelParams,
+  DaemonFolderAccessPlanParams,
+  DaemonFolderAccessStartParams,
+  DaemonFolderAccessStatusParams,
+  DaemonFolderAccessVerifyParams
+} from './daemon-folder-access-params'
+import {
   DaemonManagementListParams,
   DaemonManagementStopManyParams,
   DaemonManagementStopParams
 } from './daemon-management-params'
+import { DaemonRestartParams, DaemonRestartPlanParams } from './daemon-restart-params'
 import { EmulatorControlParams, EmulatorFocusParams } from './emulator-control-params'
 import { EmulatorObservationParams, EmulatorStreamStopParams } from './emulator-observation-params'
 import {
@@ -594,11 +615,14 @@ import {
   ProjectUpdate
 } from './project-runtime-params'
 import { PtyProviderSessionsParams } from './pty-provider-sessions-params'
+import { RemoteWorkspacePublishParams } from './remote-workspace-publish-params'
 import {
   RemoteWorkspaceClientsParams,
   RemoteWorkspaceInventoryParams,
   RemoteWorkspaceReadParams
 } from './remote-workspace-read-params'
+import { RemoteWorkspaceSubscriptionParams } from './remote-workspace-watch-params'
+import { RendererResyncSubscriptionParams } from './renderer-delivery-resync-watch-params'
 import {
   ProjectGroupCreate,
   ProjectGroupImportNested,
@@ -707,20 +731,35 @@ import {
   ThreadGoalParams,
   UnsubscribeParams
 } from './structured-agent-session-params'
+import { StructuredHeldSubscriptionParams } from './structured-held-watch-params'
+import { TerminalControlSubscriptionParams } from './terminal-control-watch-params'
 import {
   TerminalDeliveryDebugReadParams,
   TerminalDeliveryDebugResetParams
 } from './terminal-delivery-debug-params'
+import { TerminalEffectsSubscriptionParams } from './terminal-effects-watch-params'
+import { TerminalExitSubscriptionParams } from './terminal-exit-watch-params'
 import {
   FloatingTerminalCwdParams,
   SavedTerminalScrollbackParams,
   TerminalMainBufferParams
 } from './terminal-host-details-params'
 import { TerminalHostInventoryParams } from './terminal-host-inventory-params'
+import { TerminalHostResizeParams } from './terminal-host-resize-params'
+import { TerminalHostViewportParams } from './terminal-host-viewport-params'
+import { TerminalListenerCountParams } from './terminal-listener-count-params'
 import { TerminalAdoptOrphans } from './terminal-orphan-params'
+import { TerminalPresentationWaitParams } from './terminal-presentation-wait-params'
+import { TerminalPresentationSubscriptionParams } from './terminal-presentation-watch-params'
+import { TerminalPreviewDataSubscriptionParams } from './terminal-preview-data-watch-params'
+import { TerminalPreviewInputParams } from './terminal-preview-input-params'
+import { TerminalPrivateSpawnParams } from './terminal-private-spawn-params'
+import { TerminalPtyStopParams } from './terminal-pty-stop-params'
 import { TerminalQuickCommandsUpdate } from './terminal-quick-command-params'
+import { TerminalRenderEvidenceParams } from './terminal-render-evidence-params'
 import { TerminalSideEffectSnapshotParams } from './terminal-side-effect-snapshot-params'
 import { TerminalSignalParams } from './terminal-signal-params'
+import { TerminalSpawnSubscriptionParams } from './terminal-spawn-watch-params'
 import { TerminalStartupRestorationParams } from './terminal-startup-restoration-params'
 import {
   TerminalMultiplex,
@@ -876,6 +915,10 @@ import {
   WorkspaceSessionStateReadParams
 } from './workspace-session-state-params'
 import {
+  WorkspaceSessionPatchParams,
+  WorkspaceSessionWriteParams
+} from './workspace-session-write-params'
+import {
   DesktopShellOpenEditor,
   DesktopShellOpenFile,
   DesktopShellOpenUri
@@ -963,6 +1006,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'agent.launch': AgentLaunch,
   'agent.launchReplay': AgentLaunchReplay,
   'agentAwake.status': AgentStatusListParams,
+  'agentAwake.subscribe': AgentAwakeSubscriptionParams,
   'agentHooks.prepareCodexForWslPane': PrepareCodexForWslPaneParams,
   'agentPermissionMode.control': AgentPermissionModeParams,
   'agentSession.agents': AgentsParams,
@@ -1004,13 +1048,21 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentStatus.inferQuestionAnswered': AgentStatusQuestionAnsweredParams,
   'agentStatus.list': AgentStatusListParams,
   'agentStatus.migration': AgentStatusListParams,
+  'agentStatus.migrationSubscribe': AgentMigrationSubscriptionParams,
   'agentStatus.reconcileEndedProcess': AgentStatusReconcileParams,
+  'agentStatus.restorePaneAuthority': AgentPaneRestoreParams,
+  'agentStatus.retirePaneAuthority': AgentPaneRetireParams,
   'agentStatus.retireTab': AgentStatusRetireTabParams,
+  'agentStatus.subscribe': AgentStatusSubscriptionParams,
+  'agentStatus.transferPaneAuthority': AgentPaneTransferParams,
+  'agentStatus.workerRecoverySubscribe': AgentWorkerRecoverySubscriptionParams,
   'agentTeams.prepareLaunch': AgentTeamsPrepareLaunch,
   'agentTeams.tmuxCompat': AgentTeamsTmuxCompat,
+  'aiVault.cancelOwnedListSessions': AiVaultListCancelParams,
   'aiVault.deleteSession': AiVaultDeleteSessionParams,
   'aiVault.listSessions': AiVaultListSessionsParams,
   'aiVault.listSubagentSessions': AiVaultSubagentSessionsParams,
+  'aiVault.ownedListCapabilities': AiVaultListCapabilitiesParams,
   'aiVault.prepareSessionResume': AiVaultPrepareSessionResumeParams,
   'aiVault.resolveSessionTitles': AiVaultSessionTitlesParams,
   'aiVault.searchSessions': AiVaultSearchRequestSchema,
@@ -1178,6 +1230,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'crashReports.getLatestPending': null,
   'crashReports.getLatestReport': null,
   'crashReports.submit': WorkspaceCrashReportSubmit,
+  'daemon.folderAccessCancel': DaemonFolderAccessCancelParams,
+  'daemon.folderAccessPlan': DaemonFolderAccessPlanParams,
+  'daemon.folderAccessStart': DaemonFolderAccessStartParams,
+  'daemon.folderAccessStatus': DaemonFolderAccessStatusParams,
+  'daemon.folderAccessVerify': DaemonFolderAccessVerifyParams,
+  'daemon.restartPinned': DaemonRestartParams,
+  'daemon.restartPlan': DaemonRestartPlanParams,
   'daemon.sessions.list': DaemonManagementListParams,
   'daemon.sessions.stop': DaemonManagementStopParams,
   'daemon.sessions.stopMany': DaemonManagementStopManyParams,
@@ -1732,6 +1791,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'remoteWorkspace.get': RemoteWorkspaceReadParams,
   'remoteWorkspace.listConnectedClients': RemoteWorkspaceClientsParams,
   'remoteWorkspace.listEnabledConnectedTargets': RemoteWorkspaceInventoryParams,
+  'remoteWorkspace.publishTargets': RemoteWorkspacePublishParams,
+  'remoteWorkspace.subscribe': RemoteWorkspaceSubscriptionParams,
+  'renderer.deliveryResync.subscribe': RendererResyncSubscriptionParams,
   'repo.add': RepoPath,
   'repo.addDesktopLocal': DesktopRepoAddLocal,
   'repo.addDesktopRemote': DesktopRepoAddRemote,
@@ -1786,9 +1848,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'search.viewer': SearchSettingsViewerParams,
   'session.flush': WorkspaceSessionStateFlushParams,
   'session.listHostIds': TerminalHostInventoryParams,
+  'session.patchState': WorkspaceSessionPatchParams,
   'session.prepareTerminalStartupRestoration': TerminalStartupRestorationParams,
   'session.readState': WorkspaceSessionStateReadParams,
   'session.readTerminalScrollback': SavedTerminalScrollbackParams,
+  'session.replaceState': WorkspaceSessionWriteParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
   'session.tabs.closeLifecycle': CloseLifecycleTab,
@@ -1903,21 +1967,27 @@ export const RPC_PARAMS_BY_METHOD = {
   'ssh.management.updateTarget': SshManagedUpdateTarget,
   'stats.summary': null,
   'status.get': null,
+  'structuredHeld.subscribe': StructuredHeldSubscriptionParams,
   'terminal.adoptOrphans': TerminalAdoptOrphans,
   'terminal.agentStatus': TerminalHandle,
+  'terminal.claimHostViewport': TerminalHostViewportParams,
   'terminal.clearBuffer': TerminalHandle,
   'terminal.close': TerminalHandle,
   'terminal.closeAll': TerminalCloseAll,
   'terminal.closeTab': TerminalHandle,
   'terminal.codexSharedServerStatus': CodexPaneSharedServerStatusParams,
   'terminal.confirmForegroundProcess': CodexPaneSharedServerStatusParams,
+  'terminal.controlRequests.subscribe': TerminalControlSubscriptionParams,
   'terminal.create': TerminalCreateParams,
   'terminal.createAgentSession': CreateAgentSessionParams,
   'terminal.cwd': CodexPaneSharedServerStatusParams,
+  'terminal.dataListenerCount': TerminalListenerCountParams,
   'terminal.deliveryDebug': TerminalDeliveryDebugReadParams,
   'terminal.disableCodexSharedServerAutoStart': CodexPaneSharedServerMutationParams,
   'terminal.drivers': TerminalHostInventoryParams,
+  'terminal.effects.subscribe': TerminalEffectsSubscriptionParams,
   'terminal.ensureAgentSession': EnsureAgentSessionParams,
+  'terminal.exit.subscribe': TerminalExitSubscriptionParams,
   'terminal.fitOverrides': TerminalHostInventoryParams,
   'terminal.floatingCwd': FloatingTerminalCwdParams,
   'terminal.focus': TerminalFocus,
@@ -1928,14 +1998,21 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.list': TerminalListParams,
   'terminal.listProviderSessions': PtyProviderSessionsParams,
   'terminal.mainBufferSnapshot': TerminalMainBufferParams,
+  'terminal.modelRestore.subscribe': TerminalControlSubscriptionParams,
   'terminal.multiplex': TerminalMultiplex,
   'terminal.presence': CodexPaneSharedServerStatusParams,
+  'terminal.presentation.subscribe': TerminalPresentationSubscriptionParams,
+  'terminal.previewData.subscribe': TerminalPreviewDataSubscriptionParams,
+  'terminal.previewInput': TerminalPreviewInputParams,
   'terminal.read': TerminalRead,
   'terminal.recoverPane': TerminalRecoverPane,
   'terminal.rename': TerminalRename,
+  'terminal.rendererData.subscribe': TerminalPreviewDataSubscriptionParams,
+  'terminal.rendererReplay.subscribe': TerminalPreviewDataSubscriptionParams,
   'terminal.resetDeliveryDebug': TerminalDeliveryDebugResetParams,
   'terminal.resetInputModes': TerminalHandle,
   'terminal.resizeForClient': TerminalResizeForClient,
+  'terminal.resizeHost': TerminalHostResizeParams,
   'terminal.resolveActive': TerminalResolveActive,
   'terminal.resolveIdentity': TerminalHandle,
   'terminal.resolvePane': TerminalResolvePane,
@@ -1949,14 +2026,22 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.signal': TerminalSignalParams,
   'terminal.size': CodexPaneSharedServerStatusParams,
   'terminal.sleep': TerminalCloseAll,
+  'terminal.spawn.subscribe': TerminalSpawnSubscriptionParams,
+  'terminal.spawnPrivate': TerminalPrivateSpawnParams,
   'terminal.split': TerminalSplit,
   'terminal.stop': TerminalCloseAll,
   'terminal.stopCodexSharedServer': CodexPaneSharedServerMutationParams,
   'terminal.stopExact': TerminalStopExact,
+  'terminal.stopPty': TerminalPtyStopParams,
   'terminal.subscribe': TerminalSubscribe,
   'terminal.unsubscribe': TerminalUnsubscribe,
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
+  'terminal.waitDriver': TerminalPresentationWaitParams,
+  'terminal.waitFit': TerminalPresentationWaitParams,
+  'terminal.writeInput': TerminalPreviewInputParams,
+  'terminal.writeInputAccepted': TerminalPreviewInputParams,
+  'terminal.writeRenderEvidence': TerminalRenderEvidenceParams,
   'ui.activityViewer': ActivityViewerParams,
   'ui.browserViewer': BrowserViewerCommand,
   'ui.cardViewer': CardViewerParams,

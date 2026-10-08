@@ -3,11 +3,19 @@ import { OrcaRuntimeWithPickMostRecentActor } from './orca-runtime-pick-most-rec
 import type { ApplyLayoutResult, PtyLayoutState, PtyLayoutTarget } from './orca-runtime-core'
 
 export class OrcaRuntimeWithApplyLayout extends OrcaRuntimeWithPickMostRecentActor {
-  protected async applyLayout(ptyId: string, target: PtyLayoutTarget): Promise<ApplyLayoutResult> {
+  protected async applyLayout(
+    ptyId: string,
+    target: PtyLayoutTarget,
+    ownerMatches?: () => boolean
+  ): Promise<ApplyLayoutResult> {
     // Why: re-check pty-exit at the head of the slot — the queue may have
     // accepted this target before onPtyExit ran.
     if (!this.layouts.has(ptyId) && !this.isFreshSubscribe(ptyId)) {
       return { ok: false, reason: 'pty-exited' }
+    }
+
+    if (ownerMatches && !ownerMatches()) {
+      return { ok: false, reason: 'owner-changed' }
     }
 
     const prev = this.layouts.get(ptyId) ?? null
@@ -20,6 +28,10 @@ export class OrcaRuntimeWithApplyLayout extends OrcaRuntimeWithPickMostRecentAct
 
     // Snapshot for rollback.
     const prevFitOverride = this.terminalFitOverrides.get(ptyId) ?? null
+
+    if (ownerMatches && !ownerMatches()) {
+      return { ok: false, reason: 'owner-changed' }
+    }
 
     // Tentative writes — the resize is the point of no return.
     this.layouts.set(ptyId, next)
@@ -69,6 +81,12 @@ export class OrcaRuntimeWithApplyLayout extends OrcaRuntimeWithPickMostRecentAct
           this.terminalFitOverrides.delete(ptyId)
         }
         return { ok: false, reason: 'resize-failed' }
+      }
+      if (ownerMatches && !ownerMatches()) {
+        if (this.layouts.get(ptyId) === next) {
+          this.layouts.delete(ptyId)
+        }
+        return { ok: false, reason: 'owner-changed' }
       }
       this.resizeHeadlessTerminal(ptyId, target.cols, target.rows)
     }

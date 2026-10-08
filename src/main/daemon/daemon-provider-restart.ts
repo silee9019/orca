@@ -1,3 +1,5 @@
+import type { DaemonEndpointIdentity } from './daemon-hello-protocol'
+import { assertDaemonRestartIdentity } from './daemon-restart-identity'
 import { rebindLocalProviderListeners, unbindLocalProviderListeners } from '../ipc/pty'
 import { DegradedDaemonPtyProvider } from './degraded-daemon-pty-provider'
 import {
@@ -34,11 +36,25 @@ import { PROTOCOL_VERSION } from './types'
 export type { RestartDaemonResult } from './daemon-restart-state'
 
 // Why: the 7-step restart sequence from docs/daemon-staleness-ux.md §Phase 1; current-protocol only (legacy adapters preserved).
-export async function restartDaemon(): Promise<RestartDaemonResult> {
-  return runCoalescedDaemonRestart(runRestartDaemon)
+export async function restartDaemon(expected?: {
+  provider: DaemonProvider
+  identity: DaemonEndpointIdentity
+}): Promise<RestartDaemonResult> {
+  if (expected) {
+    if (isDaemonRestartInFlight() || getDaemonProvider() !== expected.provider) {
+      throw new Error('daemon_restart_owner_changed_or_busy')
+    }
+    assertDaemonRestartIdentity(
+      getCurrentDaemonAdapter(expected.provider).getDaemonIdentity(),
+      expected.identity
+    )
+  }
+  return runCoalescedDaemonRestart(() => runRestartDaemon(expected?.identity))
 }
 
-async function runRestartDaemon(): Promise<RestartDaemonResult> {
+async function runRestartDaemon(
+  expectedIdentity?: DaemonEndpointIdentity
+): Promise<RestartDaemonResult> {
   const currentSpawner = getDaemonSpawner()
   const currentAdapter = getDaemonProvider()
   if (!currentSpawner || !currentAdapter) {
@@ -75,7 +91,9 @@ async function runRestartDaemon(): Promise<RestartDaemonResult> {
   // Step 3: kill the current-protocol daemon process; legacy adapters untouched.
   let info: Awaited<ReturnType<DaemonSpawner['ensureRunning']>>
   try {
-    await cleanupDaemonForProtocol(runtimeDir, PROTOCOL_VERSION)
+    await (expectedIdentity
+      ? cleanupDaemonForProtocol(runtimeDir, PROTOCOL_VERSION, expectedIdentity)
+      : cleanupDaemonForProtocol(runtimeDir, PROTOCOL_VERSION))
 
     // Step 4: reuse the existing spawner so the respawn closure baked into long-lived adapters stays valid (do NOT new one).
     currentSpawner.resetHandle()

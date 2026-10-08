@@ -1,5 +1,4 @@
 import '../../src/main/runtime/orca-runtime-test-mocks.spec'
-import { randomUUID } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { createConnection, type Socket } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -10,7 +9,8 @@ import type { AiVaultServiceScanOptions } from '../../src/main/ai-vault/session-
 import { OrcaRuntimeService } from '../../src/main/runtime/orca-runtime'
 import { RpcDispatcher } from '../../src/main/runtime/rpc/dispatcher'
 import { AI_VAULT_METHODS } from '../../src/main/runtime/rpc/methods/ai-vault'
-import { UnixSocketTransport } from '../../src/main/runtime/rpc/unix-socket-transport'
+import { OrcaRuntimeRpcServer } from '../../src/main/runtime/runtime-rpc'
+import { readRuntimeMetadata } from '../../src/main/runtime/runtime-metadata'
 import { resetAiVaultSessionListCacheForTests } from '../../src/main/ai-vault/cached-session-list'
 
 const { scan } = vi.hoisted(() => ({
@@ -24,7 +24,8 @@ vi.mock('../../src/main/ai-vault/session-scanner-service-spawn', async (original
 }))
 let root: string
 let endpoint: string
-let transport: UnixSocketTransport
+let transport: OrcaRuntimeRpcServer
+let authToken: string
 let rpc: RpcDispatcher
 let runtime: OrcaRuntimeService
 const clients: Socket[] = []
@@ -49,21 +50,17 @@ beforeEach(async () => {
   vi.spyOn(runtime, 'listAiVaultSessions')
   vi.spyOn(runtime, 'ensureStructuredAgentSessionHost').mockResolvedValue(undefined)
   rpc = new RpcDispatcher({ runtime, methods: AI_VAULT_METHODS })
-  endpoint =
-    process.platform === 'win32'
-      ? String.raw`\\.\pipe\orca-history-cancel-${randomUUID()}`
-      : join(root, 'runtime.sock')
-  transport = new UnixSocketTransport({
-    endpoint,
-    kind: process.platform === 'win32' ? 'named-pipe' : 'unix'
-  })
-  transport.onMessage((message, reply, context) => {
-    void rpc.dispatch(JSON.parse(message), context).then((response) => {
-      responses.set(response.id, response)
-      reply(JSON.stringify(response))
-    })
-  })
+  transport = new OrcaRuntimeRpcServer({ runtime, userDataPath: root, enableWebSocket: false })
   await transport.start()
+  const metadata = readRuntimeMetadata(root)
+  const local = metadata?.transports?.find(
+    (item) => item.kind === 'unix' || item.kind === 'named-pipe'
+  )
+  if (!metadata?.authToken || !local) {
+    throw new Error('Missing isolated runtime transport metadata')
+  }
+  endpoint = local.endpoint
+  authToken = metadata.authToken
 })
 afterEach(async () => {
   for (const client of clients.splice(0)) {
@@ -82,8 +79,23 @@ async function request(id: string): Promise<Socket> {
     client.once('connect', resolve)
     client.once('error', reject)
   })
+  let buffered = ''
+  client.on('data', (data) => {
+    buffered += data.toString('utf8')
+    for (;;) {
+      const newline = buffered.indexOf('\n')
+      if (newline === -1) {
+        break
+      }
+      const row = JSON.parse(buffered.slice(0, newline))
+      buffered = buffered.slice(newline + 1)
+      if (typeof row.id === 'string') {
+        responses.set(row.id, row)
+      }
+    }
+  })
   client.write(
-    `${JSON.stringify({ id, authToken: 'fixture', method: 'aiVault.listSessions', params: { limit: 20 } })}\n`
+    `${JSON.stringify({ id, authToken, method: 'aiVault.listSessions', params: { limit: 20 } })}\n`
   )
   return client
 }
@@ -101,7 +113,7 @@ it('cancels the scan when its only socket disconnects and permits a fresh scan',
   expect(signal.aborted).toBe(false)
   client.destroy()
   await vi.waitFor(() => expect(signal.aborted).toBe(true))
-  await vi.waitFor(() => expect(responses.get('cancel')).toMatchObject({ ok: false }))
+  await expect(vi.mocked(runtime.listAiVaultSessions).mock.results[0]?.value).rejects.toBeDefined()
   scan.mockResolvedValueOnce(result)
   await expect(
     rpc.dispatch({
@@ -119,7 +131,7 @@ it('detaches a disconnected waiter while a second socket completes the shared sc
   await request('second')
   await vi.waitFor(() => expect(runtime.listAiVaultSessions).toHaveBeenCalledTimes(2))
   first.destroy()
-  await vi.waitFor(() => expect(responses.get('first')).toMatchObject({ ok: false }))
+  await expect(vi.mocked(runtime.listAiVaultSessions).mock.results[0]?.value).rejects.toBeDefined()
   expect(scanSignal().aborted).toBe(false)
   finishScan(result)
   await vi.waitFor(() => expect(responses.get('second')).toMatchObject({ ok: true, result }))

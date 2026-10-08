@@ -5,9 +5,10 @@ import {
 } from './account-observation-transport'
 import type { EmulatorSubscriptionArguments } from './emulator-subscription'
 import { watchConnectionEvents } from './connection-event-watch'
+import { createCliRuntimeSubscriptionOptions } from './runtime-subscription-target'
+import { RuntimeEventSubscriptions } from './runtime-event-subscriptions'
 import { randomUUID } from 'node:crypto'
 import type { CliStatusResult, RuntimeStatus } from '../../shared/runtime-types'
-import { runtimeHostConnectionState } from '../../shared/runtime-host-connection-state'
 import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-envelope'
 import {
   isDurableMutation,
@@ -18,7 +19,8 @@ import {
 import type { PairingOffer } from '../../shared/pairing'
 import { launchOrcaApp } from './launch'
 import { getDefaultUserDataPath, readMetadata } from './metadata'
-import { getCliStatus, projectRemoteAppStatus } from './status'
+import { getCliStatus } from './status'
+import { projectRemoteCliStatus } from './remote-cli-status'
 import { sendRequest } from './transport'
 import { RuntimeClientError, RuntimeRpcFailureError, type RuntimeRpcSuccess } from './types'
 import {
@@ -43,7 +45,7 @@ import {
 
 const loadWebSocketTransport = async () => await import('./websocket-transport.js')
 
-export class RuntimeClient {
+export class RuntimeClient extends RuntimeEventSubscriptions {
   readonly observeCodexLogin: ReturnType<typeof createCodexLoginObserver>
   readonly observeRateLimits: ReturnType<typeof createRateLimitObserver>
   readonly observeTccThreshold: ReturnType<typeof createTccThresholdObserver>
@@ -70,6 +72,7 @@ export class RuntimeClient {
     cliExecutable = resolveOrchestrationCliExecutable(),
     originalArgs?: readonly string[]
   ) {
+    super()
     this.userDataPath = userDataPath
     this.requestTimeoutMs = requestTimeoutMs
     this.environmentSelector = environmentSelector
@@ -98,6 +101,16 @@ export class RuntimeClient {
 
   get isRemote(): boolean {
     return this.remotePairing !== null
+  }
+
+  protected get subscriptionOptions() {
+    return createCliRuntimeSubscriptionOptions(
+      this.userDataPath,
+      this.remotePairing,
+      this.requestTimeoutMs,
+      this.remoteCompat,
+      this.environmentSelector
+    )
   }
 
   async call<TResult>(
@@ -171,7 +184,7 @@ export class RuntimeClient {
       } catch (error) {
         throw recover(error, null)
       }
-      if (response.ok === false) {
+      if (!response.ok) {
         throw recover(new RuntimeRpcFailureError(response), null)
       }
       if (this.environmentSelector) {
@@ -188,7 +201,7 @@ export class RuntimeClient {
     } catch (error) {
       throw recover(error, metadata.runtimeId ?? null)
     }
-    if (response.ok === false) {
+    if (!response.ok) {
       throw recover(new RuntimeRpcFailureError(response), metadata.runtimeId ?? null)
     }
     return response
@@ -207,37 +220,7 @@ export class RuntimeClient {
     if (this.remotePairing) {
       const response = await this.call<RuntimeStatus>('status.get')
       this.remoteCompat.noteVerifiedStatus(response.result)
-      const graphState = response.result.graphStatus
-      return {
-        id: response.id,
-        ok: true,
-        result: {
-          target: {
-            kind: 'environment',
-            environment: this.environmentSelector ?? 'pairing-code'
-          },
-          app: projectRemoteAppStatus(response.result),
-          runtime: {
-            state: graphState === 'ready' ? 'ready' : 'graph_not_ready',
-            reachable: true,
-            connectionState: runtimeHostConnectionState({
-              hasStatusEntry: true,
-              status: response.result
-            }),
-            runtimeId: response.result.runtimeId,
-            ...(response.result.appVersion ? { appVersion: response.result.appVersion } : {}),
-            ...(response.result.remoteUpdateSupport
-              ? { remoteUpdateSupport: response.result.remoteUpdateSupport }
-              : {}),
-            ...(response.result.capabilities ? { capabilities: response.result.capabilities } : {}),
-            ...(response.result.degradations ? { degradations: response.result.degradations } : {})
-          },
-          graph: {
-            state: graphState
-          }
-        },
-        _meta: response._meta
-      }
+      return projectRemoteCliStatus(response, this.environmentSelector)
     }
     return getCliStatus(this.userDataPath)
   }

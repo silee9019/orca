@@ -40,6 +40,8 @@ import {
   resyncStaleRemoteWorkspace
 } from './remote-workspace-stale-resync'
 
+import { publishRemoteWorkspaceChange } from './remote-workspace-change-observers'
+
 let mainWindowGetter: (() => BrowserWindow | null) | null = null
 let unregisterRemoteWorkspaceNotifications: (() => void) | null = null
 
@@ -116,6 +118,7 @@ function sendRemoteWorkspaceChanged(
     snapshot,
     ...(sourceClientId !== undefined ? { sourceClientId } : {})
   }
+  publishRemoteWorkspaceChange(event)
   const win = mainWindowGetter?.()
   if (win && !win.isDestroyed()) {
     win.webContents.send('remoteWorkspace:changed', event)
@@ -157,6 +160,89 @@ export function handleRemoteWorkspaceNotification(
   sendRemoteWorkspaceChanged(targetId, observedSnapshot, sourceClientId)
 }
 
+export async function setRemoteWorkspaceForConnectedTargets(
+  store: Store,
+  args: {
+    session?: WorkspaceSessionState
+    hydratedTargetIds?: unknown
+    expectedRevisionsByTargetId?: unknown
+    expectedHostObservationTokensByTargetId?: unknown
+  }
+) {
+  const hydratedTargetIds = getExplicitHydratedTargetIds(args.hydratedTargetIds)
+  if (!hydratedTargetIds) {
+    // Why: an omitted hydration set used to broadcast one session to every
+    // SSH target, overwriting unrelated remote workspace snapshots.
+    return []
+  }
+  const expectedRevisions = getExpectedTargetRevisions(
+    args.expectedRevisionsByTargetId,
+    hydratedTargetIds
+  )
+  if (!expectedRevisions) {
+    return []
+  }
+  const expectedHostObservationTokens = getExpectedHostObservationTokens(
+    args.expectedHostObservationTokensByTargetId,
+    hydratedTargetIds
+  )
+  if (!expectedHostObservationTokens) {
+    return []
+  }
+  const targets =
+    getSshConnectionStore()
+      ?.listTargets()
+      .filter((target) => hydratedTargetIds.has(target.id) && getActiveMultiplexer(target.id)) ?? []
+
+  if (targets.length === 0) {
+    // Nothing to project onto, so skip the session and repo-catalog reads entirely.
+    return []
+  }
+
+  // One repo read, and ownership resolutions shared across targets: neither depends on the
+  // target. The publish fallback's catalog attribution reads the same lookup for the same
+  // reason — building it per target re-hydrates every repo row once per connected host.
+  const resolveWorktreeOwner = createWorktreeOwnerResolver(
+    createRepoRowExecutionHostLookup(store.getRepos())
+  )
+  const resolveWorktreeTarget = createWorktreeTargetResolver(resolveWorktreeOwner)
+  const results = await Promise.all(
+    targets.map(async (target) => {
+      // Why: each target has its own revision stream. Keep same-target
+      // writes queued, but do not let one slow relay block others.
+      const session = exportSessionForTarget(
+        resolveWorktreeTarget,
+        target.id,
+        args.session ?? persistedSessionForTarget(store, target.id, resolveWorktreeOwner)
+      )
+      const result = await queueRemoteWorkspacePatch(target.id, async () => {
+        const current =
+          getCachedRemoteWorkspaceSnapshot(target.id) ?? (await getRemoteSnapshot(target))
+        const expectedRevision = expectedRevisions.get(target.id)
+        const expectedHostObservationToken = expectedHostObservationTokens.get(target.id)
+        if (
+          !current ||
+          expectedRevision === undefined ||
+          expectedHostObservationToken === undefined ||
+          current.hostObservationToken !== expectedHostObservationToken ||
+          !cachedRemoteWorkspaceSnapshotAuthorizesRevision(target.id, expectedRevision)
+        ) {
+          const latest = getCachedRemoteWorkspaceSnapshot(target.id) ?? current
+          return latest
+            ? ({ ok: false, reason: 'stale-revision', snapshot: latest } as const)
+            : null
+        }
+        return patchRemoteWorkspaceSession(target, session)
+      })
+      return result ? { targetId: target.id, result } : null
+    })
+  )
+  return results.filter(
+    (entry): entry is { targetId: string; result: RemoteWorkspaceObservedPatchResult } =>
+      entry !== null
+  )
+}
+
 export function registerRemoteWorkspaceHandlers(
   store: Store,
   getMainWindow: () => BrowserWindow | null,
@@ -183,90 +269,8 @@ export function registerRemoteWorkspaceHandlers(
 
   ipcMain.handle(
     'remoteWorkspace:setForConnectedTargets',
-    async (
-      _event,
-      args: {
-        session?: WorkspaceSessionState
-        hydratedTargetIds?: unknown
-        expectedRevisionsByTargetId?: unknown
-        expectedHostObservationTokensByTargetId?: unknown
-      }
-    ) => {
-      const hydratedTargetIds = getExplicitHydratedTargetIds(args.hydratedTargetIds)
-      if (!hydratedTargetIds) {
-        // Why: an omitted hydration set used to broadcast one session to every
-        // SSH target, overwriting unrelated remote workspace snapshots.
-        return []
-      }
-      const expectedRevisions = getExpectedTargetRevisions(
-        args.expectedRevisionsByTargetId,
-        hydratedTargetIds
-      )
-      if (!expectedRevisions) {
-        return []
-      }
-      const expectedHostObservationTokens = getExpectedHostObservationTokens(
-        args.expectedHostObservationTokensByTargetId,
-        hydratedTargetIds
-      )
-      if (!expectedHostObservationTokens) {
-        return []
-      }
-      const targets =
-        getSshConnectionStore()
-          ?.listTargets()
-          .filter(
-            (target) => hydratedTargetIds.has(target.id) && getActiveMultiplexer(target.id)
-          ) ?? []
-
-      if (targets.length === 0) {
-        // Nothing to project onto, so skip the session and repo-catalog reads entirely.
-        return []
-      }
-
-      // One repo read, and ownership resolutions shared across targets: neither depends on the
-      // target. The publish fallback's catalog attribution reads the same lookup for the same
-      // reason — building it per target re-hydrates every repo row once per connected host.
-      const resolveWorktreeOwner = createWorktreeOwnerResolver(
-        createRepoRowExecutionHostLookup(store.getRepos())
-      )
-      const resolveWorktreeTarget = createWorktreeTargetResolver(resolveWorktreeOwner)
-      const results = await Promise.all(
-        targets.map(async (target) => {
-          // Why: each target has its own revision stream. Keep same-target
-          // writes queued, but do not let one slow relay block others.
-          const session = exportSessionForTarget(
-            resolveWorktreeTarget,
-            target.id,
-            args.session ?? persistedSessionForTarget(store, target.id, resolveWorktreeOwner)
-          )
-          const result = await queueRemoteWorkspacePatch(target.id, async () => {
-            const current =
-              getCachedRemoteWorkspaceSnapshot(target.id) ?? (await getRemoteSnapshot(target))
-            const expectedRevision = expectedRevisions.get(target.id)
-            const expectedHostObservationToken = expectedHostObservationTokens.get(target.id)
-            if (
-              !current ||
-              expectedRevision === undefined ||
-              expectedHostObservationToken === undefined ||
-              current.hostObservationToken !== expectedHostObservationToken ||
-              !cachedRemoteWorkspaceSnapshotAuthorizesRevision(target.id, expectedRevision)
-            ) {
-              const latest = getCachedRemoteWorkspaceSnapshot(target.id) ?? current
-              return latest
-                ? ({ ok: false, reason: 'stale-revision', snapshot: latest } as const)
-                : null
-            }
-            return patchRemoteWorkspaceSession(target, session)
-          })
-          return result ? { targetId: target.id, result } : null
-        })
-      )
-      return results.filter(
-        (entry): entry is { targetId: string; result: RemoteWorkspaceObservedPatchResult } =>
-          entry !== null
-      )
-    }
+    (_event, args: Parameters<typeof setRemoteWorkspaceForConnectedTargets>[1]) =>
+      setRemoteWorkspaceForConnectedTargets(store, args)
   )
 
   ipcMain.handle(

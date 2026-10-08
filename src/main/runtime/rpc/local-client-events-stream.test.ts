@@ -49,8 +49,8 @@ it('retains multiple client-event frames until explicit completion and drops lat
     delivered = resolve
   })
   server.onMessage((_message, _reply, context) => {
-    emit = context?.stream?.emit
-    finish = context?.stream?.finish
+    emit = context?.clientEventStream?.emit
+    finish = context?.clientEventStream?.finish
     emit?.('ready')
     emit?.('ssh-event')
     delivered?.()
@@ -72,7 +72,7 @@ it('aborts the existing dispatch signal when a subscriber closes its socket', as
   })
   server.onMessage((_message, _reply, context) => {
     context?.signal.addEventListener('abort', () => aborted?.(), { once: true })
-    context?.stream?.emit('ready')
+    context?.clientEventStream?.emit('ready')
   })
   socket.write('subscribe\n')
   await new Promise<void>((resolve) => socket.once('data', () => resolve()))
@@ -84,7 +84,7 @@ it('preserves one-shot replies for ordinary requests', async () => {
   server.onMessage((_message, reply, context) => {
     reply('first')
     reply('second')
-    context?.stream?.emit('late')
+    context?.clientEventStream?.emit('late')
   })
   socket.write('ordinary\n')
   await new Promise<void>((resolve) => socket.once('data', () => resolve()))

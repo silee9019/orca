@@ -14,6 +14,7 @@ import { requestCardViewerFromRenderer } from './card-viewer-request-relay'
 import { requestStatusBarViewerFromRenderer } from './status-bar-viewer-request-relay'
 import { requestWorkspaceListViewerFromRenderer } from './workspace-list-viewer-request-relay'
 import { requestWorkspaceFilterFromRenderer } from './workspace-filter-request-relay'
+import { requestPtyDataListenerCount } from './pty-data-listener-count-request'
 import { randomUUID } from 'node:crypto'
 
 import { ipcMain } from 'electron'
@@ -70,6 +71,8 @@ export function registerRuntimeWindowLifecycle(
     activityViewer: (command) => requestActivityViewerFromRenderer(mainWindow, command),
     workspaceListViewer: (command) => requestWorkspaceListViewerFromRenderer(mainWindow, command),
     workspaceFilter: (command) => requestWorkspaceFilterFromRenderer(mainWindow, command),
+    readPtyDataListenerCount: (rendererId, timeoutMs, signal) =>
+      requestPtyDataListenerCount(mainWindow, ipcMain, rendererId, timeoutMs, signal),
     worktreesChanged: (repoId, renamed) => {
       // Why: clear scan caches before the renderer handles this event, so it can't read stale TTL entries after a mutation.
       runWorktreeChangeInvalidators(repoId)

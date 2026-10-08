@@ -21,6 +21,7 @@ import type { RuntimeClient } from './runtime-client'
 import { COMMAND_SPECS } from './specs'
 import { resolveOrchestrationCliExecutable } from './runtime/orchestration-recovery-command'
 import { refuseConflictingSessionCallerFlags } from './session-caller-flags'
+import { isSelectedRuntimeAgentCommand } from './agent-runtime-selection'
 
 export { COMMAND_SPECS } from './specs'
 export { buildCurrentWorktreeSelector, normalizeWorktreeSelector } from './selectors'
@@ -39,7 +40,7 @@ function shouldIgnoreRemoteSelection(commandPath: string[]): boolean {
     // so routing the other half produced one listing describing two machines at once.
     commandPath.join(' ') === 'host list' ||
     commandPath[0] === 'serve' ||
-    commandPath[0] === 'agent' ||
+    (commandPath[0] === 'agent' && !isSelectedRuntimeAgentCommand(commandPath)) ||
     commandPath[0] === 'vm' ||
     commandPath[0] === 'agent-context' ||
     commandPath[0] === 'profile'

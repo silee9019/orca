@@ -256,7 +256,10 @@ export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
     summary: 'List provider transcripts on the execution host',
     usage: 'orca agent history list --request-file <path|-> [--json]',
     allowedFlags: REQUEST_FLAGS,
-    notes: HISTORY_REQUEST_NOTES
+    notes: [
+      ...HISTORY_REQUEST_NOTES,
+      'Optional private UUID requestToken enables agent history cancel. Capability is checked before starting an owned list; the token is not printed.'
+    ]
   },
   {
     path: ['agent', 'history', 'titles'],

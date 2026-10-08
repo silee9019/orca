@@ -1,3 +1,4 @@
+import { publishPtyControlRequest } from '../../../runtime/pty-control-request-observers'
 import { redactPtyIdForDiagnostics } from '../../../../shared/pty-delivery-diagnostics'
 import type { PtyModelRestoreReason } from '../../../../shared/pty-model-restore-marker'
 import { mainDeliveryBreadcrumbs } from './debug'
@@ -47,6 +48,13 @@ export function sendModelRestoreNeededMarker(
       reason,
       ...(typeof markerSeq === 'number' ? { markerSeq } : {})
     })
+    publishPtyControlRequest(session.runtime, {
+      kind: 'model-restore-needed',
+      ptyId: id,
+      rendererId: session.mainWindow.webContents.id,
+      reason,
+      ...(typeof markerSeq === 'number' ? { markerSeq } : {})
+    })
   } catch (error) {
     // Why: a disposed render frame throws synchronously here, and this rides the data path.
     console.error('[pty] renderer model-restore marker send failed', error)
@@ -85,6 +93,13 @@ export function sendPtyDataToRenderer(
   recordPtyRendererDeliveryPressure(session, id)
   try {
     session.mainWindow.webContents.send('pty:data', payload)
+    publishPtyControlRequest(session.runtime, {
+      kind: 'renderer-data',
+      ptyId: id,
+      rendererId: session.mainWindow.webContents.id,
+      origin: 'pty-output',
+      payload: { ...payload }
+    })
   } catch (error) {
     const current = session.rendererDeliveryAccountingByPty.get(id)
     if (current) {

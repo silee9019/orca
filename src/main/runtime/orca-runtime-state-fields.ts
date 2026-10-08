@@ -48,6 +48,9 @@ import type { RuntimeSettingsActions } from './runtime-settings-actions'
 
 export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
   readonly getAgentAwakeStatus: () => ComputerAwakeStatus | null
+  readonly subscribeAgentAwakeChanges: (
+    listener: (status: ComputerAwakeStatus) => void
+  ) => (() => void) | null
 
   protected readonly prepareClaudeAuth?: PrepareClaudeAuth
 
@@ -128,6 +131,9 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       buildAgentHookPtyEnv?: () => Record<string, string>
       getDesktopWindowStatus?: () => RuntimeDesktopWindowStatus
       getAgentAwakeStatus?: () => ComputerAwakeStatus | null
+      subscribeAgentAwakeChanges?: (
+        listener: (status: ComputerAwakeStatus) => void
+      ) => (() => void) | null
       agentSessionClaimSigner?: AgentSessionClaimSigner
       skillTransactionRecovery?: Promise<unknown>
       // Why a host hook and not a direct call: the process that owns this runtime's index
@@ -278,6 +284,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     this.buildAgentHookPtyEnv = deps?.buildAgentHookPtyEnv ?? null
     this.getDesktopWindowStatusFn = deps?.getDesktopWindowStatus ?? (() => 'openable')
     this.getAgentAwakeStatus = deps?.getAgentAwakeStatus ?? (() => null)
+    this.subscribeAgentAwakeChanges = deps?.subscribeAgentAwakeChanges ?? (() => null)
     this.prepareAiVaultSessionResumeFn = deps?.prepareAiVaultSessionResume ?? null
     this.prepareCodexStructuredLaunchFn = deps?.prepareCodexStructuredLaunch ?? null
     this.resolveCodexStructuredLaunchHomeFn = deps?.resolveCodexStructuredLaunchHome ?? null

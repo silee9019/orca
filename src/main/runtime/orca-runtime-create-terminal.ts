@@ -4,6 +4,7 @@ import * as dependencies from './orca-runtime-create-terminal-dependencies'
 import { createDesktopTerminal } from './orca-runtime-create-terminal-desktop'
 import { buildRuntimeAgentTeamsLaunchPlan } from './orca-runtime-agent-teams-launch-plan'
 import { createPtySpawnCommitReporter } from './orca-runtime-report-pty-spawn-commit'
+import { admitTerminalSpawnSize, assertTerminalSpawnLaunchScope } from './terminal-spawn-admission'
 import { recordPtySurface, spawnSurfaceClaimSequence } from './pty-recorded-surface-topology'
 
 export class OrcaRuntimeWithCreateTerminal extends OrcaRuntimeWithTerminalCreateDeduplication {
@@ -16,6 +17,7 @@ export class OrcaRuntimeWithCreateTerminal extends OrcaRuntimeWithTerminalCreate
     if (opts.startupAgent && worktreeSelector === undefined) {
       throw new Error(`startupAgent ${opts.startupAgent} requires a workspace selector.`)
     }
+    const initialSize = admitTerminalSpawnSize(opts, worktreeSelector)
     const callerColors = dependencies.normalizeColorQueryReplyColors(opts.terminalColorQueryReplies)
     // Older paired clients report their theme only at creation.
     if (callerColors) {
@@ -35,6 +37,7 @@ export class OrcaRuntimeWithCreateTerminal extends OrcaRuntimeWithTerminalCreate
         throw new Error('runtime_unavailable')
       }
       const workspace = await this.resolveTerminalWorkspaceLaunchScope(worktreeSelector, created)
+      assertTerminalSpawnLaunchScope(workspace, opts.launchScopePin)
       const launchOpts = await this.resolveAgentTerminalCreateOptions(workspace, opts)
       const reportPtySpawnCommitted = createPtySpawnCommitReporter(launchOpts.onPtySpawnCommitted)
       const cwd =
@@ -61,8 +64,7 @@ export class OrcaRuntimeWithCreateTerminal extends OrcaRuntimeWithTerminalCreate
           throw new Error('client_disconnected')
         }
         const adoptedBeforeLaunch = await this.ptyController.adoptStablePane?.({
-          cols: 120,
-          rows: 40,
+          ...initialSize,
           cwd,
           connectionId: workspace.connectionId,
           worktreeId: workspace.id,
@@ -124,8 +126,7 @@ export class OrcaRuntimeWithCreateTerminal extends OrcaRuntimeWithTerminalCreate
           const { launchAgent } = launchOpts
           launchOpts.onPtySpawnDispatched?.({ launchConfig: effectiveLaunchConfig, launchAgent })
           result = await this.ptyController.spawn({
-            cols: 120,
-            rows: 40,
+            ...initialSize,
             cwd,
             command: sequencedStartupCommand
               ? launchOpts.command

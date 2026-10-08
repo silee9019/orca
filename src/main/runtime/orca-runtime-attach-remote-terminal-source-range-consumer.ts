@@ -175,16 +175,23 @@ export class OrcaRuntimeWithAttachRemoteTerminalSourceRangeConsumer extends Orca
 
   /** Raw keystroke pass-through for the pop-out dashboard's terminal preview.
    *  Honors the mobile-presence lock like the main window's pty:write path. */
-  async writeTerminalPreviewInput(ptyId: string, data: string): Promise<boolean> {
+  async writeTerminalPreviewInput(
+    ptyId: string,
+    data: string,
+    assertTarget?: () => void
+  ): Promise<boolean> {
     if (data.length === 0 || this.getDriver(ptyId).kind === 'mobile') {
       return false
     }
     try {
+      assertTarget?.()
       await assertTerminalInputWithinLimitWithYield(data)
       await this.writeTerminalInputChunks(ptyId, data, {
         inputKind: 'driving',
+        reserveWrite: assertTarget,
         // Why: a phone can claim the floor while a paste yields between chunks.
         beforeWrite: () => {
+          assertTarget?.()
           if (this.getDriver(ptyId).kind === 'mobile') {
             throw new Error('terminal_mobile_driver_active')
           }

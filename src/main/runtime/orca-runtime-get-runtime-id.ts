@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import { replaceWorkspaceSessionState, patchWorkspaceSessionState } from './workspace-session-write'
 import { OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity } from './orca-runtime-has-exact-persisted-terminal-surface-identity'
 import type {
   OrchestrationEnvironmentCallOptions,
@@ -23,11 +24,16 @@ import {
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../shared/constants'
 import type { CodexPaneSharedServerCommands } from '../codex/codex-pane-shared-server-commands'
 import type { WorkspaceSessionState } from '../../shared/workspace-session-state-types'
+import { publishConnectedRemoteWorkspaceTargets } from './remote-workspace-publish'
 
 import { createWorkspaceIssueCommandRunner } from './runtime-issue-command-runner'
 import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
 import { resolveSetupRunnerShell } from '../worktree-runner-script'
 import type { WorktreeSetupLaunch } from '../../shared/worktree/launch-types'
+import type {
+  RendererPtyStopOptions,
+  RendererPtyStopReceipt
+} from '../ipc/pty/runtime/renderer-pty-stop'
 
 export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity {
   getCodexPaneSharedServerCommands(): CodexPaneSharedServerCommands | null {
@@ -84,6 +90,20 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     )
   }
 
+  patchWorkspaceSessionState(
+    params: { hostId: string; expected: unknown; patch: unknown },
+    signal?: AbortSignal
+  ) {
+    return patchWorkspaceSessionState(this.requireStore(), params, signal)
+  }
+
+  replaceWorkspaceSessionState(
+    params: { hostId: string; expected: unknown; next: unknown },
+    signal?: AbortSignal
+  ) {
+    return replaceWorkspaceSessionState(this.requireStore(), params, signal)
+  }
+
   syncOrchestrationFederation(runId?: string): Promise<void> {
     return this.orchestrationFederation.sync(runId)
   }
@@ -125,8 +145,25 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     return this.store.readTerminalScrollbackSnapshot(ref)
   }
 
+  publishRemoteWorkspaceTargets(
+    params: Parameters<typeof publishConnectedRemoteWorkspaceTargets>[1]
+  ) {
+    return publishConnectedRemoteWorkspaceTargets(this.requireStore(), params)
+  }
+
   getStartedAt(): number {
     return this.startedAt
+  }
+
+  async stopRendererOwnedTerminalPty(
+    ptyId: string,
+    options: RendererPtyStopOptions,
+    assertOwner: () => void
+  ): Promise<RendererPtyStopReceipt> {
+    if (!this.ptyController?.stopRendererOwnedPty) {
+      throw new Error('renderer_pty_stop_unavailable')
+    }
+    return this.ptyController.stopRendererOwnedPty(ptyId, options, assertOwner)
   }
 
   protected tryGetWorkspaceSessionHostIdForWorktree(worktreeId: string): ExecutionHostId | null {

@@ -1,0 +1,132 @@
+import type { OrcaRuntimeService } from './orca-runtime'
+import type { RpcContext } from './rpc/core'
+
+const active = new WeakMap<OrcaRuntimeService, Set<string>>()
+export function getActiveRuntimeJsonEventStreamCount(
+  runtime: OrcaRuntimeService,
+  namespace:
+    | 'terminalControl'
+    | 'terminalSpawn'
+    | 'terminalExit'
+    | 'terminalEffects'
+    | 'terminalPresentation'
+    | 'agentAwake'
+    | 'remoteWorkspace'
+    | 'structuredHeld'
+    | 'agentStatus'
+    | 'agentStatusMigration'
+    | 'agentWorkerRecovery'
+): number {
+  return [...(active.get(runtime) ?? [])].filter((key) => key.startsWith(`${namespace}:`)).length
+}
+export function createRuntimeJsonEventSubscription(
+  context: RpcContext,
+  namespace:
+    | 'terminalControl'
+    | 'terminalSpawn'
+    | 'terminalExit'
+    | 'terminalEffects'
+    | 'terminalPresentation'
+    | 'agentAwake'
+    | 'remoteWorkspace'
+    | 'structuredHeld'
+    | 'agentStatus'
+    | 'agentStatusMigration'
+    | 'agentWorkerRecovery',
+  subscriptionId: string,
+  emit: (event: unknown) => void,
+  assertOwner: () => void
+) {
+  const { runtime, connectionId, signal } = context
+  if (!connectionId) {
+    throw new Error('runtime_event_connection_required')
+  }
+  const key = `${namespace}:${connectionId}:${subscriptionId}`
+  const streams = active.get(runtime) ?? new Set<string>()
+  if (streams.size >= 64 && !streams.has(key)) {
+    throw new Error('runtime_event_stream_capacity')
+  }
+  active.set(runtime, streams)
+  let closed = false,
+    sequence = 0
+  const disposals: (() => void)[] = []
+  const cleanup = () => {
+    if (closed) {
+      return
+    }
+    closed = true
+    streams.delete(key)
+    signal?.removeEventListener('abort', aborted)
+    for (const dispose of disposals.splice(0)) {
+      dispose()
+    }
+    emit({ type: 'end', sequence })
+  }
+  function aborted() {
+    runtime.cleanupSubscription(key)
+  }
+  const register = (dispose: () => void) => {
+    if (closed) {
+      dispose()
+    } else {
+      disposals.push(dispose)
+    }
+  }
+  const event = (value: Record<string, unknown>) => {
+    if (closed) {
+      return
+    }
+    try {
+      assertOwner()
+    } catch {
+      emit({
+        type: 'error',
+        code:
+          namespace === 'terminalControl'
+            ? 'terminal_control_owner_changed_or_cancelled'
+            : namespace === 'terminalSpawn'
+              ? 'terminal_spawn_unavailable'
+              : namespace === 'terminalExit'
+                ? 'terminal_exit_owner_changed_or_unverifiable'
+                : namespace === 'terminalEffects'
+                  ? 'terminal_effects_owner_changed'
+                  : namespace === 'terminalPresentation'
+                    ? 'terminal_presentation_owner_changed'
+                    : namespace === 'agentAwake'
+                      ? 'agent_awake_unavailable'
+                      : namespace === 'structuredHeld'
+                        ? 'structured_held_unavailable'
+                        : namespace === 'agentStatus'
+                          ? 'agent_status_unavailable'
+                          : namespace === 'agentStatusMigration'
+                            ? 'agent_migration_unavailable'
+                            : namespace === 'agentWorkerRecovery'
+                              ? 'agent_worker_recovery_unavailable'
+                              : 'remote_workspace_unavailable'
+      })
+      aborted()
+      return
+    }
+    emit({ ...value, type: 'event', sequence: ++sequence })
+  }
+  runtime.registerSubscriptionCleanup(key, cleanup, connectionId)
+  streams.add(key)
+  signal?.addEventListener('abort', aborted, { once: true })
+  try {
+    assertOwner()
+    signal?.throwIfAborted()
+  } catch (error) {
+    aborted()
+    throw error
+  }
+  return {
+    event,
+    register,
+    close: aborted,
+    ready: (value: Record<string, unknown> = {}) => {
+      if (!closed) {
+        emit({ ...value, type: 'ready', sequence: 0 })
+      }
+    }
+  }
+}

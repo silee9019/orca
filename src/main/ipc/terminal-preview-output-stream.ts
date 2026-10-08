@@ -1,3 +1,4 @@
+import { publishPtyControlRequest } from '../runtime/pty-control-request-observers'
 import type { WebContents } from 'electron'
 import { iterateTerminalInputChunks } from '../../shared/terminal-input'
 import type {
@@ -70,10 +71,11 @@ export class TerminalPreviewOutputStream {
   private isDisposed = false
 
   constructor(
-    readonly contents: WebContents,
+    readonly contents: Pick<WebContents, 'id' | 'send' | 'isDestroyed'>,
     readonly ptyId: string,
     private readonly releaseRawView: () => void,
-    private readonly onDispose: (stream: TerminalPreviewOutputStream) => void
+    private readonly onDispose: (stream: TerminalPreviewOutputStream) => void,
+    private readonly owner?: object
   ) {}
 
   get disposed(): boolean {
@@ -179,6 +181,12 @@ export class TerminalPreviewOutputStream {
     }
     try {
       this.contents.send('terminalPreview:data', payload)
+      publishPtyControlRequest(this.owner, {
+        kind: 'preview-data',
+        ptyId: this.ptyId,
+        rendererId: this.contents.id,
+        payload: { ...payload }
+      })
       return true
     } catch {
       this.dispose()

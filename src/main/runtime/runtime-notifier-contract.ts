@@ -65,6 +65,11 @@ export type RuntimeNotifier = {
   activityViewer?(command: ActivityViewerCommand): Promise<ActivityViewerResult>
   workspaceListViewer?(command: WorkspaceListViewerCommand): Promise<WorkspaceListViewerResult>
   workspaceFilter?(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult>
+  readPtyDataListenerCount?(
+    rendererId: number,
+    timeoutMs: number,
+    signal?: AbortSignal
+  ): Promise<number>
   automationsChanged?(payload: {
     selector?: { kind: 'self' } | { kind: 'ssh'; targetId: string } | { kind: 'orphan' }
     reason?: 'definition' | 'run' | 'usage'

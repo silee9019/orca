@@ -13,6 +13,10 @@ import type { PtyBindingSourceExpectation } from '../persistence'
 import type { ExecutionHostId } from '../../shared/execution-host'
 import type { PtyProviderBufferSnapshot, PtyProcessInfo, PtySpawnResult } from '../providers/types'
 import type { PtyProcessInspection } from '../providers/pty-process-inspection'
+import type {
+  RendererPtyStopOptions,
+  RendererPtyStopReceipt
+} from '../ipc/pty/runtime/renderer-pty-stop'
 import type { WriteSettlement } from '../../shared/pty-write-settlement'
 import type { TerminalInputKind } from '../../shared/terminal-input-kind'
 import type { CodexPaneSharedServerCommands } from '../codex/codex-pane-shared-server-commands'
@@ -129,6 +133,11 @@ export type RuntimePtyController = {
   /** Durably records a kill order for an explicit close's unconfirmed stop, replayed when its SSH
    *  host reconnects. True only when an order was written; local PTYs have no later host to ask. */
   recordUnconfirmedStop?(ptyId: string): boolean
+  stopRendererOwnedPty?(
+    ptyId: string,
+    options: RendererPtyStopOptions,
+    assertOwner: () => void
+  ): Promise<RendererPtyStopReceipt>
   getCwd?(ptyId: string): Promise<string | null>
   getForegroundProcess(ptyId: string): Promise<string | null>
   inspectProcess?(

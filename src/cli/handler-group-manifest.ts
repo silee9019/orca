@@ -1,4 +1,4 @@
-import { AGENT_SESSION_HANDLER_GROUPS } from './agent-sessions-handler-groups'
+import { AGENT_SESSION_HANDLER_GROUPS } from './agent-session-handler-groups'
 import { PROJECT_FILTER_GROUPS, WORKSPACE_VIEWER_GROUPS } from './workspace-viewer-handler-groups'
 import { CONNECTIONS_HANDLER_GROUPS } from './connections-handler-groups'
 import { APP_LIFECYCLE_HANDLER_GROUPS } from './app-lifecycle-handler-groups'

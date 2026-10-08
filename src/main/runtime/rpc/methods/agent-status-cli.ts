@@ -1,3 +1,4 @@
+import { projectCliAgentStatus } from '../../../../shared/agent-status-cli-row'
 import { paneCacheKeyMatchesTab } from '../../../agent-hooks/server/server-status-identity'
 import { structuredAgentSessionsHeld } from '../../../native-chat/agent-session-wire/structured-agent-session-registry'
 import { defineMethod } from '../core'
@@ -89,30 +90,7 @@ export const AGENT_STATUS_CLI_METHODS = [
   defineMethod({
     name: 'agentStatus.list',
     params: AgentStatusListParams,
-    handler: () =>
-      agentHookServer.getStatusSnapshot().map((row) => ({
-        paneKey: row.paneKey,
-        tabId: row.tabId,
-        worktreeId: row.worktreeId,
-        connectionId: row.connectionId,
-        terminalHandle: row.terminalHandle,
-        agentType: row.agentType,
-        state: row.state,
-        mainAgent: row.mainAgent,
-        observation: row.observation
-          ? {
-              authorityId: row.observation.authorityId,
-              incarnation: row.observation.incarnation,
-              revision: row.observation.revision
-            }
-          : undefined,
-        receivedAt: row.receivedAt,
-        evidenceObservedAt: row.evidenceObservedAt,
-        stateStartedAt: row.stateStartedAt,
-        restoredUnconfirmed: row.restoredUnconfirmed,
-        providerSessionOnly: row.providerSessionOnly,
-        structuredHost: row.structuredHost
-      }))
+    handler: () => agentHookServer.getStatusSnapshot().map(projectCliAgentStatus)
   }),
   defineMethod({
     name: 'agentStatus.dismiss',

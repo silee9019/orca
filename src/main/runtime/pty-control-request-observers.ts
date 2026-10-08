@@ -1,0 +1,58 @@
+import type { TerminalPreviewDataSignal } from '../../shared/rpc-contract/terminal-preview-data-watch-params'
+import type { TerminalRendererReplaySignal } from '../../shared/rpc-contract/terminal-renderer-replay-watch-params'
+import type { TerminalRendererDataSignal } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
+import type { RendererDeliveryResyncSignal } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
+import type { TerminalControlRequestSignal } from '../../shared/rpc-contract/terminal-control-watch-params'
+
+export type PtyControlRequest =
+  | TerminalPreviewDataSignal
+  | TerminalControlRequestSignal
+  | RendererDeliveryResyncSignal
+  | TerminalRendererDataSignal
+  | TerminalRendererReplaySignal
+type Observer = { changed: (request: PtyControlRequest) => void; failed: () => void }
+const observers = new WeakMap<object, Set<Observer>>()
+export function subscribePtyControlRequests(
+  owner: object,
+  changed: Observer['changed'],
+  failed: Observer['failed']
+): () => void {
+  const entries = observers.get(owner) ?? new Set<Observer>()
+  observers.set(owner, entries)
+  const observer = { changed, failed }
+  entries.add(observer)
+  return () => {
+    entries.delete(observer)
+  }
+}
+export function getPtyControlRequestObserverCount(owner: object): number {
+  return observers.get(owner)?.size ?? 0
+}
+export function publishPtyControlRequest(
+  owner: object | undefined,
+  request: PtyControlRequest
+): void {
+  if (!owner) {
+    return
+  }
+  for (const observer of observers.get(owner) ?? []) {
+    try {
+      observer.changed(
+        request.kind === 'preview-data'
+          ? { ...request, payload: { ...request.payload } }
+          : request.kind === 'renderer-data' || request.kind === 'renderer-replay'
+            ? { ...request, payload: { ...request.payload } }
+            : request.kind === 'serialize-buffer'
+              ? { ...request, ...(request.opts ? { opts: { ...request.opts } } : {}) }
+              : { ...request }
+      )
+    } catch {
+      observers.get(owner)?.delete(observer)
+      try {
+        observer.failed()
+      } catch {
+        continue
+      }
+    }
+  }
+}

@@ -1,6 +1,101 @@
+import { AGENT_SESSION_WATCH_HANDLER_GROUPS } from './agent-session-watch-handler-groups'
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...AGENT_SESSION_WATCH_HANDLER_GROUPS,
+  {
+    name: 'terminal-private-spawn',
+    keys: ['terminal spawn'],
+    load: async () =>
+      (await import('./handlers/terminal-private-spawn.js')).TERMINAL_PRIVATE_SPAWN_HANDLERS
+  },
+  {
+    name: 'terminal-listener-count',
+    keys: ['terminal data-listener-count'],
+    load: async () =>
+      (await import('./handlers/terminal-listener-count.js')).TERMINAL_LISTENER_COUNT_HANDLERS
+  },
+  {
+    name: 'terminal-host-viewport',
+    keys: ['terminal claim-host-viewport'],
+    load: async () =>
+      (await import('./handlers/terminal-host-viewport.js')).TERMINAL_HOST_VIEWPORT_HANDLERS
+  },
+  {
+    name: 'terminal-host-resize',
+    keys: ['terminal resize-host'],
+    load: async () =>
+      (await import('./handlers/terminal-host-resize.js')).TERMINAL_HOST_RESIZE_HANDLERS
+  },
+  {
+    name: 'terminal-render-evidence',
+    keys: ['terminal write-render-evidence'],
+    load: async () =>
+      (await import('./handlers/terminal-render-evidence.js')).TERMINAL_RENDER_EVIDENCE_HANDLERS
+  },
+  {
+    name: 'daemon-folder-access',
+    keys: [
+      'terminal daemon folder-access-plan',
+      'terminal daemon folder-access-start',
+      'terminal daemon folder-access-status',
+      'terminal daemon folder-access-cancel',
+      'terminal daemon folder-access-complete'
+    ],
+    load: async () =>
+      (await import('./handlers/daemon-folder-access.js')).DAEMON_FOLDER_ACCESS_HANDLERS
+  },
+  {
+    name: 'daemon-restart',
+    keys: ['terminal daemon restart-plan', 'terminal daemon restart'],
+    load: async () => (await import('./handlers/daemon-restart.js')).DAEMON_RESTART_HANDLERS
+  },
+  {
+    name: 'terminal-presentation-wait',
+    keys: ['terminal wait-driver', 'terminal wait-fit'],
+    load: async () =>
+      (await import('./handlers/terminal-presentation-wait.js')).TERMINAL_PRESENTATION_WAIT_HANDLERS
+  },
+  {
+    name: 'terminal-pty-input',
+    keys: ['terminal write-input', 'terminal write-input-accepted'],
+    load: async () => (await import('./handlers/terminal-pty-input.js')).TERMINAL_PTY_INPUT_HANDLERS
+  },
+  {
+    name: 'remote-workspace-publish',
+    keys: ['terminal publish-workspace'],
+    load: async () =>
+      (await import('./handlers/remote-workspace-publish.js')).REMOTE_WORKSPACE_PUBLISH_HANDLERS
+  },
+  {
+    name: 'ai-vault-list-cancel',
+    keys: ['agent history cancel'],
+    load: async () =>
+      (await import('./handlers/ai-vault-list-cancel.js')).AI_VAULT_LIST_CANCEL_HANDLERS
+  },
+  {
+    name: 'terminal-preview-input',
+    keys: ['terminal preview-input'],
+    load: async () =>
+      (await import('./handlers/terminal-preview-input.js')).TERMINAL_PREVIEW_INPUT_HANDLERS
+  },
+  {
+    name: 'terminal-pty-stop',
+    keys: ['terminal stop-pty'],
+    load: async () => (await import('./handlers/terminal-pty-stop.js')).TERMINAL_PTY_STOP_HANDLERS
+  },
+  {
+    name: 'workspace-session-write',
+    keys: ['terminal set-session', 'terminal patch-session', 'terminal checkpoint-session'],
+    load: async () =>
+      (await import('./handlers/workspace-session-write.js')).WORKSPACE_SESSION_WRITE_HANDLERS
+  },
+  {
+    name: 'agent-pane-authority',
+    keys: ['agent status retire-pane', 'agent status restore-pane', 'agent status transfer-pane'],
+    load: async () =>
+      (await import('./handlers/agent-pane-authority.js')).AGENT_PANE_AUTHORITY_HANDLERS
+  },
   {
     name: 'terminal-startup-restoration',
     keys: ['terminal prepare-startup'],

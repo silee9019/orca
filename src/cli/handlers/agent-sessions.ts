@@ -1,3 +1,4 @@
+import { requireAiVaultListCancellationCapability } from './ai-vault-list-capability'
 import { agentSessionQuestionReceipt } from './agent-session-question-receipt'
 import { TerminalSignalParams } from '../../shared/rpc-contract/terminal-signal-params'
 import {
@@ -82,6 +83,9 @@ const refusal = z.object({
 })
 
 async function call(ctx: HandlerContext, method: string, params: unknown): Promise<void> {
+  if (method === 'aiVault.listSessions') {
+    await requireAiVaultListCancellationCapability(ctx, params)
+  }
   const response = await ctx.client.call<unknown>(method, params)
   if (method === 'nativeChat.readSession') {
     const failure = z

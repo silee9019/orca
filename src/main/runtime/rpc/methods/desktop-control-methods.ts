@@ -1,3 +1,33 @@
+import { TERMINAL_PRIVATE_SPAWN_METHODS } from './terminal-private-spawn'
+import { TERMINAL_LISTENER_COUNT_METHODS } from './terminal-listener-count'
+import { TERMINAL_HOST_VIEWPORT_METHODS } from './terminal-host-viewport'
+import { TERMINAL_PREVIEW_DATA_WATCH_METHODS } from './terminal-preview-data-watch'
+import { TERMINAL_HOST_RESIZE_METHODS } from './terminal-host-resize'
+import { TERMINAL_RENDERER_REPLAY_WATCH_METHODS } from './terminal-renderer-replay-watch'
+import { TERMINAL_RENDERER_DATA_WATCH_METHODS } from './terminal-renderer-data-watch'
+import { RENDERER_DELIVERY_RESYNC_WATCH_METHODS } from './renderer-delivery-resync-watch'
+import { TERMINAL_CONTROL_WATCH_METHODS } from './terminal-control-watch'
+import { TERMINAL_RENDER_EVIDENCE_METHODS } from './terminal-render-evidence'
+import { DAEMON_FOLDER_ACCESS_METHODS } from './daemon-folder-access'
+import { TERMINAL_SPAWN_WATCH_METHODS } from './terminal-spawn-watch'
+import { TERMINAL_EXIT_WATCH_METHODS } from './terminal-exit-watch'
+import { DAEMON_RESTART_METHODS } from './daemon-restart'
+import { TERMINAL_EFFECTS_WATCH_METHODS } from './terminal-effects-watch'
+import { AGENT_WORKER_RECOVERY_WATCH_METHODS } from './agent-worker-recovery-watch'
+import { AGENT_MIGRATION_WATCH_METHODS } from './agent-migration-watch'
+import { AGENT_STATUS_WATCH_METHODS } from './agent-status-watch'
+import { STRUCTURED_HELD_WATCH_METHODS } from './structured-held-watch'
+import { REMOTE_WORKSPACE_WATCH_METHODS } from './remote-workspace-watch'
+import { AGENT_AWAKE_WATCH_METHODS } from './agent-awake-watch'
+import { TERMINAL_PRESENTATION_WATCH_METHODS } from './terminal-presentation-watch'
+import { TERMINAL_PRESENTATION_WAIT_METHODS } from './terminal-presentation-wait'
+import { TERMINAL_PTY_INPUT_METHODS } from './terminal-pty-input'
+import { REMOTE_WORKSPACE_PUBLISH_METHODS } from './remote-workspace-publish'
+import { AI_VAULT_LIST_CANCEL_METHODS } from './ai-vault-list-cancel'
+import { TERMINAL_PREVIEW_INPUT_METHODS } from './terminal-preview-input'
+import { TERMINAL_PTY_STOP_METHODS } from './terminal-pty-stop'
+import { WORKSPACE_SESSION_WRITE_METHODS } from './workspace-session-write'
+import { AGENT_PANE_AUTHORITY_METHODS } from './agent-pane-authority'
 import { SETTINGS_CONTROL_METHODS } from './settings-control'
 import { TCC_THRESHOLD_OBSERVATION_METHODS } from './tcc-threshold-observation'
 import { CODEX_LOGIN_OBSERVATION_METHODS } from './codex-login-observation'
@@ -189,5 +219,35 @@ export const DESKTOP_CONTROL_RPC_METHODS = [
   ...STATUS_METHODS,
   ...AGENT_STATUS_CLI_METHODS,
   ...TERMINAL_HOST_INVENTORY_METHODS,
-  ...TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS
+  ...TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS,
+  ...TERMINAL_PRIVATE_SPAWN_METHODS,
+  ...TERMINAL_LISTENER_COUNT_METHODS,
+  ...TERMINAL_HOST_VIEWPORT_METHODS,
+  ...TERMINAL_PREVIEW_DATA_WATCH_METHODS,
+  ...TERMINAL_HOST_RESIZE_METHODS,
+  ...TERMINAL_RENDERER_REPLAY_WATCH_METHODS,
+  ...TERMINAL_RENDERER_DATA_WATCH_METHODS,
+  ...RENDERER_DELIVERY_RESYNC_WATCH_METHODS,
+  ...TERMINAL_CONTROL_WATCH_METHODS,
+  ...TERMINAL_RENDER_EVIDENCE_METHODS,
+  ...DAEMON_FOLDER_ACCESS_METHODS,
+  ...TERMINAL_SPAWN_WATCH_METHODS,
+  ...TERMINAL_EXIT_WATCH_METHODS,
+  ...DAEMON_RESTART_METHODS,
+  ...TERMINAL_EFFECTS_WATCH_METHODS,
+  ...AGENT_WORKER_RECOVERY_WATCH_METHODS,
+  ...AGENT_MIGRATION_WATCH_METHODS,
+  ...AGENT_STATUS_WATCH_METHODS,
+  ...STRUCTURED_HELD_WATCH_METHODS,
+  ...REMOTE_WORKSPACE_WATCH_METHODS,
+  ...AGENT_AWAKE_WATCH_METHODS,
+  ...TERMINAL_PRESENTATION_WATCH_METHODS,
+  ...TERMINAL_PRESENTATION_WAIT_METHODS,
+  ...TERMINAL_PTY_INPUT_METHODS,
+  ...REMOTE_WORKSPACE_PUBLISH_METHODS,
+  ...AI_VAULT_LIST_CANCEL_METHODS,
+  ...TERMINAL_PREVIEW_INPUT_METHODS,
+  ...TERMINAL_PTY_STOP_METHODS,
+  ...WORKSPACE_SESSION_WRITE_METHODS,
+  ...AGENT_PANE_AUTHORITY_METHODS
 ]

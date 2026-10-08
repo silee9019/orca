@@ -45,7 +45,8 @@ export const AiVaultListSessionsParams = z
     // Why: desktop/web callers name the runtime host they are addressing; mobile
     // omits it. The scan itself is host-local either way, so the id must never
     // change what is scanned — it only restamps the shared cached result.
-    executionHostId: executionHostIdSchema.optional()
+    executionHostId: executionHostIdSchema.optional(),
+    requestToken: z.string().uuid().optional()
   })
   .superRefine((params, ctx) => {
     if (params.unlimited !== true && params.limit && params.limit > AI_VAULT_LIMIT_MAX) {

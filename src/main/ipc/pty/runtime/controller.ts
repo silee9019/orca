@@ -1,6 +1,7 @@
 import { readMainTerminalBufferSnapshot } from '../../../runtime/terminal-main-buffer-snapshot'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { claimRuntimePaneCreate, makePaneSpawnReservationKey } from '../pane/spawn-reservation'
+import { stopRendererPtyWithEvidence } from './renderer-pty-stop'
 import type { PtyRuntimeControllerDeps } from './controller-deps'
 import { listPtyProviderSessions } from '../listed-sessions'
 import { spawnPtyFromRuntimeController } from './spawn'
@@ -68,6 +69,8 @@ export function installPtyRuntimeController(deps: PtyRuntimeControllerDeps): voi
     retireRejectedPty: (ptyId, stopConfirmed) =>
       retireRejectedPtyFromRuntimeController(deps, ptyId, stopConfirmed),
     stopAndWait: (ptyId, opts) => stopAndWaitPtyFromRuntimeController(deps, ptyId, opts),
+    stopRendererOwnedPty: (ptyId, options, assertOwner) =>
+      stopRendererPtyWithEvidence(deps, ptyId, options, assertOwner),
     recordUnconfirmedStop: (ptyId) =>
       recordUnconfirmedExplicitSshStop({
         store: deps.store,
