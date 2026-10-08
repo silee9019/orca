@@ -1,6 +1,6 @@
 import { getStoredRepoSshConnectionId } from '../repo-execution-host'
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { readFile, stat } from 'node:fs/promises'
 import type { Repo } from '../../shared/repo-types'
 import {
   getEffectiveHooks,
@@ -32,12 +32,7 @@ export class RuntimeRepositoryHooksCommands {
     if (connectionId) {
       const fsProvider = getSshFilesystemProvider(connectionId)
       if (!fsProvider) {
-        return {
-          hasHooksFile: false,
-          hooks: null,
-          setupRunPolicy: getEffectiveSetupRunPolicy(repo),
-          source: null
-        }
+        throw new Error('Remote filesystem unavailable. Reconnect the SSH target before retrying.')
       }
       try {
         const result = await fsProvider.readFile(joinWorktreeRelativePath(repo.path, 'orca.yaml'))
@@ -49,7 +44,10 @@ export class RuntimeRepositoryHooksCommands {
           source: hooks ? ('orca.yaml' as const) : null,
           setupTrust: setupTrust(repo, getDefaultTabCommandTrustContent(hooks))
         }
-      } catch {
+      } catch (error) {
+        if (!isENOENT(error)) {
+          throw error
+        }
         return {
           hasHooksFile: false,
           hooks: null,
@@ -116,30 +114,60 @@ export class RuntimeRepositoryHooksCommands {
     if (isFolderRepo(repo)) {
       return []
     }
-    return inspectSetupScriptImportCandidates(async (relativePath) => {
-      const filePath = joinWorktreeRelativePath(repo.path, relativePath)
-      const connectionId = getStoredRepoSshConnectionId(repo)
-      if (connectionId) {
-        const fsProvider = getSshFilesystemProvider(connectionId)
-        if (!fsProvider) {
-          return null
+    return inspectSetupScriptImportCandidates(
+      async (relativePath) => {
+        const filePath = joinWorktreeRelativePath(repo.path, relativePath)
+        const connectionId = getStoredRepoSshConnectionId(repo)
+        if (connectionId) {
+          const fsProvider = getSshFilesystemProvider(connectionId)
+          if (!fsProvider) {
+            throw new Error(
+              'Remote filesystem unavailable. Reconnect the SSH target before retrying.'
+            )
+          }
+          try {
+            const result = await fsProvider.readFile(filePath)
+            return result.isBinary ? null : result.content
+          } catch (error) {
+            if (!isENOENT(error)) {
+              throw error
+            }
+            return null
+          }
         }
         try {
-          const result = await fsProvider.readFile(filePath)
-          return result.isBinary ? null : result.content
-        } catch {
+          return await readFile(filePath, 'utf-8')
+        } catch (error) {
+          if (!isENOENT(error)) {
+            throw error
+          }
           return null
         }
-      }
-      try {
-        return await readFile(filePath, 'utf-8')
-      } catch (error) {
-        if (!isENOENT(error)) {
-          console.warn('[runtime] Failed to inspect setup script import candidate:', error)
+      },
+      {
+        fileExists: async (relativePath) => {
+          const filePath = joinWorktreeRelativePath(repo.path, relativePath)
+          const connectionId = getStoredRepoSshConnectionId(repo)
+          try {
+            if (connectionId) {
+              const provider = getSshFilesystemProvider(connectionId)
+              if (!provider) {
+                throw new Error(
+                  'Remote filesystem unavailable. Reconnect the SSH target before retrying.'
+                )
+              }
+              return (await provider.stat(filePath)).type !== 'directory'
+            }
+            return !(await stat(filePath)).isDirectory()
+          } catch (error) {
+            if (!isENOENT(error)) {
+              throw error
+            }
+            return false
+          }
         }
-        return null
       }
-    })
+    )
   }
 }
 

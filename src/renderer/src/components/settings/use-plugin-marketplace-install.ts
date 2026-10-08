@@ -67,6 +67,7 @@ export function usePluginMarketplaceInstall({
         return parentApplied ? current : undefined
       }
       await onInstalled(result.pluginKey)
+      return current() ? current : undefined
     } catch (cause) {
       if (mountedRef.current && (!canApply || (current() && canApply('review')))) {
         setActionError(formatError(cause))

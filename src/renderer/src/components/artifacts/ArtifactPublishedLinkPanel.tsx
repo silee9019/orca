@@ -1,20 +1,29 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { Check, Copy, ExternalLink, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { copyArtifactLink, openArtifactInBrowser } from './artifact-link-actions'
 
+export type ArtifactPublishedLinkControl = {
+  shareUrl: string
+  copied: boolean
+  copy: () => Promise<boolean>
+  open: () => Promise<boolean>
+}
+
 export function ArtifactPublishedLinkPanel({
   shareUrl,
   publishing,
   sharingEnabled,
-  onUpdate
+  onUpdate,
+  viewerRef
 }: {
   shareUrl: string
   publishing: boolean
   sharingEnabled: boolean
-  onUpdate: () => void
+  onUpdate: () => Promise<boolean>
+  viewerRef?: RefObject<ArtifactPublishedLinkControl | null>
 }): React.JSX.Element {
   const [copied, setCopied] = useState(false)
   const copiedResetTimerRef = useRef<number | null>(null)
@@ -36,12 +45,12 @@ export function ArtifactPublishedLinkPanel({
     [clearCopiedResetTimer]
   )
 
-  const copyLink = async (): Promise<void> => {
+  const copyLink = async (): Promise<boolean> => {
     if (!(await copyArtifactLink(shareUrl, { showSuccessToast: false }))) {
-      return
+      return false
     }
     if (!mountedRef.current) {
-      return
+      return false
     }
     setCopied(true)
     clearCopiedResetTimer()
@@ -49,7 +58,22 @@ export function ArtifactPublishedLinkPanel({
       copiedResetTimerRef.current = null
       setCopied(false)
     }, 1_500)
+    return true
   }
+  useLayoutEffect(() => {
+    if (!viewerRef) {
+      return
+    }
+    viewerRef.current = {
+      shareUrl,
+      copied,
+      copy: copyLink,
+      open: () => openArtifactInBrowser(shareUrl)
+    }
+    return () => {
+      viewerRef.current = null
+    }
+  })
 
   const copyLabel = copied
     ? translate('auto.components.artifacts.copySuccess', 'Artifact link copied')

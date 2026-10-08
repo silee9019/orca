@@ -55,7 +55,7 @@ function getRepoHostId(
   return defaultHostId
 }
 
-function getRowHostId(row: Row, defaultHostId: ExecutionHostId): ExecutionHostId | null {
+export function getRowHostId(row: Row, defaultHostId: ExecutionHostId): ExecutionHostId | null {
   switch (row.type) {
     case 'item':
       return getWorktreeExecutionHostId(row.worktree, row.repo, defaultHostId)

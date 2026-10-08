@@ -10,3 +10,16 @@ export const BrowserGrabActionReceipt = z.object({
   contextMenu: z.boolean()
 })
 export type BrowserGrabActionReceipt = z.infer<typeof BrowserGrabActionReceipt>
+
+export const BrowserGrabViewerAction = z.enum([
+  'start',
+  'toggle',
+  'shortcut-copy',
+  'cancel',
+  'rearm',
+  'exit',
+  'status',
+  'copy',
+  'copy-screenshot'
+])
+export type BrowserGrabViewerAction = z.infer<typeof BrowserGrabViewerAction>

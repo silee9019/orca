@@ -101,6 +101,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onToggleStatusBar',
   'ui.onToggleWorktreePalette',
   'ui.onVoiceViewerRequest',
+  'ui.onWorkspaceFilterRequest',
   'ui.onWorktreeHistoryNavigate',
   'updater.onClearDismissal',
   'updater.onStatus',
@@ -119,6 +120,7 @@ const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
   'ui.onProjectFilterRequest',
   'ui.onBrowserViewerRequest',
   'ui.onVoiceViewerRequest',
+  'ui.onWorkspaceFilterRequest',
   'automations.onChanged',
   'runtimeEnvironments.onStatusChanged',
   'repos.onChanged',
@@ -252,10 +254,26 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       installAppLifetimeIpcEvents: vi.fn(() => vi.fn())
     }))
 
+    const viewerBridges = [
+      ['../runtime/use-settings-viewer-bridge', 'useSettingsViewerBridge'],
+      ['../runtime/use-sidebar-viewer-bridge', 'useSidebarViewerBridge'],
+      ['../runtime/use-card-viewer-bridge', 'useCardViewerBridge'],
+      ['../runtime/use-status-bar-viewer-bridge', 'useStatusBarViewerBridge'],
+      ['../runtime/use-workspace-list-viewer-bridge', 'useWorkspaceListViewerBridge']
+    ] as const
+    const bridgeHooks = viewerBridges.map(([module, name]) => {
+      const hook = vi.fn()
+      vi.doMock(module, () => ({ [name]: hook }))
+      return hook
+    })
+
     const { useIpcEvents } = await import('./useIpcEvents')
     useIpcEvents()
 
     expect(dependencies).toEqual([])
+    for (const hook of bridgeHooks) {
+      expect(hook).toHaveBeenCalledOnce()
+    }
   })
 
   it('leaves exactly one listener per channel across a StrictMode cleanup-remount cycle', async () => {
@@ -410,10 +428,11 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       'ui.onProjectFilterRequest',
       'ui.onBrowserViewerRequest',
       'ui.onVoiceViewerRequest',
+      'ui.onWorkspaceFilterRequest',
       'automations.onChanged',
       'runtimeEnvironments.onStatusChanged',
       'runtimeEnvironments.subscribe',
-      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(8)
+      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(9)
     ])
     const groupOrder = (names: readonly string[]): string[] =>
       registrationOrder.filter((entry) => names.includes(entry))
@@ -492,7 +511,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
     const browserCallback = listeners.get('ui.onBrowserViewerRequest')?.[0]?.callback
     if (!browserCallback) {
@@ -531,11 +550,13 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       'mobile.disposeHydration',
       'store.unsubscribe.0',
       'runtimeStore.unsubscribe',
-      'store.unsubscribe.2',
+      'store.unsubscribe.3',
       'agentStore.unsubscribe'
     ])
     // The background-removal bridge's row subscription, released with the rest of `unsubs`.
     expect(cleanupOrder).toContain('store.unsubscribe.1')
+    // The paired creation owner releases its independent lifetime fence.
+    expect(cleanupOrder).toContain('store.unsubscribe.2')
     expect(cleanupOrder.indexOf('runtimeEnvironment.unsubscribe')).toBeGreaterThan(
       cleanupOrder.indexOf('ipc.ui.onMobileMarkdownRequest')
     )
@@ -550,6 +571,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)
@@ -568,13 +590,14 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
     secondCleanup()
     expect([...listeners.values()].every((records) => records.every((item) => !item.active))).toBe(
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)

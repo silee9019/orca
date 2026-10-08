@@ -1,3 +1,4 @@
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import type { UISlice, UISliceGet, UISliceSet } from './ui-slice-contract'
 import {
   mergeFeatureInteractionState,
@@ -39,6 +40,7 @@ export function createUiFeatureActions(set: UISliceSet, get: UISliceGet): Partia
           return s
         }
         tourProgression = getContextualTourProgressionForFeatureInteraction(s, id)
+        const runtime = getProviderRuntimeContextKey(s.settings)
         const existing = s.featureInteractions[id]
         const next: FeatureInteractionState = {
           ...s.featureInteractions,
@@ -51,19 +53,24 @@ export function createUiFeatureActions(set: UISliceSet, get: UISliceGet): Partia
           const recordInteraction = window.api.ui.recordFeatureInteraction
           const persist = recordInteraction
             ? recordInteraction(id).then((ui) => {
-                set((current) => ({
-                  featureInteractions: mergeFeatureInteractionState(
-                    current.featureInteractions,
-                    ui.featureInteractions
-                  ),
-                  contextualToursSeenIds: mergeContextualTourSeenIds(
-                    current.contextualToursSeenIds,
-                    ui.contextualToursSeenIds
-                  )
-                }))
+                set((current) =>
+                  getProviderRuntimeContextKey(current.settings) !== runtime
+                    ? current
+                    : {
+                        featureInteractions: mergeFeatureInteractionState(
+                          current.featureInteractions,
+                          ui.featureInteractions
+                        ),
+                        contextualToursSeenIds: mergeContextualTourSeenIds(
+                          current.contextualToursSeenIds,
+                          ui.contextualToursSeenIds
+                        )
+                      }
+                )
               })
             : window.api.ui.set({ featureInteractions: next })
-          persistPromise = persist.catch(console.error)
+          void persist.catch(console.error)
+          persistPromise = persist
         }
         if (tourProgression === 'reveal-sidebar-and-advance') {
           // Why: split can fire from keyboard/menu with the sidebar closed, but the next tour target lives in the sidebar.

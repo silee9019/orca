@@ -1,3 +1,4 @@
+import { PluginSettingsViewerActionSchema } from './plugin-settings-viewer-command'
 import { SkillsViewerActionSchema } from './skills-viewer-command'
 import { AutomationViewerActionSchema } from './automation-viewer-command'
 import { ArtifactViewerActionSchema } from './artifact-viewer-command'
@@ -9,6 +10,9 @@ import { AccountsViewerActionSchema } from './accounts-viewer-command'
 export const ACCOUNT_VIEWER_REQUEST_CHANNEL = 'accounts:viewerRequest'
 export const ACCOUNT_VIEWER_RESPONSE_CHANNEL = 'accounts:viewerResponse'
 export const AccountViewerCommandSchema = z.discriminatedUnion('domain', [
+  z
+    .object({ domain: z.literal('plugin-settings'), action: PluginSettingsViewerActionSchema })
+    .strict(),
   z.object({ domain: z.literal('skills'), action: SkillsViewerActionSchema }).strict(),
   z.object({ domain: z.literal('automation'), action: AutomationViewerActionSchema }).strict(),
   z.object({ domain: z.literal('artifact'), action: ArtifactViewerActionSchema }).strict(),

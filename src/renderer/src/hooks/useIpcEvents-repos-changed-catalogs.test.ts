@@ -76,7 +76,8 @@ describe('runtime host catalog refresh on reposChanged', () => {
       )
       vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), api })
 
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       // Seeded discovery for the connected runtime; drains the scheduler's debounce.
       await vi.advanceTimersByTimeAsync(300)
@@ -164,7 +165,8 @@ describe('runtime host catalog refresh on reposChanged', () => {
       })
       vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn(), api })
 
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       await vi.advanceTimersByTimeAsync(300)
 
@@ -239,7 +241,8 @@ describe('repo catalog refresh on repos:changed', () => {
       await import('@/lib/parked-terminal-host-hydration')
     clearTerminalTabsParkedOnUnresolvedHost()
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     state.settings.activeRuntimeEnvironmentId = 'env-1'
     // Why: the local-slice refresh still has to release panes that parked on an unhydrated host.
@@ -323,7 +326,8 @@ describe('parked terminal recovery on repos:changed', () => {
       await import('@/lib/parked-terminal-host-hydration')
     clearTerminalTabsParkedOnUnresolvedHost()
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     expect(reposChangedListener).toBeDefined()
 

@@ -13,6 +13,7 @@ import type {
   PluginMarketplaceHostInstallPreview,
   PluginMarketplaceHostListing
 } from '../../../../preload/api-types'
+import { usePluginMarketplaceViewerController } from '@/runtime/plugin-marketplace-viewer-controller'
 import { translate } from '@/i18n/i18n'
 import { PluginCatalogEmptyState } from '../plugin-catalog/PluginCatalogEmptyState'
 import {
@@ -35,14 +36,13 @@ type PluginMarketplaceBrowserProps = {
   renderInstalledContent?: (search: string) => React.ReactNode
 }
 
-function marketplaceError(cause: unknown, fallback: string): string {
-  console.warn('[plugins] marketplace action failed:', cause)
+function marketplaceError(fallback: string): string {
+  console.warn('[plugins] marketplace action failed:', fallback)
   return fallback
 }
 
-function marketplaceLoadError(cause: unknown): string {
+function marketplaceLoadError(): string {
   return marketplaceError(
-    cause,
     translate(
       'auto.components.settings.PluginMarketplaceBrowser.loadFailed',
       'Could not load marketplace plugins.'
@@ -77,9 +77,8 @@ export function PluginMarketplaceBrowser({
     previewOperationsRef,
     setPreview,
     onInstalled,
-    formatError: (cause) =>
+    formatError: () =>
       marketplaceError(
-        cause,
         translate(
           'auto.components.settings.PluginMarketplaceBrowser.installFailed',
           'Could not install this plugin. The reviewed source may have changed.'
@@ -122,9 +121,8 @@ export function PluginMarketplaceBrowser({
     loadMarketplaceData,
     reloadWithReceipt,
     setError,
-    formatError: (cause) =>
+    formatError: () =>
       marketplaceError(
-        cause,
         translate(
           'auto.components.settings.PluginMarketplaceBrowser.refreshFailed',
           'Could not refresh marketplaces. Cached listings remain available.'
@@ -157,11 +155,10 @@ export function PluginMarketplaceBrowser({
         setPreview(nextPreview)
         return () => mountedRef.current && requestId === previewRequestRef.current
       }
-    } catch (cause) {
+    } catch {
       if (mountedRef.current && requestId === previewRequestRef.current) {
         setError(
           marketplaceError(
-            cause,
             translate(
               'auto.components.settings.PluginMarketplaceBrowser.previewFailed',
               'Could not prepare this plugin for review. Refresh the marketplace and try again.'
@@ -209,6 +206,24 @@ export function PluginMarketplaceBrowser({
   const currentVersion = Boolean(
     preview && installedByKey.get(preview.pluginKey)?.source?.contentHash === preview.contentHash
   )
+
+  usePluginMarketplaceViewerController({
+    search,
+    filter,
+    loading,
+    refreshBusy,
+    previewBusyKey,
+    installBusy,
+    sourcesOpen,
+    previewOpen: Boolean(preview),
+    error,
+    listings: visibleListings,
+    setSearch,
+    setFilter,
+    setSourcesOpen,
+    installedPlugins,
+    openPreview: async (listing, update) => (await openPreview(listing, update))?.() ?? false
+  })
 
   return (
     <>
@@ -362,7 +377,7 @@ export function PluginMarketplaceBrowser({
         currentVersion={currentVersion}
         error={actionError}
         onClose={() => setPreview(null)}
-        onConfirm={() => void installPreview()}
+        onConfirm={async () => (await installPreview())?.() ?? false}
       />
     </>
   )

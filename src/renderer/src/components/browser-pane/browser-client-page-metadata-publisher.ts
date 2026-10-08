@@ -26,6 +26,19 @@ export type BrowserClientPageMetadataUnpublished =
   /** Delivered, but the runtime declined it — usually a revision it has already passed. */
   { reason: 'rejected' } | { reason: 'failed'; errorCode: string }
 
+export type BrowserClientPageMetadataAcknowledgment = (revision: number | null) => void
+type PendingMetadata = {
+  snapshot: BrowserClientPageMetadataSnapshot
+  acknowledge: BrowserClientPageMetadataAcknowledgment | undefined
+}
+function acknowledgeMetadata(entry: PendingMetadata | null, revision: number | null): void {
+  const callback = entry?.acknowledge
+  if (entry) {
+    entry.acknowledge = undefined
+  }
+  callback?.(revision)
+}
+
 export function createBrowserClientPageMetadataPublisher(options: {
   browserPageId: string
   placement: RuntimeBrowserClientPlacement
@@ -33,15 +46,20 @@ export function createBrowserClientPageMetadataPublisher(options: {
   publish: BrowserClientPageMetadataPublish
   onUnpublished?: (detail: BrowserClientPageMetadataUnpublished) => void
 }): {
-  publish(snapshot: BrowserClientPageMetadataSnapshot): void
+  publish(
+    snapshot: BrowserClientPageMetadataSnapshot,
+    acknowledge?: BrowserClientPageMetadataAcknowledgment
+  ): void
   dispose(): void
 } {
   let disposed = false
   let inFlight = false
-  let pending: BrowserClientPageMetadataSnapshot | null = null
+  let pending: PendingMetadata | null = null
+  let active: PendingMetadata | null = null
 
   const settle = (): void => {
     inFlight = false
+    active = null
     if (disposed) {
       pending = null
       return
@@ -53,19 +71,23 @@ export function createBrowserClientPageMetadataPublisher(options: {
     }
   }
 
-  const send = (snapshot: BrowserClientPageMetadataSnapshot): void => {
+  const send = (entry: PendingMetadata): void => {
+    const { snapshot } = entry
+    active = entry
     inFlight = true
+    let revision: number | null = null
     let request: Promise<BrowserClientPageMetadataPublishOutcome>
     try {
       // Why the revision is minted inside the try: it is drawn from the page's live attachment and
       // throws once that page is detached. Outside, the throw escapes into a webview event handler
       // and leaves this publisher wedged with nothing in flight to release it.
+      revision = options.nextRevision()
       request = options.publish({
         browserHostClientId: options.placement.browserHostClientId,
         browserHostGeneration: options.placement.browserHostGeneration,
         browserPageId: options.browserPageId,
         pageHostGeneration: options.placement.pageHostGeneration,
-        revision: options.nextRevision(),
+        revision,
         ...snapshot
       })
     } catch (error) {
@@ -73,6 +95,10 @@ export function createBrowserClientPageMetadataPublisher(options: {
     }
     void request
       .then((outcome) => {
+        acknowledgeMetadata(
+          entry,
+          !disposed && outcome.status === 'published' && outcome.accepted === true ? revision : null
+        )
         if (outcome.status === 'published') {
           if (!outcome.accepted) {
             options.onUnpublished?.({ reason: 'rejected' })
@@ -86,6 +112,7 @@ export function createBrowserClientPageMetadataPublisher(options: {
         })
       })
       .catch((error: unknown) => {
+        acknowledgeMetadata(entry, null)
         options.onUnpublished?.({
           reason: 'failed',
           errorCode: error instanceof Error ? error.message : 'browser_client_page_metadata_failed'
@@ -95,19 +122,23 @@ export function createBrowserClientPageMetadataPublisher(options: {
   }
 
   return {
-    publish: (snapshot) => {
+    publish: (snapshot, acknowledge) => {
       if (disposed) {
+        acknowledge?.(null)
         return
       }
-      const fullSnapshot = { ...snapshot }
+      const entry: PendingMetadata = { snapshot: { ...snapshot }, acknowledge }
       if (inFlight) {
-        pending = fullSnapshot
+        acknowledgeMetadata(pending, null)
+        pending = entry
         return
       }
-      send(fullSnapshot)
+      send(entry)
     },
     dispose: () => {
       disposed = true
+      acknowledgeMetadata(active, null)
+      acknowledgeMetadata(pending, null)
       pending = null
     }
   }

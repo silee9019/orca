@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useArtifactPublishViewerController } from '@/runtime/artifact-publish-viewer-controller'
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import { ArrowRight, Loader2, Share2 } from 'lucide-react'
 import type { ArtifactWriteRequest } from '../../../../shared/artifacts'
 import { Button } from '@/components/ui/button'
@@ -7,12 +8,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { ArtifactPublishedLinkPanel } from './ArtifactPublishedLinkPanel'
+import {
+  ArtifactPublishedLinkPanel,
+  type ArtifactPublishedLinkControl
+} from './ArtifactPublishedLinkPanel'
 import { getPublishedArtifactLink } from './artifact-published-link-client'
 import { publishArtifactFromSurface } from './artifact-publish-flow'
 
 type PublishedLinkLookup = {
   key: string
+  sequence: number
   status: 'loading' | 'loaded' | 'error'
   shareUrl: string | null
 }
@@ -45,6 +50,7 @@ export function ArtifactPublishButton({
   const [lookupRevision, setLookupRevision] = useState(0)
   const [linkLookup, setLinkLookup] = useState<PublishedLinkLookup | null>(null)
   const lookupSequence = useRef(0)
+  const linkRef = useRef<ArtifactPublishedLinkControl | null>(null)
   const popoverContentRef = useRef<HTMLDivElement>(null)
   const authStatus = useAppStore((state) => state.orcaProfileAuthStatus)
   const connect = useAppStore((state) => state.connectCurrentOrcaProfile)
@@ -63,6 +69,16 @@ export function ArtifactPublishButton({
         ])
       : null
   const lookupKey = accountKey ? JSON.stringify([accountKey, sourceKey]) : null
+  const currentTarget = useRef({ lookupKey, mounted: true })
+  useLayoutEffect(() => {
+    currentTarget.current = { lookupKey, mounted: true }
+  })
+  useEffect(
+    () => () => {
+      currentTarget.current.mounted = false
+    },
+    []
+  )
   const currentLookup = linkLookup?.key === lookupKey ? linkLookup : null
   const checkingLink =
     signedIn && currentLookup?.status !== 'loaded' && currentLookup?.status !== 'error'
@@ -76,17 +92,17 @@ export function ArtifactPublishButton({
       setLinkLookup(null)
       return
     }
-    setLinkLookup({ key: lookupKey, status: 'loading', shareUrl: null })
+    setLinkLookup({ key: lookupKey, sequence, status: 'loading', shareUrl: null })
     void getPublishedArtifactLink(sourceKey)
       .then((shareUrl) => {
         if (lookupSequence.current === sequence) {
-          setLinkLookup({ key: lookupKey, status: 'loaded', shareUrl })
+          setLinkLookup({ key: lookupKey, sequence, status: 'loaded', shareUrl })
         }
       })
-      .catch((error: unknown) => {
-        console.error('Failed to check published artifact link:', error)
+      .catch(() => {
+        console.error('Failed to check published artifact link')
         if (lookupSequence.current === sequence) {
-          setLinkLookup({ key: lookupKey, status: 'error', shareUrl: null })
+          setLinkLookup({ key: lookupKey, sequence, status: 'error', shareUrl: null })
         }
       })
     return () => {
@@ -94,18 +110,34 @@ export function ArtifactPublishButton({
     }
   }, [lookupKey, lookupRevision, open, sourceKey])
 
-  const publish = async (): Promise<void> => {
+  const publish = async (): Promise<boolean> => {
     if (blocked || !signedIn || !sharingEnabled) {
-      return
+      return false
     }
     setPublishing(true)
     try {
-      const result = await publishArtifactFromSurface(createRequest)
+      const result = await publishArtifactFromSurface(async () => {
+        const request = await createRequest()
+        if (
+          !currentTarget.current.mounted ||
+          currentTarget.current.lookupKey !== lookupKey ||
+          request.sourceKey !== sourceKey
+        ) {
+          throw new Error('artifact_publish_target_changed')
+        }
+        return request
+      })
       if (result) {
         if (lookupKey) {
-          setLinkLookup({ key: lookupKey, status: 'loaded', shareUrl: result.item.shareUrl })
+          setLinkLookup({
+            key: lookupKey,
+            sequence: lookupSequence.current,
+            status: 'loaded',
+            shareUrl: result.item.shareUrl
+          })
         }
       }
+      return Boolean(result)
     } finally {
       setPublishing(false)
     }
@@ -117,6 +149,28 @@ export function ArtifactPublishButton({
     openSettingsPage()
   }
 
+  useArtifactPublishViewerController({
+    sourceKey,
+    lookupKey,
+    linkRef,
+    open,
+    disabled: Boolean(disabled),
+    authState: authStatus?.state ?? 'unavailable',
+    configured: authStatus?.configured === true,
+    contentRef: popoverContentRef,
+    anchorRef,
+    connect: async () => (await connect())?.status === 'connected',
+    signedIn,
+    sharingEnabled,
+    publishing,
+    lookupStatus: currentLookup?.status ?? 'idle',
+    lookupSequence: currentLookup?.sequence ?? lookupSequence.current,
+    publishedLink,
+    setOpen,
+    openSettings: openArtifactsSettings,
+    retry: () => setLookupRevision((value) => value + 1),
+    publish
+  })
   const label = translate(
     'auto.components.artifacts.ArtifactPublishButton.a4a49da6af',
     'Share as artifact'
@@ -286,7 +340,8 @@ export function ArtifactPublishButton({
               shareUrl={publishedLink}
               publishing={publishing}
               sharingEnabled={sharingEnabled}
-              onUpdate={() => void publish()}
+              onUpdate={publish}
+              viewerRef={linkRef}
             />
           ) : (
             <Button

@@ -1,4 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  useBrowserImportHintOwner,
+  type ImportHintPersistenceReceipt
+} from './use-browser-import-hint-owner'
+import type { BrowserCookieImportResult } from '../../../../../shared/browser-workspace-types'
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Import } from 'lucide-react'
 import { toast } from 'sonner'
 import { emitBrowserCookieImportToast } from '@/lib/browser-cookie-import-toast'
@@ -27,14 +32,23 @@ import { translate } from '@/i18n/i18n'
 type BrowserImportHintButtonProps = {
   profileId: string | null
   compact?: boolean
+  browserPageId?: string
+  isActive?: boolean
 }
 
 export function BrowserImportHintButton({
   profileId,
+  browserPageId,
+  isActive = false,
   compact = false
 }: BrowserImportHintButtonProps): React.JSX.Element | null {
   const [open, setOpen] = useState(false)
-  const [importMenuOpen, setImportMenuOpen] = useState(false)
+  const [importMenuOpen, updateImportMenuOpen] = useState(false)
+  const revision = useRef(0)
+  const setImportMenuOpen = useCallback((value: boolean): void => {
+    revision.current += 1
+    updateImportMenuOpen(value)
+  }, [])
   const browserSessionImportState = useAppStore((s) => s.browserSessionImportState)
   const browserImportHintHidden = useAppStore((s) => s.browserImportHintHidden)
   const persistedUIReady = useAppStore((s) => s.persistedUIReady)
@@ -69,22 +83,21 @@ export function BrowserImportHintButton({
   )
 
   const handleOpenChange = useCallback(
-    (nextOpen: boolean): void => {
+    (nextOpen: boolean): Promise<void> => {
+      revision.current += 1
       setOpen(nextOpen)
       if (!nextOpen) {
         setImportMenuOpen(false)
       }
-      if (nextOpen) {
-        // Why: macOS treats other browsers' profile folders as app data. Only
-        // probe them when the user opens the import hint.
-        void fetchDetectedBrowsers()
-      }
+      // Only probe browser profile folders after the user opens this hint.
+      return nextOpen ? fetchDetectedBrowsers() : Promise.resolve()
     },
-    [fetchDetectedBrowsers]
+    [fetchDetectedBrowsers, setImportMenuOpen]
   )
 
   const handleImportFromBrowser = useCallback(
-    async (browserFamily: string, browserProfile?: string): Promise<void> => {
+    async (browserFamily: string, browserProfile?: string): Promise<BrowserCookieImportResult> => {
+      revision.current += 1
       setOpen(false)
       setImportMenuOpen(false)
       const result = await importCookiesFromBrowser(
@@ -107,44 +120,57 @@ export function BrowserImportHintButton({
           ),
           result
         )
-        return
+        return result
       }
       toast.error(result.reason)
+      return result
     },
-    [detectedBrowsers, effectiveProfileId, importCookiesFromBrowser]
+    [detectedBrowsers, effectiveProfileId, importCookiesFromBrowser, setImportMenuOpen]
   )
 
-  const handleImportFromFile = useCallback(async (): Promise<void> => {
-    setOpen(false)
-    setImportMenuOpen(false)
-    const result = await importCookiesToProfile(effectiveProfileId)
-    if (result.ok) {
-      emitBrowserCookieImportToast(
-        result.summary,
-        translate(
-          'auto.components.browser.pane.BrowserImportHintButton.d40d584769',
-          'Imported {{value0}} cookies from file.',
-          { value0: result.summary.importedCookies }
-        ),
-        result
-      )
-      return
-    }
-    if (result.reason !== 'canceled') {
-      toast.error(result.reason)
-    }
-  }, [effectiveProfileId, importCookiesToProfile])
+  const handleImportFromFile = useCallback(
+    async (filePath?: string): Promise<BrowserCookieImportResult> => {
+      revision.current += 1
+      setOpen(false)
+      setImportMenuOpen(false)
+      const result = await importCookiesToProfile(effectiveProfileId, filePath)
+      if (result.ok) {
+        emitBrowserCookieImportToast(
+          result.summary,
+          translate(
+            'auto.components.browser.pane.BrowserImportHintButton.d40d584769',
+            'Imported {{value0}} cookies from file.',
+            { value0: result.summary.importedCookies }
+          ),
+          result
+        )
+        return result
+      }
+      if (result.reason !== 'canceled') {
+        toast.error(result.reason)
+      }
+      return result
+    },
+    [effectiveProfileId, importCookiesToProfile, setImportMenuOpen]
+  )
 
   const handleOpenBrowserSettings = useCallback((): void => {
+    revision.current += 1
+    setImportMenuOpen(false)
     openSettingsTarget({ pane: 'browser', repoId: null })
     openSettingsPage()
     setOpen(false)
-  }, [openSettingsPage, openSettingsTarget])
+  }, [openSettingsPage, openSettingsTarget, setImportMenuOpen])
 
-  const handleHideHint = useCallback((): void => {
-    setBrowserImportHintHidden(true)
+  const handleHideHint = useCallback((): Promise<ImportHintPersistenceReceipt> => {
+    revision.current += 1
+    const persisted = new Promise<ImportHintPersistenceReceipt>((resolve) =>
+      setBrowserImportHintHidden(true, (saved, isCurrent) => resolve({ saved, isCurrent }))
+    )
+    setImportMenuOpen(false)
     setOpen(false)
-  }, [setBrowserImportHintHidden])
+    return persisted
+  }, [setBrowserImportHintHidden, setImportMenuOpen])
 
   // Why: Electron <webview> elements run in a separate process, so clicking
   // inside one never dispatches pointerdown on the renderer document. Radix
@@ -160,6 +186,22 @@ export function BrowserImportHintButton({
     window.addEventListener('blur', dismiss)
     return () => window.removeEventListener('blur', dismiss)
   }, [handleOpenChange, open])
+
+  useBrowserImportHintOwner({
+    pageId: browserPageId,
+    profileId: effectiveProfileId,
+    available: shouldShow && isActive,
+    active: isActive,
+    open,
+    menuOpen: importMenuOpen,
+    getRevision: () => revision.current,
+    changeOpen: handleOpenChange,
+    changeMenu: setImportMenuOpen,
+    openSettings: handleOpenBrowserSettings,
+    hide: handleHideHint,
+    importFile: handleImportFromFile,
+    importBrowser: handleImportFromBrowser
+  })
 
   if (!shouldShow) {
     return null
@@ -178,6 +220,9 @@ export function BrowserImportHintButton({
             'Import browser data'
           )}
           data-contextual-tour-target="browser-import-hint"
+          data-browser-import-hint-page={browserPageId}
+          data-import-hint-open={open}
+          data-import-menu-open={importMenuOpen}
         >
           <Import className="size-3.5" />
           {compact
@@ -188,8 +233,14 @@ export function BrowserImportHintButton({
               )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" side="bottom" sideOffset={6} className="w-80 p-3">
-        <div className="space-y-3">
+      <PopoverContent
+        data-import-hint-content={browserPageId}
+        align="end"
+        side="bottom"
+        sideOffset={6}
+        className="w-80"
+      >
+        <div className="space-y-3 p-3">
           <div className="space-y-1.5">
             <div className="text-sm font-medium text-foreground">
               {translate(
@@ -222,7 +273,11 @@ export function BrowserImportHintButton({
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuContent
+                data-import-hint-menu={browserPageId}
+                align="start"
+                className="w-52"
+              >
                 <BrowserCookieImportMachineNotice />
                 {detectedBrowsers.map((browser) =>
                   browser.profiles.length > 1 ? (
@@ -299,4 +354,13 @@ export function BrowserImportHintButton({
       </PopoverContent>
     </Popover>
   )
+}
+
+export function browserImportHintControl(
+  profileId: string | null,
+  browserPageId: string,
+  isActive: boolean
+): (compact: boolean) => React.ReactNode {
+  return (compact) =>
+    createElement(BrowserImportHintButton, { profileId, browserPageId, isActive, compact })
 }

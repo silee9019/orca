@@ -1,3 +1,4 @@
+import { SkillLinksViewerActionSchema } from './skill-links-viewer-command'
 import { SkillFreshnessViewerActionSchema } from './skill-freshness-viewer-command'
 import { SkillListViewerActionSchema } from './skill-list-viewer-command'
 import { SkillShareViewerActionSchema } from './skill-share-viewer-command'
@@ -24,13 +25,25 @@ export const SkillsViewerFilterSchema = z
   .strict()
 export type SkillsFilterState = z.infer<typeof SkillsViewerFilterSchema>
 export const NO_SKILL_FILTERS: SkillsFilterState = { query: '', sourceKind: 'all', agent: 'all' }
+export const SkillsDeleteConfirmationSchema = z
+  .object({
+    kind: z.literal('delete-confirmation'),
+    operationId: z.uuid(),
+    confirmed: z.boolean()
+  })
+  .strict()
 export const SkillsViewerActionSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('get') }).strict(),
+  z.object({ kind: z.literal('close') }).strict(),
+  z.object({ kind: z.literal('delete-selected') }).strict(),
+  z.object({ kind: z.literal('delete-result-dismiss') }).strict(),
+  SkillsDeleteConfirmationSchema,
   z.object({ kind: z.literal('install-form'), action: SkillInstallViewerActionSchema }).strict(),
   z.object({ kind: z.literal('bundle-form'), action: SkillBundleViewerActionSchema }).strict(),
   z.object({ kind: z.literal('managed-form'), action: ManagedSkillViewerActionSchema }).strict(),
   z.object({ kind: z.literal('share-form'), action: SkillShareViewerActionSchema }).strict(),
   z.object({ kind: z.literal('list-form'), action: SkillListViewerActionSchema }).strict(),
+  z.object({ kind: z.literal('links-form'), action: SkillLinksViewerActionSchema }).strict(),
   z
     .object({ kind: z.literal('freshness-form'), action: SkillFreshnessViewerActionSchema })
     .strict(),

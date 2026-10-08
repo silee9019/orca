@@ -235,7 +235,8 @@ describe('useIpcEvents updater integration', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()

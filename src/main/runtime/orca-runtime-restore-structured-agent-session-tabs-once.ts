@@ -229,7 +229,7 @@ export class OrcaRuntimeWithRestoreStructuredAgentSessionTabsOnce extends OrcaRu
     options?: { expectedIncarnationId?: string; scanChildProcesses?: boolean }
   ): Promise<PtyProcessInspection> {
     const leaf = this.resolveLiveLeafForHandle(terminalSelector)
-    if (!leaf?.ptyId || !this.ptyController) {
+    if (!leaf?.ptyId || !this.ptyController || this.isPtyKnownExited(leaf.ptyId)) {
       throw new Error('terminal_gone')
     }
     if (this.ptyController.inspectProcess) {

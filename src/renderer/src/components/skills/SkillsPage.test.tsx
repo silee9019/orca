@@ -4,6 +4,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { fireEvent } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { SkillsViewerAction } from '../../../../shared/skills-viewer-command'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import type { DiscoveredSkill, SkillDiscoveryResult } from '../../../../shared/skills'
 import { createCompatibleRuntimeStatusResponseIfNeeded } from '@/runtime/runtime-compatibility-test-fixture'
@@ -157,6 +158,47 @@ afterEach(async () => {
 })
 
 describe('SkillsPage', () => {
+  it('uses the public viewer for empty installs, failed scan retries and no-match resets', async () => {
+    const discover = vi
+      .fn()
+      .mockResolvedValueOnce(discoveryResult([]))
+      .mockRejectedValueOnce(new Error('fixture unavailable'))
+      .mockResolvedValue(discoveryResult(['alpha']))
+    Object.defineProperty(window, 'api', {
+      configurable: true,
+      value: { skills: skillsApi(discover), runtimeEnvironments: { call: vi.fn() } }
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    await renderPage()
+    await flushMicrotasks()
+    async function apply(action: SkillsViewerAction) {
+      let pending: ReturnType<typeof applySkillsViewerAction> | undefined
+      await act(async () => {
+        pending = applySkillsViewerAction(action)
+        void pending.catch(() => undefined)
+      })
+      return pending
+    }
+    expect(container?.textContent).toContain('No skills found')
+    await expect(apply({ kind: 'install', open: true })).resolves.toMatchObject({
+      installOpen: true
+    })
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+    await apply({ kind: 'install', open: false })
+    await expect(apply({ kind: 'refresh' })).rejects.toThrow('skills_refresh_failed')
+    expect(container?.textContent).toContain('Could not scan skills')
+    await expect(apply({ kind: 'refresh' })).resolves.toMatchObject({
+      error: false,
+      visibleSkillIds: ['skill-alpha']
+    })
+    expect(container?.textContent).not.toContain('Could not scan skills')
+    await apply({ kind: 'filter', value: { query: 'missing', sourceKind: 'all', agent: 'all' } })
+    expect(container?.textContent).toContain('No matches')
+    await apply({ kind: 'filter-clear' })
+    expect(renderedSkillNames()).toEqual(['alpha'])
+    expect(discover).toHaveBeenCalledTimes(3)
+  })
+
   it('acknowledges viewer filtering and eligible share selection on the owning page', async () => {
     const discover = vi.fn().mockResolvedValue(discoveryResult(['alpha', 'beta']))
     Object.defineProperty(window, 'api', {

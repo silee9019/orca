@@ -1,6 +1,8 @@
+import { bindArtifactDeleteConfirmation } from '@/runtime/artifact-delete-viewer-controller'
+import { useMountedRef } from '@/hooks/useMountedRef'
 import { useArtifactViewerController } from '../../runtime/artifact-viewer-controller'
 import { filterArtifactsBySearchQuery } from './artifact-list-search'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ArtifactCloudOperation, ArtifactListItem } from '../../../../shared/artifacts'
 import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { persistConfirmationSkipPreference } from '@/components/confirmation-skip-preference'
@@ -29,6 +31,8 @@ export default function ArtifactsPage(): React.JSX.Element {
   const settings = useAppStore((state) => state.settings)
   const updateSettings = useAppStore((state) => state.updateSettings)
   const confirm = useConfirmationDialog()
+  const mountedRef = useMountedRef()
+  const deleteAbort = useRef<AbortController | null>(null)
   // Why: publishing is off by default, so "ask your agent to share" is a dead end until the
   // capability is granted. Only claim that once settings have actually loaded.
   const publishingBlocked = settings ? settings.artifactSharingEnabled !== true : false
@@ -51,6 +55,12 @@ export default function ArtifactsPage(): React.JSX.Element {
     removeArtifact,
     setError
   } = useArtifactPagination(authStatus, refreshAuth)
+  useEffect(
+    () => () => {
+      deleteAbort.current?.abort()
+    },
+    [accountIdentity]
+  )
   const { query, setQuery, selectedSlug, setSelectedSlug } = useArtifactViewerController({
     identity: accountIdentity,
     slugs: artifacts.map((item) => item.artifact.slug),
@@ -60,7 +70,22 @@ export default function ArtifactsPage(): React.JSX.Element {
     loadMore: loadMoreArtifacts,
     hasMore: Boolean(nextCursor),
     loading: loading || loadingMore,
-    error
+    error,
+    items: artifacts,
+    deleteArtifact: (item, reviewedTarget) => deleteArtifact(item, reviewedTarget),
+    connect:
+      !signedIn && authStatus?.configured === true
+        ? async () => (await connect())?.status === 'connected'
+        : undefined,
+    openAccountSettings:
+      !signedIn && authStatus?.configured !== true ? openAccountSettings : undefined,
+    openArtifactsSettings:
+      signedIn && artifacts.length === 0 && !nextCursor && publishingBlocked
+        ? () => {
+            openSettingsTarget({ pane: 'artifacts', repoId: null })
+            openSettingsPage()
+          }
+        : undefined
   })
   const deletingId = deleting?.identity === accountIdentity ? deleting.slug : null
   const selectedArtifact =
@@ -72,7 +97,7 @@ export default function ArtifactsPage(): React.JSX.Element {
     if (selectedSlug && !artifacts.some(({ artifact }) => artifact.slug === selectedSlug)) {
       setSelectedSlug(null)
     }
-  }, [selectedSlug, artifacts])
+  }, [selectedSlug, artifacts, setSelectedSlug])
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
@@ -106,75 +131,101 @@ export default function ArtifactsPage(): React.JSX.Element {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [closePage, selectedSlug])
+  }, [closePage, selectedSlug, setSelectedSlug])
 
-  const deleteArtifact = async (item: ArtifactListItem): Promise<void> => {
-    const name = item.artifact.title || item.artifact.originalFileName || item.artifact.slug
-    if (!settings?.skipDeleteArtifactConfirm) {
-      const accepted = await confirm({
-        title: translate('auto.components.artifacts.ArtifactsPage.deleteTitle', 'Delete artifact?'),
-        description: translate(
-          'auto.components.artifacts.ArtifactsPage.deleteDescription',
-          '“{{name}}” will no longer be available at its public link.',
-          { name }
-        ),
-        confirmLabel: translate('auto.components.artifacts.ArtifactsPage.delete', 'Delete'),
-        confirmVariant: 'destructive',
-        dontAskAgain: {
-          onConfirmed: () =>
-            persistConfirmationSkipPreference({
-              updates: { skipDeleteArtifactConfirm: true },
-              settingsSectionId: 'general-skip-delete-artifact-confirm',
-              updateSettings,
-              openSettingsPage,
-              openSettingsTarget
-            })
-        }
-      })
-      if (!accepted) {
-        return
-      }
+  const deleteArtifact = async (
+    item: ArtifactListItem,
+    reviewedTarget?: string
+  ): Promise<boolean> => {
+    if (deleteAbort.current || !mountedRef.current) {
+      return false
     }
-    const requestedIdentity = accountIdentity
-    if (!requestedIdentity) {
-      return
-    }
-    const requestedAccountIsCurrent = (): boolean =>
-      artifactAccountIdentity(useAppStore.getState().orcaProfileAuthStatus) === requestedIdentity
-    if (!requestedAccountIsCurrent()) {
-      return
-    }
-    setDeleting({ identity: requestedIdentity, slug: item.artifact.slug })
+    const controller = new AbortController()
+    deleteAbort.current = controller
     try {
-      const result = await callRuntimeRpc<ArtifactCloudOperation<void>>(
-        LOCAL_RUNTIME,
-        'artifacts.delete',
-        { id: item.artifact.slug }
-      )
+      const name = item.artifact.title || item.artifact.originalFileName || item.artifact.slug
+      if (!settings?.skipDeleteArtifactConfirm) {
+        const accepted = await confirm({
+          signal: controller.signal,
+          onViewerControl: reviewedTarget
+            ? bindArtifactDeleteConfirmation({ slug: item.artifact.slug, reviewedTarget })
+            : undefined,
+          title: translate(
+            'auto.components.artifacts.ArtifactsPage.deleteTitle',
+            'Delete artifact?'
+          ),
+          description: translate(
+            'auto.components.artifacts.ArtifactsPage.deleteDescription',
+            '“{{name}}” will no longer be available at its public link.',
+            { name }
+          ),
+          confirmLabel: translate('auto.components.artifacts.ArtifactsPage.delete', 'Delete'),
+          confirmVariant: 'destructive',
+          dontAskAgain: {
+            onConfirmed: () =>
+              persistConfirmationSkipPreference({
+                updates: { skipDeleteArtifactConfirm: true },
+                settingsSectionId: 'general-skip-delete-artifact-confirm',
+                updateSettings,
+                openSettingsPage,
+                openSettingsTarget
+              })
+          }
+        })
+        if (!accepted) {
+          return false
+        }
+      }
+      if (controller.signal.aborted || !mountedRef.current) {
+        return false
+      }
+      const requestedIdentity = accountIdentity
+      if (!requestedIdentity) {
+        return false
+      }
+      const requestedAccountIsCurrent = (): boolean =>
+        artifactAccountIdentity(useAppStore.getState().orcaProfileAuthStatus) === requestedIdentity
       if (!requestedAccountIsCurrent()) {
-        return
+        return false
       }
-      if (result.status !== 'ok') {
-        await refreshAuth()
-        throw new Error(result.status)
-      }
-      removeArtifact(requestedIdentity, item.artifact.slug)
-    } catch (deleteError) {
-      console.error('Failed to delete artifact:', deleteError)
-      if (requestedAccountIsCurrent()) {
-        setError(
-          translate(
-            'auto.components.artifacts.ArtifactsPage.deleteFailed',
-            'Could not delete the artifact.'
+      setDeleting({ identity: requestedIdentity, slug: item.artifact.slug })
+      try {
+        const result = await callRuntimeRpc<ArtifactCloudOperation<void>>(
+          LOCAL_RUNTIME,
+          'artifacts.delete',
+          { id: item.artifact.slug }
+        )
+        if (!requestedAccountIsCurrent()) {
+          return false
+        }
+        if (result.status !== 'ok') {
+          await refreshAuth()
+          throw new Error(result.status)
+        }
+        removeArtifact(requestedIdentity, item.artifact.slug)
+        return true
+      } catch {
+        console.error('Failed to delete artifact')
+        if (requestedAccountIsCurrent()) {
+          setError(
+            translate(
+              'auto.components.artifacts.ArtifactsPage.deleteFailed',
+              'Could not delete the artifact.'
+            )
           )
+        }
+        return false
+      } finally {
+        setDeleting((current) =>
+          current?.identity === requestedIdentity && current.slug === item.artifact.slug
+            ? null
+            : current
         )
       }
     } finally {
-      setDeleting((current) =>
-        current?.identity === requestedIdentity && current.slug === item.artifact.slug
-          ? null
-          : current
-      )
+      if (deleteAbort.current === controller) {
+        deleteAbort.current = null
+      }
     }
   }
 

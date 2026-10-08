@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
   CalendarClock,
   Check,
@@ -33,6 +33,7 @@ import { searchRepos } from '@/lib/repo-search'
 import { DEFAULT_SHOW_SLEEPING_WORKSPACES } from '../../../../shared/constants'
 import { isSleepingSweepExemptionNarrowingList } from './visible-worktrees'
 import { translate } from '@/i18n/i18n'
+import { useProjectFilterControls } from '@/runtime/use-project-filter-controls'
 
 type SidebarFilterProps = {
   preserveWorkspaceBoardOpen?: boolean
@@ -74,6 +75,7 @@ const SidebarFilter = React.memo(function SidebarFilter({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [commandValueOverride, setCommandValueOverride] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleOpenChange = useCallback(
     (next: boolean) => {
@@ -141,6 +143,21 @@ const SidebarFilter = React.memo(function SidebarFilter({
       ? commandValueOverride
       : (filteredRepos[0]?.id ?? '')
   const allSelected = canFilterRepos && selectedCount === repos.length
+
+  const inputFocus = useProjectFilterControls({
+    surface: preserveWorkspaceBoardOpen ? 'workspace-board' : 'sidebar',
+    open,
+    query,
+    highlightedRepoId: commandValue,
+    resultRepoIds: canFilterRepos ? filteredRepos.map((repo) => repo.id) : [],
+    inputRef,
+    onOpenChange: handleOpenChange,
+    setQuery: (nextQuery) => {
+      setCommandValueOverride(null)
+      setQuery(nextQuery)
+    },
+    setHighlightedRepoId: setCommandValueOverride
+  })
 
   const clearAll = useCallback(() => {
     setShowSleepingWorkspaces(DEFAULT_SHOW_SLEEPING_WORKSPACES)
@@ -317,6 +334,9 @@ const SidebarFilter = React.memo(function SidebarFilter({
               className="bg-transparent"
             >
               <CommandInput
+                ref={inputRef}
+                onFocus={inputFocus.onFocus}
+                onBlur={inputFocus.onBlur}
                 autoFocus
                 placeholder={translate(
                   'auto.components.sidebar.SidebarFilter.489d1c8c9f',

@@ -203,7 +203,8 @@ describe('useIpcEvents updater integration', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -345,7 +346,8 @@ describe('useIpcEvents updater integration', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     // Why: the pending-intent pull is a Promise; flush microtasks before asserting.

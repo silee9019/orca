@@ -28,7 +28,7 @@ export type UISlicePreferences = {
   sidebarBody: 'workspaces' | 'agents'
   setSidebarBody: (body: UISlicePreferences['sidebarBody']) => void
   groupBy: 'none' | 'workspace-status' | 'repo' | 'pr-status'
-  setGroupBy: (g: UISlicePreferences['groupBy']) => void
+  setGroupBy: (g: UISlicePreferences['groupBy']) => Promise<void>
   sortBy: 'name' | 'smart' | 'recent' | 'repo' | 'manual'
   setSortBy: (s: UISlicePreferences['sortBy']) => void
   projectOrderBy: ProjectOrderBy
@@ -91,10 +91,10 @@ export type UISlicePreferences = {
   toggleCollapsedGroup: (key: string) => void
   worktreeCardProperties: WorktreeCardProperty[]
   _worktreeCardModeDefaulted: boolean
-  setWorktreeCardMode: (mode: WorktreeCardMode) => void
+  setWorktreeCardMode: (mode: WorktreeCardMode) => Promise<void>
   setWorktreeCardProperties: (properties: readonly WorktreeCardProperty[]) => void
   agentActivityDisplayMode: AgentActivityDisplayMode
-  setAgentActivityDisplayMode: (mode: AgentActivityDisplayMode) => void
+  setAgentActivityDisplayMode: (mode: AgentActivityDisplayMode) => Promise<void>
   workspaceStatuses: WorkspaceStatusDefinition[]
   setWorkspaceStatuses: (statuses: WorkspaceStatusDefinition[]) => void
   workspaceBoardOpacity: number
@@ -107,11 +107,11 @@ export type UISlicePreferences = {
   agentDashboardDrawerOpen: boolean
   setAgentDashboardDrawerOpen: (open: boolean) => void
   statusBarItems: StatusBarItem[]
-  toggleStatusBarItem: (item: StatusBarItem) => void
+  toggleStatusBarItem: (item: StatusBarItem) => Promise<void>
   statusBarVisible: boolean
-  setStatusBarVisible: (v: boolean) => void
+  setStatusBarVisible: (v: boolean) => Promise<void>
   usagePercentageDisplay: UsagePercentageDisplay
-  setUsagePercentageDisplay: (display: UsagePercentageDisplay) => void
+  setUsagePercentageDisplay: (display: UsagePercentageDisplay) => Promise<void>
   statusBarUsageMode: StatusBarUsageMode
   setStatusBarUsageMode: (mode: StatusBarUsageMode) => void
 }

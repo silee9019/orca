@@ -9,7 +9,7 @@ import { useAppStore } from '@/store'
 import type { BrowserReloadTrigger } from '../navigate/browser-reload-action'
 import BrowserAddressBar from './BrowserAddressBar'
 import { BrowserChromeToolbar } from './browser-chrome-toolbar'
-import { BrowserImportHintButton } from './BrowserImportHintButton'
+import { browserImportHintControl } from './BrowserImportHintButton'
 import { BrowserReloadControl } from './browser-reload-control'
 import { BrowserToolbarMenu } from './BrowserToolbarMenu'
 import { SshEgressIndicator } from './browser-egress-indicator'
@@ -172,7 +172,12 @@ export function BrowserPageToolbar({
           }
           inputRef={addressBarInputRef}
           dismissSuggestionsRef={dismissAddressBarSuggestionsRef}
-          leadingIcon={<SshEgressIndicator worktreeId={worktreeId} />}
+          leadingIcon={
+            <SshEgressIndicator
+              worktreeId={worktreeId}
+              commandOwner={{ page: browserPageId, isActive }}
+            />
+          }
         />
       }
       reloadControl={
@@ -189,9 +194,7 @@ export function BrowserPageToolbar({
           onHardReload={() => runReloadTrigger('hard-reload')}
         />
       }
-      importControl={(compact) => (
-        <BrowserImportHintButton profileId={sessionProfileId} compact={compact} />
-      )}
+      importControl={browserImportHintControl(sessionProfileId, browserPageId, isActive)}
       elementTools={{
         activeIntent: grab.state !== 'idle' ? grabIntent : null,
         onStartIntent: startGrabIntent,
@@ -201,6 +204,7 @@ export function BrowserPageToolbar({
         annotationCount: browserAnnotationsLength
       }}
       markup={{
+        commandOwner: { page: browserPageId, active: isActive && !isBlankTab },
         active: markupIsActive,
         disabled: isBlankTab || grab.state !== 'idle',
         onToggle: () => (markupIsActive ? markupCancel() : void markupStart()),

@@ -5,6 +5,7 @@ import { printResult } from '../format'
 import { readJsonInput } from '../json-input'
 import { RuntimeClientError } from '../runtime-client'
 import { pluginMarketplaceGitSourceSchema } from '../../shared/plugins/plugin-marketplace'
+import { PluginSettingsViewerParams } from '../../shared/plugin-settings-viewer-command'
 import {
   PluginPreferencesUpdate,
   PluginInstallParams,
@@ -44,6 +45,19 @@ function list(method: string): CommandHandler {
 }
 
 export const PLUGIN_MANAGEMENT_HANDLERS: Record<string, CommandHandler> = {
+  'plugins viewer': async (ctx) => {
+    const parsed = PluginSettingsViewerParams.safeParse({
+      viewer: ctx.flags.get('viewer'),
+      action: await readJsonInput(ctx)
+    })
+    if (!parsed.success) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'A desktop viewer and valid plugin action JSON are required.'
+      )
+    }
+    printResult(await ctx.client.call('plugins.viewerAction', parsed.data), ctx.json, format)
+  },
   'plugins preferences get': list('plugins.getPreferences'),
   'plugins preferences update': request('plugins.updatePreferences', PluginPreferencesUpdate),
   'plugins install': request('plugins.install', PluginInstallParams),

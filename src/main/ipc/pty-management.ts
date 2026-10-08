@@ -1,6 +1,8 @@
+import {
+  getDaemonManagementAdapters as getDaemonAdapters,
+  isDaemonManagementDegraded as isDaemonDegraded
+} from '../daemon/daemon-management'
 import { ipcMain } from 'electron'
-import { DaemonPtyRouter } from '../daemon/daemon-pty-router'
-import { DegradedDaemonPtyProvider } from '../daemon/degraded-daemon-pty-provider'
 import type { DaemonPtyAdapter } from '../daemon/daemon-pty-adapter'
 import {
   getCurrentDaemonMacTccAttributionHealth,
@@ -27,26 +29,6 @@ const POLL_INTERVAL_MS = 100
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function getDaemonAdapters(): DaemonPtyAdapter[] {
-  const provider = getDaemonProvider()
-  if (!provider) {
-    return []
-  }
-  if (provider instanceof DaemonPtyRouter || provider instanceof DegradedDaemonPtyProvider) {
-    return [...provider.getAllAdapters()]
-  }
-  return [provider]
-}
-
-// Why: surface degraded mode (daemon alive but cannot spawn fresh PTYs) so the UI can warn new terminals lack persistence.
-function isDaemonDegraded(): boolean {
-  const provider = getDaemonProvider()
-  return (
-    provider instanceof DegradedDaemonPtyProvider &&
-    provider.routesFreshSpawnsToLocalProvider === true
-  )
 }
 
 // Why the current adapter only: evidence is keyed to the daemon now spawning terminals, so a

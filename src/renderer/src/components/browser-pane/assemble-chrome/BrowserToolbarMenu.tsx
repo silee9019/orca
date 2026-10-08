@@ -183,21 +183,24 @@ export function BrowserToolbarMenu({
   const { handleImportFromBrowser, handleImportFromFile } =
     useBrowserToolbarCookieImports(effectiveProfileId)
 
+  const profileUiSnapshot = {
+    cookieImportTargetGuard: 1 as const,
+    workspace: workspaceId,
+    profile: workspace?.sessionProfileId ?? 'default',
+    partition: workspace?.sessionPartition ?? null,
+    menuOpen,
+    pendingProfile:
+      pendingSwitchProfileId === undefined ? null : (pendingSwitchProfileId ?? 'default'),
+    newDialogOpen: newProfileDialogOpen,
+    newName: newProfileName,
+    creating: isCreatingProfile,
+    guestRegistrationVerified: false as const
+  }
+
   useBrowserProfileUiCommands({
     page: browserPageId,
     active: isActive,
-    snapshot: {
-      workspace: workspaceId,
-      profile: workspace?.sessionProfileId ?? 'default',
-      partition: workspace?.sessionPartition ?? null,
-      menuOpen,
-      pendingProfile:
-        pendingSwitchProfileId === undefined ? null : (pendingSwitchProfileId ?? 'default'),
-      newDialogOpen: newProfileDialogOpen,
-      newName: newProfileName,
-      creating: isCreatingProfile,
-      guestRegistrationVerified: false
-    },
+    snapshot: profileUiSnapshot,
     profiles: browserSessionProfiles,
     menu: handleMenuOpenChange,
     select: handleSwitchProfile,
@@ -217,6 +220,7 @@ export function BrowserToolbarMenu({
       }
     },
     getImportState: () => useAppStore.getState().browserSessionImportState,
+    cookieMenuForcedOpen: shouldForceMenuOpen,
     cookieBusy: browserSessionImportState?.status === 'importing',
     importBrowser: handleImportFromBrowser,
     importFile: handleImportFromFile
@@ -225,6 +229,7 @@ export function BrowserToolbarMenu({
   return (
     <>
       <BrowserToolbarMenuDropdown
+        commandOwner={{ page: browserPageId, active: isActive, snapshot: profileUiSnapshot }}
         menuOpen={menuOpen}
         onMenuOpenChange={handleMenuOpenChange}
         allProfiles={allProfiles}

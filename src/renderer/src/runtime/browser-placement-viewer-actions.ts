@@ -1,3 +1,20 @@
+import { applyBrowserClientSubmissionRequest } from './browser-client-submission-request'
+import { applyBrowserClientReloadRequest } from './browser-client-reload-request'
+import { applyBrowserClientFindRequest } from './browser-client-find-request'
+import { requestBrowserNewTab } from './browser-new-tab-request'
+import { applyBrowserClientAddressRequest } from './browser-client-address-request'
+import { requestBrowserPairedNewTab } from './browser-paired-new-tab-request'
+import { requestBrowserServerReopen } from './browser-server-reopen-request'
+import { applyBrowserClientNavigationRequest } from './browser-client-navigation-request'
+import { requestBrowserGrabToast } from './browser-grab-toast-request'
+import { requestBrowserWebAuthnFocus } from './browser-webauthn-focus-request'
+import { requestBrowserEgress } from './browser-egress-request'
+import { requestBrowserViewportPan } from './browser-viewport-pan-request'
+import { requestBrowserMarkupHint } from './browser-markup-hint-request'
+import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
+import { requestBrowserMarkup } from './browser-markup-request'
+import { applyBrowserImportHintAction } from './browser-import-hint-actions'
+import { requestBrowserBanner } from './browser-banner-request'
 import { requestBrowserOverlayFocus } from './browser-overlay-focus-request'
 import { applyBrowserSetupGuideAction } from './browser-setup-guide-actions'
 import { applyBrowserFeatureWallAction } from './browser-feature-wall-actions'
@@ -14,35 +31,57 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestRemoteFilePicker } from './remote-file-picker-request'
 import { requestLinkedBrowser } from './linked-browser-request'
 import { requestBrowserFailure } from './browser-failure-request'
-import type { BrowserViewerCommand } from '../../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserPlacementViewerCommand } from './browser-placement-viewer-command'
 import type { BrowserViewerResult } from '../../../shared/browser-viewer-command'
 
 export async function applyBrowserPlacementViewerAction(
-  command: Extract<
-    BrowserViewerCommand,
-    {
-      operation:
-        | 'overlay-focus'
-        | 'browser-setup-guide'
-        | 'browser-feature-wall'
-        | 'client-hosted-row'
-        | 'client-markup'
-        | 'take-back'
-        | 'observe-page'
-        | 'computer-permissions'
-        | 'load-failure'
-        | 'webauthn-dialog'
-        | 'workspace-file-open'
-        | 'workspace-port-open'
-        | 'palette-select'
-        | 'floating-browser'
-        | 'remote-picker'
-        | 'linked-browser'
-    }
-  >,
+  command: BrowserPlacementViewerCommand,
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
+  if (command.operation === 'server-reopen') {
+    const serverReopen = await requestBrowserServerReopen(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, serverReopen }
+  }
+  if (command.operation === 'grab-toast') {
+    const grabToast = await requestBrowserGrabToast(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, grabToast }
+  }
+  if (command.operation === 'webauthn-dialog-focus') {
+    const webAuthnFocus = await requestBrowserWebAuthnFocus(command.command, expiresAt)
+    return { ...base, applied: true, page: command.command.page, webAuthnFocus }
+  }
+  if (command.operation === 'browser-import-hint') {
+    const browserImportHint = await applyBrowserImportHintAction(command.command, expiresAt)
+    return { ...base, applied: true, browserImportHint }
+  }
+  if (command.operation === 'egress') {
+    const egress = await requestBrowserEgress(command.command, expiresAt)
+    return { ...base, applied: true, egress }
+  }
+  if (command.operation === 'banner') {
+    return {
+      ...base,
+      applied: true,
+      banner: await requestBrowserBanner(command.command, expiresAt)
+    }
+  }
+  if (command.operation === 'viewport-pan') {
+    const viewportPan = await requestBrowserViewportPan(command.page, command.delta, expiresAt)
+    return { ...base, page: command.page, applied: true, viewportPan }
+  }
+  if (command.operation === 'markup-hint') {
+    const markupHint = await requestBrowserMarkupHint(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markupHint }
+  }
+  if (command.operation === 'markup-editor') {
+    const markupEditor = await requestBrowserMarkupEditor(command.page, command.command, expiresAt)
+    return { ...base, page: command.page, applied: true, markupEditor }
+  }
+  if (command.operation === 'markup') {
+    const markup = await requestBrowserMarkup(command.page, command.action, expiresAt)
+    return { ...base, page: command.page, applied: true, markup }
+  }
   if (command.operation === 'overlay-focus') {
     return {
       ...base,
@@ -61,6 +100,31 @@ export async function applyBrowserPlacementViewerAction(
   if (command.operation === 'client-hosted-row') {
     const clientHostedRow = await requestClientHostedBrowserRow(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, clientHostedRow }
+  }
+  if (command.operation === 'new-tab') {
+    return { ...base, newTab: await requestBrowserNewTab(command.target, expiresAt), applied: true }
+  }
+  if (command.operation === 'new-tab-paired') {
+    return {
+      ...base,
+      applied: true,
+      pairedNewTab: await requestBrowserPairedNewTab(command.target, expiresAt)
+    }
+  }
+  if (command.operation === 'client-submission') {
+    return applyBrowserClientSubmissionRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-reload') {
+    return applyBrowserClientReloadRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-find') {
+    return applyBrowserClientFindRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-address') {
+    return applyBrowserClientAddressRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-navigation') {
+    return applyBrowserClientNavigationRequest(command, expiresAt)
   }
   if (command.operation === 'client-markup') {
     return await applyBrowserClientMarkupRequest(command, expiresAt)

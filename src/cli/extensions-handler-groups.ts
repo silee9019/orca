@@ -17,6 +17,7 @@ export const EXTENSIONS_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'plugins-management',
     keys: [
+      'plugins viewer',
       'plugins preferences get',
       'plugins preferences update',
       'plugins install',

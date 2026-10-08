@@ -1,4 +1,8 @@
 import {
+  applySkillLinksViewerAction,
+  type SkillLinksViewerState
+} from './skill-links-viewer-controller'
+import {
   applySkillFreshnessViewerAction,
   type SkillFreshnessViewerState
 } from './skill-freshness-viewer-controller'
@@ -31,6 +35,7 @@ export type SkillsChildViewerState = {
   share?: SkillShareViewerState
   list?: SkillListViewerState
   freshness?: SkillFreshnessViewerState
+  links?: SkillLinksViewerState
 }
 type SkillsChildViewerAction = Extract<
   SkillsViewerAction,
@@ -42,6 +47,7 @@ type SkillsChildViewerAction = Extract<
       | 'share-form'
       | 'list-form'
       | 'freshness-form'
+      | 'links-form'
   }
 >
 export function isSkillsChildViewerAction(
@@ -53,7 +59,8 @@ export function isSkillsChildViewerAction(
     action.kind === 'managed-form' ||
     action.kind === 'share-form' ||
     action.kind === 'list-form' ||
-    action.kind === 'freshness-form'
+    action.kind === 'freshness-form' ||
+    action.kind === 'links-form'
   )
 }
 export function requireSkillsChildViewerAvailable(
@@ -69,11 +76,13 @@ export function requireSkillsChildViewerAvailable(
     action.kind === 'freshness-form' ||
     (action.kind === 'managed-form'
       ? page.managementOpen
-      : action.kind === 'list-form'
-        ? page.view === 'skills'
-        : action.kind === 'share-form'
-          ? page.shareSkills.length > 0
-          : page.installOpen)
+      : action.kind === 'links-form'
+        ? page.view === 'shared'
+        : action.kind === 'list-form'
+          ? page.view === 'skills'
+          : action.kind === 'share-form'
+            ? page.shareSkills.length > 0
+            : page.installOpen)
   if (!available) {
     throw new Error('viewer_unavailable')
   }
@@ -82,6 +91,8 @@ export async function applySkillsChildViewerAction(
   action: SkillsChildViewerAction
 ): Promise<SkillsChildViewerState> {
   switch (action.kind) {
+    case 'links-form':
+      return { links: await applySkillLinksViewerAction(action.action) }
     case 'freshness-form':
       return { freshness: await applySkillFreshnessViewerAction(action.action) }
     case 'install-form':

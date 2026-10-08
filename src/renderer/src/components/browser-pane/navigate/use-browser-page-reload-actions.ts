@@ -26,7 +26,7 @@ export function useBrowserPageReloadActions({
   retryGuestRecoveryRef: MutableRefObject<() => void>
   onUpdatePageStateRef: MutableRefObject<(tabId: string, updates: BrowserTabPageState) => void>
 }): {
-  reloadWebviewOrRecoverGuest: (ignoreCache: boolean) => void
+  reloadWebviewOrRecoverGuest: (ignoreCache: boolean) => boolean
   runReloadTrigger: (trigger: BrowserReloadTrigger) => void
   reloadButtonLabel: string
   reloadButtonLabelKind: ReturnType<typeof resolveBrowserReloadButtonLabelKind>

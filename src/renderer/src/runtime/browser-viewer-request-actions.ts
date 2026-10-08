@@ -1,3 +1,4 @@
+import { isBrowserPlacementViewerCommand } from './browser-placement-viewer-command'
 import { requestBrowserSshRoute } from './browser-ssh-route-request'
 import { applyBrowserPlacementViewerAction } from './browser-placement-viewer-actions'
 import { requestBrowserGrabAction } from './browser-grab-action-request'
@@ -7,7 +8,6 @@ import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
 import { applyBrowserGrabRequest } from './browser-viewer-grab-request'
 import { requestBrowserDownload } from './browser-download-request'
-import { requestBrowserNewTab } from './browser-new-tab-request'
 import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
 import { requestBrowserContextMenu } from './browser-context-menu-request'
@@ -20,8 +20,6 @@ import {
   browserViewportPresetToOverride,
   getBrowserViewportPreset
 } from '../../../shared/browser-viewport-presets'
-import { requestBrowserMarkupEditor } from './browser-markup-editor-request'
-import { requestBrowserMarkup } from './browser-markup-request'
 import { requestBrowserAnnotationDraft } from './browser-annotation-draft-request'
 import { requestBrowserToolbar } from './browser-toolbar-request'
 import { requestBrowserFind } from './browser-find-request'
@@ -49,27 +47,8 @@ export async function applyBrowserViewerRequest(
   if (!state.settings || !state.persistedUIReady) {
     throw new Error('viewer_not_ready')
   }
-  if (command.operation === 'new-tab') {
-    const newTab = await requestBrowserNewTab(command.target, request.expiresAt)
-    return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
-  }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
-  if (
-    command.operation === 'overlay-focus' ||
-    command.operation === 'client-hosted-row' ||
-    command.operation === 'client-markup' ||
-    command.operation === 'take-back' ||
-    command.operation === 'observe-page' ||
-    command.operation === 'computer-permissions' ||
-    command.operation === 'webauthn-dialog' ||
-    command.operation === 'load-failure' ||
-    command.operation === 'workspace-file-open' ||
-    command.operation === 'workspace-port-open' ||
-    command.operation === 'palette-select' ||
-    command.operation === 'floating-browser' ||
-    command.operation === 'remote-picker' ||
-    command.operation === 'linked-browser'
-  ) {
+  if (isBrowserPlacementViewerCommand(command)) {
     return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   if (command.operation === 'remote-pane') {
@@ -244,13 +223,13 @@ export async function applyBrowserViewerRequest(
     const address = await requestBrowserAddress(page.id, command.command, request.expiresAt)
     return { ...base, page: page.id, applied: true, address }
   }
-  if (command.operation === 'markup-editor') {
-    const editor = await requestBrowserMarkupEditor(page.id, command.command, request.expiresAt)
-    return { ...base, page: page.id, applied: true, markupEditor: editor }
-  }
-  if (command.operation === 'markup') {
-    const markup = await requestBrowserMarkup(page.id, command.action, request.expiresAt)
-    return { ...base, page: page.id, applied: true, markup }
+  if (
+    command.operation === 'viewport-pan' ||
+    command.operation === 'markup-hint' ||
+    command.operation === 'markup-editor' ||
+    command.operation === 'markup'
+  ) {
+    return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   const before = state.browserAnnotationsByPageId[page.id] ?? []
   if (command.operation === 'annotation-update' || command.operation === 'annotation-delete') {

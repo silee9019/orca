@@ -1,3 +1,4 @@
+import { useSkillLinksViewerController } from '@/runtime/skill-links-viewer-controller'
 import { useMemo } from 'react'
 import { translate } from '@/i18n/i18n'
 import { SkillSharedLinkRow } from './SkillSharedLinkRow'
@@ -11,15 +12,19 @@ export function matchesSkillShareQuery(name: string, query: string): boolean {
  *  record of a share lives beside the thing that made it. */
 export function SkillSharedLinksView({
   query,
-  shares: { shares, loading, error, busyShareId, revoke, refresh }
+  locked = false,
+  shares: { ownerKey, shares, loading, error, busyShareId, revoke, refresh }
 }: {
   query: string
+  locked?: boolean
   shares: OwnedSkillShares
 }): React.JSX.Element {
   const visible = useMemo(
     () => shares.filter((share) => matchesSkillShareQuery(share.name, query)),
     [query, shares]
   )
+
+  useSkillLinksViewerController({ ownerKey, shares: visible, loading, error, busyShareId, locked })
 
   if (error) {
     return (
@@ -70,10 +75,10 @@ export function SkillSharedLinksView({
       <ul className="divide-y divide-border rounded-md border border-border">
         {visible.map((share) => (
           <SkillSharedLinkRow
-            key={share.id}
+            key={`${share.id}:${share.packageId}`}
             share={share}
             busy={busyShareId === share.id}
-            onRevoke={() => void revoke(share)}
+            onRevoke={() => revoke(share)}
             onDeleted={refresh}
           />
         ))}

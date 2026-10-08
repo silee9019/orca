@@ -1,4 +1,3 @@
-import type * as ReactModule from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createTestStore,
@@ -91,7 +90,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     const emitFit = listeners.fit
@@ -154,18 +154,7 @@ describe('useIpcEvents agent status snapshot integration', () => {
       setDriverForBrowserPage,
       hydrateBrowserDrivers
     }))
-    vi.doMock('react', async () => {
-      const actual = await vi.importActual<typeof ReactModule>('react')
-      return {
-        ...actual,
-        useEffect: (effect: () => void | (() => void)) => {
-          const result = effect()
-          if (typeof result === 'function') {
-            refs.cleanup = result
-          }
-        }
-      }
-    })
+
     stubAuxiliaryModules()
     vi.doMock('../store', () => ({
       useAppStore: {
@@ -208,8 +197,9 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
-    useIpcEvents()
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
+    refs.cleanup = useIpcEvents()
 
     if (!refs.fit || !refs.driver || !refs.browserDriver || !refs.cleanup) {
       throw new Error('Expected mobile listeners and cleanup to be registered')
@@ -299,7 +289,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
 
     useIpcEvents()
     await Promise.resolve()
@@ -425,7 +416,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
     let relevantPublications = 0
@@ -532,7 +524,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
     stubAuxiliaryModules()
     vi.stubGlobal('window', buildWindowApi({ getSnapshot, onSet: () => () => {} }))
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
     tabIdLookupCount = 0
@@ -639,7 +632,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
     tabIdLookupCount = 0

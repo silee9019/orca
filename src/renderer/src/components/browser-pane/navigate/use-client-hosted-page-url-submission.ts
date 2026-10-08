@@ -21,7 +21,7 @@ export function useClientHostedPageUrlSubmission(params: {
   activeLoadFailureRef: MutableRefObject<BrowserLoadError | null>
   onUpdatePageState: (pageId: string, updates: Partial<BrowserTabPageState>) => void
   setAddressBarValue: (value: string) => void
-}): (value: string) => void {
+}): (value: string, onSubmitted?: (pending: Promise<void>) => void) => void {
   const {
     browserTabId,
     worktreeId,
@@ -31,7 +31,7 @@ export function useClientHostedPageUrlSubmission(params: {
     setAddressBarValue
   } = params
   return useCallback(
-    (value: string) => {
+    (value: string, onSubmitted?: (pending: Promise<void>) => void) => {
       const consumedAsWorkspaceDoc = routeWorkspaceDocAddressSubmission({
         worktreeId,
         pageId: browserTabId,
@@ -65,7 +65,9 @@ export function useClientHostedPageUrlSubmission(params: {
         title: getBrowserDisplayTitle(browserModelUrl, browserModelUrl)
       })
       // Why: loadURL rejects on any failed navigation; did-fail-load owns error reporting.
-      void webview.loadURL(submission.url).catch(() => {})
+      const pending = webview.loadURL(submission.url)
+      void pending.catch(() => {})
+      onSubmitted?.(pending)
     },
     [
       activeLoadFailureRef,

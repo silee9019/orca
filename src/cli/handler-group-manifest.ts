@@ -1,3 +1,5 @@
+import { AGENT_SESSION_HANDLER_GROUPS } from './agent-sessions-handler-groups'
+import { PROJECT_FILTER_GROUPS, WORKSPACE_VIEWER_GROUPS } from './workspace-viewer-handler-groups'
 import { CONNECTIONS_HANDLER_GROUPS } from './connections-handler-groups'
 import { APP_LIFECYCLE_HANDLER_GROUPS } from './app-lifecycle-handler-groups'
 import { SETTINGS_HANDLER_GROUPS } from './settings-handler-groups'
@@ -24,6 +26,7 @@ import { PLUGIN_MARKETPLACE_HANDLER_GROUPS } from './plugin-marketplace-handler-
 import { COMPUTER_PERMISSIONS_HANDLER_GROUPS } from './computer-permissions-handler-groups'
 import { BROWSER_OBSERVATION_HANDLER_GROUPS } from './browser-observation-handler-groups'
 import type { CommandHandler } from './dispatch'
+import { WORKSPACE_DATA_HANDLER_GROUPS } from './workspace-data-handler-groups'
 import { BROWSER_HANDLER_GROUPS } from './browser-handler-groups'
 
 export type HandlerGroup = {
@@ -42,11 +45,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...ACCOUNT_HANDLER_GROUPS,
   ...ACCOUNT_VIEWER_HANDLER_GROUPS,
   ...USAGE_HANDLER_GROUPS,
-  {
-    name: 'project-filter',
-    keys: ['ui project-filter get', 'ui project-filter set', 'ui project-filter clear'],
-    load: async () => (await import('./handlers/project-filter.js')).PROJECT_FILTER_HANDLERS
-  },
+  ...PROJECT_FILTER_GROUPS,
   ...SETTINGS_HANDLER_GROUPS,
   ...EXTENSIONS_HANDLER_GROUPS,
   ...APP_LIFECYCLE_HANDLER_GROUPS,
@@ -62,6 +61,9 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...COMPUTER_PERMISSIONS_HANDLER_GROUPS,
   ...BROWSER_OBSERVATION_HANDLER_GROUPS,
   ...CONNECTIONS_HANDLER_GROUPS,
+  ...AGENT_SESSION_HANDLER_GROUPS,
+  ...WORKSPACE_DATA_HANDLER_GROUPS,
+  ...WORKSPACE_VIEWER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],

@@ -2,6 +2,16 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 
 export const PLUGIN_MANAGEMENT_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['plugins', 'viewer'],
+    summary: 'Control the mounted desktop plugin settings with a finite JSON action',
+    usage:
+      'orca plugins viewer --viewer desktop --input-file <action.json> | --input-stdin [--json]',
+    notes: [
+      'Requires viewer desktop. Mutations target a visible installed plugin and preserve consent, busy states and confirmation dialogs. Missing viewers and old hosts return explicit errors.'
+    ],
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'input-file', 'input-stdin']
+  },
+  {
     path: ['plugins', 'preferences', 'get'],
     summary: 'Read plugin system enablement and development paths on the selected runtime',
     usage: 'orca plugins preferences get [--json]',

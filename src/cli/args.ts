@@ -154,6 +154,7 @@ export function supportsBrowserPageFlag(commandPath: string[]): boolean {
       'secrets',
       'usage',
       'rate-limit',
+      'agent',
       'artifacts',
       'automations',
       'project',

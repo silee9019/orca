@@ -1,3 +1,4 @@
+import { usePluginSettingsViewerRow } from '@/runtime/plugin-settings-viewer-controller'
 import {
   AlertTriangle,
   BadgeCheck,
@@ -138,6 +139,7 @@ export function PluginSettingsRow({
   onRollbackRequest,
   onRemoveRequest
 }: PluginSettingsRowProps): React.JSX.Element {
+  usePluginSettingsViewerRow(plugin.pluginKey)
   const status = statusPresentation(plugin)
   const needsReview = plugin.needsReconsent || plugin.status === 'pending'
   const enabled =

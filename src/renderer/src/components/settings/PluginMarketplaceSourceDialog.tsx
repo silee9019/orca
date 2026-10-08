@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import type { PluginMarketplaceHostSourceState } from '../../../../preload/api-types'
+import { usePluginMarketplaceSourceViewerController } from '@/runtime/plugin-marketplace-source-viewer-controller'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -23,8 +24,8 @@ type PluginMarketplaceSourceDialogProps = {
   closeRequestRef?: RefObject<(() => boolean) | null>
 }
 
-function sourceError(cause: unknown, fallback: string): string {
-  console.warn('[plugins] marketplace source action failed:', cause)
+function sourceError(fallback: string): string {
+  console.warn('[plugins] marketplace source action failed:', fallback)
   return fallback
 }
 
@@ -71,9 +72,9 @@ export function PluginMarketplaceSourceDialog({
     }
   }, [open])
 
-  const add = async (): Promise<void> => {
+  const add = async (): Promise<boolean> => {
     if (!url.trim() || !gitRef.trim() || busyAction) {
-      return
+      return false
     }
     setBusyRequest('add')
     setError(null)
@@ -86,62 +87,81 @@ export function PluginMarketplaceSourceDialog({
       setUrl('')
       setGitRef('main')
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.addFailed',
             'Could not add this marketplace. Check the Git URL, ref, and your Git credentials.'
           )
         )
       )
+      return false
     } finally {
       setBusyRequest(null)
     }
   }
 
-  const refresh = async (sourceId: string): Promise<void> => {
+  const refresh = async (sourceId: string): Promise<boolean> => {
     setBusyRequest(`refresh:${sourceId}`)
     setError(null)
     try {
       await window.api.plugins.refreshMarketplaces({ sourceId })
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.refreshFailed',
             'Could not refresh this marketplace. Its last valid cached index is still available.'
           )
         )
       )
+      return false
     } finally {
       setBusyRequest(null)
     }
   }
 
-  const remove = async (sourceId: string): Promise<void> => {
+  const remove = async (sourceId: string): Promise<boolean> => {
     setBusyRequest(`remove:${sourceId}`)
     setError(null)
     try {
       await window.api.plugins.removeMarketplace({ sourceId })
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.removeFailed',
             'Could not remove this marketplace.'
           )
         )
       )
+      return false
     } finally {
       setBusyRequest(null)
     }
   }
+
+  usePluginMarketplaceSourceViewerController({
+    open,
+    sources,
+    url,
+    gitRef,
+    busyAction,
+    error,
+    urlRef,
+    setUrl,
+    setGitRef,
+    add,
+    refresh,
+    remove,
+    close: () => onOpenChange(false)
+  })
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !busyAction && onOpenChange(nextOpen)}>

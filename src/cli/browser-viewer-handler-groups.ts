@@ -1,3 +1,10 @@
+import { BROWSER_PAIRED_NEW_TAB_HANDLER_GROUPS } from './browser-paired-new-tab-handler-groups'
+import { BROWSER_SERVER_REOPEN_HANDLER_GROUPS } from './browser-server-reopen-handler-groups'
+import { BROWSER_GRAB_TOAST_HANDLER_GROUPS } from './browser-grab-toast-handler-groups'
+import { BROWSER_WEBAUTHN_FOCUS_HANDLER_GROUPS } from './browser-webauthn-focus-handler-groups'
+import { BROWSER_EGRESS_HANDLER_GROUPS } from './browser-egress-handler-groups'
+import { BROWSER_IMPORT_HINT_HANDLER_GROUPS } from './browser-import-hint-handler-groups'
+import { BROWSER_BANNER_HANDLER_GROUPS } from './browser-banner-handler-groups'
 import { BROWSER_OVERLAY_FOCUS_HANDLER_GROUPS } from './browser-overlay-focus-handler-groups'
 import { BROWSER_READER_HANDLER_GROUPS } from './browser-reader-handler-groups'
 import { BROWSER_SETUP_GUIDE_HANDLER_GROUPS } from './browser-setup-guide-handler-groups'
@@ -36,6 +43,43 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       (await import('./handlers/browser-webauthn-dialog.js')).BROWSER_WEBAUTHN_DIALOG_HANDLERS
   },
 
+  ...BROWSER_PAIRED_NEW_TAB_HANDLER_GROUPS,
+  {
+    name: 'browser-client-submission',
+    keys: ['browser client-submit'],
+    load: async () =>
+      (await import('./handlers/browser-client-submission.js')).BROWSER_CLIENT_SUBMISSION_HANDLERS
+  },
+  {
+    name: 'browser-client-reload',
+    keys: ['browser client-reload'],
+    load: async () =>
+      (await import('./handlers/browser-client-reload.js')).BROWSER_CLIENT_RELOAD_HANDLERS
+  },
+  {
+    name: 'browser-client-find',
+    keys: ['browser client-find'],
+    load: async () =>
+      (await import('./handlers/browser-client-find.js')).BROWSER_CLIENT_FIND_HANDLERS
+  },
+  {
+    name: 'browser-client-address',
+    keys: ['browser client-address'],
+    load: async () =>
+      (await import('./handlers/browser-client-address.js')).BROWSER_CLIENT_ADDRESS_HANDLERS
+  },
+  ...BROWSER_SERVER_REOPEN_HANDLER_GROUPS,
+  {
+    name: 'browser-client-navigation',
+    keys: ['browser client-navigate'],
+    load: async () =>
+      (await import('./handlers/browser-client-navigation.js')).BROWSER_CLIENT_NAVIGATION_HANDLERS
+  },
+  ...BROWSER_GRAB_TOAST_HANDLER_GROUPS,
+  ...BROWSER_WEBAUTHN_FOCUS_HANDLER_GROUPS,
+  ...BROWSER_EGRESS_HANDLER_GROUPS,
+  ...BROWSER_IMPORT_HINT_HANDLER_GROUPS,
+  ...BROWSER_BANNER_HANDLER_GROUPS,
   ...BROWSER_OVERLAY_FOCUS_HANDLER_GROUPS,
   ...BROWSER_READER_HANDLER_GROUPS,
   ...BROWSER_SETUP_GUIDE_HANDLER_GROUPS,
@@ -86,6 +130,8 @@ export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'browser new-ui',
       'browser download-ui',
       'browser grab-action',
+      'browser viewport-pan',
+      'browser markup-hint',
       'browser reload-menu',
       'browser annotation tray',
       'browser address',

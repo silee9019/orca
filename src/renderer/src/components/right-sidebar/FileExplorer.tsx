@@ -221,7 +221,10 @@ function FileExplorerFiles(): React.JSX.Element {
 
   if (!worktreePath) {
     return (
-      <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground px-4 text-center">
+      <div
+        data-file-explorer-view={explorerView}
+        className="flex h-full items-center justify-center text-[11px] text-muted-foreground px-4 text-center"
+      >
         {explorerView === 'search'
           ? translate(
               'auto.components.right.sidebar.Search.98c8435e36',
@@ -240,6 +243,7 @@ function FileExplorerFiles(): React.JSX.Element {
       <div
         ref={rowScrolling.setExplorerShellRef}
         data-orca-explorer-shell
+        data-file-explorer-view={explorerView}
         data-selected-folder-relative-path={
           selectedNode?.isDirectory ? selectedNode.relativePath : undefined
         }

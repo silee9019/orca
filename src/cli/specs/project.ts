@@ -32,11 +32,24 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Make a project available on a host by importing an existing folder',
     usage:
       'orca project setup-existing-folder --project <id> --host <host-id> --path <path> [--kind git|folder] [--display-name <name>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'project', 'host', 'path', 'kind', 'display-name'],
+    allowedFlags: [
+      ...GLOBAL_FLAGS,
+      'project',
+      'host',
+      'path',
+      'kind',
+      'display-name',
+      'method',
+      'project-owner',
+      'project-repo',
+      'project-provider-host'
+    ],
     notes: [
       'For remote runtimes, --path must be an absolute path on the remote server.',
+      'Use --project-owner and --project-repo together (optional --project-provider-host) when the selected project identity exists only on the source host. The existing project schema supports GitHub identities.',
+      '--method may be imported-existing-folder or cloned; omitted uses the existing import default.',
       '--host runtime:<environment-id> targets that paired Orca server; use the id from `orca environment list`, not the environment name.',
-      'SSH targets are set up through the desktop UI because the desktop client owns SSH connections.'
+      'SSH imports use the addressed runtime connection and require an absolute host path; missing providers fail without local fallback.'
     ],
     examples: [
       'orca project setup-existing-folder --project github:stablyai/orca --host local --path ~/orca',
@@ -48,11 +61,22 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Make a project available on a host by cloning a repository',
     usage:
       'orca project setup-clone --project <id> --host <host-id> --url <clone-url> --destination <path> [--display-name <name>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'project', 'host', 'url', 'destination', 'display-name'],
+    allowedFlags: [
+      ...GLOBAL_FLAGS,
+      'project',
+      'host',
+      'url',
+      'destination',
+      'display-name',
+      'project-owner',
+      'project-repo',
+      'project-provider-host'
+    ],
     notes: [
       'For remote runtimes, --destination must be an absolute parent directory on the remote server.',
+      'Use --project-owner and --project-repo together (optional --project-provider-host) to carry a source-host GitHub project identity.',
       '--host runtime:<environment-id> targets that paired Orca server; use the id from `orca environment list`, not the environment name.',
-      'SSH targets are cloned through the desktop UI because the desktop client owns SSH connections.'
+      'Cloning onto an SSH host is unsupported; clone on that host first, then use setup-existing-folder.'
     ],
     examples: [
       'orca project setup-clone --project github:stablyai/orca --host local --url https://github.com/stablyai/orca.git --destination ~/src',
@@ -115,12 +139,15 @@ export const PROJECT_COMMAND_SPECS: CommandSpec[] = [
     path: ['project', 'setup-delete'],
     destructive: true,
     summary: 'Remove a project host setup',
-    usage: 'orca project setup-delete --setup <setup-id> [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'setup'],
+    usage: 'orca project setup-delete --setup <setup-id> --confirm <setup-id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'setup', 'confirm'],
     notes: [
+      'Requires --confirm equal to the exact --setup ID before removing metadata or a repo registration.',
       'Independent setups are removed directly.',
       'Repo-backed setups remove the registered repo compatibility record.'
     ],
-    examples: ['orca project setup-delete --setup github:stablyai/orca::gpu --json']
+    examples: [
+      'orca project setup-delete --setup github:stablyai/orca::gpu --confirm github:stablyai/orca::gpu --json'
+    ]
   }
 ]

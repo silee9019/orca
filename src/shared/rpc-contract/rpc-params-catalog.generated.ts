@@ -40,6 +40,7 @@ import {
   PairingProvisionRelayParamsSchema
 } from '../mobile-relay-credential-contract'
 import { MobileWebBundleChunkParamsSchema } from '../mobile-web-bundle/bundle-rpc-contract'
+import { PluginSettingsViewerParams } from '../plugin-settings-viewer-command'
 import { pluginConsentRequestSchema } from '../plugins/plugin-consent-request'
 import { pluginMarketplaceGitSourceSchema } from '../plugins/plugin-marketplace'
 import {
@@ -68,11 +69,16 @@ import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
 import { AgentPermissionModeParams } from './agent-permission-mode-params'
 import { CreateAgentSessionParams, EnsureAgentSessionParams } from './agent-session-params'
+import { AgentStatusDismissParams, AgentStatusListParams } from './agent-status-cli-params'
 import {
   AiVaultListSessionsParams,
   AiVaultPrepareSessionResumeParams,
   AiVaultSessionTitlesParams
 } from './ai-vault-params'
+import {
+  AiVaultDeleteSessionParams,
+  AiVaultSubagentSessionsParams
+} from './ai-vault-session-actions-params'
 import {
   AntigravityAccountMutationParams,
   AntigravityAccountTargetParams
@@ -120,6 +126,7 @@ import {
   AutomationRuns,
   AutomationUpdate
 } from './automation-params'
+import { BitbucketConnect } from './bitbucket-params'
 import { CertificateProceed } from './browser-core-params'
 import { MouseClick } from './browser-extras-params'
 import { BrowserIdentitySet, ProfileCreate } from './browser-identity-params'
@@ -179,6 +186,7 @@ import { BrowserProfileImportFile } from './browser-profile-file-params'
 import { ScreencastUnsubscribe } from './browser-screencast-params'
 import { BrowserOpenUrlParams, BrowserTabCreateParams } from './browser-tab-create-params'
 import { BrowserViewerCommand } from './browser-viewer-params'
+import { CardViewerParams } from './card-viewer-params'
 import { ClientEventsSubscribeParams, ClientEventsUnsubscribeParams } from './client-events-params'
 import {
   NativeChatSessionOptionsMutation,
@@ -210,6 +218,11 @@ import {
   TypeText
 } from './computer-schemas-params'
 import { ConnectionsViewerParams } from './connections-viewer-params'
+import {
+  DaemonManagementListParams,
+  DaemonManagementStopManyParams,
+  DaemonManagementStopParams
+} from './daemon-management-params'
 import { EmulatorControlParams, EmulatorFocusParams } from './emulator-control-params'
 import { EmulatorObservationParams, EmulatorStreamStopParams } from './emulator-observation-params'
 import {
@@ -282,6 +295,7 @@ import {
   FolderWorkspaceSelector,
   FolderWorkspaceUpdate
 } from './folder-workspace-params'
+import { GitAppendGitignore } from './git-ignore-params'
 import {
   GitBranchCompare,
   GitBranchDiff,
@@ -420,6 +434,7 @@ import {
   McpListIssues
 } from './linear-issue-list-params'
 import {
+  ConcreteIssueUpdate,
   Connect as ConnectOfLinearParams,
   CreateIssue as CreateIssueOfLinearParams,
   CustomViewContents,
@@ -596,6 +611,8 @@ import {
   WorktreeTabSelector
 } from './session-tabs-schemas-params'
 import { SettingsKeybindingUpdate, SettingsWarpImportSource } from './settings-control-params'
+import { SettingsViewerParams } from './settings-viewer-params'
+import { SidebarViewerParams } from './sidebar-viewer-params'
 import {
   SkillAuthorizedBundlePackageInstallParams,
   SkillAuthorizedBundleShareInstallParams,
@@ -641,6 +658,7 @@ import {
   SshManagedUpdateTarget
 } from './ssh-management-params'
 import { SshTarget } from './ssh-params'
+import { StatusBarViewerParams } from './status-bar-viewer-params'
 import {
   AgentsParams,
   AttachParams,
@@ -666,8 +684,10 @@ import {
   ThreadGoalParams,
   UnsubscribeParams
 } from './structured-agent-session-params'
+import { TerminalHostInventoryParams } from './terminal-host-inventory-params'
 import { TerminalAdoptOrphans } from './terminal-orphan-params'
 import { TerminalQuickCommandsUpdate } from './terminal-quick-command-params'
+import { TerminalSideEffectSnapshotParams } from './terminal-side-effect-snapshot-params'
 import {
   TerminalMultiplex,
   TerminalResizeForClient,
@@ -713,6 +733,15 @@ import {
   UsageViewerParams
 } from './usage-params'
 import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
+import { WorkspaceFilterParams } from './workspace-filter-params'
+import { GitHubAccountDiagnostic, GitHubStarRequest } from './workspace-github-account-params'
+import {
+  GitLabBranchMergeRequestLookup,
+  GitLabIssueLookup,
+  GitLabMergeRequestLookup
+} from './workspace-gitlab-inspection-params'
+import { JiraProjectAssignableUsers } from './workspace-jira-project-users-params'
+import { WorkspaceListViewerParams } from './workspace-list-viewer-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
@@ -786,6 +815,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'accounts.viewerAction': AccountsViewerParams,
   'agent.launch': AgentLaunch,
   'agent.launchReplay': AgentLaunchReplay,
+  'agentAwake.status': AgentStatusListParams,
   'agentHooks.prepareCodexForWslPane': PrepareCodexForWslPaneParams,
   'agentPermissionMode.control': AgentPermissionModeParams,
   'agentSession.agents': AgentsParams,
@@ -821,9 +851,14 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentSession.subscribeTurnCompletions': null,
   'agentSession.threadGoal': ThreadGoalParams,
   'agentSession.unsubscribe': UnsubscribeParams,
+  'agentStatus.dismiss': AgentStatusDismissParams,
+  'agentStatus.list': AgentStatusListParams,
+  'agentStatus.migration': AgentStatusListParams,
   'agentTeams.prepareLaunch': AgentTeamsPrepareLaunch,
   'agentTeams.tmuxCompat': AgentTeamsTmuxCompat,
+  'aiVault.deleteSession': AiVaultDeleteSessionParams,
   'aiVault.listSessions': AiVaultListSessionsParams,
+  'aiVault.listSubagentSessions': AiVaultSubagentSessionsParams,
   'aiVault.prepareSessionResume': AiVaultPrepareSessionResumeParams,
   'aiVault.resolveSessionTitles': AiVaultSessionTitlesParams,
   'aiVault.searchSessions': AiVaultSearchRequestSchema,
@@ -867,6 +902,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'automation.snapshotWorkspaceName': AutomationSnapshotNameParams,
   'automation.update': AutomationUpdate,
   'automation.viewerAction': AutomationViewerParams,
+  'bitbucket.connect': BitbucketConnect,
+  'bitbucket.disconnect': null,
+  'bitbucket.status': null,
   'browser.back': BrowserTarget,
   'browser.capture.start': BrowserTarget,
   'browser.capture.stop': BrowserTarget,
@@ -981,6 +1019,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'computer.setValue': SetValue,
   'computer.typeText': TypeText,
   'connections.viewer.apply': ConnectionsViewerParams,
+  'daemon.sessions.list': DaemonManagementListParams,
+  'daemon.sessions.stop': DaemonManagementStopParams,
+  'daemon.sessions.stopMany': DaemonManagementStopManyParams,
   'desktopCli.getInstallStatus': null,
   'desktopCli.getWslInstallStatus': DesktopCliDistroParams,
   'desktopCli.install': DesktopCliMutationParams,
@@ -1103,6 +1144,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'folderWorkspace.update': FolderWorkspaceUpdate,
   'git.abortMerge': WorktreeSelectorOfGitParams,
   'git.abortRebase': WorktreeSelectorOfGitParams,
+  'git.appendGitignore': GitAppendGitignore,
   'git.branchCompare': GitBranchCompare,
   'git.branchDiff': GitBranchDiff,
   'git.bulkDiscard': GitBulkPaths,
@@ -1121,6 +1163,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'git.discoverCommitMessageModels': GitDiscoverCommitMessageModels,
   'git.fastForward': GitTargetedRemote,
   'git.fetch': GitTargetedRemote,
+  'git.findHugeFoldersToIgnore': WorktreeSelectorOfGitParams,
   'git.forkSync': GitForkSync,
   'git.generateCommitMessage': GitGenerateCommitMessage,
   'git.generatePullRequestFields': GitGeneratePullRequestFields,
@@ -1139,8 +1182,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.addIssueComment': IssueComment,
   'github.addPRReviewComment': PRReviewComment,
   'github.addPRReviewCommentReply': PRReviewCommentReply,
+  'github.checkOrcaStarred': null,
   'github.countWorkItems': WorkItemsCount,
   'github.createIssue': CreateIssue,
+  'github.diagnoseAuth': GitHubAccountDiagnostic,
   'github.issue': Issue,
   'github.listAssignableUsers': RepoSelector,
   'github.listBindableAccounts': BindableAccounts,
@@ -1180,11 +1225,13 @@ export const RPC_PARAMS_BY_METHOD = {
   'github.setPRAutoMerge': SetPrAutoMerge,
   'github.setPRCommentReaction': PRCommentReaction,
   'github.setPRFileViewed': PullRequestFileViewed,
+  'github.starOrca': GitHubStarRequest,
   'github.updateIssue': UpdateIssue,
   'github.updatePR': UpdatePr,
   'github.updatePRState': UpdatePrState,
   'github.updatePRTitle': UpdatePrTitle,
   'github.validateAccountBinding': ValidateAccountBinding,
+  'github.viewer': null,
   'github.workItem': WorkItem,
   'github.workItemByOwnerRepo': WorkItemByOwnerRepo,
   'github.workItemDetails': WorkItem,
@@ -1193,12 +1240,17 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.addMRInlineComment': AddMRInlineComment,
   'gitlab.createIssue': CreateIssueOfGitlabParams,
   'gitlab.diagnoseAuth': EmptyParams,
+  'gitlab.issue': GitLabIssueLookup,
   'gitlab.jobTrace': JobTrace,
+  'gitlab.listAssignableUsers': RepoSelectorOfGitlabParams,
   'gitlab.listIssues': IssuesListOfGitlabParams,
   'gitlab.listLabels': RepoSelectorOfGitlabParams,
   'gitlab.listMRs': WorkItemsListOfGitlabParams,
   'gitlab.listWorkItems': WorkItemsListOfGitlabParams,
   'gitlab.mergeMR': MergeMr,
+  'gitlab.mr': GitLabMergeRequestLookup,
+  'gitlab.mrForBranch': GitLabBranchMergeRequestLookup,
+  'gitlab.projectSlug': RepoSelectorOfGitlabParams,
   'gitlab.rateLimit': GitLabRateLimit,
   'gitlab.resolveMRDiscussion': ResolveMRDiscussion,
   'gitlab.retryJob': RetryJob,
@@ -1207,6 +1259,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.updateMR': UpdateMr,
   'gitlab.updateMRReviewers': UpdateMrReviewers,
   'gitlab.updateMRState': UpdateMrState,
+  'gitlab.viewer': null,
   'gitlab.workItemByPath': WorkItemByPath,
   'gitlab.workItemDetails': WorkItemDetails,
   'host.gitBash.isAvailable': null,
@@ -1228,6 +1281,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.issueComments': IssueKey,
   'jira.issueCommentsStream': IssueKey,
   'jira.listAssignableUsers': AssignableUsers,
+  'jira.listAssignableUsersForProject': JiraProjectAssignableUsers,
   'jira.listCreateFields': ProjectIssueTypeFields,
   'jira.listIssueTypes': ProjectIssueTypes,
   'jira.listIssues': ListIssues,
@@ -1242,8 +1296,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'jira.status': null,
   'jira.testConnection': SiteSelection,
   'jira.updateIssue': IssueUpdate,
+  'keybindings.ensureFile': null,
   'keybindings.get': null,
+  'keybindings.openFile': null,
   'keybindings.reload': null,
+  'keybindings.revealFile': null,
   'keybindings.setAction': SettingsKeybindingUpdate,
   'linear.addIssueComment': IssueCommentOfLinearParams,
   'linear.agentIssueList': LinearIssueList,
@@ -1286,6 +1343,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'linear.teamStates': TeamId,
   'linear.testConnection': WorkspaceSelection,
   'linear.updateIssue': IssueUpdateOfLinearParams,
+  'linear.updateIssueFields': ConcreteIssueUpdate,
   'macosTccPrompts.acknowledgePending': TccPromptClaimParams,
   'macosTccPrompts.consumePending': TccPromptOwnerParams,
   'macosTccPrompts.dismiss': OsPermissionConfirmedParams,
@@ -1397,6 +1455,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'plugins.rollbackMarketplacePlugin': PluginKeyParams,
   'plugins.setEnabled': PluginSetEnabledParams,
   'plugins.updatePreferences': PluginPreferencesUpdate,
+  'plugins.viewerAction': PluginSettingsViewerParams,
   'preflight.check': PreflightCheck,
   'preflight.detectAgents': null,
   'preflight.detectRemoteAgents': PreflightDetectRemoteAgents,
@@ -1476,6 +1535,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
   'runtime.clientHostedBrowserRows': null,
   'search.viewer': SearchSettingsViewerParams,
+  'session.listHostIds': TerminalHostInventoryParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
   'session.tabs.closeLifecycle': CloseLifecycleTab,
@@ -1590,7 +1650,9 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.closeTab': TerminalHandle,
   'terminal.create': TerminalCreateParams,
   'terminal.createAgentSession': CreateAgentSessionParams,
+  'terminal.drivers': TerminalHostInventoryParams,
   'terminal.ensureAgentSession': EnsureAgentSessionParams,
+  'terminal.fitOverrides': TerminalHostInventoryParams,
   'terminal.focus': TerminalFocus,
   'terminal.getAutoRestoreFit': TerminalGetAutoRestoreFitParams,
   'terminal.getDisplayMode': TerminalHandle,
@@ -1612,6 +1674,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.setDisplayMode': TerminalSetDisplayMode,
   'terminal.setViewerColors': TerminalSetViewerColors,
   'terminal.show': TerminalHandle,
+  'terminal.sideEffectSnapshot': TerminalSideEffectSnapshotParams,
   'terminal.sleep': TerminalCloseAll,
   'terminal.split': TerminalSplit,
   'terminal.stop': TerminalCloseAll,
@@ -1621,10 +1684,16 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.updateViewport': TerminalUpdateViewport,
   'terminal.wait': TerminalWait,
   'ui.browserViewer': BrowserViewerCommand,
+  'ui.cardViewer': CardViewerParams,
   'ui.get': null,
   'ui.projectFilter': ProjectFilterParams,
   'ui.recordFeatureInteraction': FeatureInteractionIdParam,
   'ui.set': UiUpdate,
+  'ui.settingsViewer': SettingsViewerParams,
+  'ui.sidebarViewer': SidebarViewerParams,
+  'ui.statusBarViewer': StatusBarViewerParams,
+  'ui.workspaceFilter': WorkspaceFilterParams,
+  'ui.workspaceListViewer': WorkspaceListViewerParams,
   'updater.check': UpdaterCheckParams,
   'updater.download': null,
   'updater.getStatus': null,

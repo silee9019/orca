@@ -36,7 +36,7 @@ export function usePluginMarketplaceLifecycle({
   ) => Promise<void>
   requestRollback: (pluginKey: string) => void
   cancelRollback: () => void
-  confirmRollback: (pluginKey: string) => Promise<void>
+  confirmRollback: (pluginKey: string) => Promise<boolean>
 } {
   const [rollbackPluginId, setRollbackPluginId] = useState<string | null>(null)
   const [rollbackError, setRollbackError] = useState<string | null>(null)
@@ -71,7 +71,7 @@ export function usePluginMarketplaceLifecycle({
     }
   }
 
-  const confirmRollback = async (pluginKey: string): Promise<void> => {
+  const confirmRollback = async (pluginKey: string): Promise<boolean> => {
     setBusyPluginKeys((current) => new Set(current).add(pluginKey))
     setRollbackError(null)
     try {
@@ -83,6 +83,7 @@ export function usePluginMarketplaceLifecycle({
       if (mountedRef.current) {
         setRollbackPluginId(null)
       }
+      return true
     } catch (cause) {
       console.warn('[plugins] marketplace rollback failed:', cause)
       if (mountedRef.current) {
@@ -93,6 +94,7 @@ export function usePluginMarketplaceLifecycle({
           )
         )
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setBusyPluginKeys((current) => {

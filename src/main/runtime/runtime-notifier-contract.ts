@@ -7,6 +7,18 @@ import type {
   SearchSettingsViewerCommand,
   SearchSettingsViewerResult
 } from '../../shared/search-settings-viewer'
+import type { SettingsViewerCommand } from '../../shared/rpc-contract/settings-viewer-params'
+import type { SidebarViewerCommand } from '../../shared/rpc-contract/sidebar-viewer-params'
+import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
+import type { StatusBarViewerCommand } from '../../shared/rpc-contract/status-bar-viewer-params'
+import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
+import type { SettingsViewerResult } from '../../shared/settings-viewer-command'
+import type { SidebarViewerResult } from '../../shared/sidebar-viewer-command'
+import type { CardViewerResult } from '../../shared/card-viewer-command'
+import type { StatusBarViewerResult } from '../../shared/status-bar-viewer-command'
+import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
+import type { WorkspaceFilterCommand } from '../../shared/rpc-contract/workspace-filter-params'
+import type { WorkspaceFilterResult } from '../../shared/workspace-filter-command'
 import type { SleepingAgentLaunchConfig } from '../../shared/agent-session-resume'
 import type { TerminalPaneSplitSource } from '../../shared/feature-education-telemetry'
 import type { TerminalRevealIdentity } from '../../shared/terminal-reveal-identity'
@@ -35,6 +47,12 @@ export type RuntimeNotifier = {
   browserViewer?(command: BrowserViewerCommand): Promise<BrowserViewerResult>
   voiceViewer?(command: VoiceViewerOperation): Promise<VoiceViewerResult>
   searchSettingsViewer?(command: SearchSettingsViewerCommand): Promise<SearchSettingsViewerResult>
+  settingsViewer?(command: SettingsViewerCommand): Promise<SettingsViewerResult>
+  sidebarViewer?(command: SidebarViewerCommand): Promise<SidebarViewerResult>
+  cardViewer?(command: CardViewerCommand): Promise<CardViewerResult>
+  statusBarViewer?(command: StatusBarViewerCommand): Promise<StatusBarViewerResult>
+  workspaceListViewer?(command: WorkspaceListViewerCommand): Promise<WorkspaceListViewerResult>
+  workspaceFilter?(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult>
   automationsChanged?(payload: {
     selector?: { kind: 'self' } | { kind: 'ssh'; targetId: string } | { kind: 'orphan' }
     reason?: 'definition' | 'run' | 'usage'

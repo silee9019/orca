@@ -2,7 +2,8 @@
 import { OrcaRuntimeWithResolveTerminalSplitSourceAuthority } from './orca-runtime-resolve-terminal-split-source-authority'
 import {
   runtimeWorktreeIdentityKey,
-  runtimeWorktreeIdsEqual
+  runtimeWorktreeIdsEqual,
+  type ResolvedWorktree
 } from './runtime-worktree-path-identity'
 import { teardownRpcDeadline } from './worktree-teardown'
 import type {
@@ -58,11 +59,18 @@ export class OrcaRuntimeWithStopTerminalsForWorktree extends OrcaRuntimeWithReso
       : { resolvedConnectionId: parsedHost?.kind === 'ssh' ? parsedHost.targetId : null }
   }
 
+  private async resolveTerminalTeardownWorkspace(selector: string): Promise<ResolvedWorktree> {
+    const folder = this.resolveFolderWorkspaceSelector(selector)
+    return folder
+      ? this.folderWorkspaceToResolvedWorktree(folder)
+      : await this.resolveWorktreeSelector(selector)
+  }
+
   async closeTerminalsForWorktree(
     worktreeSelector: string
   ): Promise<RuntimeWorktreeTerminalCloseResult> {
     const graphEpoch = this.captureReadyGraphEpoch()
-    const worktree = await this.resolveWorktreeSelector(worktreeSelector)
+    const worktree = await this.resolveTerminalTeardownWorkspace(worktreeSelector)
     this.assertStableReadyGraph(graphEpoch)
     const hostFence = this.getWorktreeHostFence(worktree)
 
@@ -190,7 +198,7 @@ export class OrcaRuntimeWithStopTerminalsForWorktree extends OrcaRuntimeWithReso
     const graphEpoch = this.captureReadyGraphEpoch()
     const worktree = options.resolvedWorktreeId
       ? { id: options.resolvedWorktreeId }
-      : await this.resolveWorktreeSelector(worktreeSelector)
+      : await this.resolveTerminalTeardownWorkspace(worktreeSelector)
     this.assertStableReadyGraph(graphEpoch)
     if (options.deadline !== undefined && Date.now() >= options.deadline) {
       return { stopped: 0 }
@@ -245,7 +253,7 @@ export class OrcaRuntimeWithStopTerminalsForWorktree extends OrcaRuntimeWithReso
   async sleepTerminalsForWorktree(
     worktreeSelector: string
   ): Promise<RuntimeWorktreeTerminalSleepResult> {
-    const worktree = await this.resolveWorktreeSelector(worktreeSelector)
+    const worktree = await this.resolveTerminalTeardownWorkspace(worktreeSelector)
     const existing = this.terminalSleepByWorktreeId.get(worktree.id)
     if (existing) {
       return await existing

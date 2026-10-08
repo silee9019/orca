@@ -1,18 +1,20 @@
-import { matchesBrowserClientPageCommandTarget } from '@/runtime/browser-client-page-command-target'
+import { matchesBrowserWebAuthnPageTarget } from './browser-webauthn-page-target'
+import { useBrowserWebAuthnFocusOwner } from './use-browser-webauthn-focus-owner'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useAppStore } from '@/store'
-import { findPage } from '@/store/slices/browser-page-records'
 import { BrowserWebAuthnDialogEvent } from '@/runtime/browser-webauthn-dialog-request'
 import type { BrowserWebAuthnAccountRequest } from '../../../shared/browser-webauthn-account'
 import type { BrowserWebAuthnDialogState } from '../../../shared/rpc-contract/browser-webauthn-dialog-params'
 
-export function useBrowserWebAuthnDialogOwner() {
+export function useBrowserWebAuthnDialogOwner(
+  focus?: (requestId?: string, accountId?: string) => boolean
+) {
   const [requests, setRequests] = useState<BrowserWebAuthnAccountRequest[]>([])
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null)
   const queue = useRef(requests)
   const pending = useRef<string | null>(null)
   const mounted = useRef(false)
   const generation = useRef(0)
+  useBrowserWebAuthnFocusOwner({ queue, pending, mounted, generation, focus })
   const removal = useCallback((requestId: string) => {
     queue.current = queue.current.filter((request) => request.requestId !== requestId)
     setRequests(queue.current)
@@ -91,22 +93,10 @@ export function useBrowserWebAuthnDialogOwner() {
       event.offers.push(async () => {
         const command = event.command
         const matches = () => {
-          const state = useAppStore.getState()
-          const page = findPage(state.browserPagesByWorkspace, command.page)
           return (
             mounted.current &&
             generation.current === epoch &&
-            page?.worktreeId === command.worktreeId &&
-            (page.browserRuntimeEnvironmentId ?? null) === command.environmentId &&
-            (command.environmentId === null
-              ? command.clientTarget === undefined &&
-                !state.remoteBrowserPageHandlesByPageId[command.page]
-              : matchesBrowserClientPageCommandTarget(
-                  state.remoteBrowserPageHandlesByPageId[command.page],
-                  command.environmentId,
-                  command.clientTarget
-                )) &&
-            state.activeModal === 'none'
+            matchesBrowserWebAuthnPageTarget(command)
           )
         }
         if (

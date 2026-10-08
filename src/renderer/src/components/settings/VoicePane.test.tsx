@@ -18,7 +18,15 @@ const { useAppStoreMock, useShortcutLabelMock } = vi.hoisted(() => ({
   useShortcutLabelMock: vi.fn()
 }))
 
-vi.mock('@/store', () => ({ useAppStore: useAppStoreMock }))
+vi.mock('@/store', async (importOriginal) => {
+  const actual = await importOriginal<typeof VoiceStoreModule>()
+  return {
+    useAppStore: Object.assign(useAppStoreMock, {
+      getState: actual.useAppStore.getState,
+      subscribe: actual.useAppStore.subscribe
+    })
+  }
+})
 
 vi.mock('@/hooks/useShortcutLabel', () => ({
   useShortcutLabel: useShortcutLabelMock
@@ -84,6 +92,8 @@ async function renderVoicePane(args: {
   container: HTMLDivElement
   refreshModelStates: ReturnType<typeof vi.fn>
 }> {
+  const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+  actual.useAppStore.setState({ settings: makeSettings(args.voiceEnabled) })
   const refreshModelStates = vi.fn()
   useAppStoreMock.mockImplementation((selector: (state: Record<string, unknown>) => unknown) =>
     selector({
@@ -124,6 +134,8 @@ async function clickSwitch(button: HTMLButtonElement): Promise<void> {
 }
 
 describe('VoicePane', () => {
+  let previousSettings: GlobalSettings | null
+
   it('changes only the actual password draft through the typed receiver while the dialog is open', async () => {
     const { root } = await renderVoicePane({
       voiceEnabled: true,
@@ -156,12 +168,16 @@ describe('VoicePane', () => {
     act(() => root.unmount())
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    actual.useAppStore.setState({ settings: previousSettings })
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    previousSettings = actual.useAppStore.getState().settings
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     useAppStoreMock.mockReset()
     useShortcutLabelMock.mockReset()
@@ -458,6 +474,8 @@ describe('VoicePane', () => {
         }
       }) as GlobalSettings
 
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    actual.useAppStore.setState({ settings: settingsWithKey(true) })
     const container = document.createElement('div')
     document.body.appendChild(container)
     const root = createRoot(container)
@@ -477,6 +495,7 @@ describe('VoicePane', () => {
 
     // The user turns dictation off while the clear-key IPC is still in flight.
     await act(async () => {
+      actual.useAppStore.setState({ settings: settingsWithKey(false) })
       root.render(<VoicePane settings={settingsWithKey(false)} updateSettings={updateSettings} />)
     })
 

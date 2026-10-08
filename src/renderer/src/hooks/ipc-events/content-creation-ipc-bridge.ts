@@ -1,6 +1,7 @@
 import { createBrowserTabForCurrentViewer } from './browser-new-tab-owner'
 import { registerBrowserNewTabCommands } from './browser-new-tab-commands'
 import { attachEmulatorFocusBridge } from '../../runtime/emulator-focus-bridge'
+import { registerBrowserPairedNewTabCommands } from './browser-paired-new-tab-commands'
 import { ensureSimulatorTab } from '@/lib/ensure-simulator-tab'
 import { openMobileEmulatorTab } from '@/lib/open-mobile-emulator-tab'
 import {
@@ -20,6 +21,7 @@ export function registerContentCreationIpcBridge(
   unsubs: (() => void)[],
   isRuntimeEnvironmentActive: () => boolean
 ): void {
+  unsubs.push(registerBrowserPairedNewTabCommands())
   unsubs.push(attachEmulatorFocusBridge())
   unsubs.push(
     registerBrowserNewTabCommands(() =>

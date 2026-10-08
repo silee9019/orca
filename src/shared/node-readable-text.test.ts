@@ -38,3 +38,20 @@ describe('readNodeReadableTextWithinLimit', () => {
     ).resolves.toBe('')
   })
 })
+
+it('rejects malformed UTF-8 when strict decoding is requested', async () => {
+  await expect(
+    readNodeReadableTextWithinLimit(chunks([Buffer.from([0xc3, 0x28])]), 2, { fatalUtf8: true })
+  ).rejects.toThrow()
+})
+it('preserves a literal BOM and a split UTF-8 character in strict mode', async () => {
+  const text = `${String.fromCodePoint(0xfeff)}한글`
+  const encoded = Buffer.from(text)
+  await expect(
+    readNodeReadableTextWithinLimit(
+      chunks([encoded.subarray(0, 4), encoded.subarray(4)]),
+      encoded.byteLength,
+      { fatalUtf8: true }
+    )
+  ).resolves.toBe(text)
+})

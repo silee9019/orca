@@ -1,3 +1,17 @@
+import { BrowserClientSubmissionReceipt } from './rpc-contract/browser-client-submission-params'
+import { BrowserClientReloadReceipt } from './rpc-contract/browser-client-reload-params'
+import { BrowserClientFindReceipt } from './rpc-contract/browser-client-find-params'
+import { BrowserClientAddressReceipt } from './rpc-contract/browser-client-address-params'
+import { BrowserPairedNewTabState } from './rpc-contract/browser-paired-new-tab-params'
+import { BrowserServerReopenState } from './rpc-contract/browser-server-reopen-params'
+import { BrowserClientNavigationReceipt } from './rpc-contract/browser-client-navigation-params'
+import { BrowserGrabToastState } from './rpc-contract/browser-grab-toast-params'
+import { BrowserWebAuthnFocusState } from './rpc-contract/browser-webauthn-focus-params'
+import { BrowserEgressState } from './rpc-contract/browser-egress-params'
+import { BrowserViewportPanReceipt } from './rpc-contract/browser-viewport-pan-params'
+import { BrowserMarkupHintState } from './rpc-contract/browser-markup-hint-params'
+import { BrowserImportHintState } from './rpc-contract/browser-import-hint-params'
+import { BrowserBannerState } from './rpc-contract/browser-banner-params'
 import { BrowserOverlayFocusState } from './rpc-contract/browser-overlay-focus-params'
 import { BrowserSetupGuideState } from './rpc-contract/browser-setup-guide-params'
 import { ClientHostedBrowserRowState } from './rpc-contract/client-hosted-browser-row-params'
@@ -38,6 +52,19 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  clientSubmission: BrowserClientSubmissionReceipt.optional(),
+  clientReload: BrowserClientReloadReceipt.optional(),
+  clientFind: BrowserClientFindReceipt.optional(),
+  clientAddress: BrowserClientAddressReceipt.optional(),
+  pairedNewTab: BrowserPairedNewTabState.optional(),
+  serverReopen: BrowserServerReopenState.optional(),
+  clientNavigation: BrowserClientNavigationReceipt.optional(),
+  grabToast: BrowserGrabToastState.optional(),
+  egress: BrowserEgressState.optional(),
+  viewportPan: BrowserViewportPanReceipt.optional(),
+  markupHint: BrowserMarkupHintState.optional(),
+  browserImportHint: BrowserImportHintState.optional(),
+  banner: BrowserBannerState.optional(),
   browserSetupGuide: BrowserSetupGuideState.optional(),
   clientHostedRow: ClientHostedBrowserRowState.optional(),
   clientMarkup: BrowserClientMarkupReceipt.optional(),
@@ -72,6 +99,7 @@ export const BrowserViewerResultSchema = z.object({
   document: BrowserDocumentState.optional(),
   remotePane: BrowserRemotePaneState.optional(),
   failureState: BrowserFailureState.optional(),
+  webAuthnFocus: BrowserWebAuthnFocusState.optional(),
   webAuthnDialog: BrowserWebAuthnDialogState.optional(),
   settings: BrowserSettingsState.optional(),
   annotationTray: BrowserAnnotationTrayState.optional(),

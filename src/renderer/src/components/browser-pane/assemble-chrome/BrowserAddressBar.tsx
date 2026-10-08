@@ -17,7 +17,7 @@ import type { BrowserAddressBarEditSessionBinding } from './use-browser-address-
 import BrowserAddressBarSuggestionList from './BrowserAddressBarSuggestionList'
 
 type BrowserAddressBarProps = {
-  commandOwner?: { page: string; active: boolean }
+  commandOwner?: Parameters<typeof useBrowserAddressCommands>[0]
   value: string
   onChange: (value: string) => void
   onSubmit: () => void

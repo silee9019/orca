@@ -159,6 +159,12 @@ export default function SkillsPage(): React.JSX.Element {
 
   useSkillsViewerController({
     target: runtimeTarget,
+    close: closeSkillsPage,
+    deleteRunning: deleteFlow.running,
+    deleteResult: deleteFlow.result,
+    dismissDeleteResult: deleteFlow.dismissResult,
+    deleteSelected: () =>
+      deleteFlow.requestDelete(skills.filter((skill) => selectedSkillIds.has(skill.id))),
     filters,
     setFilters,
     agents: agentOptions.map((agent) => agent.id),
@@ -303,7 +309,11 @@ export default function SkillsPage(): React.JSX.Element {
       <section className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto">
         <div className={cn(SKILLS_PAGE_COLUMN, 'py-2')} data-skills-page-list="true">
           {view === 'shared' ? (
-            <SkillSharedLinksView query={filters.query} shares={ownedShares} />
+            <SkillSharedLinksView
+              query={filters.query}
+              shares={ownedShares}
+              locked={installOpen || managementOpen || shareSkills.length > 0}
+            />
           ) : (
             <>
               {hostLabel && !local ? <SkillsRemoteShareNotice hostLabel={hostLabel} /> : null}

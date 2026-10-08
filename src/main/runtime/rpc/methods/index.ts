@@ -36,6 +36,24 @@ import { ENVIRONMENT_MANAGEMENT_METHODS } from './environment-management'
 import { MOBILE_CONNECTION_METHODS } from './mobile-connections'
 import { NETWORK_CONNECTION_METHODS } from './network-connections'
 import { MOBILE_NETWORK_HUMAN_METHODS } from './mobile-network-human-actions'
+import { TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS } from './terminal-side-effect-snapshot'
+import { TERMINAL_HOST_INVENTORY_METHODS } from './terminal-host-inventory'
+import { DAEMON_MANAGEMENT_METHODS } from './daemon-management'
+import { AGENT_STATUS_CLI_METHODS } from './agent-status-cli'
+import { AI_VAULT_SESSION_ACTION_METHODS } from './ai-vault-session-actions'
+import { WORKSPACE_JIRA_PROJECT_USER_METHODS } from './workspace-jira-project-users'
+import { WORKSPACE_LINEAR_ISSUE_FIELD_METHODS } from './workspace-linear-issue-fields'
+import { WORKSPACE_GITHUB_ACCOUNT_METHODS } from './workspace-github-account'
+import { WORKSPACE_GITLAB_INSPECTION_METHODS } from './workspace-gitlab-inspection'
+import { WORKSPACE_KEYBINDING_FILE_METHODS } from './workspace-keybinding-file'
+import { WORKSPACE_GIT_IGNORE_METHODS } from './workspace-git-ignore'
+import { WORKSPACE_BITBUCKET_METHODS } from './workspace-bitbucket'
+import { SETTINGS_VIEWER_METHODS } from './settings-viewer'
+import { SIDEBAR_VIEWER_METHODS } from './sidebar-viewer'
+import { CARD_VIEWER_METHODS } from './card-viewer'
+import { STATUS_BAR_VIEWER_METHODS } from './status-bar-viewer'
+import { WORKSPACE_LIST_VIEWER_METHODS } from './workspace-list-viewer'
+import { WORKSPACE_FILTER_METHODS } from './workspace-filter'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -132,9 +150,27 @@ export const ALL_RPC_METHODS = [
   ...NETWORK_CONNECTION_METHODS,
   ...MOBILE_NETWORK_HUMAN_METHODS,
 
+  ...WORKSPACE_GIT_IGNORE_METHODS,
+  ...WORKSPACE_KEYBINDING_FILE_METHODS,
+  ...WORKSPACE_LINEAR_ISSUE_FIELD_METHODS,
+  ...WORKSPACE_JIRA_PROJECT_USER_METHODS,
+  ...WORKSPACE_GITHUB_ACCOUNT_METHODS,
+  ...WORKSPACE_GITLAB_INSPECTION_METHODS,
+  ...WORKSPACE_BITBUCKET_METHODS,
+  ...SETTINGS_VIEWER_METHODS,
+  ...SIDEBAR_VIEWER_METHODS,
+  ...CARD_VIEWER_METHODS,
+  ...STATUS_BAR_VIEWER_METHODS,
+  ...WORKSPACE_LIST_VIEWER_METHODS,
+  ...WORKSPACE_FILTER_METHODS,
   ...STATUS_METHODS,
+  ...AGENT_STATUS_CLI_METHODS,
+  ...TERMINAL_HOST_INVENTORY_METHODS,
+  ...TERMINAL_SIDE_EFFECT_SNAPSHOT_METHODS,
+  ...DAEMON_MANAGEMENT_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
+  ...AI_VAULT_SESSION_ACTION_METHODS,
   ...ARTIFACT_METHODS,
   ...AUTOMATION_METHODS,
   ...REPO_METHODS,

@@ -63,6 +63,18 @@ describe('HtmlDocPreview browser chrome', () => {
     })
   })
 
+  it('registers the existing draw control only for an active ready document', async () => {
+    const { requestBrowserMarkupHint } = await import('@/runtime/browser-markup-hint-request')
+    await renderPreview(container, root, { isActive: false })
+    await expect(
+      requestBrowserMarkupHint('preview-1', 'status', Date.now() + 1000)
+    ).rejects.toThrow('browser_markup_hint_inactive')
+    await renderPreview(container, root, { isActive: true })
+    await expect(
+      requestBrowserMarkupHint('preview-1', 'status', Date.now() + 1000)
+    ).resolves.toMatchObject({ hintOpen: false, active: false, disabled: false })
+  })
+
   it('counts document guests in the workspace budget and restores only on activation', async () => {
     const { hasLiveBrowserGuest, webviewRegistry } = await import('../host-guest/webview-registry')
     const { worktreeHoldsLiveBrowserGuests, selectBrowserGuestEvictionWorktreeIds } =

@@ -1,3 +1,7 @@
+import {
+  notifyWebRuntimeBrowserCreation,
+  type WebRuntimeBrowserCreationObserver
+} from './web-runtime-browser-creation-receipt'
 import type { BrowserClientHostPlacementPreference } from '../../../shared/browser-client-host-placement'
 import { BROWSER_TAB_CREATE_KNOWN_ID_RUNTIME_CAPABILITY } from '../../../shared/protocol-version'
 import { assertRuntimeManagedBrowserCreationAvailable } from '../lib/client-creation-action-policy'
@@ -31,6 +35,7 @@ import {
 import { selectWebRuntimeSessionBrowserWorktree } from './web-runtime-session-workspace-selection'
 
 export type CreateWebRuntimeSessionBrowserTabArgs = {
+  onCreationReceipt?: WebRuntimeBrowserCreationObserver
   worktreeId: string
   environmentId?: string | null
   url?: string
@@ -127,6 +132,7 @@ export function stageWebRuntimeBrowserCreation(context: WebRuntimeBrowserCreatio
   const { args, environmentId, intentOwner, provisionalPageId, shouldFocusOnCreate } = context
   throwIfE2eWebRuntimeBrowserCapabilityUnavailable()
   assertRuntimeManagedBrowserCreationAvailable(useAppStore.getState(), environmentId)
+  notifyWebRuntimeBrowserCreation(args.onCreationReceipt, { phase: 'started' })
   if (args.clientTargetGroupId) {
     recordWebSessionBrowserPlacement({
       environmentId,

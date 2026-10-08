@@ -1,4 +1,6 @@
 import { defineMethod } from '../core'
+import { requestAccountViewerAction } from '../../account-viewer-request'
+import { PluginSettingsViewerParams } from '../../../../shared/plugin-settings-viewer-command'
 import type { PluginService } from '../../../plugins/plugin-service'
 import type { PluginMarketplaceService } from '../../../plugins/plugin-marketplace-service'
 import type { PluginMarketplaceInstaller } from '../../../plugins/plugin-marketplace-installer'
@@ -41,6 +43,12 @@ function requireServices(): PluginManagementServices {
 }
 
 export const PLUGIN_MANAGEMENT_METHODS = [
+  defineMethod({
+    name: 'plugins.viewerAction',
+    params: PluginSettingsViewerParams,
+    handler: ({ action }, { signal }) =>
+      requestAccountViewerAction({ domain: 'plugin-settings', action }, signal)
+  }),
   defineMethod({
     name: 'plugins.getPreferences',
     params: null,

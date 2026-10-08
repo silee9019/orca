@@ -197,6 +197,7 @@ export function BrowserGuestAnnotateOverlays({
       {/* Inline toast bubble; flips above the element when near the viewport bottom so it doesn't occlude it. */}
       {grabToast ? (
         <BrowserPageGrabToast
+          commandOwner={markup.commandOwner}
           grabToast={grabToast}
           grabToastTimerRef={grabToastTimerRef}
           dismissGrabToast={dismissGrabToast}

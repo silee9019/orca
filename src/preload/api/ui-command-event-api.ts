@@ -5,13 +5,34 @@ import type {
 } from '../../shared/browser-viewer-command'
 import type { VoiceViewerRequest, VoiceViewerResponse } from '../../shared/voice-viewer'
 import type {
-  SearchSettingsViewerRequest,
+  SearchSettingsViewerRequest as SearchSettingsRequest,
   SearchSettingsViewerResponse
 } from '../../shared/search-settings-viewer'
 import type {
   ConnectionsViewerRequest,
   ConnectionsViewerResponse
 } from '../../shared/connections-viewer'
+import type {
+  WorkspaceListViewerRequest,
+  WorkspaceListViewerResponse
+} from '../../shared/workspace-list-viewer-command'
+import type {
+  SettingsViewerRequest,
+  SettingsViewerResponse
+} from '../../shared/settings-viewer-command'
+import type {
+  SidebarViewerRequest,
+  SidebarViewerResponse
+} from '../../shared/sidebar-viewer-command'
+import type { CardViewerRequest, CardViewerResponse } from '../../shared/card-viewer-command'
+import type {
+  StatusBarViewerRequest,
+  StatusBarViewerResponse
+} from '../../shared/status-bar-viewer-command'
+import type {
+  WorkspaceFilterRequest,
+  WorkspaceFilterResponse
+} from '../../shared/workspace-filter-command'
 import type { MarkdownDocument } from '../../shared/filesystem-entry-types'
 import type { PersistedUIState } from '../../shared/persisted-ui-state-types'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -61,12 +82,24 @@ export type UiCommandEventApi = {
   respondBrowserViewer?: (response: BrowserViewerResponse) => void
   onVoiceViewerRequest?: (callback: (request: VoiceViewerRequest) => void) => () => void
   respondVoiceViewer?: (response: VoiceViewerResponse) => void
-  onSearchSettingsViewerRequest?: (
-    callback: (request: SearchSettingsViewerRequest) => void
-  ) => () => void
+  onSearchSettingsViewerRequest?: (callback: (request: SearchSettingsRequest) => void) => () => void
   respondSearchSettingsViewer?: (response: SearchSettingsViewerResponse) => void
   onConnectionsViewerRequest?: (callback: (request: ConnectionsViewerRequest) => void) => () => void
   respondConnectionsViewer?: (response: ConnectionsViewerResponse) => void
+  onSettingsViewerRequest?: (callback: (request: SettingsViewerRequest) => void) => () => void
+  onSidebarViewerRequest?: (callback: (request: SidebarViewerRequest) => void) => () => void
+  onCardViewerRequest?: (callback: (request: CardViewerRequest) => void) => () => void
+  onStatusBarViewerRequest?: (callback: (request: StatusBarViewerRequest) => void) => () => void
+  onWorkspaceListViewerRequest?: (
+    callback: (request: WorkspaceListViewerRequest) => void
+  ) => () => void
+  respondSettingsViewer?: (response: SettingsViewerResponse) => void
+  respondSidebarViewer?: (response: SidebarViewerResponse) => void
+  respondCardViewer?: (response: CardViewerResponse) => void
+  respondStatusBarViewer?: (response: StatusBarViewerResponse) => void
+  respondWorkspaceListViewer?: (response: WorkspaceListViewerResponse) => void
+  onWorkspaceFilterRequest?: (callback: (request: WorkspaceFilterRequest) => void) => () => void
+  respondWorkspaceFilter?: (response: WorkspaceFilterResponse) => void
   get: () => Promise<PersistedUIState>
   set: (args: Partial<PersistedUIState>) => Promise<void>
   /** Like set, but REJECTS when the update did not reach the host (the web preload's set

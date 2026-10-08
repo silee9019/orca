@@ -63,3 +63,12 @@ export async function writeNotifyWithSettlement(
     }
   })
 }
+
+export function writeDaemonNotify(socket: Socket, message: unknown): boolean {
+  try {
+    socket.write(encodeNdjson(message))
+    return true
+  } catch {
+    return false
+  }
+}

@@ -1,5 +1,7 @@
 import { useAppStore } from '@/store'
 import { publishProjectFilterView } from '@/runtime/project-filter-view'
+import { useWorkspaceListViewerPublication } from '@/runtime/use-workspace-list-viewer-publication'
+import { useWorkspaceFilterPublication } from '@/runtime/use-workspace-filter-publication'
 import { useCallback, useLayoutEffect, useMemo } from 'react'
 import type React from 'react'
 import type { Worktree } from '../../../../../../shared/worktree/types'
@@ -22,6 +24,7 @@ export function useSidebarWorktreeSelection(args: {
 }) {
   const { sectionRows, pinnedDisplayPolicy } = args
   const filterRepoIds = useAppStore((state) => state.filterRepoIds)
+  useWorkspaceListViewerPublication(sectionRows)
   // Why: derive order from the built rows, not the flat worktrees array, so Cmd+1–9 match visual positions when grouping reorders cards.
   const renderedWorktrees = useMemo(
     () => getRenderedWorktreesInSidebarOrder(sectionRows, pinnedDisplayPolicy),
@@ -33,6 +36,14 @@ export function useSidebarWorktreeSelection(args: {
       [renderedWorktrees]
     )
   )
+  const visibleFolderWorkspaceIds = useMemo(
+    () =>
+      sectionRows.flatMap((row) =>
+        row.type === 'folder-workspace' ? [row.folderWorkspace.id] : []
+      ),
+    [sectionRows]
+  )
+  useWorkspaceFilterPublication(renderedWorktreeIds, visibleFolderWorkspaceIds)
   const selection = useListMultiSelection({
     items: renderedWorktrees,
     getKey: getWorktreeHostIdentity,

@@ -1,5 +1,15 @@
 // Kept import-free for main/CLI project isolation; a parity test prevents drift.
 export const CLI_COMMAND_NAMES = [
+  'keybindings',
+  'bitbucket',
+  'review',
+  'folder-workspace',
+  'git',
+  'github',
+  'gitlab',
+  'jira',
+  'project-group',
+  'workspace-ports',
   'account',
   'accounts',
   'account-view',

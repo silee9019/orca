@@ -1,3 +1,4 @@
+import type { WebRuntimeBrowserCreationObserver } from '@/runtime/web-runtime-browser-creation-receipt'
 import { useAppStore } from '@/store'
 import { createWorkspaceBrowserShortcut } from '@/components/workspace-browser-shortcut-creation'
 import {
@@ -16,6 +17,7 @@ export function resolveBrowserNewTabInvocation(state: AppState) {
 }
 export async function createBrowserTabForCurrentViewer(options?: {
   workspaceFallback: boolean
+  onCreationReceipt?: WebRuntimeBrowserCreationObserver
 }): Promise<void> {
   const store = useAppStore.getState()
   if (isFloatingWorkspacePanelFocused()) {
@@ -33,6 +35,7 @@ export async function createBrowserTabForCurrentViewer(options?: {
   }
   await createWorkspaceBrowserShortcut({
     worktreeId,
+    ...(options?.onCreationReceipt ? { onCreationReceipt: options.onCreationReceipt } : {}),
     createBrowserTab: store.createBrowserTab,
     openNewBrowserTabInActiveWorkspace: store.openNewBrowserTabInActiveWorkspace
   })

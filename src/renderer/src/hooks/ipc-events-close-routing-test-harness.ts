@@ -303,6 +303,7 @@ export async function useIpcEventsForCloseRouting({
     }
   })
 
-  const { useIpcEvents: registerIpcEvents } = await import('./useIpcEvents')
+  const { installAppLifetimeIpcEvents: registerIpcEvents } =
+    await import('./ipc-events/app-lifetime-ipc-bridge')
   registerIpcEvents()
 }

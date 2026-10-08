@@ -1,3 +1,17 @@
+import { BrowserClientSubmissionViewerCommand } from './browser-client-submission-params'
+import { BrowserClientReloadViewerCommand } from './browser-client-reload-params'
+import { BrowserClientFindViewerCommand } from './browser-client-find-params'
+import { BrowserClientAddressViewerCommand } from './browser-client-address-params'
+import { BrowserPairedNewTabCommand } from './browser-paired-new-tab-params'
+import { BrowserServerReopenCommand } from './browser-server-reopen-params'
+import { BrowserClientNavigationViewerCommand } from './browser-client-navigation-params'
+import { BrowserGrabToastCommand } from './browser-grab-toast-params'
+import { BrowserWebAuthnFocusTarget } from './browser-webauthn-focus-params'
+import { BrowserEgressCommand } from './browser-egress-params'
+import { BrowserViewportPanDelta } from './browser-viewport-pan-params'
+import { BrowserMarkupHintAction } from './browser-markup-hint-params'
+import { BrowserImportHintCommand } from './browser-import-hint-params'
+import { BrowserBannerCommand } from './browser-banner-params'
 import { BrowserOverlayFocusCommand } from './browser-overlay-focus-params'
 import { BrowserSetupGuideCommand } from './browser-setup-guide-params'
 import { ClientHostedBrowserRowCommand } from './client-hosted-browser-row-params'
@@ -12,7 +26,8 @@ import { ComputerPermissionsViewerCommand } from './computer-permissions-viewer-
 import { BrowserSshRouteTarget } from './browser-ssh-route-params'
 import { BrowserWebAuthnDialogTarget } from './browser-webauthn-dialog-params'
 import { BrowserFailureTarget } from './browser-failure-params'
-import { BrowserGrabActionKey } from './browser-grab-action-params'
+import { BrowserGrabActionKey, BrowserGrabViewerAction } from './browser-grab-action-params'
+export { BrowserGrabViewerAction } from './browser-grab-action-params'
 import { WorkspaceFileOpenCommand } from './workspace-file-open-params'
 import { WorkspacePortOpenCommand } from './workspace-port-open-params'
 import { PluginMarketplaceViewerCommand } from './plugin-marketplace-viewer-params'
@@ -40,19 +55,6 @@ import { GRAB_BUDGET } from '../browser-grab-types'
 
 export const BrowserViewerPreset = z.enum(BROWSER_VIEWPORT_PRESETS.map((preset) => preset.id))
 
-export const BrowserGrabViewerAction = z.enum([
-  'start',
-  'toggle',
-  'shortcut-copy',
-  'cancel',
-  'rearm',
-  'exit',
-  'status',
-  'copy',
-  'copy-screenshot'
-])
-export type BrowserGrabViewerAction = z.infer<typeof BrowserGrabViewerAction>
-
 export const BrowserToolbarAction = z.enum([
   'back',
   'forward',
@@ -65,6 +67,28 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  BrowserClientSubmissionViewerCommand,
+  BrowserClientReloadViewerCommand,
+  BrowserClientFindViewerCommand,
+  BrowserClientAddressViewerCommand,
+  BrowserPairedNewTabCommand,
+  z.object({ viewer, operation: z.literal('server-reopen'), command: BrowserServerReopenCommand }),
+  BrowserClientNavigationViewerCommand,
+  z.object({ viewer, operation: z.literal('grab-toast'), command: BrowserGrabToastCommand }),
+  z.object({
+    viewer,
+    operation: z.literal('webauthn-dialog-focus'),
+    command: BrowserWebAuthnFocusTarget
+  }),
+  z.object({ viewer, operation: z.literal('egress'), command: BrowserEgressCommand }),
+  z.object({ viewer, operation: z.literal('viewport-pan'), page, delta: BrowserViewportPanDelta }),
+  z.object({ viewer, operation: z.literal('markup-hint'), page, action: BrowserMarkupHintAction }),
+  z.object({
+    viewer,
+    operation: z.literal('browser-import-hint'),
+    command: BrowserImportHintCommand
+  }),
+  z.object({ viewer, operation: z.literal('banner'), command: BrowserBannerCommand }),
   z.object({ viewer, operation: z.literal('overlay-focus'), command: BrowserOverlayFocusCommand }),
   z.object({
     viewer,

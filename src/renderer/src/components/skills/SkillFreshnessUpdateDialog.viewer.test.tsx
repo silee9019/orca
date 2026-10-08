@@ -8,6 +8,7 @@ import type {
 } from '../../../../shared/skill-freshness'
 import type { SkillFreshnessViewerAction } from '../../../../shared/skill-freshness-viewer-command'
 import { applySkillFreshnessViewerAction } from '@/runtime/skill-freshness-viewer-controller'
+import { applySkillsViewerRequest } from '@/runtime/skills-viewer-request'
 import { SkillFreshnessUpdateDialog } from './SkillFreshnessUpdateDialog'
 import { eligibleInventory } from './skill-freshness-dialog-test-fixture'
 import { _resetSkillUpdateRunStore } from './skill-update-run-store'
@@ -62,6 +63,31 @@ afterEach(() => {
   consumeSkillFreshnessUpdateDialogRequest()
   vi.restoreAllMocks()
   Reflect.deleteProperty(window, 'api')
+})
+it('routes the public freshness request without a SkillsPage and keeps other actions unavailable', async () => {
+  await act(async () => {
+    render(<SkillFreshnessUpdateDialog />)
+  })
+  let request: ReturnType<typeof applySkillsViewerRequest> | undefined
+  await act(async () => {
+    request = applySkillsViewerRequest({
+      kind: 'freshness-form',
+      action: { kind: 'open', value: true }
+    })
+    void request.catch(() => undefined)
+  })
+  await expect(request).resolves.toMatchObject({ freshness: { open: true, committed: true } })
+  expect(screen.getByRole('dialog')).toBeTruthy()
+  await expect(applySkillsViewerRequest({ kind: 'get' })).rejects.toThrow('viewer_unavailable')
+  await act(async () => {
+    request = applySkillsViewerRequest({
+      kind: 'freshness-form',
+      action: { kind: 'open', value: false }
+    })
+    void request.catch(() => undefined)
+  })
+  await expect(request).resolves.toMatchObject({ freshness: { open: false } })
+  expect(document.querySelector('[role="dialog"]')).toBeNull()
 })
 it('opens the existing global dialog, submits eligible names, and closes without cancelling a running update', async () => {
   await act(async () => {

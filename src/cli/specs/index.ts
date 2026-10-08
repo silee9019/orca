@@ -52,12 +52,33 @@ import { ENVIRONMENT_CONNECTION_COMMAND_SPECS } from './environment-connections'
 import { MOBILE_CONNECTION_COMMAND_SPECS } from './mobile-connections'
 import { NETWORK_CONNECTION_COMMAND_SPECS } from './network-connections'
 import { MOBILE_NETWORK_HUMAN_COMMAND_SPECS } from './mobile-network-human-actions'
+import { BROWSER_CLIENT_SUBMISSION_COMMAND_SPECS } from './browser-client-submission'
+import { BROWSER_CLIENT_RELOAD_COMMAND_SPECS } from './browser-client-reload'
+import { BROWSER_EGRESS_COMMAND_SPECS } from './browser-egress'
+import { BROWSER_VIEWPORT_PAN_COMMAND_SPECS } from './browser-viewport-pan'
+import { BROWSER_MARKUP_HINT_COMMAND_SPECS } from './browser-markup-hint'
+import { BROWSER_IMPORT_HINT_SPECS } from './browser-import-hint'
+import { BROWSER_BANNER_COMMAND_SPECS } from './browser-banner'
+import { BROWSER_WEBAUTHN_FOCUS_COMMAND_SPECS } from './browser-webauthn-focus'
+import { BROWSER_GRAB_TOAST_COMMAND_SPECS } from './browser-grab-toast'
+import { BROWSER_CLIENT_NAVIGATION_COMMAND_SPECS } from './browser-client-navigation'
+import { BROWSER_SERVER_REOPEN_COMMAND_SPECS } from './browser-server-reopen'
+import { BROWSER_CLIENT_ADDRESS_COMMAND_SPECS } from './browser-client-address'
+import { BROWSER_PAIRED_NEW_TAB_COMMAND_SPECS } from './browser-paired-new-tab'
+import { BROWSER_CLIENT_FIND_COMMAND_SPECS } from './browser-client-find'
+import { SETTINGS_VIEWER_COMMAND_SPECS } from './settings-viewer'
+import { SIDEBAR_VIEWER_COMMAND_SPECS } from './sidebar-viewer'
+import { CARD_VIEWER_COMMAND_SPECS } from './card-viewer'
+import { STATUS_BAR_VIEWER_COMMAND_SPECS } from './status-bar-viewer'
+import { WORKSPACE_LIST_VIEWER_COMMAND_SPECS } from './workspace-list-viewer'
+import { WORKSPACE_FILTER_COMMAND_SPECS } from './workspace-filter'
 import type { CommandSpec } from '../args'
 import { BROWSER_SESSION_COMMAND_SPECS } from './browser-session'
 import { BROWSER_VIEWER_COMMAND_SPECS } from './browser-viewer'
 import { BROWSER_TAB_UI_COMMAND_SPECS } from './browser-tab-ui'
 import { BROWSER_MARKUP_GESTURE_COMMAND_SPECS } from './browser-markup-gesture'
 import { BROWSER_GROUP_UI_COMMAND_SPECS } from './browser-group-ui'
+import { WORKSPACE_DATA_COMMAND_SPECS } from './workspace-data'
 import { ACCOUNT_COMMAND_SPECS } from './account'
 import { BROWSER_ADVANCED_COMMAND_SPECS } from './browser-advanced'
 import { BROWSER_BASIC_COMMAND_SPECS } from './browser-basic'
@@ -84,6 +105,8 @@ import { SKILL_COMMAND_SPECS } from './skills'
 import { ARTIFACT_COMMAND_SPECS } from './artifacts'
 import { SEARCH_COMMAND_SPECS } from './search'
 import { PROFILE_STATE_COMMAND_SPECS } from './profile-state'
+
+import { AGENT_SESSION_COMMAND_SPECS } from './agent-sessions'
 
 export const COMMAND_SPECS: CommandSpec[] = [
   ...PROJECT_FILTER_COMMAND_SPECS,
@@ -138,7 +161,27 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...NETWORK_CONNECTION_COMMAND_SPECS,
   ...MOBILE_NETWORK_HUMAN_COMMAND_SPECS,
 
+  ...BROWSER_EGRESS_COMMAND_SPECS,
+  ...BROWSER_VIEWPORT_PAN_COMMAND_SPECS,
+  ...BROWSER_MARKUP_HINT_COMMAND_SPECS,
+  ...BROWSER_IMPORT_HINT_SPECS,
+  ...BROWSER_BANNER_COMMAND_SPECS,
+  ...BROWSER_WEBAUTHN_FOCUS_COMMAND_SPECS,
+  ...BROWSER_GRAB_TOAST_COMMAND_SPECS,
+  ...BROWSER_CLIENT_NAVIGATION_COMMAND_SPECS,
+  ...BROWSER_SERVER_REOPEN_COMMAND_SPECS,
+  ...BROWSER_CLIENT_ADDRESS_COMMAND_SPECS,
+  ...BROWSER_PAIRED_NEW_TAB_COMMAND_SPECS,
+  ...BROWSER_CLIENT_FIND_COMMAND_SPECS,
+  ...WORKSPACE_DATA_COMMAND_SPECS,
+  ...SETTINGS_VIEWER_COMMAND_SPECS,
+  ...SIDEBAR_VIEWER_COMMAND_SPECS,
+  ...CARD_VIEWER_COMMAND_SPECS,
+  ...STATUS_BAR_VIEWER_COMMAND_SPECS,
+  ...WORKSPACE_LIST_VIEWER_COMMAND_SPECS,
+  ...WORKSPACE_FILTER_COMMAND_SPECS,
   ...CORE_COMMAND_SPECS,
+  ...AGENT_SESSION_COMMAND_SPECS,
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,
   ...USAGE_COMMAND_SPECS,
@@ -147,6 +190,8 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...FILE_COMMAND_SPECS,
   ...AUTOMATION_COMMAND_SPECS,
   ...BROWSER_BASIC_COMMAND_SPECS,
+  ...BROWSER_CLIENT_SUBMISSION_COMMAND_SPECS,
+  ...BROWSER_CLIENT_RELOAD_COMMAND_SPECS,
   ...BROWSER_SESSION_COMMAND_SPECS,
   ...BROWSER_VIEWER_COMMAND_SPECS,
   ...BROWSER_TAB_UI_COMMAND_SPECS,

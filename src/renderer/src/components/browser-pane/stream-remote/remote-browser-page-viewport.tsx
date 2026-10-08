@@ -235,6 +235,11 @@ export function RemoteBrowserPageViewport({
               can never render it here. A new server-placed page is the only way through. */}
           {remotePageHandle?.placement?.kind === 'client' ? (
             <ReopenBrowserPageOnServerButton
+              commandOwner={{
+                page: browserTab.id,
+                active: isActive && !markup.isActive,
+                clientPlacement: remotePageHandle.placement
+              }}
               environmentId={remotePageHandle.environmentId}
               worktreeId={worktreeId}
               lastCommittedUrl={browserTab.url}

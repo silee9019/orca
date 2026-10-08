@@ -174,7 +174,7 @@ export function createBrowserTabActions(
       return browserTab
     },
 
-    openNewBrowserTabInActiveWorkspace: async (groupId) => {
+    openNewBrowserTabInActiveWorkspace: async (groupId, onCreationReceipt) => {
       const state = get()
       // Why: the invoking group owns its workspace; global selection may already point elsewhere.
       const worktreeId =
@@ -205,7 +205,8 @@ export function createBrowserTabActions(
             // Why: desktop pane groups are client-owned — the local reconciler only honors a
             // recorded clientTargetGroupId; targetGroupId steers snapshot-driven clients instead.
             targetGroupId: groupId,
-            clientTargetGroupId: groupId
+            clientTargetGroupId: groupId,
+            ...(onCreationReceipt ? { onCreationReceipt } : {})
           })
           if (created) {
             get().recordFeatureInteraction('browser-tab-created')

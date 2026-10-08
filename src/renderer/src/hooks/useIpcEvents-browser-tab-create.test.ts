@@ -252,7 +252,8 @@ describe('useIpcEvents browser tab create routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     requestTabCreateListenerRef.current?.({

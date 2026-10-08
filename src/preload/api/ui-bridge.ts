@@ -1,6 +1,12 @@
 import { uiVoiceViewerApi } from './ui-voice-viewer-api'
 import { uiSearchSettingsViewerApi } from './ui-search-settings-viewer-api'
 import { connectionsViewerUiApi } from './connections-viewer-bridge'
+import { settingsViewerBridgeApi } from './settings-viewer-bridge'
+import { sidebarViewerBridgeApi } from './sidebar-viewer-bridge'
+import { cardViewerBridgeApi } from './card-viewer-bridge'
+import { statusBarViewerBridgeApi } from './status-bar-viewer-bridge'
+import { workspaceListViewerBridgeApi } from './workspace-list-viewer-bridge'
+import { workspaceFilterBridgeApi } from './workspace-filter-bridge'
 import type { PreloadApi } from '../api-types'
 import { uiStateAndMenuCommandsApi } from './ui-bridge-state-and-menu-commands'
 import { uiTabAndBrowserCommandsApi } from './ui-bridge-tab-and-browser-commands'
@@ -11,6 +17,12 @@ export const uiApi = {
   ...uiVoiceViewerApi,
   ...uiSearchSettingsViewerApi,
   ...connectionsViewerUiApi,
+  ...settingsViewerBridgeApi,
+  ...sidebarViewerBridgeApi,
+  ...cardViewerBridgeApi,
+  ...statusBarViewerBridgeApi,
+  ...workspaceListViewerBridgeApi,
+  ...workspaceFilterBridgeApi,
   ...uiStateAndMenuCommandsApi,
   ...uiTabAndBrowserCommandsApi,
   ...uiTerminalAndSessionTabsApi,

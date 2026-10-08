@@ -13,6 +13,7 @@ import RepoBadgeLabel from '@/components/repo/RepoBadgeLabel'
 import { searchRepos } from '@/lib/repo-search'
 import type { Repo } from '../../../../shared/repo-types'
 import { translate } from '@/i18n/i18n'
+import { useProjectFilterControls } from '@/runtime/use-project-filter-controls'
 
 function projectCommandFilter(_value: string, search: string, keywords?: string[]): number {
   const query = search.trim().toLowerCase()
@@ -35,6 +36,7 @@ function projectCommandFilter(_value: string, search: string, keywords?: string[
 }
 
 type SidebarProjectFilterPanelProps = {
+  workspaceFilter?: boolean
   availableRepos: Repo[]
   selectedRepos: Repo[]
   hasRepoFilter: boolean
@@ -52,11 +54,23 @@ export function SidebarProjectFilterPanel({
   selectedRepos,
   hasRepoFilter,
   filterRepoIds,
-  setFilterRepoIds
+  setFilterRepoIds,
+  workspaceFilter = false
 }: SidebarProjectFilterPanelProps): React.JSX.Element {
   const [query, setQuery] = useState('')
   const [highlightedRepoId, setHighlightedRepoId] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const inputFocus = useProjectFilterControls({
+    surface: 'project-panel',
+    enabled: workspaceFilter,
+    open: true,
+    query,
+    highlightedRepoId,
+    resultRepoIds: searchRepos(availableRepos, query).map((repo) => repo.id),
+    inputRef,
+    setQuery,
+    setHighlightedRepoId
+  })
 
   // Why: `autoFocus` cannot survive here — it fires during commit, while the
   // root menu's trapped focus scope is still active and yanks focus back to the
@@ -131,12 +145,15 @@ export function SidebarProjectFilterPanel({
   return (
     <Command
       filter={projectCommandFilter}
+      value={highlightedRepoId}
       onValueChange={setHighlightedRepoId}
       className="bg-transparent"
     >
       <SelectedProjectPills selectedRepos={selectedRepos} onRemoveProject={handleRemoveProject} />
       <CommandInput
         ref={inputRef}
+        onFocus={inputFocus.onFocus}
+        onBlur={inputFocus.onBlur}
         placeholder={
           selectedRepos.length > 0
             ? translate(

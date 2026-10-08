@@ -40,6 +40,7 @@ export function useBrowserPageGrabAnnotations({
   toolTargetId = browserTabId,
   isActive,
   markupIsActive = false,
+  grabCommandDisabled = false,
   grabActionCommandOwner,
   grab,
   containerRef,
@@ -205,7 +206,8 @@ export function useBrowserPageGrabAnnotations({
     grab,
     grabIntent,
     startGrabIntent,
-    markupIsActive
+    markupIsActive,
+    grabCommandDisabled
   )
 
   const handleGrabActionShortcut = useBrowserGrabActionCommands({

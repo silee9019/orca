@@ -12,7 +12,8 @@ export class NodeReadableTextTooLargeError extends Error {
 
 export async function readNodeReadableTextWithinLimit(
   readable: AsyncIterable<unknown>,
-  maxBytes: number
+  maxBytes: number,
+  options: { fatalUtf8?: boolean } = {}
 ): Promise<string> {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
     throw new RangeError('Readable text limit must be a non-negative safe integer')
@@ -38,5 +39,8 @@ export async function readNodeReadableTextWithinLimit(
     chunk.copy(buffer, bytes)
     bytes = observedBytes
   }
-  return buffer.subarray(0, bytes).toString('utf8')
+  const content = buffer.subarray(0, bytes)
+  return options.fatalUtf8
+    ? new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(content)
+    : content.toString('utf8')
 }

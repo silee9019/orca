@@ -22,6 +22,13 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     return this.runtimeId
   }
 
+  getWorkspaceSessionHostIds(): ExecutionHostId[] {
+    if (!this.store?.getWorkspaceSessionHostIds) {
+      throw new Error('runtime_unavailable')
+    }
+    return this.store.getWorkspaceSessionHostIds()
+  }
+
   resolveOrchestrationWorkerServer(selector: string): OrchestrationWorkerServer {
     return this.orchestrationFederation.resolveWorkerServer(selector)
   }

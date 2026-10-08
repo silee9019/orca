@@ -126,6 +126,8 @@ it.each([
       'profile-ui',
       '--action',
       'import-browser',
+      '--profile',
+      'default',
       '--family',
       'chrome',
       '--browser-profile',
@@ -137,7 +139,12 @@ it.each([
     command: {
       operation: 'profile-ui',
       page: 'p1',
-      command: { action: 'import-browser', family: 'chrome', browserProfile: 'Profile 1' }
+      command: {
+        action: 'import-browser',
+        profile: 'default',
+        family: 'chrome',
+        browserProfile: 'Profile 1'
+      }
     }
   },
   {
@@ -145,6 +152,8 @@ it.each([
       'profile-ui',
       '--action',
       'import-file',
+      '--profile',
+      'default',
       '--file',
       join(tmpdir(), 'cookies.json'),
       '--confirm',
@@ -154,7 +163,11 @@ it.each([
     command: {
       operation: 'profile-ui',
       page: 'p1',
-      command: { action: 'import-file', filePath: join(tmpdir(), 'cookies.json') }
+      command: {
+        action: 'import-file',
+        profile: 'default',
+        filePath: join(tmpdir(), 'cookies.json')
+      }
     }
   },
   {
@@ -302,9 +315,60 @@ it.each([
       _meta: { runtimeId: 'fixture' }
     }
     const call = vi.spyOn(client, 'call').mockResolvedValue(response)
+    const importing =
+      command.operation === 'profile-ui' &&
+      'command' in command &&
+      (command.command?.action === 'import-browser' || command.command?.action === 'import-file')
+    if (importing) {
+      const profileUi = {
+        workspace: 'workspace',
+        profile: 'default',
+        partition: 'persist:default',
+        menuOpen: false,
+        switching: false,
+        creating: false,
+        newDialogOpen: false,
+        newName: '',
+        pendingProfile: null,
+        cookieImportTargetGuard: 1,
+        guestRegistrationVerified: false as const
+      }
+      call.mockResolvedValueOnce({ ...response, result: { ...response.result, profileUi } })
+      call.mockResolvedValueOnce({
+        ...response,
+        result: {
+          ...response.result,
+          profileUi: {
+            ...profileUi,
+            cookieImport: {
+              profile: 'default',
+              imported: 2,
+              skipped: 1,
+              total: 3,
+              executionHost: 'local',
+              executionMachine: 'client'
+            }
+          }
+        }
+      })
+    }
     vi.spyOn(console, 'log').mockImplementation(() => {})
     await run([...args, '--viewer', 'host'])
-    expect(call).toHaveBeenCalledExactlyOnceWith('ui.browserViewer', { viewer: 'host', ...command })
+    if (importing) {
+      expect(call).toHaveBeenCalledTimes(2)
+      expect(call).toHaveBeenNthCalledWith(1, 'ui.browserViewer', {
+        viewer: 'host',
+        operation: 'profile-ui',
+        page: 'p1',
+        command: { action: 'status' }
+      })
+      expect(call).toHaveBeenNthCalledWith(2, 'ui.browserViewer', { viewer: 'host', ...command })
+    } else {
+      expect(call).toHaveBeenCalledExactlyOnceWith('ui.browserViewer', {
+        viewer: 'host',
+        ...command
+      })
+    }
   }
 )
 

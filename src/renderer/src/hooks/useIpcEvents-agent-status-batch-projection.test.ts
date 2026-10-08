@@ -165,7 +165,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       buildWindowApi({ getSnapshot: vi.fn().mockResolvedValue(snapshot), onSet: () => () => {} })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     await vi.waitFor(() => {
@@ -248,7 +249,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     await vi.waitFor(() => {
@@ -328,7 +330,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
     )
 
     try {
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       if (typeof onSetListenerRef.current !== 'function') {
         throw new Error('Expected agentStatus.onSet listener to be registered')
@@ -445,7 +448,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
     )
 
     try {
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       if (!onSetListenerRef.current) {
         throw new Error('Expected agentStatus.onSet listener to be registered')
@@ -566,7 +570,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
     )
 
     try {
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       const onSet = onSetListenerRef.current
       if (!onSet) {

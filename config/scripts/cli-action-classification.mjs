@@ -144,6 +144,12 @@ function describeSource(source) {
   }
   const domainText = `${operation} ${source.file} ${source.component ?? ''}`.toLowerCase()
   let domain = ACTION_DOMAINS.find((item) => item.pattern.test(domainText))
+  if (
+    kind === 'command' &&
+    /^src\/cli\/specs\/workspace-(?:folder|ports|repo-data)\.ts$/.test(source.file)
+  ) {
+    domain = ACTION_DOMAINS.find((item) => item.id === 'workspace-data')
+  }
   if (/browser/.test(source.file.toLowerCase()) && kind !== 'setting') {
     domain = ACTION_DOMAINS.find((item) => item.id === 'tools')
   }

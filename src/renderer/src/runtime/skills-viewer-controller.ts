@@ -1,3 +1,4 @@
+import { applySkillDeletionConfirmation } from './skill-delete-viewer-confirmation'
 import { dialogClose, isSkillsViewerDialogOpen } from './skills-viewer-dialog'
 export { useSkillsViewerDialog } from './skills-viewer-dialog'
 import {
@@ -8,58 +9,14 @@ import {
 } from './skills-child-viewer-actions'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { DiscoveredSkill } from '../../../shared/skills'
-import type { SkillsFilterState, SkillsViewerAction } from '../../../shared/skills-viewer-command'
+import type { SkillsViewerAction } from '../../../shared/skills-viewer-command'
 import { NO_SKILL_FILTERS, SkillsViewerActionSchema } from '../../../shared/skills-viewer-command'
 import type { RuntimeClientTarget } from './runtime-client-target'
+import {
+  skillsViewerSnapshot as snapshot,
+  type SkillsViewerPage as Page
+} from './skills-page-viewer-state'
 
-type Page = {
-  target: RuntimeClientTarget | null
-  filters: SkillsFilterState
-  setFilters: (value: SkillsFilterState) => void
-  agents: readonly string[]
-  visibleSkills: readonly DiscoveredSkill[]
-  visibleShareIds: readonly string[]
-  selectedIds: ReadonlySet<string>
-  setSelectedIds: (value: Set<string>) => void
-  mode: 'share' | 'delete' | null
-  setMode: (value: 'share' | 'delete' | null) => void
-  deleteSupported: boolean
-  addSelected: (current: ReadonlySet<string>, skills: readonly DiscoveredSkill[]) => Set<string>
-  view: 'skills' | 'shared'
-  changeView: (value: 'skills' | 'shared') => void
-  installOpen: boolean
-  setInstallOpen: (value: boolean) => void
-  setInstallLink: (value: string) => void
-  shareSkills: readonly DiscoveredSkill[]
-  setShareSkills: (value: DiscoveredSkill[]) => void
-  shareSelection: (ids: readonly string[]) => DiscoveredSkill[]
-  managementOpen: boolean
-  setManagementOpen: (value: boolean) => void
-  loading: boolean
-  error: boolean
-  refresh: () => Promise<void>
-}
-function snapshot(page: Page) {
-  return {
-    viewer: 'desktop' as const,
-    committed: true as const,
-    target: page.target,
-    filters: page.filters,
-    visibleSkillIds: page.view === 'skills' ? page.visibleSkills.map((skill) => skill.id) : [],
-    visibleShareIds: page.view === 'shared' ? page.visibleShareIds : [],
-    selectedSkillIds: [...page.selectedIds],
-    selectionMode: page.mode,
-    view: page.view,
-    installOpen: page.installOpen,
-    managementOpen: page.managementOpen,
-    shareOpen: page.shareSkills.length > 0,
-    detailOpen: isSkillsViewerDialogOpen('detail'),
-    freshnessOpen: isSkillsViewerDialogOpen('freshness'),
-    sharedSkillIds: page.shareSkills.map((skill) => skill.id),
-    loading: page.loading,
-    error: page.error
-  }
-}
 type ViewerState = ReturnType<typeof snapshot> & SkillsChildViewerState
 type Control = (action: SkillsViewerAction) => Promise<ViewerState>
 const mountedViewers = new Set<Control>()
@@ -83,6 +40,7 @@ export function useSkillsViewerController(page: Page): void {
   const pending = useRef<{
     target: RuntimeClientTarget | null
     refresh: boolean
+    close: boolean
     ready: boolean
     resolve: (state: ViewerState) => void
     reject: (error: Error) => void
@@ -95,7 +53,7 @@ export function useSkillsViewerController(page: Page): void {
     if (request.target !== page.target) {
       pending.current = null
       request.reject(new Error('viewer_target_changed'))
-    } else if (request.ready && (!request.refresh || !page.loading)) {
+    } else if (!request.close && request.ready && (!request.refresh || !page.loading)) {
       pending.current = null
       if (request.refresh && page.error) {
         request.reject(new Error('skills_refresh_failed'))
@@ -109,6 +67,13 @@ export function useSkillsViewerController(page: Page): void {
       const current = latest.current
       if (action.kind === 'get') {
         return snapshot(current)
+      }
+      if (action.kind === 'delete-confirmation') {
+        const confirmation = await applySkillDeletionConfirmation(action)
+        return { ...snapshot(latest.current), ...confirmation }
+      }
+      if (current.deleteRunning) {
+        throw new Error('viewer_busy')
       }
       if (
         isSkillsViewerDialogOpen('freshness') &&
@@ -209,6 +174,16 @@ export function useSkillsViewerController(page: Page): void {
         }
         closeDialog = dialogClose(kind)
       }
+      if (
+        action.kind === 'delete-selected' &&
+        (!current.deleteSupported ||
+          current.mode !== 'delete' ||
+          !current.selectedIds.size ||
+          current.view !== 'skills' ||
+          current.loading)
+      ) {
+        throw new Error('skill_selection_ineligible')
+      }
       if (action.kind === 'refresh' && current.loading) {
         throw new Error('viewer_busy')
       }
@@ -216,12 +191,19 @@ export function useSkillsViewerController(page: Page): void {
         const request = {
           target: current.target,
           refresh: action.kind === 'refresh',
+          close: action.kind === 'close',
           ready: true,
           resolve,
           reject
         }
         pending.current = request
         switch (action.kind) {
+          case 'delete-result-dismiss':
+            current.dismissDeleteResult()
+            break
+          case 'close':
+            current.close()
+            return
           case 'filter':
             current.setFilters(action.value)
             break
@@ -266,9 +248,18 @@ export function useSkillsViewerController(page: Page): void {
               current.setInstallOpen(action.open)
             }
             break
-          case 'refresh':
+          case 'delete-selected':
+          case 'refresh': {
             request.ready = false
-            void current.refresh().then(
+            const operation =
+              action.kind === 'refresh'
+                ? current.refresh()
+                : current.deleteSelected().then((completed) => {
+                    if (!completed) {
+                      throw new Error('skills_delete_not_completed')
+                    }
+                  })
+            void operation.then(
               () => {
                 if (pending.current !== request) {
                   return
@@ -285,6 +276,7 @@ export function useSkillsViewerController(page: Page): void {
               }
             )
             return
+          }
         }
         setRevision((value) => value + 1)
       })
@@ -292,7 +284,12 @@ export function useSkillsViewerController(page: Page): void {
     mountedViewers.add(control)
     return () => {
       mountedViewers.delete(control)
-      pending.current?.reject(new Error('viewer_unmounted'))
+      const request = pending.current
+      if (request?.close && request.target === latest.current.target) {
+        request.resolve({ ...snapshot(latest.current), closed: true })
+      } else {
+        request?.reject(new Error('viewer_unmounted'))
+      }
       pending.current = null
     }
   }, [])

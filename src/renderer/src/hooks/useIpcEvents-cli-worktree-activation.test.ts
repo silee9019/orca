@@ -225,7 +225,8 @@ describe('useIpcEvents CLI-created worktree activation', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
 
@@ -493,7 +494,8 @@ describe('useIpcEvents CLI-created worktree activation', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
 

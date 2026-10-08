@@ -84,8 +84,11 @@ export const TERMINAL_HANDLERS: Record<string, CommandHandler> = {
       cursorFlag !== undefined && /^\d+$/.test(cursorFlag)
         ? Number.parseInt(cursorFlag, 10)
         : undefined
-    if (cursorFlag !== undefined && cursor === undefined) {
-      throw new RuntimeClientError('invalid_argument', '--cursor must be a non-negative integer')
+    if (cursorFlag !== undefined && (cursor === undefined || !Number.isSafeInteger(cursor))) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        '--cursor must be a non-negative safe integer'
+      )
     }
     const screen = flags.get('screen') === true
     // Why: a cursor pages through accumulated output. A screen read is the current frame and has

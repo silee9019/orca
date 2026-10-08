@@ -66,19 +66,22 @@ export const AI_VAULT_METHODS = [
   defineMethod({
     name: 'aiVault.listSessions',
     params: AiVaultListSessionsParams,
-    handler: async (params, { runtime, clientKind, clientCapabilities }) => {
+    handler: async (params, { runtime, clientKind, clientCapabilities, signal }) => {
       await ensureStructuredAgentSessionHostUnlessRefused(() =>
         runtime.ensureStructuredAgentSessionHost()
       )
       let result
       try {
-        result = await runtime.listAiVaultSessions({
-          limit: params.unlimited ? undefined : params.limit,
-          unlimited: params.unlimited,
-          force: params.force,
-          scopePaths: params.scopePaths,
-          includeAntigravityIdeSessions: params.includeAntigravityIdeSessions
-        })
+        result = await runtime.listAiVaultSessions(
+          {
+            limit: params.unlimited ? undefined : params.limit,
+            unlimited: params.unlimited,
+            force: params.force,
+            scopePaths: params.scopePaths,
+            includeAntigravityIdeSessions: params.includeAntigravityIdeSessions
+          },
+          signal
+        )
       } catch (error) {
         if (error instanceof Error) {
           error.message = describeAiVaultScanError(error.message)

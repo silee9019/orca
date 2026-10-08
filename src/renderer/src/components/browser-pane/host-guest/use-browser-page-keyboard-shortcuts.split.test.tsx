@@ -10,13 +10,15 @@ import type { BrowserPageZoomCommand } from '../../../../../shared/browser-page-
 import { paneChannel } from '../client-hosted-browser-pane-test-rig'
 import type { BrowserChromeShortcutScope, GrabIntent } from '../describe-page/browser-page-types'
 import { useBrowserPageKeyboardShortcuts } from './use-browser-page-keyboard-shortcuts'
+import { useBrowserToolbarHistoryCommands } from '../assemble-chrome/use-browser-toolbar-history-commands'
+import { requestBrowserToolbar } from '@/runtime/browser-toolbar-request'
 
 // Why: the chords are Cmd on macOS and Ctrl elsewhere, so the platform cannot be left to the runner.
 const MAC_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'
 
 type FakeWebview = {
-  goBack: ReturnType<typeof vi.fn>
-  goForward: ReturnType<typeof vi.fn>
+  goBack: Mock<() => void>
+  goForward: Mock<() => void>
   getZoomLevel: () => number
   setZoomLevel: ReturnType<typeof vi.fn>
 }
@@ -76,6 +78,21 @@ function PaneHarness({
     startGrabIntent: spies.startGrabIntent,
     handleGrabActionShortcut: vi.fn(),
     grabIsInteractive: false
+  })
+  useBrowserToolbarHistoryCommands({
+    page: `page-${id}`,
+    controls: {
+      canGoBack: true,
+      canGoForward: true,
+      loading: false,
+      goBack: () => spies.webview.goBack(),
+      goForward: () => spies.webview.goForward(),
+      reload: () => spies.reload(false),
+      navigate: vi.fn()
+    },
+    nativeBack: true,
+    nativeForward: true,
+    guestAvailable: () => true
   })
   return (
     <div data-browser-overlay-tab-id={`workspace-${id}`}>
@@ -171,6 +188,20 @@ afterEach(() => {
 })
 
 describe('useBrowserPageKeyboardShortcuts in a split of two active browser panes', () => {
+  it('routes chrome, guest IPC and typed history to the same exact-page guest methods', () => {
+    const { a, b } = renderSplit('owned-target', 'owned-target')
+    press(byTestId('toolbar-b'), { key: '[', code: 'BracketLeft' })
+    press(byTestId('toolbar-b'), { key: ']', code: 'BracketRight' })
+    act(() => historyNavigate.emit({ browserPageId: 'page-b', direction: 'back' }))
+    act(() => historyNavigate.emit({ browserPageId: 'page-b', direction: 'forward' }))
+    requestBrowserToolbar('page-b', 'back', Date.now() + 1000)
+    requestBrowserToolbar('page-b', 'forward', Date.now() + 1000)
+    expect(b.webview.goBack).toHaveBeenCalledTimes(3)
+    expect(b.webview.goForward).toHaveBeenCalledTimes(3)
+    expect(a.webview.goBack).not.toHaveBeenCalled()
+    expect(a.webview.goForward).not.toHaveBeenCalled()
+  })
+
   it('acts only in the pane whose guest forwarded the chord', () => {
     const { a, b } = renderSplit('focused', 'inactive')
 

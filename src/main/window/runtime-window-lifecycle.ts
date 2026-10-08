@@ -4,6 +4,12 @@ import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
 import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
 import { registerConnectionsViewerManagement } from '../ipc/connections-viewer-management'
 import { requestConnectionsViewerFromRenderer } from './connections-viewer-request-relay'
+import { requestSettingsViewerFromRenderer } from './settings-viewer-request-relay'
+import { requestSidebarViewerFromRenderer } from './sidebar-viewer-request-relay'
+import { requestCardViewerFromRenderer } from './card-viewer-request-relay'
+import { requestStatusBarViewerFromRenderer } from './status-bar-viewer-request-relay'
+import { requestWorkspaceListViewerFromRenderer } from './workspace-list-viewer-request-relay'
+import { requestWorkspaceFilterFromRenderer } from './workspace-filter-request-relay'
 import { randomUUID } from 'node:crypto'
 
 import { ipcMain } from 'electron'
@@ -50,6 +56,12 @@ export function registerRuntimeWindowLifecycle(
     browserViewer: (command) => requestBrowserViewerFromRenderer(mainWindow, command),
     voiceViewer: (command) => requestVoiceViewerFromRenderer(mainWindow, command),
     searchSettingsViewer: (command) => requestSearchSettingsViewerFromRenderer(mainWindow, command),
+    settingsViewer: (command) => requestSettingsViewerFromRenderer(mainWindow, command),
+    sidebarViewer: (command) => requestSidebarViewerFromRenderer(mainWindow, command),
+    cardViewer: (command) => requestCardViewerFromRenderer(mainWindow, command),
+    statusBarViewer: (command) => requestStatusBarViewerFromRenderer(mainWindow, command),
+    workspaceListViewer: (command) => requestWorkspaceListViewerFromRenderer(mainWindow, command),
+    workspaceFilter: (command) => requestWorkspaceFilterFromRenderer(mainWindow, command),
     worktreesChanged: (repoId, renamed) => {
       // Why: clear scan caches before the renderer handles this event, so it can't read stale TTL entries after a mutation.
       runWorktreeChangeInvalidators(repoId)

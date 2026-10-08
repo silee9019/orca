@@ -1,4 +1,7 @@
-import { app } from 'electron'
+import { app, shell } from 'electron'
+import { createKeybindingFileOperations } from '../keybindings/keybinding-file-operations'
+import { broadcastKeybindingsChanged } from '../ipc/keybindings'
+import { setKeybindingFileOperationsForRpc } from '../runtime/rpc/methods/workspace-keybinding-file'
 import { RateLimitService } from '../rate-limits/service'
 import { CodexRuntimeHomeService } from '../codex-accounts/runtime-home-service'
 import { CodexAccountService } from '../codex-accounts/service'
@@ -177,6 +180,16 @@ export function initializeMainProcessAccountServices(): void {
       markSeeded: () => store.updateSettings({ tabSwitchKeybindingSeed: 'done' })
     }
   })
+  setKeybindingFileOperationsForRpc(
+    createKeybindingFileOperations(state.keybindings, {
+      onChanged: (snapshot) => {
+        broadcastKeybindingsChanged(snapshot)
+        void state.pluginService?.reconcileActivationState()
+      },
+      openPath: (path) => shell.openPath(path),
+      showItemInFolder: (path) => shell.showItemInFolder(path)
+    })
+  )
   browserManager.setSettingsResolver(() => ({ keybindings: state.keybindings?.getOverrides() }))
   state.rateLimits.setInactiveClaudeAccountsResolver(() => {
     const settings = store.getSettings()

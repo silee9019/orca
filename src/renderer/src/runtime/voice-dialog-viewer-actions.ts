@@ -134,6 +134,9 @@ export async function applyVoiceDialogViewerAction(
     }
     case 'model-delete-status':
       return { ...result, ...readVoiceModelDelete(command.operationId) }
+    case 'model-menu-open':
+    case 'model-menu-close':
+    case 'model-menu-status':
     case 'dictation-start':
     case 'dictation-toggle':
     case 'dictation-stop':

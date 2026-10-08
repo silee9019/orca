@@ -1,4 +1,5 @@
 import { useUsageMenuViewerController } from '../../runtime/use-usage-menu-viewer-controller'
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
 import { useAppStore } from '../../store'
@@ -287,6 +288,7 @@ export function useStatusBarController(floatingTerminalOpen: boolean) {
     showResourceUsage,
     showSsh,
     statusBarItems,
+    runtimeContextKey: getProviderRuntimeContextKey(settings),
     statusBarUsageMode,
     toggleStatusBarItem,
     usageMenuFocusHandoff,

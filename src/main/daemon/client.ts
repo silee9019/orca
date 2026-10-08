@@ -1,7 +1,5 @@
 import type { Socket } from 'node:net'
-import { readFileSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
-import { encodeNdjson } from './ndjson'
 import {
   PROTOCOL_VERSION,
   NOTIFY_PREFIX,
@@ -16,13 +14,18 @@ import {
   waitForDaemonConnectionAttempt
 } from './daemon-client-socket-connect'
 import { DaemonClientListeners } from './daemon-client-listener-registry'
-import { sameDaemonIdentity, sendDaemonHello } from './daemon-client-hello-handshake'
+import {
+  readDaemonToken,
+  sameDaemonIdentity,
+  sendDaemonHello,
+  type DaemonHelloResult
+} from './daemon-client-hello-handshake'
 import { DaemonPendingRequests } from './daemon-client-pending-requests'
 import {
   attachControlResponseReader,
   attachStreamEventReader
 } from './daemon-client-ndjson-readers'
-import { writeNotifyWithSettlement } from './daemon-client-notify-settlement'
+import { writeDaemonNotify, writeNotifyWithSettlement } from './daemon-client-notify-settlement'
 import { requestDaemonRpc } from './daemon-client-rpc-request'
 
 const CONNECT_TIMEOUT_MS = 5000
@@ -57,6 +60,7 @@ export class DaemonClient {
   private connectingPromise: Promise<void> | null = null
   private connectionAttemptGeneration = 0
   private daemonIdentity: DaemonEndpointIdentity | null = null
+  private daemonCapabilities: readonly string[] = []
   private observedAuthenticatedDisconnect = false
 
   private pendingRequests = new DaemonPendingRequests()
@@ -77,6 +81,10 @@ export class DaemonClient {
 
   getDaemonIdentity(): DaemonEndpointIdentity | null {
     return this.daemonIdentity ? { ...this.daemonIdentity } : null
+  }
+
+  hasCapability(capability: string): boolean {
+    return this.connected && this.daemonCapabilities.includes(capability)
   }
 
   hasObservedAuthenticatedDisconnect(): boolean {
@@ -114,24 +122,12 @@ export class DaemonClient {
     }
   }
 
-  // Why: a missing token must not preempt the connect that proves whether the endpoint is gone.
-  private readToken(): string {
-    try {
-      return readFileSync(this.tokenPath, 'utf-8').trim()
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException | null)?.code === 'ENOENT') {
-        return ''
-      }
-      throw error
-    }
-  }
-
   private async doConnect(
     timeoutMs: number,
     attemptGeneration: number,
     sharedBudget: boolean
   ): Promise<void> {
-    const token = this.readToken()
+    const token = readDaemonToken(this.tokenPath)
     const deadlineMs = Date.now() + timeoutMs
     const remainingMs = (): number =>
       sharedBudget ? Math.max(1, deadlineMs - Date.now()) : timeoutMs
@@ -147,13 +143,10 @@ export class DaemonClient {
       const pendingControlSocket = await connectDaemonSocket(this.socketPath, remainingMs())
       this.assertConnectionAttemptCurrent(attemptGeneration, pendingControlSocket)
       this.controlSocket = pendingControlSocket
-      const controlIdentity = await this.sendHello(
-        this.controlSocket,
-        token,
-        'control',
-        remainingMs()
-      )
+      const controlHello = await this.sendHello(this.controlSocket, token, 'control', remainingMs())
       this.assertConnectionAttemptCurrent(attemptGeneration, this.controlSocket)
+      this.daemonCapabilities = controlHello.capabilities
+      const controlIdentity = controlHello.identity
       pendingListenerCleanups.push(
         attachControlResponseReader(this.controlSocket, (response) =>
           this.pendingRequests.settle(response)
@@ -163,7 +156,12 @@ export class DaemonClient {
       const pendingStreamSocket = await connectDaemonSocket(this.socketPath, remainingMs())
       this.assertConnectionAttemptCurrent(attemptGeneration, pendingStreamSocket)
       this.streamSocket = pendingStreamSocket
-      const streamIdentity = await this.sendHello(this.streamSocket, token, 'stream', remainingMs())
+      const { identity: streamIdentity } = await this.sendHello(
+        this.streamSocket,
+        token,
+        'stream',
+        remainingMs()
+      )
       this.assertConnectionAttemptCurrent(attemptGeneration, this.streamSocket)
       if (!sameDaemonIdentity(controlIdentity, streamIdentity)) {
         throw new DaemonProtocolError('Daemon identity changed during connection')
@@ -196,6 +194,7 @@ export class DaemonClient {
       this.streamSocket = null
       this.connected = false
       this.daemonIdentity = null
+      this.daemonCapabilities = []
       this.disconnectArmed = false
       throw error
     }
@@ -240,14 +239,11 @@ export class DaemonClient {
     }
 
     const id = `${NOTIFY_PREFIX}${++this.requestCounter}`
-    const msg = { id, type, ...(payload !== undefined ? { payload } : {}) }
-    try {
-      this.controlSocket.write(encodeNdjson(msg))
-      return true
-    } catch {
-      // Notifications are best-effort; an oversized payload must not tear down the caller.
-      return false
-    }
+    return writeDaemonNotify(this.controlSocket, {
+      id,
+      type,
+      ...(payload !== undefined ? { payload } : {})
+    })
   }
 
   async notifyWithSettlement(
@@ -286,6 +282,7 @@ export class DaemonClient {
     this.connectionAttemptGeneration++
     this.connected = false
     this.daemonIdentity = null
+    this.daemonCapabilities = []
     this.disconnectArmed = false
     this.cleanupActiveSocketListeners()
 
@@ -310,7 +307,7 @@ export class DaemonClient {
     token: string,
     role: 'control' | 'stream',
     timeoutMs: number
-  ): Promise<DaemonEndpointIdentity | null> {
+  ): Promise<DaemonHelloResult> {
     return sendDaemonHello({
       socket,
       token,
@@ -332,6 +329,7 @@ export class DaemonClient {
     }
     this.connected = false
     this.daemonIdentity = null
+    this.daemonCapabilities = []
     this.cleanupActiveSocketListeners()
 
     this.pendingRequests.rejectAll('Connection lost')

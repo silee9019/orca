@@ -231,7 +231,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     expect(tabCloseListenerRef.current).toBeTypeOf('function')
@@ -459,7 +460,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     tabCloseListenerRef.current?.({
@@ -682,7 +684,8 @@ describe('useIpcEvents browser tab close routing', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     tabCloseListenerRef.current?.({
