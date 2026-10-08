@@ -1,3 +1,4 @@
+import { WORKSPACE_FILE_SEARCH_COMMAND_SPECS } from './workspace-file-search'
 import { WORKSPACE_NESTED_SCAN_COMMAND_SPECS } from './workspace-nested-scan'
 import { WORKSPACE_FILE_LIST_COMMAND_SPECS } from './workspace-file-list'
 import { WORKSPACE_DESKTOP_ADOPT_COMMAND_SPECS } from './workspace-desktop-adopt'
@@ -60,6 +61,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_FILE_SEARCH_COMMAND_SPECS,
   ...WORKSPACE_NESTED_SCAN_COMMAND_SPECS,
   ...WORKSPACE_FILE_LIST_COMMAND_SPECS,
   ...WORKSPACE_DESKTOP_ADOPT_COMMAND_SPECS,
