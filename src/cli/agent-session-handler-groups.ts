@@ -3,7 +3,7 @@ import type { HandlerGroup } from './handler-group-manifest'
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'terminal-control-watch',
-    keys: ['terminal watch-control-requests'],
+    keys: ['terminal watch-control-requests', 'terminal watch-model-restore'],
     load: async () =>
       (await import('./handlers/terminal-control-watch.js')).TERMINAL_CONTROL_WATCH_HANDLERS
   },

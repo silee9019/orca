@@ -15,6 +15,11 @@ export const TerminalControlSubscriptionParams = Target.extend({
 export type TerminalControlSubscriptionParams = z.output<typeof TerminalControlSubscriptionParams>
 const Signal = z.object({ ptyId: z.string().min(1).max(1024), rendererId })
 export const TerminalControlRequestSignal = z.union([
+  Signal.extend({
+    kind: z.literal('model-restore-needed'),
+    reason: z.enum(['hidden-drop', 'unhide', 'pending-cap', 'delivery-heal']),
+    markerSeq: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).optional()
+  }).strict(),
   Signal.extend({ kind: z.literal('clear-buffer') }).strict(),
   Signal.extend({ kind: z.literal('reset-input-modes') }).strict(),
   Signal.extend({
