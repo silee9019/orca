@@ -22,6 +22,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-file-watch',
+    keys: ['file watch-start', 'file watch-status', 'file watch-stop'],
+    load: async () =>
+      (await import('./handlers/workspace-file-watch.js')).WORKSPACE_FILE_WATCH_HANDLERS
+  },
+  {
     name: 'workspace-jira-reads',
     keys: [
       'jira search-start',
