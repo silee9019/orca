@@ -3,7 +3,6 @@ import { defineMethod } from '../core'
 import {
   DesktopPetPreferencesParams,
   DesktopPetRemoveParams,
-  DesktopPetDeleteParams,
   DesktopPetFileParams,
   DesktopPetImportParams
 } from '../../../../shared/rpc-contract/app-lifecycle-params'
@@ -83,19 +82,6 @@ export const DESKTOP_PET_METHODS = [
       return bytes
         ? { encoding: 'base64' as const, content: Buffer.from(bytes).toString('base64') }
         : null
-    }
-  }),
-  defineMethod({
-    name: 'desktopPet.delete',
-    params: DesktopPetDeleteParams,
-    handler: async (params, context) => {
-      assertDesktopAppContext(context)
-      if (params.id !== params.confirmId) {
-        throw new Error('Confirm the exact pet ID before deletion')
-      }
-      const pet = await import('../../../ipc/pet')
-      await pet.deletePetFile(params.id, params.fileName, params.kind)
-      return { state: 'requested' as const, id: params.id }
     }
   })
 ]

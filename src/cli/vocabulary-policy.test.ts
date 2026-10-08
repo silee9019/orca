@@ -58,6 +58,7 @@ describe('integrated command vocabulary aliases', () => {
     ['app cli remove', 'app cli rm'],
     ['app diagnostics delete', 'app diagnostics rm'],
     ['app onboarding get', 'app onboarding show'],
+    ['app pet remove', 'app pet rm'],
     ['file delete', 'file rm'],
     ['folder-workspace delete', 'folder-workspace rm'],
     ['linear project get', 'linear project show'],

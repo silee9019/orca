@@ -22,7 +22,6 @@ export const APP_LIFECYCLE_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'app native-menu',
       'app onboarding get',
       'app onboarding update',
-      'app pet delete',
       'app pet import',
       'app pet preferences',
       'app pet read',

@@ -80,9 +80,6 @@ export const DesktopPetFileParams = z
     kind: z.enum(['image', 'bundle']).optional()
   })
   .strict()
-export const DesktopPetDeleteParams = DesktopPetFileParams.extend({
-  confirmId: z.string().uuid()
-}).strict()
 export const DesktopDockBadgeParams = z
   .object({ count: z.number().int().min(0).max(999999) })
   .strict()

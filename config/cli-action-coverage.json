@@ -44868,14 +44868,14 @@
       "id": "api.pet.delete",
       "phase": 9,
       "bundle": "app-lifecycle",
-      "effect": "pet-api: pet.delete에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "effect": "pet-api: pet.delete에 연결된 사용자 효과는 app pet remove가 사용자 정의 pet을 잊은 뒤 같은 파일 삭제 경로로 수행합니다.",
       "owner": "app/runtime lifecycle / updater / support services; source boundary src/preload/api/pet-api.ts:pet-api",
       "host": "explicit app or server runtime; OS and consent boundaries remain intact",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Fixture/provider proof only; shared registration patch and real platform/host/renderer verification remain. No full PASS claimed.",
+      "gap": "Standalone app pet delete and the desktopPet.delete RPC were removed so app pet remove owns the deletion; its own effect evidence is not recorded yet.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "implemented",
-      "evidence": "partial",
+      "support": "internal",
+      "evidence": "unverified",
       "sources": [
         {
           "id": "api:pet.delete",
@@ -44884,13 +44884,11 @@
       ],
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
-      "candidateCommand": "app pet delete",
       "implementation": "48852378fb domain services and shared-registration.patch",
-      "evidenceFiles": ["final-tests.log", "public-cli-smoke.log"],
       "perActionLiveEffectVerified": false,
       "evidenceScope": "Domain fixture/regression and source adapter mapping; individual live effects are not verified.",
-      "command": "app pet delete",
-      "evidencePaths": []
+      "evidencePaths": [],
+      "parent": "command.app-pet-remove"
     },
     {
       "id": "api.pet.import",

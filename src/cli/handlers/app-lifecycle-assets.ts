@@ -3,7 +3,6 @@ import type { CommandHandler } from '../dispatch'
 import {
   DesktopPetPreferencesParams,
   DesktopDockBadgeParams,
-  DesktopPetDeleteParams,
   DesktopPetFileParams,
   DesktopPetImportParams,
   DesktopSelectPathParams,
@@ -69,17 +68,6 @@ export const APP_ASSET_HANDLERS: Record<string, CommandHandler> = {
         id: requiredFlag(context.flags, 'id'),
         fileName: requiredFlag(context.flags, 'file-name'),
         kind: stringFlag(context.flags, 'kind')
-      })
-    ),
-  'app pet delete': (context) =>
-    printCall(
-      context,
-      'desktopPet.delete',
-      DesktopPetDeleteParams.parse({
-        id: requiredFlag(context.flags, 'id'),
-        fileName: requiredFlag(context.flags, 'file-name'),
-        kind: stringFlag(context.flags, 'kind'),
-        confirmId: requiredFlag(context.flags, 'confirm-id')
       })
     ),
   'app shell open-url': async (context) =>

@@ -26,6 +26,7 @@ export const APP_ASSET_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['app', 'pet', 'remove'],
+    aliases: [['app', 'pet', 'rm']],
     summary: 'Remove a registered custom pet and select the fallback if needed',
     usage: 'orca app pet remove --id <id> --confirm-id <id> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'id', 'confirm-id'],
@@ -90,16 +91,6 @@ export const APP_ASSET_COMMAND_SPECS: CommandSpec[] = [
     summary: 'Read pet bytes as base64',
     usage: 'orca app pet read [--id <value>] [--file-name <value>] [--kind <value>] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'id', 'file-name', 'kind'],
-    notes: [
-      'Targets the connected runtime; paths are absolute on that host. Native desktop actions fail on a headless server. Pet import stores metadata and selection; preferences report persisted state separately from rendering. Star action requires the current app target and uses that host account. First-prompt output is private transcript content.'
-    ]
-  },
-  {
-    path: ['app', 'pet', 'delete'],
-    summary: 'Request deletion of the exact confirmed pet',
-    usage:
-      'orca app pet delete [--id <value>] [--file-name <value>] [--kind <value>] [--confirm-id <value>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'id', 'file-name', 'kind', 'confirm-id'],
     notes: [
       'Targets the connected runtime; paths are absolute on that host. Native desktop actions fail on a headless server. Pet import stores metadata and selection; preferences report persisted state separately from rendering. Star action requires the current app target and uses that host account. First-prompt output is private transcript content.'
     ]
