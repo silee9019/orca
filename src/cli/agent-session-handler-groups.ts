@@ -2,6 +2,18 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'daemon-folder-access',
+    keys: [
+      'terminal daemon folder-access-plan',
+      'terminal daemon folder-access-start',
+      'terminal daemon folder-access-status',
+      'terminal daemon folder-access-cancel',
+      'terminal daemon folder-access-complete'
+    ],
+    load: async () =>
+      (await import('./handlers/daemon-folder-access.js')).DAEMON_FOLDER_ACCESS_HANDLERS
+  },
+  {
     name: 'terminal-spawn-watch',
     keys: ['terminal watch-spawned'],
     load: async () =>
