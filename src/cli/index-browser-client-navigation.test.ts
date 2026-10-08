@@ -41,6 +41,20 @@ beforeEach(() => {
     _meta: { runtimeId: 'viewer-runtime' },
     result: {
       applied: true,
+      clientFind: {
+        target,
+        state: { open: true, query: 'needle', activeMatch: 0, totalMatches: 0 }
+      },
+      clientAddress: {
+        target,
+        state: {
+          value: 'https://draft.test/',
+          open: true,
+          focused: true,
+          selectedIndex: -1,
+          suggestions: []
+        }
+      },
       clientNavigation: {
         ...target,
         url: 'https://after.test/',
@@ -62,10 +76,10 @@ afterEach(() => {
   vi.unstubAllEnvs()
   process.exitCode = originalExitCode
 })
-function args() {
+function args(command: 'client-navigate' | 'client-address' | 'client-find') {
   return [
     'browser',
-    'client-navigate',
+    command,
     '--viewer',
     'host',
     '--worktree',
@@ -82,44 +96,68 @@ function args() {
     '3',
     '--page-host-generation',
     '4',
-    '--url',
-    'https://after.test/',
+    ...(command === 'client-navigate'
+      ? ['--url', 'https://after.test/']
+      : command === 'client-find'
+        ? ['--action', 'query', '--query', 'needle']
+        : ['--action', 'draft', '--text', 'https://draft.test/']),
     '--json'
   ]
 }
-it('passes the page environment as identity without selecting it as the viewer runtime', async () => {
-  await main(args(), tmpdir())
-  expect(process.exitCode).toBeUndefined()
-  expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
-  expect(fixture.environments).not.toHaveBeenCalled()
-  expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
-    viewer: 'host',
-    operation: 'client-navigation',
-    target,
-    url: 'https://after.test/'
-  })
-})
-it('keeps explicit viewer runtime selection independent of the page environment identity', async () => {
-  pairRuntimeEnvironment(fixture.environments, 'viewer-runtime')
-  await main([...args(), '--environment', 'viewer-runtime'], tmpdir())
-  expect(process.exitCode).toBeUndefined()
-  expect(fixture.constructor).toHaveBeenCalledWith(undefined, 'viewer-runtime')
-  expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
-    viewer: 'host',
-    operation: 'client-navigation',
-    target,
-    url: 'https://after.test/'
-  })
-})
-it('preserves ambient viewer selection without replacing the page environment identity', async () => {
-  vi.stubEnv('ORCA_ENVIRONMENT', 'viewer-runtime')
-  await main(args(), tmpdir())
-  expect(process.exitCode).toBeUndefined()
-  expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
-  expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
-    viewer: 'host',
-    operation: 'client-navigation',
-    target,
-    url: 'https://after.test/'
-  })
-})
+it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+  'passes the page environment as identity without selecting it as the viewer runtime',
+  async (command) => {
+    await main(args(command), tmpdir())
+    expect(process.exitCode).toBeUndefined()
+    expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
+    expect(fixture.environments).not.toHaveBeenCalled()
+    expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
+      viewer: 'host',
+      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      target,
+      ...(command === 'client-navigate'
+        ? { url: 'https://after.test/' }
+        : command === 'client-find'
+          ? { action: 'query', query: 'needle' }
+          : { command: { action: 'draft', text: 'https://draft.test/' } })
+    })
+  }
+)
+it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+  'keeps explicit viewer runtime selection independent of the page environment identity',
+  async (command) => {
+    pairRuntimeEnvironment(fixture.environments, 'viewer-runtime')
+    await main([...args(command), '--environment', 'viewer-runtime'], tmpdir())
+    expect(process.exitCode).toBeUndefined()
+    expect(fixture.constructor).toHaveBeenCalledWith(undefined, 'viewer-runtime')
+    expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
+      viewer: 'host',
+      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      target,
+      ...(command === 'client-navigate'
+        ? { url: 'https://after.test/' }
+        : command === 'client-find'
+          ? { action: 'query', query: 'needle' }
+          : { command: { action: 'draft', text: 'https://draft.test/' } })
+    })
+  }
+)
+it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+  'preserves ambient viewer selection without replacing the page environment identity',
+  async (command) => {
+    vi.stubEnv('ORCA_ENVIRONMENT', 'viewer-runtime')
+    await main(args(command), tmpdir())
+    expect(process.exitCode).toBeUndefined()
+    expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
+    expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
+      viewer: 'host',
+      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      target,
+      ...(command === 'client-navigate'
+        ? { url: 'https://after.test/' }
+        : command === 'client-find'
+          ? { action: 'query', query: 'needle' }
+          : { command: { action: 'draft', text: 'https://draft.test/' } })
+    })
+  }
+)

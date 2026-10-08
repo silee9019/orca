@@ -1,3 +1,4 @@
+import type { BrowserClientAddressTarget } from '../../../shared/rpc-contract/browser-client-address-params'
 import type {
   BrowserAddressCommand,
   BrowserAddressState
@@ -6,6 +7,8 @@ export type BrowserAddressEvent = {
   page: string
   command: BrowserAddressCommand
   expiresAt: number
+  clientTarget?: BrowserClientAddressTarget
+  offer: (perform: () => void) => void
   claim: () => boolean
   isSettled: () => boolean
   finish: (error?: Error, state?: BrowserAddressState) => void
@@ -20,9 +23,11 @@ declare global {
 export function requestBrowserAddress(
   page: string,
   command: BrowserAddressCommand,
-  expiresAt: number
+  expiresAt: number,
+  clientTarget?: BrowserClientAddressTarget
 ): Promise<BrowserAddressState> {
   return new Promise((resolve, reject) => {
+    const offers: (() => void)[] = []
     let claimed = false
     let settled = false
     const finish = (error?: Error, state?: BrowserAddressState): void => {
@@ -45,10 +50,15 @@ export function requestBrowserAddress(
       new CustomEvent(BROWSER_ADDRESS_COMMAND_EVENT, {
         detail: {
           page,
+          clientTarget,
           command,
           expiresAt,
           isSettled: () => settled,
+          offer: (perform: () => void) => offers.push(perform),
           claim: () => {
+            if (clientTarget) {
+              return false
+            }
             if (claimed) {
               return false
             }
@@ -59,7 +69,15 @@ export function requestBrowserAddress(
         }
       })
     )
-    if (!claimed) {
+    if (clientTarget) {
+      if (Date.now() >= expiresAt) {
+        finish(new Error('request_expired'))
+      } else if (offers.length !== 1) {
+        finish(new Error('browser_client_address_owner_unavailable_or_ambiguous'))
+      } else {
+        offers[0]?.()
+      }
+    } else if (!claimed) {
       finish(new Error('browser_address_ui_unavailable'))
     }
   })

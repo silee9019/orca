@@ -1,3 +1,4 @@
+import type { BrowserFindAction } from '@/runtime/browser-find-request'
 // @vitest-environment happy-dom
 import { tmpdir } from 'node:os'
 import { act, cleanup, render } from '@testing-library/react'
@@ -290,4 +291,464 @@ it('rejects unmount while the actual guest navigation promise is pending', async
   view.unmount()
   await expect(pending).rejects.toThrow('browser_client_navigation_owner_changed_effect_unknown')
   await act(async () => finishLoad())
+})
+
+it('edits the address through the actual materialized client Pane controller', async () => {
+  mount()
+  let result
+  await act(async () => {
+    result = await applyBrowserViewerRequest({
+      id: 'client-address',
+      expiresAt: Date.now() + 1000,
+      command: {
+        viewer: 'host',
+        operation: 'client-address',
+        target,
+        command: { action: 'draft', text: 'https://draft.test/' }
+      }
+    })
+  })
+  expect(result).toMatchObject({
+    applied: true,
+    clientAddress: { target, state: { value: 'https://draft.test/', open: true, focused: true } }
+  })
+  expect(document.querySelector('input')?.value).toBe('https://draft.test/')
+  expect(guest.loadURL).not.toHaveBeenCalled()
+})
+it('refuses duplicate client address owners before editing either field', async () => {
+  mount()
+  mount()
+  await expect(
+    applyBrowserViewerRequest({
+      id: 'duplicate-address',
+      expiresAt: Date.now() + 1000,
+      command: {
+        viewer: 'host',
+        operation: 'client-address',
+        target,
+        command: { action: 'draft', text: 'changed' }
+      }
+    })
+  ).rejects.toThrow('owner_unavailable_or_ambiguous')
+  expect(
+    Array.from(document.querySelectorAll('input')).every((input) => input.value !== 'changed')
+  ).toBe(true)
+})
+it('refuses a stale client address placement without submitting the guest', async () => {
+  mount()
+  const stale = { ...target, pageHostGeneration: target.pageHostGeneration + 1 }
+  await expect(
+    applyBrowserViewerRequest({
+      id: 'stale-address',
+      expiresAt: Date.now() + 1000,
+      command: {
+        viewer: 'host',
+        operation: 'client-address',
+        target: stale,
+        command: { action: 'draft', text: 'changed' }
+      }
+    })
+  ).rejects.toThrow('target_unavailable')
+  expect(document.querySelector('input')?.value).not.toBe('changed')
+  expect(guest.loadURL).not.toHaveBeenCalled()
+})
+it.each(['inactive', 'staged', 'restored'] as const)(
+  'refuses %s client address owners before editing',
+  async (kind) => {
+    if (kind !== 'inactive') {
+      useAppStore.setState({
+        remoteBrowserPageHandlesByPageId: {
+          [target.page]: {
+            environmentId: target.environmentId,
+            remotePageId: target.remotePageId,
+            placement,
+            ...(kind === 'staged' ? { staged: true } : { restoredFromSession: true })
+          }
+        }
+      })
+    }
+    mount(kind !== 'inactive')
+    await expect(
+      applyBrowserViewerRequest({
+        id: 'unavailable-address',
+        expiresAt: Date.now() + 1000,
+        command: {
+          viewer: 'host',
+          operation: 'client-address',
+          target,
+          command: { action: 'draft', text: 'changed' }
+        }
+      })
+    ).rejects.toThrow()
+    expect(document.querySelector('input')?.value).not.toBe('changed')
+    expect(guest.loadURL).not.toHaveBeenCalled()
+  }
+)
+it('refuses the address receipt when client generation changes while its edit is pending', async () => {
+  mount()
+  let pending
+  await act(async () => {
+    pending = applyBrowserViewerRequest({
+      id: 'pending-address',
+      expiresAt: Date.now() + 1000,
+      command: {
+        viewer: 'host',
+        operation: 'client-address',
+        target,
+        command: { action: 'draft', text: 'changed' }
+      }
+    })
+    void pending.catch(() => {})
+    useAppStore.setState({
+      remoteBrowserPageHandlesByPageId: {
+        [target.page]: {
+          environmentId: target.environmentId,
+          remotePageId: target.remotePageId,
+          placement: { ...placement, pageHostGeneration: 5 }
+        }
+      }
+    })
+  })
+  await expect(pending).rejects.toThrow('owner_changed_effect_unknown')
+})
+it('reuses the client chrome focus owner for address focus and selection', async () => {
+  mount()
+  let result
+  await act(async () => {
+    result = await applyBrowserViewerRequest({
+      id: 'focus-address',
+      expiresAt: Date.now() + 1000,
+      command: { viewer: 'host', operation: 'client-address', target, command: { action: 'focus' } }
+    })
+  })
+  const input = document.querySelector('input')
+  expect(document.activeElement).toBe(input)
+  expect(input?.selectionStart).toBe(0)
+  expect(input?.selectionEnd).toBe(input?.value.length)
+  expect(result).toMatchObject({
+    clientAddress: { state: { focused: true, open: true, chromeFocusOwnerInvoked: true } }
+  })
+})
+
+it.each(['workspace', 'handle'] as const)(
+  'rejects client address blur after same-act %s ownership ABA',
+  async (kind) => {
+    mount()
+    await act(async () => {
+      await applyBrowserViewerRequest({
+        id: 'open-address-aba',
+        expiresAt: Date.now() + 2000,
+        command: {
+          viewer: 'host',
+          operation: 'client-address',
+          target,
+          command: { action: 'open' }
+        }
+      })
+    })
+    let pending: ReturnType<typeof applyBrowserViewerRequest> | undefined
+    await act(async () => {
+      pending = applyBrowserViewerRequest({
+        id: 'blur-address-aba',
+        expiresAt: Date.now() + 2000,
+        command: {
+          viewer: 'host',
+          operation: 'client-address',
+          target,
+          command: { action: 'blur' }
+        }
+      })
+      void pending.catch(() => {})
+      if (kind === 'workspace') {
+        useAppStore.setState({ activeWorktreeId: 'folder:other' })
+        useAppStore.setState({ activeWorktreeId: target.worktreeId })
+      } else {
+        const handles = useAppStore.getState().remoteBrowserPageHandlesByPageId
+        useAppStore.setState({
+          remoteBrowserPageHandlesByPageId: {
+            [target.page]: {
+              ...handles[target.page],
+              placement: { ...placement, pageHostGeneration: 5 }
+            }
+          }
+        })
+        useAppStore.setState({ remoteBrowserPageHandlesByPageId: handles })
+      }
+    })
+    await expect(pending).rejects.toThrow('owner_changed_effect_unknown')
+  }
+)
+
+it.each(['workspace', 'handle'] as const)(
+  'rejects a captured client address offer after same-dispatch %s ABA before editing',
+  async (kind) => {
+    mount()
+    const replaceOwnership = (): void => {
+      if (kind === 'workspace') {
+        useAppStore.setState({ activeWorktreeId: 'folder:other' })
+        useAppStore.setState({ activeWorktreeId: target.worktreeId })
+      } else {
+        const handles = useAppStore.getState().remoteBrowserPageHandlesByPageId
+        useAppStore.setState({
+          remoteBrowserPageHandlesByPageId: {
+            [target.page]: {
+              ...handles[target.page],
+              placement: { ...placement, pageHostGeneration: 5 }
+            }
+          }
+        })
+        useAppStore.setState({ remoteBrowserPageHandlesByPageId: handles })
+      }
+    }
+    const dispatch = window.dispatchEvent.bind(window)
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation((event) => {
+      const result = dispatch(event)
+      if (event.type === 'orca:browser-address-command') {
+        replaceOwnership()
+      }
+      return result
+    })
+    let pending: ReturnType<typeof applyBrowserViewerRequest> | undefined
+    try {
+      await act(async () => {
+        pending = applyBrowserViewerRequest({
+          id: 'captured-address-aba',
+          expiresAt: Date.now() + 2000,
+          command: {
+            viewer: 'host',
+            operation: 'client-address',
+            target,
+            command: { action: 'draft', text: 'must-not-edit' }
+          }
+        })
+        void pending.catch(() => {})
+      })
+      await expect(pending).rejects.toThrow('owner_changed_effect_unknown')
+      expect(document.querySelector('input')?.value).not.toBe('must-not-edit')
+      expect(guest.loadURL).not.toHaveBeenCalled()
+    } finally {
+      dispatchSpy.mockRestore()
+    }
+  }
+)
+
+it('disposes the synchronous client address lifetime subscription on actual Pane unmount', () => {
+  const subscribe = useAppStore.subscribe
+  const disposed = vi.fn()
+  const subscription = vi.spyOn(useAppStore, 'subscribe').mockImplementation((listener) => {
+    const unsubscribe = subscribe(listener)
+    return () => {
+      disposed()
+      unsubscribe()
+    }
+  })
+  try {
+    const owner = mount()
+    expect(subscription).toHaveBeenCalled()
+    owner.unmount()
+    expect(disposed).toHaveBeenCalledTimes(subscription.mock.calls.length)
+  } finally {
+    subscription.mockRestore()
+  }
+})
+
+async function clientFind(action: BrowserFindAction, query?: string) {
+  let pending: ReturnType<typeof applyBrowserViewerRequest> | undefined
+  await act(async () => {
+    pending = applyBrowserViewerRequest({
+      id: 'client-find',
+      expiresAt: Date.now() + 2000,
+      command: { viewer: 'host', operation: 'client-find', target, action, query }
+    })
+    void pending.catch(() => {})
+  })
+  if (!pending) {
+    throw new Error('missing client find request')
+  }
+  return pending
+}
+it('uses the actual client Pane find owner for query, guest traversal, counts and close', async () => {
+  mount()
+  expect(await clientFind('query', 'needle')).toMatchObject({
+    clientFind: { state: { open: true, query: 'needle' } }
+  })
+  expect(
+    document.querySelector<HTMLInputElement>('input[placeholder="Find in page..."]')?.value
+  ).toBe('needle')
+  await clientFind('next')
+  expect(guest.findInPage).toHaveBeenLastCalledWith('needle', { forward: true, findNext: false })
+  await clientFind('previous')
+  expect(guest.findInPage).toHaveBeenLastCalledWith('needle', { forward: false, findNext: false })
+  act(() =>
+    guest.dispatchEvent(
+      Object.assign(new Event('found-in-page'), {
+        result: { activeMatchOrdinal: 2, matches: 3 }
+      })
+    )
+  )
+  expect(await clientFind('status')).toMatchObject({
+    clientFind: { state: { activeMatch: 2, totalMatches: 3 } }
+  })
+  expect(await clientFind('close')).toMatchObject({ clientFind: { state: { open: false } } })
+  expect(document.querySelector('input[placeholder="Find in page..."]')).toBeNull()
+  expect(guest.stopFindInPage).toHaveBeenCalledWith('clearSelection')
+  expect(guest.loadURL).not.toHaveBeenCalled()
+})
+
+it.each(['duplicate', 'inactive', 'stale', 'staged', 'restored'] as const)(
+  'refuses %s client find owners before opening or querying the guest',
+  async (kind) => {
+    if (kind === 'stale' || kind === 'staged' || kind === 'restored') {
+      useAppStore.setState({
+        remoteBrowserPageHandlesByPageId: {
+          [target.page]: {
+            environmentId: target.environmentId,
+            remotePageId: target.remotePageId,
+            placement: kind === 'stale' ? { ...placement, pageHostGeneration: 5 } : placement,
+            ...(kind === 'staged' ? { staged: true } : {}),
+            ...(kind === 'restored' ? { restoredFromSession: true } : {})
+          }
+        }
+      })
+    }
+    mount(kind !== 'inactive')
+    if (kind === 'duplicate') {
+      mount()
+    }
+    await expect(clientFind('query', 'forbidden')).rejects.toThrow()
+    expect(document.querySelector('input[placeholder="Find in page..."]')).toBeNull()
+    expect(guest.findInPage).not.toHaveBeenCalled()
+  }
+)
+it.each(['workspace', 'handle'] as const)(
+  'invalidates pending client find after same-act %s ownership ABA',
+  async (kind) => {
+    mount()
+    let pending: ReturnType<typeof applyBrowserViewerRequest> | undefined
+    await act(async () => {
+      pending = applyBrowserViewerRequest({
+        id: 'find-aba',
+        expiresAt: Date.now() + 2000,
+        command: { viewer: 'host', operation: 'client-find', target, action: 'open' }
+      })
+      void pending.catch(() => {})
+      if (kind === 'workspace') {
+        useAppStore.setState({ activeWorktreeId: 'folder:other' })
+        useAppStore.setState({ activeWorktreeId: target.worktreeId })
+      } else {
+        const handles = useAppStore.getState().remoteBrowserPageHandlesByPageId
+        useAppStore.setState({
+          remoteBrowserPageHandlesByPageId: {
+            [target.page]: {
+              ...handles[target.page],
+              placement: { ...placement, pageHostGeneration: 5 }
+            }
+          }
+        })
+        useAppStore.setState({ remoteBrowserPageHandlesByPageId: handles })
+      }
+    })
+    await expect(pending).rejects.toThrow('owner_changed_effect_unknown')
+  }
+)
+it('invalidates a captured client find offer before a restored workspace can open it', async () => {
+  mount()
+  const dispatch = window.dispatchEvent.bind(window)
+  const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation((event) => {
+    const result = dispatch(event)
+    if (event.type === 'orca:browser-find-command') {
+      useAppStore.setState({ activeWorktreeId: 'folder:other' })
+      useAppStore.setState({ activeWorktreeId: target.worktreeId })
+    }
+    return result
+  })
+  try {
+    await expect(clientFind('query', 'forbidden')).rejects.toThrow('owner_changed_effect_unknown')
+    expect(document.querySelector('input[placeholder="Find in page..."]')).toBeNull()
+    expect(guest.findInPage).not.toHaveBeenCalled()
+  } finally {
+    dispatchSpy.mockRestore()
+  }
+})
+it('rejects an oversized client find query and unavailable guest traversal', async () => {
+  mount()
+  await expect(clientFind('query', '한'.repeat(800))).rejects.toThrow()
+  expect(guest.findInPage).not.toHaveBeenCalled()
+  await clientFind('query', 'needle')
+  vi.mocked(guest.findInPage).mockImplementationOnce(() => {
+    throw new Error('guest gone')
+  })
+  await expect(clientFind('next')).rejects.toThrow('browser_find_guest_unavailable')
+})
+
+it.each(['open', 'query'] as const)(
+  'rejects client find %s commit after a hard deadline without running timeout tasks',
+  async (action) => {
+    mount()
+    const now = Date.now()
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+    let pending: ReturnType<typeof applyBrowserViewerRequest> | undefined
+    try {
+      await act(async () => {
+        pending = applyBrowserViewerRequest({
+          id: 'late-find',
+          expiresAt: now + 1000,
+          command: { viewer: 'host', operation: 'client-find', target, action, query: 'needle' }
+        })
+        void pending.catch(() => {})
+        clock.mockReturnValue(now + 1001)
+      })
+      await expect(pending).rejects.toThrow('request_expired')
+    } finally {
+      clock.mockRestore()
+    }
+  }
+)
+
+it('rejects a client find guest traversal receipt completed after its deadline', async () => {
+  mount()
+  await clientFind('query', 'needle')
+  const now = Date.now()
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+  vi.mocked(guest.findInPage).mockImplementationOnce(() => {
+    clock.mockReturnValue(now + 2001)
+    return 1
+  })
+  try {
+    await expect(clientFind('next')).rejects.toThrow('request_expired')
+  } finally {
+    clock.mockRestore()
+  }
+})
+
+it.each(['next', 'previous'] as const)(
+  'rejects %s guest traversal ownership ABA before success acknowledgement',
+  async (action) => {
+    mount()
+    await clientFind('query', 'needle')
+    vi.mocked(guest.findInPage).mockImplementationOnce(() => {
+      useAppStore.setState({ activeWorktreeId: 'folder:other' })
+      useAppStore.setState({ activeWorktreeId: target.worktreeId })
+      return 1
+    })
+    await expect(clientFind(action)).rejects.toThrow('owner_changed_effect_unknown')
+  }
+)
+it('rejects client find traversal handle ABA before success acknowledgement', async () => {
+  mount()
+  await clientFind('query', 'needle')
+  vi.mocked(guest.findInPage).mockImplementationOnce(() => {
+    const handles = useAppStore.getState().remoteBrowserPageHandlesByPageId
+    useAppStore.setState({
+      remoteBrowserPageHandlesByPageId: {
+        [target.page]: {
+          ...handles[target.page],
+          placement: { ...placement, pageHostGeneration: 5 }
+        }
+      }
+    })
+    useAppStore.setState({ remoteBrowserPageHandlesByPageId: handles })
+    return 1
+  })
+  await expect(clientFind('next')).rejects.toThrow('owner_changed_effect_unknown')
 })

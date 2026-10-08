@@ -28,7 +28,13 @@ const fixture = vi.hoisted(() => {
     provider: 'local-client'
   }
 })
-vi.mock('@/store', () => ({ useAppStore: { getState: () => fixture.getStore().getState() } }))
+vi.mock('@/store', () => ({
+  useAppStore: {
+    getState: () => fixture.getStore().getState(),
+    subscribe: (listener: Parameters<ReturnType<typeof createTestStore>['subscribe']>[0]) =>
+      fixture.getStore().subscribe(listener)
+  }
+}))
 vi.mock('@/lib/client-creation-action-policy', async (importOriginal) => {
   const actual = await importOriginal<typeof CreationPolicy>()
   return {

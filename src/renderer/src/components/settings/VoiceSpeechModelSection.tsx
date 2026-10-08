@@ -1,3 +1,4 @@
+import { useVoiceModelMenuCommands } from './use-voice-model-menu-commands'
 import { useCallback, useEffect, useState } from 'react'
 import { attachVoiceModelDeleteRequest } from '@/runtime/voice-model-delete-request'
 import { toast } from 'sonner'
@@ -43,6 +44,7 @@ export function VoiceSpeechModelSection({
 }: VoiceSpeechModelSectionProps): React.JSX.Element {
   const [pendingDeleteModelIds, setPendingDeleteModelIds] = useState<Set<string>>(() => new Set())
   const [modelMenuOpen, setModelMenuOpen] = useState(false)
+  useVoiceModelMenuCommands(modelMenuOpen, voiceSettings.enabled, setModelMenuOpen)
   const getModelState = (id: string): SpeechModelState | undefined =>
     modelStates.find((s) => s.id === id)
 

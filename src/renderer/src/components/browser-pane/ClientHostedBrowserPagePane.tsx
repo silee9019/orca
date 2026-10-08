@@ -1,3 +1,4 @@
+import { useClientHostedAddressOwner } from './navigate/use-client-hosted-address-owner'
 import { useClientHostedPageAttachment } from './navigate/use-client-hosted-page-attachment'
 import {
   useClientHostedNavigationCommands,
@@ -201,6 +202,14 @@ export function ClientHostedBrowserPagePane({
     isDefaultZoom: zoom.browserZoomPercent === zoom.browserDefaultZoomPercent
   })
 
+  const addressCommandOwner = useClientHostedAddressOwner({
+    page: browserTab.id,
+    worktreeId,
+    environmentId: runtimeEnvironmentId,
+    active: isActive && !attachmentError && !restoredPageUnrecovered,
+    placement
+  })
+
   const markup = useClientHostedBrowserMarkup({
     webviewRef,
     browserPageId: browserTab.id,
@@ -238,6 +247,7 @@ export function ClientHostedBrowserPagePane({
           }}
           addressSlot={
             <BrowserAddressBar
+              commandOwner={addressCommandOwner}
               value={addressBarValue}
               onChange={setAddressBarValue}
               onSubmit={() => navigateToUrl(addressBarValue)}
@@ -266,6 +276,7 @@ export function ClientHostedBrowserPagePane({
           percent={zoom.browserZoomPercent}
         />
         <BrowserFind
+          commandOwner={addressCommandOwner}
           browserPageId={browserTab.id}
           onOpen={() => setFindOpen(true)}
           isOpen={findOpen}

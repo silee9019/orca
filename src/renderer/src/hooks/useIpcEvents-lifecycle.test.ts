@@ -484,7 +484,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
     const browserCallback = listeners.get('ui.onBrowserViewerRequest')?.[0]?.callback
     if (!browserCallback) {
@@ -523,11 +523,13 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       'mobile.disposeHydration',
       'store.unsubscribe.0',
       'runtimeStore.unsubscribe',
-      'store.unsubscribe.2',
+      'store.unsubscribe.3',
       'agentStore.unsubscribe'
     ])
     // The background-removal bridge's row subscription, released with the rest of `unsubs`.
     expect(cleanupOrder).toContain('store.unsubscribe.1')
+    // The paired creation owner releases its independent lifetime fence.
+    expect(cleanupOrder).toContain('store.unsubscribe.2')
     expect(cleanupOrder.indexOf('runtimeEnvironment.unsubscribe')).toBeGreaterThan(
       cleanupOrder.indexOf('ipc.ui.onMobileMarkdownRequest')
     )
@@ -542,6 +544,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)
@@ -560,13 +563,14 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
     expect(
       [...listeners.values()].every((records) => records.filter((item) => item.active).length === 1)
     ).toBe(true)
-    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(3)
+    expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(4)
 
     secondCleanup()
     expect([...listeners.values()].every((records) => records.every((item) => !item.active))).toBe(
       true
     )
     expect(storeSubscriptions.filter((item) => item.active)).toHaveLength(0)
+    expect(storeSubscriptions.every((item) => item.cleanup.mock.calls.length === 1)).toBe(true)
     expect(
       [...listeners.values()].every((records) =>
         records.every((item) => item.cleanup.mock.calls.length === 1)

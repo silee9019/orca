@@ -3,10 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
-import { useBrowserFindCommands } from './use-browser-find-commands'
+import { useBrowserFindCommands, type BrowserFindCommandOwner } from './use-browser-find-commands'
 import { getFindRequestQuery } from '@/lib/find-query-bounds'
 
 type BrowserFindProps = {
+  commandOwner?: BrowserFindCommandOwner
   browserPageId?: string
   onOpen?: () => void
   isOpen: boolean
@@ -18,6 +19,7 @@ type BrowserFindProps = {
 
 export default function BrowserFind({
   browserPageId,
+  commandOwner,
   onOpen,
   isOpen,
   onClose,
@@ -176,6 +178,7 @@ export default function BrowserFind({
 
   useBrowserFindCommands({
     page: browserPageId,
+    commandOwner,
     state: { open: isOpen, query, activeMatch, totalMatches },
     open: onOpen,
     close: onClose,

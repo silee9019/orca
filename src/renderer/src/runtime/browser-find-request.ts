@@ -1,3 +1,4 @@
+import type { BrowserClientNavigationTarget } from '../../../shared/rpc-contract/browser-client-navigation-params'
 export type BrowserFindAction = 'open' | 'query' | 'next' | 'previous' | 'close' | 'status'
 export type BrowserFindState = {
   open: boolean
@@ -10,6 +11,8 @@ export type BrowserFindEvent = {
   action: BrowserFindAction
   query?: string
   expiresAt: number
+  clientTarget?: BrowserClientNavigationTarget
+  offer: (perform: () => void) => void
   isSettled: () => boolean
   claim: () => boolean
   finish: (error?: Error, state?: BrowserFindState) => void
@@ -26,9 +29,11 @@ export function requestBrowserFind(
   page: string,
   action: BrowserFindAction,
   expiresAt: number,
-  query?: string
+  query?: string,
+  clientTarget?: BrowserClientNavigationTarget
 ): Promise<BrowserFindState> {
   return new Promise((resolve, reject) => {
+    const offers: (() => void)[] = []
     let claimed = false
     let settled = false
     const timer = window.setTimeout(
@@ -38,6 +43,9 @@ export function requestBrowserFind(
     const finish = (error?: Error, state?: BrowserFindState): void => {
       if (settled) {
         return
+      }
+      if (!error && Date.now() >= expiresAt) {
+        error = new Error('request_expired')
       }
       settled = true
       window.clearTimeout(timer)
@@ -51,12 +59,14 @@ export function requestBrowserFind(
       new CustomEvent(BROWSER_FIND_COMMAND_EVENT, {
         detail: {
           page,
+          clientTarget,
+          offer: (perform: () => void) => offers.push(perform),
           action,
           query,
           expiresAt,
           isSettled: () => settled,
           claim: () => {
-            if (claimed) {
+            if (clientTarget || claimed) {
               return false
             }
             claimed = true
@@ -66,7 +76,15 @@ export function requestBrowserFind(
         }
       })
     )
-    if (!claimed) {
+    if (clientTarget) {
+      if (Date.now() >= expiresAt) {
+        finish(new Error('request_expired'))
+      } else if (offers.length !== 1) {
+        finish(new Error('browser_client_find_owner_unavailable_or_ambiguous'))
+      } else {
+        offers[0]?.()
+      }
+    } else if (!claimed) {
       finish(new Error('browser_find_ui_unavailable'))
     }
   })

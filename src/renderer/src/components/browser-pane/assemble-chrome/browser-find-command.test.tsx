@@ -85,3 +85,20 @@ it('rejects oversized UTF-8 queries and unavailable guest commands without repor
     'browser_find_guest_unavailable'
   )
 })
+
+it('rejects a native find UI commit after deadline without waiting for the timeout task', async () => {
+  render(<Fixture />)
+  const now = Date.now()
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+  let pending: Promise<BrowserFindState> | undefined
+  try {
+    await act(async () => {
+      pending = requestBrowserFind('p1', 'open', now + 1000)
+      void pending.catch(() => {})
+      clock.mockReturnValue(now + 1001)
+    })
+    await expect(pending).rejects.toThrow('request_expired')
+  } finally {
+    clock.mockRestore()
+  }
+})

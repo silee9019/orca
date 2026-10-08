@@ -1,3 +1,4 @@
+import type { WebRuntimeBrowserCreationObserver } from '@/runtime/web-runtime-browser-creation-receipt'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
 import { getClientCreationActionPolicy } from '@/lib/client-creation-action-policy'
@@ -8,17 +9,20 @@ import { translate } from '@/i18n/i18n'
 type WorkspaceBrowserShortcutCreation = Pick<
   AppState,
   'createBrowserTab' | 'openNewBrowserTabInActiveWorkspace'
-> & { worktreeId: string }
+> & { worktreeId: string; onCreationReceipt?: WebRuntimeBrowserCreationObserver }
 export function createWorkspaceBrowserShortcut({
   worktreeId,
   createBrowserTab,
-  openNewBrowserTabInActiveWorkspace
+  openNewBrowserTabInActiveWorkspace,
+  onCreationReceipt
 }: WorkspaceBrowserShortcutCreation): Promise<void | boolean> | void {
   const state = useAppStore.getState()
   const group =
     state.activeGroupIdByWorktree[worktreeId] ?? state.groupsByWorktree[worktreeId]?.[0]?.id
   if (group) {
-    return openNewBrowserTabInActiveWorkspace(group)
+    return onCreationReceipt
+      ? openNewBrowserTabInActiveWorkspace(group, onCreationReceipt)
+      : openNewBrowserTabInActiveWorkspace(group)
   }
   const availability = getClientCreationActionPolicy(state, worktreeId)['managed-browser']
   if (availability.state !== 'enabled') {
@@ -27,7 +31,12 @@ export function createWorkspaceBrowserShortcut({
   const url = state.browserDefaultUrl ?? 'about:blank'
   const environmentId = getActiveWorktreeRuntimeEnvironmentId(worktreeId)
   if (availability.provider === 'paired-runtime' && environmentId) {
-    return createWebRuntimeSessionBrowserTab({ worktreeId, environmentId, url })
+    return createWebRuntimeSessionBrowserTab({
+      worktreeId,
+      environmentId,
+      url,
+      ...(onCreationReceipt ? { onCreationReceipt } : {})
+    })
   }
   createBrowserTab(worktreeId, url, {
     title: translate('auto.components.Terminal.37da0d736f', 'New Browser Tab'),

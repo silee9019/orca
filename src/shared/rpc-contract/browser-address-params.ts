@@ -1,3 +1,4 @@
+import { openEnum } from '../zod-salvage'
 import { z } from 'zod'
 export const BrowserAddressCommand = z.discriminatedUnion('action', [
   z.object({ action: z.literal('draft'), text: z.string().max(2048) }),
@@ -20,7 +21,7 @@ export const BrowserAddressState = z.object({
       index: z.number().int(),
       url: z.string(),
       title: z.string(),
-      kind: z.enum(['workspace-doc', 'search', 'history'])
+      kind: openEnum(['workspace-doc', 'search', 'history', 'unknown'], 'unknown')
     })
   ),
   chromeFocusOwnerInvoked: z.literal(true).optional(),

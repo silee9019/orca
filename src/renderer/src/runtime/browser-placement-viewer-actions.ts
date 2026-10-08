@@ -1,3 +1,7 @@
+import { applyBrowserClientFindRequest } from './browser-client-find-request'
+import { requestBrowserNewTab } from './browser-new-tab-request'
+import { applyBrowserClientAddressRequest } from './browser-client-address-request'
+import { requestBrowserPairedNewTab } from './browser-paired-new-tab-request'
 import { requestBrowserServerReopen } from './browser-server-reopen-request'
 import { applyBrowserClientNavigationRequest } from './browser-client-navigation-request'
 import { requestBrowserGrabToast } from './browser-grab-toast-request'
@@ -45,6 +49,10 @@ export async function applyBrowserPlacementViewerAction(
         | 'browser-setup-guide'
         | 'browser-feature-wall'
         | 'client-hosted-row'
+        | 'client-address'
+        | 'client-find'
+        | 'new-tab-paired'
+        | 'new-tab'
         | 'client-navigation'
         | 'client-markup'
         | 'take-back'
@@ -126,6 +134,22 @@ export async function applyBrowserPlacementViewerAction(
   if (command.operation === 'client-hosted-row') {
     const clientHostedRow = await requestClientHostedBrowserRow(command.command, expiresAt)
     return { ...base, applied: true, page: command.command.page, clientHostedRow }
+  }
+  if (command.operation === 'new-tab') {
+    return { ...base, newTab: await requestBrowserNewTab(command.target, expiresAt), applied: true }
+  }
+  if (command.operation === 'new-tab-paired') {
+    return {
+      ...base,
+      applied: true,
+      pairedNewTab: await requestBrowserPairedNewTab(command.target, expiresAt)
+    }
+  }
+  if (command.operation === 'client-find') {
+    return applyBrowserClientFindRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-address') {
+    return applyBrowserClientAddressRequest(command, expiresAt)
   }
   if (command.operation === 'client-navigation') {
     return applyBrowserClientNavigationRequest(command, expiresAt)

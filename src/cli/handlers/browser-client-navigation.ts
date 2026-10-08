@@ -1,3 +1,4 @@
+import { readBrowserClientTargetFlags } from './browser-client-target-flags'
 import type { CommandHandler } from '../dispatch'
 import { getRequiredStringFlag } from '../flags'
 import { RuntimeClientError } from '../runtime-client'
@@ -11,15 +12,7 @@ import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
 export const BROWSER_CLIENT_NAVIGATION_HANDLERS: Record<string, CommandHandler> = {
   'browser client-navigate': async (ctx) => {
     const viewer = getRequiredStringFlag(ctx.flags, 'viewer')
-    const target = BrowserClientNavigationTarget.safeParse({
-      worktreeId: getRequiredStringFlag(ctx.flags, 'worktree'),
-      page: getRequiredStringFlag(ctx.flags, 'page'),
-      environmentId: getRequiredStringFlag(ctx.flags, 'runtime-environment'),
-      remotePageId: getRequiredStringFlag(ctx.flags, 'remote-page'),
-      browserHostClientId: getRequiredStringFlag(ctx.flags, 'browser-client'),
-      browserHostGeneration: Number(getRequiredStringFlag(ctx.flags, 'browser-host-generation')),
-      pageHostGeneration: Number(getRequiredStringFlag(ctx.flags, 'page-host-generation'))
-    })
+    const target = BrowserClientNavigationTarget.safeParse(readBrowserClientTargetFlags(ctx.flags))
     const url = BrowserClientNavigationUrl.safeParse(getRequiredStringFlag(ctx.flags, 'url'))
     if (viewer !== 'host' || !target.success || !url.success) {
       throw new RuntimeClientError(

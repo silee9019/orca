@@ -7,7 +7,6 @@ import { applyRemoteBrowserPaneViewerAction } from './browser-remote-pane-viewer
 import { applyBrowserSettingsViewerAction } from './browser-settings-viewer-actions'
 import { applyBrowserGrabRequest } from './browser-viewer-grab-request'
 import { requestBrowserDownload } from './browser-download-request'
-import { requestBrowserNewTab } from './browser-new-tab-request'
 import { requestBrowserReloadMenu } from './browser-reload-menu-request'
 import { requestBrowserAnnotationRow } from './browser-annotation-row-request'
 import { requestBrowserContextMenu } from './browser-context-menu-request'
@@ -47,10 +46,6 @@ export async function applyBrowserViewerRequest(
   if (!state.settings || !state.persistedUIReady) {
     throw new Error('viewer_not_ready')
   }
-  if (command.operation === 'new-tab') {
-    const newTab = await requestBrowserNewTab(command.target, request.expiresAt)
-    return { viewer: 'host', viewerId: 0, persisted: false, rendered: false, newTab, applied: true }
-  }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
   if (
     command.operation === 'server-reopen' ||
@@ -59,6 +54,10 @@ export async function applyBrowserViewerRequest(
     command.operation === 'egress' ||
     command.operation === 'overlay-focus' ||
     command.operation === 'client-hosted-row' ||
+    command.operation === 'client-address' ||
+    command.operation === 'client-find' ||
+    command.operation === 'new-tab-paired' ||
+    command.operation === 'new-tab' ||
     command.operation === 'client-navigation' ||
     command.operation === 'client-markup' ||
     command.operation === 'take-back' ||

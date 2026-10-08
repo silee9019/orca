@@ -1,3 +1,4 @@
+import { requestVoiceModelMenu } from './voice-model-menu-request'
 import { applyVoiceMicrophoneViewerAction } from './voice-microphone-viewer-actions'
 import { applyVmRuntimeViewerAction } from './vm-runtime-viewer-actions'
 import { applyVoiceDictationViewerAction } from './voice-dictation-viewer-actions'
@@ -24,6 +25,20 @@ export async function applyVoiceViewerRequest(
   }
   const result = { viewer: 'host' as const, applied: true, persisted: false }
   switch (command.operation) {
+    case 'model-menu-open':
+    case 'model-menu-close':
+    case 'model-menu-status':
+      return {
+        ...result,
+        modelMenuOpen: await requestVoiceModelMenu(
+          command.operation === 'model-menu-open'
+            ? 'open'
+            : command.operation === 'model-menu-close'
+              ? 'close'
+              : 'status',
+          request.expiresAt
+        )
+      }
     case 'microphones-list':
     case 'microphone-select':
     case 'microphone-request-start':

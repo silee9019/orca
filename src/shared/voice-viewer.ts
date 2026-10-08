@@ -6,6 +6,9 @@ export const VoiceViewerParams = z.discriminatedUnion('operation', [
   z.object({
     ...target,
     operation: z.enum([
+      'model-menu-open',
+      'model-menu-close',
+      'model-menu-status',
       'microphones-list',
       'microphone-request-start',
       'settings-open',
@@ -82,6 +85,7 @@ export const VoiceViewerResultSchema = z.object({
   operationId: z.string().optional(),
   requestState: z.enum(['pending', 'granted', 'denied', 'cancelled']).optional(),
   modelId: z.string().optional(),
+  modelMenuOpen: z.boolean().optional(),
   deleteState: z.enum(['pending', 'succeeded', 'failed']).optional(),
   draftPresent: z.boolean().optional(),
   vmActionState: z.enum(['pending', 'succeeded', 'failed']).optional(),
