@@ -144,6 +144,18 @@ export const WORKSPACE_PROVIDER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
     name: 'workspace-linear-data',
     keys: [
+      'linear create-issue',
+      'linear update-issue',
+      'linear add-issue-comment',
+      'linear get-issue',
+      'linear list-workspace-issues',
+      'linear search-issues',
+      'linear list-projects',
+      'linear list-teams',
+      'linear team-states',
+      'linear team-labels',
+      'linear team-members',
+
       'linear issue-comments',
       'linear project get',
       'linear project create',
