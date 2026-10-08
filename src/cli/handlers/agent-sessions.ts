@@ -69,6 +69,20 @@ const refusal = z.object({
 
 async function call(ctx: HandlerContext, method: string, params: unknown): Promise<void> {
   const response = await ctx.client.call<unknown>(method, params)
+  if (method === 'nativeChat.readSession') {
+    const failure = z
+      .object({ error: z.string(), notFound: z.boolean().optional() })
+      .safeParse(response.result)
+    if (failure.success) {
+      throw new RuntimeClientError(
+        failure.data.notFound ? 'transcript_not_found' : 'transcript_unavailable',
+        failure.data.notFound
+          ? 'The execution host has no transcript yet; retry after the agent flushes its transcript.'
+          : 'The execution host could not read the requested transcript.',
+        { notFound: failure.data.notFound === true }
+      )
+    }
+  }
   if (
     method === 'repo.hooksCheck' &&
     !z.object({ status: z.literal('ok') }).safeParse(response.result).success
