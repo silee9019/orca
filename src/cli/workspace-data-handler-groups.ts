@@ -1,3 +1,4 @@
+import { WORKSPACE_NOTEBOOK_KERNEL_HANDLER_GROUPS } from './workspace-notebook-kernel-handler-groups'
 import { WORKSPACE_LOCAL_CLONE_HANDLER_GROUPS } from './workspace-local-clone-handler-groups'
 import { WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS } from './workspace-remote-clone-handler-groups'
 import { WORKSPACE_FILE_SEARCH_HANDLER_GROUPS } from './workspace-file-search-handler-groups'
@@ -17,6 +18,7 @@ import type { HandlerGroup } from './handler-group-manifest'
 import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-groups'
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...WORKSPACE_NOTEBOOK_KERNEL_HANDLER_GROUPS,
   ...WORKSPACE_LOCAL_CLONE_HANDLER_GROUPS,
   ...WORKSPACE_REMOTE_CLONE_HANDLER_GROUPS,
   ...WORKSPACE_FILE_SEARCH_HANDLER_GROUPS,
