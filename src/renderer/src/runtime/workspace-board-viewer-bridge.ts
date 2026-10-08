@@ -10,8 +10,18 @@ import type {
   WorkspaceBoardResult,
   WorkspaceBoardSnapshot
 } from '../../../shared/workspace-board-command'
+import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
 import { attachHelpModalRequestQueue } from './help-modal-request-queue'
 import { pollPersistedUi } from './persisted-ui-readback'
+import {
+  assignmentPersisted,
+  boardShowsAssignment,
+  buildAssignmentReport,
+  changedAssignmentIds,
+  planWorkspaceAssignment,
+  type AssignmentPlan
+} from './workspace-board-assignment-plan'
+import { readBackLocalWorkspaceStatuses } from './workspace-board-local-host-readback'
 import {
   readWorkspaceBoardControl,
   readWorkspaceBoardView,
@@ -34,7 +44,7 @@ function sameStatuses(a: readonly BoardStatus[], b: readonly BoardStatus[]): boo
 }
 
 function dispatchBoardCommand(
-  command: WorkspaceBoardCommand,
+  command: Exclude<WorkspaceBoardCommand, { operation: 'assign' }>,
   statuses: readonly BoardStatus[],
   control: WorkspaceBoardControl
 ): void {
@@ -106,6 +116,8 @@ export async function applyWorkspaceBoardRequest(
     )
   }
   let dispatched = false
+  let plan: AssignmentPlan | null = null
+  let taskStatusSyncRequested = false
   if (command.operation !== 'get') {
     // Why: the board's handlers close over its last render, so wait for it to catch up with the store first.
     const settleDeadline = Math.min(request.expiresAt - 5000, Date.now() + 1000)
@@ -121,8 +133,21 @@ export async function applyWorkspaceBoardRequest(
     if (!view || !control || !boardMatchesStore(view)) {
       throw new Error('workspace_board_unavailable')
     }
-    dispatchBoardCommand(command, view.statuses, control)
-    dispatched = true
+    if (command.operation === 'assign') {
+      plan = planWorkspaceAssignment(command, view)
+      const changedIds = changedAssignmentIds(plan)
+      // Why: nothing to move means nothing is dispatched, so no write or sync is requested.
+      if (changedIds.length > 0) {
+        taskStatusSyncRequested = control.assignWorkspaces(
+          changedIds,
+          plan.statusId
+        ).taskStatusSyncRequested
+        dispatched = true
+      }
+    } else {
+      dispatchBoardCommand(command, view.statuses, control)
+      dispatched = true
+    }
   }
   const expected = useAppStore.getState()
   const statuses = expected.workspaceStatuses.map((status) => ({ ...status }))
@@ -135,7 +160,10 @@ export async function applyWorkspaceBoardRequest(
       state.workspaceBoardColumnWidth === columnWidth
     )
   }
-  const matches = (): boolean => stillExpected() && boardMatchesStore(readWorkspaceBoardView())
+  const assignedShown = (): boolean =>
+    plan === null || boardShowsAssignment(plan, readWorkspaceBoardView())
+  const matches = (): boolean =>
+    stillExpected() && boardMatchesStore(readWorkspaceBoardView()) && assignedShown()
   const persistedMatches =
     command.operation === 'column-width'
       ? (ui: { workspaceBoardColumnWidth?: number }) => ui.workspaceBoardColumnWidth === columnWidth
@@ -143,7 +171,38 @@ export async function applyWorkspaceBoardRequest(
           sameStatuses(ui.workspaceStatuses ?? [], statuses)
   const persistenceDeadline = Math.min(request.expiresAt - 100, Date.now() + 5000)
   let persisted: boolean | null = null
-  if (command.operation !== 'get') {
+  let assignment: WorkspaceBoardResult['assignment']
+  if (plan) {
+    // Why: a write that fails at once can revert the board before it is ever seen, so the host read starts
+    // without waiting for the render and stops only after the board has shown the move and then withdrawn it.
+    let wasShown = false
+    const keepReading = (): boolean => {
+      wasShown = wasShown || assignedShown()
+      return stillExpected() && (!wasShown || assignedShown())
+    }
+    const hostWrites = await readBackLocalWorkspaceStatuses({
+      targets: plan.entries
+        .filter((entry) => entry.changed && entry.workspace.hostId === LOCAL_EXECUTION_HOST_ID)
+        .map((entry) => entry.workspace),
+      statusId: plan.statusId,
+      statuses,
+      keepWaiting: keepReading,
+      deadline: persistenceDeadline
+    })
+    // A write the host never showed has reverted the board, so only a landed or unreadable one is worth waiting on.
+    const renderDeadline = Math.min(request.expiresAt - 25, Date.now() + 5000)
+    while (
+      !Array.from(hostWrites.values()).includes('not_confirmed') &&
+      stillExpected() &&
+      readWorkspaceBoardView() !== null &&
+      !assignedShown() &&
+      Date.now() < renderDeadline
+    ) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 25))
+    }
+    assignment = buildAssignmentReport(plan, hostWrites, taskStatusSyncRequested)
+    persisted = sameRuntime() ? assignmentPersisted(assignment) : null
+  } else if (command.operation !== 'get') {
     const polled = await pollPersistedUi({
       matches: persistedMatches,
       keepWaiting: stillExpected,
@@ -153,6 +212,7 @@ export async function applyWorkspaceBoardRequest(
   }
   const viewDeadline = Math.min(request.expiresAt - 25, Date.now() + 5000)
   while (
+    !plan &&
     stillExpected() &&
     readWorkspaceBoardView() !== null &&
     !matches() &&
@@ -166,7 +226,7 @@ export async function applyWorkspaceBoardRequest(
     ? ('viewer_runtime_changed' as const)
     : !stillExpected()
       ? ('viewer_surface_superseded' as const)
-      : command.operation !== 'get' && persisted === null
+      : dispatched && persisted === null
         ? ('persistence_unverifiable' as const)
         : persisted === false
           ? ('persistence_superseded' as const)
@@ -185,6 +245,7 @@ export async function applyWorkspaceBoardRequest(
     statuses,
     columnWidth,
     rendered,
+    ...(assignment ? { assignment } : {}),
     ...(reason ? { reason } : {})
   }
 }

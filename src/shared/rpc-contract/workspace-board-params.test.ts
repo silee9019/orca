@@ -11,7 +11,9 @@ it('accepts only explicit board operations for the host viewer', () => {
     { operation: 'status-move', statusId: 'in-review', direction: 'left' },
     { operation: 'status-remove', statusId: 'in-review' },
     { operation: 'column-width', width: 220 },
-    { operation: 'column-width', width: 520 }
+    { operation: 'column-width', width: 520 },
+    { operation: 'assign', workspaceIds: ['repo::/tmp/a'], statusId: 'in-review' },
+    { operation: 'assign', workspaceIds: ['a', 'b'], statusId: 'done' }
   ]) {
     expect(WorkspaceBoardParams.safeParse({ viewer: 'host', ...command }).success).toBe(true)
   }
@@ -32,7 +34,21 @@ it('accepts only explicit board operations for the host viewer', () => {
     { viewer: 'host', operation: 'column-width', width: 219 },
     { viewer: 'host', operation: 'column-width', width: 521 },
     { viewer: 'host', operation: 'column-width', width: 300.5 },
-    { viewer: 'host', operation: 'column-width', width: Number.NaN }
+    { viewer: 'host', operation: 'column-width', width: Number.NaN },
+    { viewer: 'host', operation: 'assign', statusId: 'done' },
+    { viewer: 'host', operation: 'assign', workspaceIds: [], statusId: 'done' },
+    { viewer: 'host', operation: 'assign', workspaceIds: [''], statusId: 'done' },
+    { viewer: 'host', operation: 'assign', workspaceIds: 'a', statusId: 'done' },
+    { viewer: 'host', operation: 'assign', workspaceIds: ['a'] },
+    { viewer: 'host', operation: 'assign', workspaceIds: ['a'], statusId: '' },
+    { viewer: 'host', operation: 'assign', workspaceIds: ['a'], statusId: 'done\u0000todo' },
+    { viewer: 'host', operation: 'assign', workspaceIds: ['a'], statusId: 'done', index: 0 },
+    {
+      viewer: 'host',
+      operation: 'assign',
+      workspaceIds: Array.from({ length: 513 }, (_, index) => `w${index}`),
+      statusId: 'done'
+    }
   ]) {
     expect(WorkspaceBoardParams.safeParse(command).success).toBe(false)
   }

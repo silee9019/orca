@@ -96,7 +96,8 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'ui workspace-board status-icon',
       'ui workspace-board status-move',
       'ui workspace-board status-remove',
-      'ui workspace-board column-width'
+      'ui workspace-board column-width',
+      'ui workspace-board assign'
     ],
     load: async () =>
       (await import('./handlers/workspace-board-viewer.js')).WORKSPACE_BOARD_VIEWER_HANDLERS

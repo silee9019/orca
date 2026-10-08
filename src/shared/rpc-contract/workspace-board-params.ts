@@ -8,6 +8,8 @@ import {
 
 const viewer = z.literal('host')
 const statusId = z.string().min(1)
+// Why: matches the board's drag payload cap, the largest selection it moves at once.
+const WORKSPACE_BOARD_ASSIGN_MAX_COUNT = 512
 // oxlint-disable-next-line no-control-regex -- the point is to match control characters
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/
 
@@ -50,6 +52,15 @@ export const WorkspaceBoardParams = z.discriminatedUnion('operation', [
     })
     .strict(),
   z.object({ viewer, operation: z.literal('status-remove'), statusId }).strict(),
+  z
+    .object({
+      viewer,
+      operation: z.literal('assign'),
+      workspaceIds: z.array(z.string().min(1)).min(1).max(WORKSPACE_BOARD_ASSIGN_MAX_COUNT),
+      // Why: a repeated --status reaches the parser NUL-joined and must not pick one silently.
+      statusId: statusId.refine((value) => !CONTROL_CHARACTERS.test(value))
+    })
+    .strict(),
   z
     .object({
       viewer,

@@ -1,5 +1,5 @@
 import { runViewerFixtureProcess } from './helpers/viewer-fixture-process'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
 import { WorkspaceBoardResultSchema } from '../../src/shared/workspace-board-command'
@@ -180,6 +180,115 @@ test('workspace board CLI manages status columns through the board controls', as
   ).toBe(400)
   await refused(['column-width', '--width', '521'], 'invalid_argument')
   await orcaPage.screenshot({ path: testInfo.outputPath('board-after.png') })
+
+  // Assignment goes through the board's own "Move to status" handler; this test never enables the Linear sync.
+  await orcaPage.evaluate(() =>
+    window.__store?.getState().setSyncTaskStatusFromWorkspaceBoard(false)
+  )
+  const folderPath = testInfo.outputPath('folder-project')
+  mkdirSync(folderPath, { recursive: true })
+  const folderRepoId = await orcaPage.evaluate(async (projectPath) => {
+    const added = await window.api.repos.add({ path: projectPath, kind: 'folder' })
+    if ('error' in added) {
+      throw new Error(added.error)
+    }
+    await window.__store?.getState().fetchRepos()
+    await window.__store?.getState().fetchWorktrees(added.repo.id)
+    return added.repo.id
+  }, folderPath)
+  await expect
+    .poll(async () =>
+      (await call(['get'])).rendered?.workspaces?.some((item) => item.repoId === folderRepoId)
+    )
+    .toBe(true)
+  const published = (await call(['get'])).rendered
+  expect(published?.taskStatusSyncEnabled).toBe(false)
+  const localWorkspaces = (published?.workspaces ?? []).filter((item) => item.hostId === 'local')
+  const gitWorkspace = localWorkspaces.find((item) => item.repoId !== folderRepoId)
+  const folderWorkspace = localWorkspaces.find((item) => item.repoId === folderRepoId)
+  expect(gitWorkspace).toBeTruthy()
+  expect(folderWorkspace).toBeTruthy()
+  const card = (id: string) => board.locator(`[data-workspace-board-card-id$="|${id}"]`)
+  const hostStatus = (repoId: string, id: string) =>
+    orcaPage.evaluate(
+      async (args) =>
+        (await window.api.worktrees.list({ repoId: args.repoId })).find(
+          (item) => item.id === args.id
+        )?.workspaceStatus,
+      { repoId, id }
+    )
+  for (const workspace of [gitWorkspace, folderWorkspace]) {
+    if (!workspace) {
+      continue
+    }
+    const from = workspace.statusId
+    const to = from === 'in-progress' ? 'todo' : 'in-progress'
+    const moved = await call(['assign', '--workspace', workspace.id, '--status', to])
+    expect(moved).toMatchObject({
+      dispatched: true,
+      applied: true,
+      persisted: true,
+      writeOutcome: 'unknown',
+      assignment: {
+        statusId: to,
+        taskStatusSync: 'not_requested',
+        writeFailureReporting: 'swallowed_by_store',
+        workspaces: [
+          { workspaceId: workspace.id, hostId: 'local', changed: true, hostWrite: 'confirmed' }
+        ]
+      }
+    })
+    await expect(
+      lane(to).locator(`[data-workspace-board-card-id$="|${workspace.id}"]`)
+    ).toHaveCount(1)
+    await expect(card(workspace.id)).toHaveCount(1)
+    // The test reads the host catalog through the list IPC; the bridge reads it through the host-qualified local listing.
+    expect(await hostStatus(workspace.repoId, workspace.id)).toBe(to)
+    // Moving it to the status it already has changes and writes nothing.
+    const unchanged = await call(['assign', '--workspace', workspace.id, '--status', to])
+    expect(unchanged).toMatchObject({
+      dispatched: false,
+      applied: true,
+      persisted: null,
+      assignment: { workspaces: [{ changed: false, hostWrite: 'not_requested' }] }
+    })
+    expect(unchanged).not.toHaveProperty('reason')
+  }
+  await orcaPage.screenshot({ path: testInfo.outputPath('board-assigned.png') })
+  await refused(
+    ['assign', '--workspace', 'folder:0c1d', '--status', 'todo'],
+    'workspace_folder_unsupported'
+  )
+  await refused(
+    ['assign', '--workspace', 'no-such::/workspace', '--status', 'todo'],
+    'workspace_unavailable'
+  )
+  await refused(
+    ['assign', '--workspace', gitWorkspace?.id ?? '', '--status', 'ghost'],
+    'workspace_status_unavailable'
+  )
+
+  // The card's own context menu reaches the same move and the same final state.
+  if (gitWorkspace) {
+    const cardNode = card(gitWorkspace.id)
+    const fromCli = (await call(['get'])).rendered?.workspaces?.find(
+      (item) => item.id === gitWorkspace.id
+    )?.statusId
+    const menuTarget = fromCli === 'in-review' ? 'completed' : 'in-review'
+    await cardNode.click({ button: 'right' })
+    await orcaPage.locator('[data-slot="dropdown-menu-sub-trigger"]').first().click()
+    // Why: the app renders localized labels, so pick the radio item by the status order the board shows.
+    await orcaPage
+      .locator('[data-slot="dropdown-menu-radio-item"]')
+      .nth(initialIds.indexOf(menuTarget))
+      .click()
+    await expect
+      .poll(async () =>
+        (await call(['get'])).rendered?.workspaces?.find((item) => item.id === gitWorkspace.id)
+      )
+      .toMatchObject({ statusId: menuTarget })
+    expect(await hostStatus(gitWorkspace.repoId, gitWorkspace.id)).toBe(menuTarget)
+  }
 
   // Closing the board makes it unavailable again.
   await orcaPage.locator('[data-workspace-board-trigger]').click()

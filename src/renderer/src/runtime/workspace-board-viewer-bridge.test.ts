@@ -7,6 +7,14 @@ import { makePersistedUI } from '@/store/slices/ui-slice-test-harness'
 import type { WorkspaceBoardControl } from './workspace-board-viewer-view'
 
 type Status = { id: string; label: string; color?: string; icon?: string }
+type Workspace = { id: string; repoId: string; statusId: string; hostId: string }
+type Lease = {
+  providerRequestId: string
+  waiterLeaseId: string
+  release: (reason: string) => void
+  result: Promise<unknown>
+}
+type AcquireLease = (settings: unknown, repoId: string, options: unknown) => Lease
 const initialStatuses = (): Status[] => [
   { id: 'todo', label: 'Todo', color: 'blue', icon: 'circle' },
   { id: 'doing', label: 'Doing', color: 'amber', icon: 'timer' },
@@ -21,6 +29,10 @@ const fixture = vi.hoisted(() => {
   const noStatuses = (): Status[] => []
   const noDurableStatuses = (): Status[] | undefined => undefined
   const noDurableWidth = (): number | undefined => undefined
+  const noWorkspaces = (): Workspace[] | undefined => undefined
+  const noHostWorkspaces = (): Workspace[] => []
+  const noAnswer = (): ((repoId: string) => Promise<unknown>) | null => null
+  const noAcquire = () => vi.fn<AcquireLease>()
   return {
     state: {
       settings,
@@ -35,10 +47,22 @@ const fixture = vi.hoisted(() => {
     publishedWidth: 308,
     durableStatuses: noDurableStatuses(),
     durableWidth: noDurableWidth(),
-    control: noControl()
+    control: noControl(),
+    publishedWorkspaces: noWorkspaces(),
+    hostWorkspaces: noHostWorkspaces(),
+    taskStatusSyncEnabled: false,
+    listAnswer: noAnswer(),
+    acquire: noAcquire()
   }
 })
 vi.mock('@/store', () => ({ useAppStore: { getState: () => fixture.state } }))
+vi.mock('@/store/slices/worktrees/listing/detected-worktree-refresh', () => ({
+  acquireDetectedWorktreeRefreshLeaseForRepo: (
+    settings: unknown,
+    repoId: string,
+    options: unknown
+  ) => fixture.acquire(settings, repoId, options)
+}))
 vi.mock('./workspace-board-viewer-view', () => ({
   readWorkspaceBoardControl: () => (fixture.mounted && fixture.open ? fixture.control : null),
   readWorkspaceBoardView: () =>
@@ -48,7 +72,9 @@ vi.mock('./workspace-board-viewer-view', () => ({
             fixture.viewRuntimeContextKey ?? getProviderRuntimeContextKey(fixture.state.settings),
           open: fixture.open,
           columnWidth: fixture.publishedWidth,
-          statuses: fixture.publishedStatuses
+          statuses: fixture.publishedStatuses,
+          workspaces: fixture.publishedWorkspaces,
+          taskStatusSyncEnabled: fixture.taskStatusSyncEnabled
         }
       : null
 }))
@@ -98,7 +124,22 @@ const control = (): WorkspaceBoardControl => {
       setTimeout(() => {
         fixture.durableWidth = width
       }, 0)
+    }),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId)
+      return { taskStatusSyncRequested: fixture.taskStatusSyncEnabled && ids.length > 0 }
     })
+  }
+}
+const withStatus = (workspaces: Workspace[], ids: readonly string[], statusId: string) =>
+  workspaces.map((w) => (ids.includes(w.id) ? { ...w, statusId } : w))
+// Mirrors the board: the render changes at once, the host write lands later (or never).
+function commitAssignment(ids: readonly string[], statusId: string, hostWrites = true): void {
+  fixture.publishedWorkspaces = withStatus(fixture.publishedWorkspaces ?? [], ids, statusId)
+  if (hostWrites) {
+    setTimeout(() => {
+      fixture.hostWorkspaces = withStatus(fixture.hostWorkspaces, ids, statusId)
+    }, 0)
   }
 }
 afterEach(() => {
@@ -124,6 +165,12 @@ beforeEach(() => {
     durableWidth: 308,
     control: control()
   })
+  const workspaces = initialWorkspaces()
+  Object.assign(fixture, {
+    publishedWorkspaces: workspaces,
+    hostWorkspaces: workspaces,
+    taskStatusSyncEnabled: false
+  })
   vi.stubGlobal('window', {
     api: {
       ui: {
@@ -134,7 +181,36 @@ beforeEach(() => {
       }
     }
   })
+  fixture.listAnswer = null
+  fixture.acquire = vi.fn<AcquireLease>((_settings, repoId) => ({
+    providerRequestId: 'p',
+    waiterLeaseId: 'w',
+    release: vi.fn(),
+    result: (fixture.listAnswer ?? completeAnswer)(repoId)
+  }))
 })
+// What the app's own local detected-worktree read answers from the host's catalog.
+const completeAnswer = async (repoId: string) => ({
+  status: 'complete',
+  providerRequestId: 'p',
+  repoId,
+  authority: { kind: 'local', executionHostId: 'local' },
+  result: {
+    repoId,
+    authoritative: true,
+    source: 'git',
+    worktrees: fixture.hostWorkspaces
+      .filter((w) => w.repoId === repoId)
+      .map((w) => ({ id: w.id, repoId: w.repoId, workspaceStatus: w.statusId }))
+  }
+})
+const initialWorkspaces = (): Workspace[] => [
+  { id: 'r1::/a', repoId: 'r1', statusId: 'todo', hostId: 'local' },
+  { id: 'r1::/b', repoId: 'r1', statusId: 'doing', hostId: 'local' },
+  { id: 'r2::/c', repoId: 'r2', statusId: 'todo', hostId: 'ssh:box' },
+  // A folder project's workspace is an ordinary board workspace: its id is the repo id and the folder path.
+  { id: 'folder-repo::/notes', repoId: 'folder-repo', statusId: 'todo', hostId: 'local' }
+]
 
 it('reads the board without touching it and reports a closed board as unavailable', async () => {
   expect(await applyWorkspaceBoardRequest(request({ ...host, operation: 'get' }))).toMatchObject({
@@ -206,9 +282,12 @@ it('applies each status operation through the published board control and reads 
 function beforeEachReset(): void {
   const statuses = initialStatuses()
   Object.assign(fixture.state, { workspaceStatuses: statuses })
+  const workspaces = initialWorkspaces()
   Object.assign(fixture, {
     publishedStatuses: statuses,
     durableStatuses: statuses,
+    publishedWorkspaces: workspaces,
+    hostWorkspaces: workspaces,
     control: control()
   })
 }
@@ -353,4 +432,284 @@ it('rejects an expired request without touching the board', async () => {
     applyWorkspaceBoardRequest({ ...request({ ...host, operation: 'status-add' }), expiresAt: 1 })
   ).rejects.toThrow('request_expired')
   expect(fixture.control?.addStatus).not.toHaveBeenCalled()
+})
+const assign = (workspaceIds: string[], statusId: string, validForMs?: number) =>
+  applyWorkspaceBoardRequest(
+    request({ ...host, operation: 'assign', workspaceIds, statusId }, validForMs)
+  )
+const listedRepos = (): string[] => fixture.acquire.mock.calls.map((call) => String(call[1]))
+
+it('assigns only the changed workspaces and confirms the write on the local host', async () => {
+  const result = await assign(['r1::/a', 'r1::/b'], 'doing')
+  expect(fixture.control?.assignWorkspaces).toHaveBeenCalledExactlyOnceWith(['r1::/a'], 'doing')
+  expect(result).toMatchObject({
+    dispatched: true,
+    applied: true,
+    persisted: true,
+    writeOutcome: 'unknown',
+    assignment: {
+      statusId: 'doing',
+      workspaces: [
+        { workspaceId: 'r1::/a', hostId: 'local', changed: true, hostWrite: 'confirmed' },
+        { workspaceId: 'r1::/b', hostId: 'local', changed: false, hostWrite: 'not_requested' }
+      ],
+      taskStatusSync: 'not_requested',
+      writeFailureReporting: 'swallowed_by_store'
+    }
+  })
+  expect(result.reason).toBeUndefined()
+  expect(result.rendered?.workspaces?.find((w) => w.id === 'r1::/a')?.statusId).toBe('doing')
+})
+it('treats a folder project workspace like any other local board workspace', async () => {
+  const result = await assign(['folder-repo::/notes'], 'done')
+  expect(fixture.control?.assignWorkspaces).toHaveBeenCalledExactlyOnceWith(
+    ['folder-repo::/notes'],
+    'done'
+  )
+  expect(result).toMatchObject({ applied: true, persisted: true })
+  expect(listedRepos()).toContain('folder-repo')
+})
+it('never reads or claims a write on an SSH host, so the result stays unverifiable', async () => {
+  const result = await assign(['r1::/a', 'r2::/c'], 'done')
+  expect(fixture.control?.assignWorkspaces).toHaveBeenCalledExactlyOnceWith(
+    ['r1::/a', 'r2::/c'],
+    'done'
+  )
+  expect(listedRepos()).not.toContain('r2')
+  expect(result).toMatchObject({
+    applied: true,
+    persisted: null,
+    reason: 'persistence_unverifiable',
+    assignment: {
+      workspaces: [
+        { workspaceId: 'r1::/a', hostWrite: 'confirmed' },
+        { workspaceId: 'r2::/c', hostId: 'ssh:box', hostWrite: 'unverifiable' }
+      ]
+    }
+  })
+})
+it('reports a local write the host never shows as not confirmed instead of a success', async () => {
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  expect(await assign(['r1::/a'], 'done', 700)).toMatchObject({
+    dispatched: true,
+    applied: true,
+    persisted: false,
+    reason: 'persistence_superseded',
+    assignment: { workspaces: [{ workspaceId: 'r1::/a', hostWrite: 'not_confirmed' }] }
+  })
+})
+it('reports a write the store reverted as not applied', async () => {
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      setTimeout(() => {
+        fixture.publishedWorkspaces = initialWorkspaces()
+      }, 150)
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  expect(await assign(['r1::/a'], 'done', 700)).toMatchObject({
+    applied: false,
+    persisted: false,
+    assignment: { workspaces: [{ hostWrite: 'not_confirmed' }] }
+  })
+})
+it('does not claim a write when the host list cannot be read', async () => {
+  fixture.listAnswer = () => new Promise<never>(() => undefined)
+  expect(await assign(['r1::/a'], 'done', 700)).toMatchObject({
+    persisted: null,
+    reason: 'persistence_unverifiable',
+    assignment: { workspaces: [{ hostWrite: 'unverifiable' }] }
+  })
+  const lease = fixture.acquire.mock.results.at(-1)?.value
+  expect(lease.release).toHaveBeenCalledWith('stopped')
+  fixture.listAnswer = () => Promise.reject(new Error('ipc down'))
+  expect(await assign(['r1::/b'], 'todo', 700)).toMatchObject({
+    persisted: null,
+    assignment: { workspaces: [{ hostWrite: 'unverifiable' }] }
+  })
+  fixture.acquire = vi.fn<AcquireLease>(() => {
+    throw new Error('no provider')
+  })
+  expect(await assign(['r1::/b'], 'done', 700)).toMatchObject({
+    persisted: null,
+    assignment: { workspaces: [{ hostWrite: 'unverifiable' }] }
+  })
+})
+it('waits for a delayed local write before confirming it', async () => {
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      setTimeout(() => {
+        fixture.hostWorkspaces = withStatus(fixture.hostWorkspaces, ids, statusId)
+      }, 250)
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  expect(await assign(['r1::/a'], 'done')).toMatchObject({ persisted: true, applied: true })
+  expect(listedRepos().length).toBeGreaterThan(1)
+})
+it('reports whether the board asked for a task status sync, without waiting for its outcome', async () => {
+  fixture.taskStatusSyncEnabled = true
+  expect(await assign(['r1::/a'], 'done')).toMatchObject({
+    assignment: { taskStatusSync: 'requested' }
+  })
+  // Nothing changed, so there is nothing to sync.
+  expect(await assign(['r1::/b'], 'doing')).toMatchObject({
+    dispatched: false,
+    assignment: { taskStatusSync: 'not_requested' }
+  })
+})
+it('does nothing and says so when every workspace already has the status', async () => {
+  const result = await assign(['r1::/b'], 'doing')
+  expect(fixture.control?.assignWorkspaces).not.toHaveBeenCalled()
+  expect(listedRepos()).toEqual([])
+  expect(result).toMatchObject({
+    dispatched: false,
+    applied: true,
+    persisted: null,
+    writeOutcome: 'not_requested',
+    assignment: {
+      workspaces: [{ workspaceId: 'r1::/b', changed: false, hostWrite: 'not_requested' }]
+    }
+  })
+})
+it('refuses a status, workspace or board it cannot reach before touching anything', async () => {
+  const refuse = async (ids: string[], statusId: string, message: string) => {
+    await expect(assign(ids, statusId)).rejects.toThrow(message)
+    expect(fixture.control?.assignWorkspaces).not.toHaveBeenCalled()
+  }
+  await refuse(['r1::/a'], 'ghost', 'workspace_status_unavailable')
+  await refuse(['r1::/ghost'], 'done', 'workspace_unavailable')
+  await refuse(['r1::/a', 'r1::/ghost'], 'done', 'workspace_unavailable')
+  // A folder workspace of a project group is not on the board lanes, so the board cannot move it.
+  await refuse(['folder:0c1d'], 'done', 'workspace_folder_unsupported')
+  await refuse(['r1::/a', 'folder:0c1d'], 'done', 'workspace_folder_unsupported')
+  fixture.publishedWorkspaces = undefined
+  await refuse(['r1::/a'], 'done', 'workspace_board_unavailable')
+  fixture.publishedWorkspaces = initialWorkspaces()
+  fixture.open = false
+  await refuse(['r1::/a'], 'done', 'workspace_board_unavailable')
+})
+it('asks only the local host, with an authoritative read, and never lists a remote one', async () => {
+  await assign(['r1::/a', 'r2::/c'], 'done')
+  expect(fixture.acquire).toHaveBeenCalledWith(expect.anything(), 'r1', {
+    executionHostId: 'local',
+    requireAuthoritative: true
+  })
+  expect(listedRepos()).toEqual(expect.not.arrayContaining(['r2']))
+})
+it('does not read an answer that is not an authoritative local listing as confirmed or failed', async () => {
+  for (const answer of [
+    { status: 'rejected' },
+    { status: 'ambiguous-owner' },
+    // Even a row that already shows the target must not count when the listing is not authoritative.
+    {
+      status: 'non-authoritative',
+      result: { worktrees: [{ id: 'r1::/a', repoId: 'r1', workspaceStatus: 'done' }] }
+    }
+  ]) {
+    beforeEachReset()
+    fixture.listAnswer = async () => answer
+    expect(await assign(['r1::/a'], 'done', 600)).toMatchObject({
+      persisted: null,
+      assignment: { workspaces: [{ hostWrite: 'unverifiable' }] }
+    })
+  }
+})
+it('leaves a workspace the host list does not contain unverifiable', async () => {
+  fixture.hostWorkspaces = fixture.hostWorkspaces.filter((w) => w.id !== 'r1::/a')
+  expect(await assign(['r1::/a'], 'done', 600)).toMatchObject({
+    persisted: null,
+    assignment: { workspaces: [{ hostWrite: 'unverifiable' }] }
+  })
+})
+it('reads the default status of a host row that holds none', async () => {
+  fixture.publishedWorkspaces = withStatus(fixture.publishedWorkspaces ?? [], ['r1::/a'], 'doing')
+  fixture.hostWorkspaces = fixture.hostWorkspaces.map((w) =>
+    w.id === 'r1::/a' ? { ...w, statusId: '' } : w
+  )
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  // An unset or retired host status resolves to the board's default (first) status, here todo.
+  expect(await assign(['r1::/a'], 'todo')).toMatchObject({
+    persisted: true,
+    assignment: { workspaces: [{ hostWrite: 'confirmed' }] }
+  })
+})
+it('reports a write that fails and reverts the board before the first check', async () => {
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      // The board never shows the move: the write failed and the store reverted within the same tick.
+      fixture.publishedWorkspaces = initialWorkspaces()
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  const started = Date.now()
+  expect(await assign(['r1::/a'], 'done', 1500)).toMatchObject({
+    applied: false,
+    persisted: false,
+    reason: 'persistence_superseded',
+    assignment: { workspaces: [{ hostWrite: 'not_confirmed' }] }
+  })
+  expect(fixture.acquire).toHaveBeenCalled()
+  expect(Date.now() - started).toBeLessThan(1500)
+})
+it('lets one failed local write decide the result even beside a confirmed or remote one', async () => {
+  fixture.control = {
+    ...control(),
+    assignWorkspaces: vi.fn((ids: readonly string[], statusId: string) => {
+      commitAssignment(ids, statusId, false)
+      // Only the first workspace reaches the host.
+      setTimeout(() => {
+        fixture.hostWorkspaces = withStatus(fixture.hostWorkspaces, ['r1::/a'], statusId)
+      }, 0)
+      return { taskStatusSyncRequested: false }
+    })
+  }
+  expect(await assign(['r1::/a', 'folder-repo::/notes'], 'done', 700)).toMatchObject({
+    persisted: false,
+    assignment: {
+      workspaces: [{ hostWrite: 'confirmed' }, { hostWrite: 'not_confirmed' }]
+    }
+  })
+  beforeEachReset()
+  expect(await assign(['folder-repo::/notes', 'r2::/c'], 'done', 700)).toMatchObject({
+    persisted: null,
+    assignment: { workspaces: [{ hostWrite: 'confirmed' }, { hostWrite: 'unverifiable' }] }
+  })
+})
+it('reads every local repo the moved workspaces belong to', async () => {
+  const result = await assign(['r1::/a', 'folder-repo::/notes'], 'done')
+  expect(result).toMatchObject({ persisted: true })
+  expect(listedRepos()).toEqual(expect.arrayContaining(['r1', 'folder-repo']))
+})
+it('moves a repeated id once', async () => {
+  await assign(['r1::/a', 'r1::/a'], 'done')
+  expect(fixture.control?.assignWorkspaces).toHaveBeenCalledExactlyOnceWith(['r1::/a'], 'done')
+})
+it('does not report a confirmed write for a runtime that changed during the read', async () => {
+  fixture.listAnswer = async (repoId: string) => {
+    bumpProviderRuntimeSessionGeneration()
+    return completeAnswer(repoId)
+  }
+  expect(await assign(['r1::/a'], 'done')).toMatchObject({
+    persisted: null,
+    reason: 'viewer_runtime_changed'
+  })
 })

@@ -70,6 +70,23 @@ export const WORKSPACE_BOARD_COMMAND_SPECS: CommandSpec[] = [
     ]
   },
   {
+    path: ['ui', 'workspace-board', 'assign'],
+    summary: 'Move workspaces to a status column through the board "Move to status" action',
+    usage:
+      'orca ui workspace-board assign --viewer host --workspace <id> [--workspace <id> ...] --status <id> [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'workspace', 'status'],
+    // Why: --status is single-valued; marking it repeatable makes a repeat reach validation instead of silently keeping the last.
+    repeatableFlags: ['workspace', 'status'],
+    notes: [
+      'Needs the workspace board open. Workspace and status ids come from workspace-board get; only workspaces the board lists can move, and project-group folder workspaces are refused.',
+      'Workspaces already in the status are reported unchanged and not written. A moved workspace on this computer is read back from the host catalog (persisted); on an SSH or remote host the write stays unverifiable.',
+      "The board's batch update logs a failed host write and reverts the card instead of reporting it, so assignment.writeFailureReporting is swallowed_by_store: trust persisted and each hostWrite, not the board view alone.",
+      'If the board option to sync Linear issue status is on, the move also asks it to update the linked issues. assignment.taskStatusSync says whether that was requested; its outcome is not awaited and not reported here.',
+      'The listed ids move even when the board search hides their cards. A workspace created moments ago may not be on the board yet: read workspace-board get and retry.',
+      'Position inside the column is not set.'
+    ]
+  },
+  {
     path: ['ui', 'workspace-board', 'column-width'],
     summary: 'Set the board column width in pixels',
     usage: 'orca ui workspace-board column-width --viewer host --width <220-520> [--json]',

@@ -21,7 +21,8 @@ const makeControl = () => ({
   changeStatusIcon: noop,
   moveStatus: noop,
   removeStatus: noop,
-  setColumnWidth: noop
+  setColumnWidth: noop,
+  assignWorkspaces: () => ({ taskStatusSyncRequested: false })
 })
 afterEach(() => {
   cleanup()
@@ -34,22 +35,50 @@ it('publishes a copy of the statuses with the latest control and withdraws both 
   const publishView = vi.spyOn(view, 'publishWorkspaceBoardView')
   const publishControl = vi.spyOn(view, 'publishWorkspaceBoardControl')
   const statuses = [{ id: 'todo', label: 'Todo', color: 'blue' }]
+  const workspaces = [{ id: 'r::/a', repoId: 'r', statusId: 'todo', hostId: 'local' }]
   const first = makeControl()
   const hook = renderHook((props) => useWorkspaceBoardViewerPublication(props), {
-    initialProps: { open: true, statuses, columnWidth: 308, control: first }
+    initialProps: {
+      open: true,
+      statuses,
+      columnWidth: 308,
+      workspaces,
+      taskStatusSyncEnabled: false,
+      control: first
+    }
   })
   expect(publishView).toHaveBeenLastCalledWith({
     runtimeContextKey: expect.any(String),
     open: true,
     columnWidth: 308,
-    statuses: [{ id: 'todo', label: 'Todo', color: 'blue' }]
+    statuses: [{ id: 'todo', label: 'Todo', color: 'blue' }],
+    workspaces: [{ id: 'r::/a', repoId: 'r', statusId: 'todo', hostId: 'local' }],
+    taskStatusSyncEnabled: false
   })
   expect(publishView.mock.calls.at(-1)?.[0]?.statuses[0]).not.toBe(statuses[0])
+  expect(publishView.mock.calls.at(-1)?.[0]?.workspaces?.[0]).not.toBe(workspaces[0])
   expect(publishControl).toHaveBeenLastCalledWith(first)
   const second = makeControl()
-  hook.rerender({ open: true, statuses, columnWidth: 308, control: second })
+  hook.rerender({
+    open: true,
+    statuses,
+    columnWidth: 308,
+    workspaces,
+    taskStatusSyncEnabled: true,
+    control: second
+  })
   expect(publishControl).toHaveBeenLastCalledWith(second)
-  hook.rerender({ open: false, statuses, columnWidth: 400, control: second })
+  expect(publishView).toHaveBeenLastCalledWith(
+    expect.objectContaining({ taskStatusSyncEnabled: true })
+  )
+  hook.rerender({
+    open: false,
+    statuses,
+    columnWidth: 400,
+    workspaces,
+    taskStatusSyncEnabled: true,
+    control: second
+  })
   expect(publishView).toHaveBeenLastCalledWith(
     expect.objectContaining({ open: false, columnWidth: 400 })
   )

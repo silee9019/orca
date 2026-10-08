@@ -20,7 +20,8 @@ const control = {
   changeStatusIcon: () => undefined,
   moveStatus: () => undefined,
   removeStatus: () => undefined,
-  setColumnWidth: () => undefined
+  setColumnWidth: () => undefined,
+  assignWorkspaces: () => ({ taskStatusSyncRequested: false })
 }
 const mountBoard = (width = 300): HTMLElement => {
   const node = document.createElement('div')

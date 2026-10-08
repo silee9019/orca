@@ -12,6 +12,7 @@ import { useWorkspaceKanbanOutsideDismiss } from './use-workspace-kanban-outside
 import { useWorkspaceBoardTaskStatusSync } from './use-workspace-board-task-status-sync'
 import { useWorkspaceKanbanStatusActions } from './use-workspace-kanban-status-actions'
 import { useWorkspaceKanbanWorktreeActions } from './use-workspace-kanban-worktree-actions'
+import { useWorkspaceBoardAssignment } from '@/runtime/use-workspace-board-assignment'
 import { useWorkspaceBoardViewerPublication } from '@/runtime/use-workspace-board-viewer-publication'
 import type { Worktree } from '../../../../shared/worktree/types'
 import { useContextualTour } from '@/components/contextual-tours/use-contextual-tour'
@@ -210,11 +211,20 @@ function WorkspaceKanbanDrawerContent({
     setWorkspaceStatuses,
     updateWorktreeMeta
   })
+  const { workspaces: assignableWorkspaces, assignWorkspaces } = useWorkspaceBoardAssignment({
+    boardWorktrees,
+    worktreeById,
+    workspaceStatuses,
+    syncTaskStatusFromWorkspaceBoard,
+    moveWorktreesToStatus
+  })
   // Why: a card-drag preview shows the drawer without the user having opened it.
   useWorkspaceBoardViewerPublication({
     open: open && !dragPreview,
     statuses: workspaceStatuses,
     columnWidth: workspaceBoardColumnWidth,
+    workspaces: assignableWorkspaces,
+    taskStatusSyncEnabled: syncTaskStatusFromWorkspaceBoard,
     control: {
       addStatus: handleAddStatus,
       renameStatus: handleRenameStatus,
@@ -222,7 +232,8 @@ function WorkspaceKanbanDrawerContent({
       changeStatusIcon: handleChangeStatusIcon,
       moveStatus: handleMoveStatus,
       removeStatus: handleRemoveStatus,
-      setColumnWidth: setWorkspaceBoardColumnWidth
+      setColumnWidth: setWorkspaceBoardColumnWidth,
+      assignWorkspaces
     }
   })
 

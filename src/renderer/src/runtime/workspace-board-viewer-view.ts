@@ -8,6 +8,10 @@ export type WorkspaceBoardControl = {
   moveStatus: (statusId: string, direction: -1 | 1) => void
   removeStatus: (statusId: string) => void
   setColumnWidth: (width: number) => void
+  assignWorkspaces: (
+    workspaceIds: readonly string[],
+    statusId: string
+  ) => { taskStatusSyncRequested: boolean }
 }
 
 let committed: WorkspaceBoardSnapshot | null = null
