@@ -1,3 +1,4 @@
+import { applyActivityThreadPreviewEditRequest } from './activity-thread-preview-edit-command'
 import { applyActivityThreadPreviewRequest } from './activity-thread-preview-command'
 import { applyActivityThreadCopyRequest } from './activity-thread-copy-command'
 import { applyActivityListScrollRequest } from './activity-list-scroll-command'
@@ -15,6 +16,9 @@ export function applyActivityViewerDirectRequest(
   request: ActivityViewerRequest,
   command: ActivityViewerCommand
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> | null {
+  if (command.operation === 'preview-edit') {
+    return applyActivityThreadPreviewEditRequest(request, command)
+  }
   if (command.operation === 'preview') {
     return applyActivityThreadPreviewRequest(request, command)
   }

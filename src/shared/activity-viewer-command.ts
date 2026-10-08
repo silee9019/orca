@@ -56,6 +56,15 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    editAction: z
+      .object({
+        paneKey: z.string(),
+        field: openEnum(['issue', 'comment', 'unknown'], 'unknown'),
+        opened: z.boolean(),
+        focus: openEnum(['focused', 'disabled', 'unverified', 'unknown'], 'unknown')
+      })
+      .strip()
+      .optional(),
     previewAction: z
       .object({ paneKey: z.string(), enabled: z.boolean(), visible: z.boolean().nullable() })
       .strip()

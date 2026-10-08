@@ -251,7 +251,9 @@ function previewPortal(): HTMLElement {
   portal.dataset.state = 'open'
   const action = document.createElement('div')
   action.dataset.activityPreviewCopyPath = ''
-  action.append(document.createElement('button'))
+  const button = document.createElement('button')
+  button.setAttribute('aria-label', 'Copy path')
+  action.append(button)
   portal.append(action)
   document.body.append(portal)
   return portal

@@ -46,7 +46,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'preview-copy-path' ||
+      ...(operation === 'preview-edit' ||
+      operation === 'preview-copy-path' ||
       operation === 'preview' ||
       operation === 'copy' ||
       operation === 'read-toggle' ||
@@ -58,6 +59,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
       ...(operation === 'copy' ? { kind: getRequiredStringFlag(flags, 'kind') } : {}),
+      ...(operation === 'preview-edit' ? { field: getRequiredStringFlag(flags, 'field') } : {}),
       ...(operation === 'scroll' ? { top: Number(getRequiredStringFlag(flags, 'top')) } : {}),
       ...(operation === 'resize' ? { width: Number(getRequiredStringFlag(flags, 'width')) } : {}),
       ...(operation === 'group-toggle'
@@ -100,6 +102,7 @@ export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity copy': handler('copy'),
   'ui activity preview-copy-path': handler('preview-copy-path'),
   'ui activity preview': handler('preview'),
+  'ui activity preview-edit': handler('preview-edit'),
   'ui activity close': handler('close'),
   'ui activity resize': handler('resize'),
   'ui activity scroll': handler('scroll'),

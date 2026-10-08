@@ -8,6 +8,7 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'ui activity copy',
       'ui activity preview-copy-path',
       'ui activity preview',
+      'ui activity preview-edit',
       'ui activity close',
       'ui activity resize',
       'ui activity scroll',

@@ -78,7 +78,7 @@ export function captureActivityThreadCommandTarget(
       superseded = true
     }
   }
-  const stillExpected = (): boolean => {
+  const stillOwned = (): boolean => {
     const current = readActivityViewerView(surface)
     const currentControl = readActivityNavigationControl(surface)
     const currentThread = currentControl?.visibleThreads.find(
@@ -97,7 +97,6 @@ export function captureActivityThreadCommandTarget(
       current.showChildAgents === view.showChildAgents &&
       sameActivityScope(current.scope, scope) &&
       document.querySelector(`[data-activity-viewer="${surface}"]`) === root &&
-      isActivityDestinationVisible(root) &&
       currentThread !== undefined &&
       currentThread.worktree.id === workspaceId &&
       currentThread.repo?.id === repoId &&
@@ -109,6 +108,7 @@ export function captureActivityThreadCommandTarget(
       currentControl !== null
     )
   }
+  const stillExpected = (): boolean => stillOwned() && isActivityDestinationVisible(root)
   const readCurrent = () => {
     const currentControl = readActivityNavigationControl(surface)
     const currentThread = currentControl?.visibleThreads.find(
@@ -129,6 +129,7 @@ export function captureActivityThreadCommandTarget(
     sameRuntime,
     observe,
     stillExpected,
+    stillOwned,
     readCurrent
   }
 }

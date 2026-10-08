@@ -1,3 +1,4 @@
+import { assertActivityPreviewEdit } from './helpers/activity-preview-edit-assertions'
 import { assertActivityPreview } from './helpers/activity-preview-assertions'
 import { assertActivityCopy } from './helpers/activity-copy-assertions'
 import { assertActivityScroll } from './helpers/activity-scroll-assertions'
@@ -459,6 +460,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivitySelect(orcaPage, call, testInfo)
   await assertActivityCopy(electronApp, orcaPage, call, testInfo)
   await assertActivityPreview(orcaPage, call, testInfo)
+  await assertActivityPreviewEdit(electronApp, orcaPage, call, testInfo)
   await assertActivityResize(orcaPage, call, testInfo)
   await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
   await assertActivityPageClose(orcaPage, call, testInfo)
