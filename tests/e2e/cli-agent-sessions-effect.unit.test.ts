@@ -162,3 +162,42 @@ it('dismisses the same canonical row through the public status CLI', async () =>
     _internals.resetCachesForTests()
   }
 })
+
+it('reports whether the execution host holds saved chats without launching an agent', async () => {
+  const rpc = new RpcDispatcher({
+    runtime: new OrcaRuntimeService(),
+    methods: AGENT_STATUS_CLI_METHODS
+  })
+  callMock.mockImplementation(async (method: string, params: unknown) => {
+    const response = await rpc.dispatch({ id: 'held', authToken: 'fixture', method, params })
+    if (!response.ok) {
+      throw new RuntimeRpcFailureError(response)
+    }
+    return response
+  })
+  const record = hostTestState().store.getRecord(HOST_TEST_SESSION)
+  for (const held of [false, true, false]) {
+    setStructuredAgentSessionHost(held ? hostTestState().host : null)
+    vi.mocked(console.log).mockClear()
+    await main(['agent', 'session', 'held', '--json'], hostTestState().root)
+    expect(process.exitCode).toBeUndefined()
+    const output = vi.mocked(console.log).mock.calls.at(-1)?.[0]
+    expect(typeof output).toBe('string')
+    expect(JSON.parse(String(output)).result).toEqual({ held })
+  }
+  expect(hostTestState().store.getRecord(HOST_TEST_SESSION)).toEqual(record)
+  expect(hostTestState().dispatch).not.toHaveBeenCalled()
+})
+
+it('returns an old-host error for the held-record query without a fallback', async () => {
+  callMock.mockReset().mockRejectedValue(
+    new RuntimeRpcFailureError({
+      id: 'old',
+      ok: false,
+      error: { code: 'method_not_found', message: 'Old host' }
+    })
+  )
+  await main(['agent', 'session', 'held', '--json'], hostTestState().root)
+  expect(process.exitCode).toBe(1)
+  expect(callMock).toHaveBeenCalledExactlyOnceWith('agentSession.held', {})
+})

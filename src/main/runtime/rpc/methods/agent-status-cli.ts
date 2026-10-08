@@ -1,3 +1,4 @@
+import { structuredAgentSessionsHeld } from '../../../native-chat/agent-session-wire/structured-agent-session-registry'
 import { defineMethod } from '../core'
 import { agentHookServer } from '../../../agent-hooks/server'
 import {
@@ -10,6 +11,11 @@ import {
 } from '../../../../shared/rpc-contract/agent-status-cli-params'
 
 export const AGENT_STATUS_CLI_METHODS = [
+  defineMethod({
+    name: 'agentSession.held',
+    params: AgentStatusListParams,
+    handler: () => ({ held: structuredAgentSessionsHeld() })
+  }),
   defineMethod({
     name: 'agentAwake.status',
     params: AgentStatusListParams,

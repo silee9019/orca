@@ -77,3 +77,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `terminal size`와 `terminal cwd`는 `--request-file <path|->`의 `{terminal, expectedIncarnationId?}` 대상으로 실행 provider의 크기·현재 디렉터리를 읽습니다. 조회할 수 없는 값은 null이며 로컬 호스트 값으로 대체하지 않습니다. 종료·incarnation 불일치 및 디렉터리 조회 중 대상 변경은 거부합니다.
 
 크기는 기존 UI와 같이 provider의 적용값을 우선합니다. provider가 없거나 조회에 실패하면 실행 호스트의 요청 크기 캐시를 사용하며, provider가 명시한 null은 보존합니다. 크기 응답은 프로세스 생존의 증거로 쓰지 않습니다.
+
+`orca agent session held` reads whether the execution host holds saved structured chat records or an outstanding legacy import. The query uses the same registry as desktop startup and returns only a boolean, without restoring sessions or launching an agent.

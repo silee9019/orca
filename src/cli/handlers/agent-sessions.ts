@@ -191,6 +191,7 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
     AiVaultPrepareSessionResumeParams
   ),
   'agent history read': request('nativeChat.readSession', NativeChatSession),
+  'agent session held': async (ctx) => call(ctx, 'agentSession.held', {}),
   'agent session agents': async (ctx) => call(ctx, 'agentSession.agents', AgentsParams.parse({})),
   'agent session create-support': async (ctx) => {
     const parsed = CreateSupportParams.safeParse({
