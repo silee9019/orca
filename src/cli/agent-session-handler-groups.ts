@@ -2,6 +2,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'terminal-render-evidence',
+    keys: ['terminal write-render-evidence'],
+    load: async () =>
+      (await import('./handlers/terminal-render-evidence.js')).TERMINAL_RENDER_EVIDENCE_HANDLERS
+  },
+  {
     name: 'daemon-folder-access',
     keys: [
       'terminal daemon folder-access-plan',
