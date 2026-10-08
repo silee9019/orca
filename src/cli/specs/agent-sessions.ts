@@ -20,6 +20,20 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['terminal', 'fit-overrides'],
+    summary: 'Read the execution host’s current terminal fit overrides',
+    usage: 'orca terminal fit-overrides [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: ['Reads current host state without resizing a terminal.']
+  },
+  {
+    path: ['terminal', 'drivers'],
+    summary: 'Read who currently owns terminal input and resize control',
+    usage: 'orca terminal drivers [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: ['Reads current host state without claiming or releasing control.']
+  },
+  {
     path: ['agent', 'awake', 'status'],
     summary: 'Read the execution host’s current agent awake status',
     usage: 'orca agent awake status [--json]',

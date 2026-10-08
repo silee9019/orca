@@ -67,3 +67,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 터미널의 비공개 입력은 `orca terminal send --terminal <handle> --text-file <path|->`로 전달합니다. CLI가 읽는 UTF-8 일반 파일 또는 piped stdin이며, 기존 터미널 입력 상한인 16 MiB를 적용합니다. `--text`와 함께 사용할 수 없습니다. `--enter`·`--wait-submit`·`--retry-request`의 기존 실행 호스트 확인과 재시도 계약은 동일합니다.
 
 `orca agent awake status --json`은 실행 호스트의 기존 Awake 서비스가 가진 `mode`와 `active`를 읽습니다. 조회는 모드나 절전 방지 상태를 변경하지 않습니다. 서비스가 없는 호스트에서는 `agent_awake_unavailable`로 실패합니다.
+
+`orca terminal fit-overrides --json`은 실행 호스트의 현재 fit 크기를 읽고, `orca terminal drivers --json`은 입력·크기 제어권 소유자를 읽습니다. 두 조회는 터미널 크기나 제어권을 변경하지 않습니다.

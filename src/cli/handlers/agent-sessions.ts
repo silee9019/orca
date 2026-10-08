@@ -170,6 +170,8 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent terminal ensure': request('terminal.ensureAgentSession', EnsureAgentSessionParams),
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
+  'terminal fit-overrides': async (ctx) => call(ctx, 'terminal.fitOverrides', {}),
+  'terminal drivers': async (ctx) => call(ctx, 'terminal.drivers', {}),
   'agent awake status': async (ctx) => call(ctx, 'agentAwake.status', {}),
   'agent status list': async (ctx) => call(ctx, 'agentStatus.list', {}),
   'agent status dismiss': request('agentStatus.dismiss', AgentStatusDismissParams),
