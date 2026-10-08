@@ -25,7 +25,8 @@ export async function applyActivityViewerRequest(
   if (initial.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
   }
-  if (command.operation !== 'get' && command.operation !== 'search' && !window.api.ui.setWithAck) {
+  const localSearch = command.operation === 'search' || command.operation === 'search-clear'
+  if (command.operation !== 'get' && !localSearch && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
   }
   const runtime = getProviderRuntimeContextKey(initial.settings)
@@ -34,7 +35,7 @@ export async function applyActivityViewerRequest(
     return settings !== null && getProviderRuntimeContextKey(settings) === runtime
   }
   const searchControl =
-    command.operation === 'search' || command.operation === 'search-visible'
+    localSearch || command.operation === 'search-visible'
       ? captureActivitySearchControl(command.surface)
       : null
   if (searchControl && !readActivityViewerView(command.surface)) {
@@ -46,6 +47,19 @@ export async function applyActivityViewerRequest(
       throw new Error('activity_search_unavailable')
     }
     searchControl?.setQuery(command.query)
+  }
+  if (command.operation === 'search-clear') {
+    const input = searchControl?.getInput()
+    const button = input?.parentElement?.querySelector('[data-activity-search-clear]')
+    if (
+      !(button instanceof HTMLButtonElement) ||
+      !button.isConnected ||
+      button.disabled ||
+      button.getBoundingClientRect().width <= 0
+    ) {
+      throw new Error('activity_search_unavailable')
+    }
+    button.click()
   }
   let saving: Promise<void> | undefined
   if (command.operation === 'search-visible') {
@@ -72,7 +86,8 @@ export async function applyActivityViewerRequest(
   const requestedQuery =
     command.operation === 'search'
       ? command.query
-      : command.operation === 'search-visible' && !command.enabled
+      : command.operation === 'search-clear' ||
+          (command.operation === 'search-visible' && !command.enabled)
         ? ''
         : undefined
   const stillExpected = (): boolean => {
@@ -97,7 +112,7 @@ export async function applyActivityViewerRequest(
       )
     : 'not_requested'
   const ui =
-    sameRuntime() && command.operation !== 'search'
+    sameRuntime() && !localSearch
       ? await withTimeout<PersistedUIState | null>(
           window.api.ui.get(),
           Math.max(0, request.expiresAt - Date.now() - 50),
@@ -138,6 +153,9 @@ export async function applyActivityViewerRequest(
         (view.query === requestedQuery && searchControl?.getQuery() === requestedQuery)) &&
       (searchControl === null || captureActivitySearchControl(command.surface) === searchControl) &&
       (command.operation !== 'search' || searchControl?.getInput()?.value === command.query) &&
+      (command.operation !== 'search-clear' ||
+        (searchControl?.getInput()?.value === '' &&
+          searchControl?.getInput() === document.activeElement)) &&
       (command.operation !== 'search-visible' ||
         (command.enabled
           ? searchControl?.getInput() === document.activeElement
@@ -162,7 +180,7 @@ export async function applyActivityViewerRequest(
       ? ('viewer_surface_superseded' as const)
       : writeOutcome === 'rejected'
         ? ('persistence_failed' as const)
-        : persisted === null && command.operation !== 'search'
+        : persisted === null && !localSearch
           ? ('persistence_unverifiable' as const)
           : persisted === false
             ? ('persistence_superseded' as const)
@@ -176,7 +194,7 @@ export async function applyActivityViewerRequest(
   return {
     viewer: 'host',
     surface: command.surface,
-    dispatched: saving !== undefined || command.operation === 'search',
+    dispatched: saving !== undefined || localSearch,
     applied,
     persisted,
     writeOutcome,

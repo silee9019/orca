@@ -63,5 +63,6 @@ export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity compact': handler('compact'),
   'ui activity children': handler('children'),
   'ui activity search': handler('search'),
+  'ui activity search-clear': handler('search-clear'),
   'ui activity search-visible': handler('search-visible')
 }

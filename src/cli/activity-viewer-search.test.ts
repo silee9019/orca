@@ -88,3 +88,24 @@ it('rejects sidebar-only visibility on the Activity page before RPC', async () =
   ).rejects.toThrow('supported Activity')
   expect(call).not.toHaveBeenCalled()
 })
+
+it('parses page clear without an enabled flag and rejects a sidebar clear before RPC', async () => {
+  const parsed = parseArgs(
+    ['ui', 'activity', 'search-clear', '--viewer', 'host', '--surface', 'activity-page'],
+    COMMAND_SPECS.map((spec) => spec.path),
+    COMMAND_SPECS
+  )
+  expect(parsed.commandPath).toEqual(['ui', 'activity', 'search-clear'])
+  await expect(
+    dispatch(parsed.commandPath, {
+      client,
+      flags: new Map([
+        ['viewer', 'host'],
+        ['surface', 'sidebar-agents']
+      ]),
+      cwd: '/unused',
+      json: true
+    })
+  ).rejects.toThrow('supported Activity')
+  expect(call).not.toHaveBeenCalled()
+})

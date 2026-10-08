@@ -281,6 +281,16 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await expect(rows).toHaveCount(1)
   await expect(rows.first()).toContainText('Activity task a')
   await list.screenshot({ path: testInfo.outputPath('page-search.png') })
+  expect(await call(['activity', 'search-clear'])).toMatchObject({
+    applied: true,
+    persisted: null,
+    writeOutcome: 'not_requested'
+  })
+  await expect(pageSearch).toHaveValue('')
+  await expect(pageSearch).toBeFocused()
+  await expect(rows).toHaveCount(3)
+  await expect(list.locator('[data-activity-search-clear]')).toHaveCount(0)
+  await list.screenshot({ path: testInfo.outputPath('page-search-cleared.png') })
   expect(await call(['activity', 'search', '--query', '없는 검색어'])).toMatchObject({
     applied: true
   })

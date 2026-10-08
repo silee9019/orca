@@ -26,6 +26,13 @@ export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z
     .object({
       ...target,
+      surface: z.literal('activity-page'),
+      operation: z.literal('search-clear')
+    })
+    .strict(),
+  z
+    .object({
+      ...target,
       surface: z.literal('sidebar-agents'),
       operation: z.literal('search-visible'),
       enabled: z.boolean()

@@ -206,3 +206,46 @@ it('keeps unavailable host readback separate from the visible search input', asy
   await vi.advanceTimersByTimeAsync(200)
   expect(await pending).toMatchObject({ persisted: null, reason: 'persistence_unverifiable' })
 })
+
+it('clears through the visible page button parent and preserves input focus without saving', async () => {
+  remove?.()
+  await setShowSearch(true)
+  setQuery('task')
+  const wrapper = document.createElement('div')
+  if (!input) {
+    throw new Error('input unavailable')
+  }
+  wrapper.append(input)
+  document.body.append(wrapper)
+  const button = document.createElement('button')
+  button.dataset.activitySearchClear = ''
+  const clicked = vi.fn(() => {
+    queueMicrotask(() => setQuery(''))
+    input?.focus()
+    button.remove()
+  })
+  button.addEventListener('click', clicked)
+  vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 20, 20))
+  wrapper.append(button)
+  button.focus()
+  remove = publishActivitySearchControl('activity-page', {
+    getInput: () => input,
+    getQuery: () => fixture.query,
+    setQuery
+  })
+  expect(
+    await run({ viewer: 'host', surface: 'activity-page', operation: 'search-clear' })
+  ).toMatchObject({
+    applied: true,
+    persisted: null,
+    writeOutcome: 'not_requested'
+  })
+  expect(clicked).toHaveBeenCalledTimes(1)
+  expect(input).toBe(document.activeElement)
+  expect(window.api.ui.get).not.toHaveBeenCalled()
+  expect(window.api.ui.setWithAck).not.toHaveBeenCalled()
+  await expect(
+    run({ viewer: 'host', surface: 'activity-page', operation: 'search-clear' })
+  ).rejects.toThrow('activity_search_unavailable')
+  expect(clicked).toHaveBeenCalledTimes(1)
+})
