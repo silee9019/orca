@@ -4,11 +4,23 @@ import {
 } from '../../shared/rpc-contract/activity-viewer-params'
 import { ActivityViewerResultSchema } from '../../shared/activity-viewer-command'
 import type { CommandHandler } from '../dispatch'
-import { getRequiredStringFlag } from '../flags'
+import { getOptionalJsonFlag, getRequiredStringFlag } from '../flags'
 import { printResult } from '../format'
 import { RuntimeClientError } from '../runtime-client'
 function handler(operation: ActivityViewerCommand['operation']): CommandHandler {
   return async ({ client, flags, json }) => {
+    let paneKeys: unknown
+    if (operation === 'read-toggle-many') {
+      const raw = getOptionalJsonFlag(flags, 'panes')
+      try {
+        paneKeys = JSON.parse(raw ?? 'null')
+      } catch {
+        throw new RuntimeClientError(
+          'invalid_argument',
+          'Use --panes with a JSON array of pane keys.'
+        )
+      }
+    }
     const enabled =
       operation === 'compact' || operation === 'children' || operation === 'search-visible'
         ? getRequiredStringFlag(flags, 'enabled')
@@ -31,6 +43,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
+      ...(operation === 'read-toggle' ? { paneKey: getRequiredStringFlag(flags, 'pane') } : {}),
+      ...(operation === 'read-toggle-many' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
       ...(operation === 'origin'
         ? { kind: getRequiredStringFlag(flags, 'kind'), hidden: hidden === 'true' }
@@ -67,6 +81,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity mark-all-read': handler('mark-all-read'),
+  'ui activity read-toggle': handler('read-toggle'),
+  'ui activity read-toggle-many': handler('read-toggle-many'),
   'ui activity origin': handler('origin'),
   'ui activity scope-reset': handler('scope-reset'),
   'ui activity host-toggle': handler('host-toggle'),

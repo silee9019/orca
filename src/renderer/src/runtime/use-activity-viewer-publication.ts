@@ -13,7 +13,7 @@ import {
   getActivityVirtualItemKey,
   type ActivityVirtualItemDescriptor
 } from '@/components/activity/activity-thread-virtual-items'
-import { publishActivityViewerView } from './activity-viewer-view'
+import { publishActivityViewerView, type ActivityThreadReadCallbacks } from './activity-viewer-view'
 
 export function useActivityViewerPublication(
   surface: ActivityViewerSurface | undefined,
@@ -27,7 +27,10 @@ export function useActivityViewerPublication(
     | 'querySettled'
     | 'query'
     | 'selectedPaneKey'
-  > & { markAllRead?: { run?: () => void; hasUnreadThreads: boolean } }
+  > & {
+    markAllRead?: { run?: () => void; hasUnreadThreads: boolean }
+    threadReads?: ActivityThreadReadCallbacks
+  }
 ): void {
   const context = useAppStore(
     useShallow((state) => ({
@@ -44,6 +47,8 @@ export function useActivityViewerPublication(
     preferences
   const markAllRead = preferences.markAllRead?.run
   const hasUnreadThreads = preferences.markAllRead?.hasUnreadThreads
+  const { allThreads, markRead, markUnread, markManyRead, markManyUnread, canMarkUnread } =
+    preferences.threadReads ?? {}
   useLayoutEffect(() => {
     if (!surface) {
       return
@@ -78,7 +83,21 @@ export function useActivityViewerPublication(
               : null
         }))
       },
-      markAllRead
+      {
+        markAllRead,
+        threadReads:
+          allThreads && markRead && markUnread && markManyRead && markManyUnread && canMarkUnread
+            ? {
+                allThreads,
+                markRead,
+                markUnread,
+                markManyRead,
+                markManyUnread,
+                canMarkUnread,
+                visibleThreads: rows.flatMap((row) => (row.type === 'thread' ? [row.thread] : []))
+              }
+            : undefined
+      }
     )
     return () => publishActivityViewerView(surface, null)
   }, [
@@ -93,6 +112,12 @@ export function useActivityViewerPublication(
     query,
     selectedPaneKey,
     hasUnreadThreads,
-    markAllRead
+    markAllRead,
+    allThreads,
+    markRead,
+    markUnread,
+    markManyRead,
+    markManyUnread,
+    canMarkUnread
   ])
 }

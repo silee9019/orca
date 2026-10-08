@@ -1,4 +1,9 @@
 import {
+  attachActivityViewerRequestQueue,
+  type ActivityViewerBridgeApi
+} from './activity-viewer-request-queue'
+export type { ActivityViewerBridgeApi } from './activity-viewer-request-queue'
+import {
   applyActivityScopeCommand,
   isActivityScopeCommand,
   readActivityScope,
@@ -12,10 +17,19 @@ import type { PersistedUIState } from '../../../shared/persisted-ui-state-types'
 import { ActivityViewerParams } from '../../../shared/rpc-contract/activity-viewer-params'
 import type {
   ActivityViewerRequest,
-  ActivityViewerResult,
-  ActivityViewerResponse
+  ActivityViewerResult
 } from '../../../shared/activity-viewer-command'
-import { readActivityMarkAllReadControl, readActivityViewerView } from './activity-viewer-view'
+import {
+  readActivityMarkAllReadControl,
+  readActivityThreadReadControl,
+  readActivityViewerView
+} from './activity-viewer-view'
+import {
+  applyActivityThreadReadCommand,
+  activityThreadReadApplied,
+  readActivityThreadReadStates,
+  sameActivityThreadReadCallbacks
+} from './activity-thread-read-command'
 import { captureActivitySearchControl } from './activity-search-controls'
 
 export async function applyActivityViewerRequest(
@@ -34,18 +48,26 @@ export async function applyActivityViewerRequest(
   }
   const localSearch = command.operation === 'search' || command.operation === 'search-clear'
   const markAllRead = command.operation === 'mark-all-read'
-  const localOnly = localSearch || markAllRead
+  const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
+  const localOnly = localSearch || markAllRead || threadRead
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
   }
   const runtime = getProviderRuntimeContextKey(initial.settings)
   const scopeCommand = isActivityScopeCommand(command)
-  if (scopeCommand || markAllRead) {
+  if (scopeCommand || markAllRead || threadRead) {
     const view = readActivityViewerView(command.surface)
     if (!view || view.surface !== command.surface || view.runtimeContextKey !== runtime) {
       throw new Error('activity_surface_unavailable')
     }
   }
+  const readControl = threadRead ? readActivityThreadReadControl(command.surface) : null
+  if (threadRead && !readControl) {
+    throw new Error('activity_read_control_unavailable')
+  }
+  const readQuery = threadRead ? readActivityViewerView(command.surface)?.query : undefined
+  const readAction =
+    threadRead && readControl ? applyActivityThreadReadCommand(command, readControl) : null
   const markAllControl = markAllRead ? readActivityMarkAllReadControl(command.surface) : null
   if (markAllRead && !markAllControl) {
     throw new Error('activity_read_control_unavailable')
@@ -102,7 +124,7 @@ export async function applyActivityViewerRequest(
     saving = initial.setAgentsShowChildAgents(command.enabled)
   }
   const expected = useAppStore.getState()
-  const expectedScope = scopeCommand ? readActivityScope(expected) : undefined
+  const expectedScope = scopeCommand || threadRead ? readActivityScope(expected) : undefined
   const groupBy = expected.agentsGroupBy
   const readFilter = expected.agentsReadFilter
   const compact = expected.agentsCompactMode
@@ -119,6 +141,12 @@ export async function applyActivityViewerRequest(
     const state = useAppStore.getState()
     return (
       sameRuntime() &&
+      (readAction === null ||
+        (sameActivityThreadReadCallbacks(
+          readActivityThreadReadControl(command.surface),
+          readAction.control
+        ) &&
+          readActivityViewerView(command.surface)?.query === readQuery)) &&
       (markAllControl === null ||
         readActivityMarkAllReadControl(command.surface)?.markAllRead ===
           markAllControl.markAllRead) &&
@@ -176,6 +204,8 @@ export async function applyActivityViewerRequest(
       view !== null &&
       view.surface === command.surface &&
       view.runtimeContextKey === runtime &&
+      (readAction === null ||
+        activityThreadReadApplied(readActivityThreadReadControl(command.surface), readAction)) &&
       (!markAllRead || view.hasUnreadThreads === false) &&
       (expectedScope === undefined || sameActivityScope(view.scope, expectedScope)) &&
       view.groupBy === groupBy &&
@@ -228,10 +258,26 @@ export async function applyActivityViewerRequest(
   return {
     viewer: 'host',
     surface: command.surface,
-    dispatched: saving !== undefined || localSearch || markAllDispatched,
+    dispatched:
+      saving !== undefined ||
+      localSearch ||
+      markAllDispatched ||
+      (readAction !== null && readAction.targets.length > 0),
     applied,
     persisted,
     ...(scopeCommand ? { persistedScope } : {}),
+    ...(readAction
+      ? {
+          readAction: {
+            operation: readAction.operation,
+            paneKeys: readAction.targets.map((thread) => thread.paneKey)
+          },
+          readStates: readActivityThreadReadStates(
+            sameRuntime() ? readActivityThreadReadControl(command.surface) : null,
+            readAction
+          )
+        }
+      : {}),
     writeOutcome,
     groupBy,
     readFilter,
@@ -242,40 +288,6 @@ export async function applyActivityViewerRequest(
   }
 }
 
-export type ActivityViewerBridgeApi = {
-  onActivityViewerRequest?: (callback: (request: ActivityViewerRequest) => void) => () => void
-  respondActivityViewer?: (response: ActivityViewerResponse) => void
-}
 export function attachActivityViewerBridge(api: ActivityViewerBridgeApi): () => void {
-  if (!api.onActivityViewerRequest || !api.respondActivityViewer) {
-    return () => {}
-  }
-  const respond = api.respondActivityViewer
-  let queue = Promise.resolve()
-  let disposed = false
-  const unsubscribe = api.onActivityViewerRequest((request) => {
-    queue = queue.then(async () => {
-      if (disposed) {
-        return
-      }
-      try {
-        const result = await applyActivityViewerRequest(request)
-        if (!disposed) {
-          respond({ id: request.id, ok: true, result: { ...result, viewerId: 0 } })
-        }
-      } catch (error) {
-        if (!disposed) {
-          respond({
-            id: request.id,
-            ok: false,
-            error: error instanceof Error ? error.message : 'viewer_operation_failed'
-          })
-        }
-      }
-    })
-  })
-  return () => {
-    disposed = true
-    unsubscribe()
-  }
+  return attachActivityViewerRequestQueue(api, applyActivityViewerRequest)
 }

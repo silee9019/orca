@@ -1,16 +1,35 @@
 import type { ActivityViewerSurface } from '../../../shared/rpc-contract/activity-viewer-params'
 import type { ActivityViewerSnapshot } from '../../../shared/activity-viewer-command'
+import type { AgentPaneThread } from '@/components/activity/activity-thread-types'
+
+export type ActivityThreadReadCallbacks = {
+  allThreads: readonly AgentPaneThread[]
+  markRead: (thread: AgentPaneThread) => void
+  markUnread: (thread: AgentPaneThread) => void
+  markManyRead: (threads: readonly AgentPaneThread[]) => void
+  markManyUnread: (threads: readonly AgentPaneThread[]) => void
+  canMarkUnread: (thread: AgentPaneThread) => boolean
+}
+export type ActivityThreadReadControl = ActivityThreadReadCallbacks & {
+  visibleThreads: readonly AgentPaneThread[]
+}
 
 const committed: Partial<
-  Record<ActivityViewerSurface, { view: ActivityViewerSnapshot; markAllRead?: () => void }>
+  Record<
+    ActivityViewerSurface,
+    {
+      view: ActivityViewerSnapshot
+      controls?: { markAllRead?: () => void; threadReads?: ActivityThreadReadControl }
+    }
+  >
 > = {}
 export function publishActivityViewerView(
   surface: ActivityViewerSurface,
   view: ActivityViewerSnapshot | null,
-  markAllRead?: () => void
+  controls?: { markAllRead?: () => void; threadReads?: ActivityThreadReadControl }
 ): void {
   if (view) {
-    committed[surface] = { view, markAllRead }
+    committed[surface] = { view, controls }
   } else {
     delete committed[surface]
   }
@@ -54,7 +73,13 @@ export function readActivityMarkAllReadControl(surface: ActivityViewerSurface): 
   hasUnreadThreads: boolean
 } | null {
   const entry = committed[surface]
-  return entry?.markAllRead && typeof entry.view.hasUnreadThreads === 'boolean'
-    ? { markAllRead: entry.markAllRead, hasUnreadThreads: entry.view.hasUnreadThreads }
+  return entry?.controls?.markAllRead && typeof entry.view.hasUnreadThreads === 'boolean'
+    ? { markAllRead: entry.controls.markAllRead, hasUnreadThreads: entry.view.hasUnreadThreads }
     : null
+}
+
+export function readActivityThreadReadControl(
+  surface: ActivityViewerSurface
+): ActivityThreadReadControl | null {
+  return committed[surface]?.controls?.threadReads ?? null
 }

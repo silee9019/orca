@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   defaultRangeExtractor,
   measureElement as measureVirtualElementSize,
@@ -26,7 +26,7 @@ import {
   getActivityHeaderItemIndexes,
   getActivityVirtualItemKey
 } from './activity-thread-virtual-items'
-import { ActivityThreadCollapseContext } from './activity-thread-collapse-context'
+import { useActivityThreadGroupCollapse } from './use-activity-thread-group-collapse'
 import { useActivityThreadSelection } from './use-activity-thread-selection'
 import type {
   ActivityGroupBy,
@@ -66,6 +66,7 @@ export function ActivityThreadListPane({
   hasCompletedThreads,
   onClearCompleted,
   visibleThreadGroups,
+  allThreads,
   visibleThreadCount,
   selectedPaneKey,
   onSelectThread,
@@ -106,6 +107,7 @@ export function ActivityThreadListPane({
   hasCompletedThreads?: boolean
   onClearCompleted?: () => void
   visibleThreadGroups: ActivityThreadGroup[]
+  allThreads?: readonly AgentPaneThread[]
   visibleThreadCount: number
   selectedPaneKey: string | null
   onSelectThread: (thread: AgentPaneThread) => void
@@ -127,30 +129,10 @@ export function ActivityThreadListPane({
   /** Optional view-local scroll memory; updated without triggering React renders. */
   scrollTopRef?: React.MutableRefObject<number>
 }): React.JSX.Element {
-  const [internalCollapsedGroupKeys, setInternalCollapsedGroupKeys] = useState<Set<string>>(
-    () => new Set()
-  )
-  // Precedence: explicit props, then a caller-owned context (hosts that unmount
-  // the pane on body switches), then pane-local state.
-  const contextCollapse = useContext(ActivityThreadCollapseContext)
-  const isControlled = collapsedGroupKeys !== undefined && onToggleGroupCollapse !== undefined
-  const effectiveCollapsedGroupKeys = isControlled
-    ? collapsedGroupKeys
-    : (contextCollapse?.collapsedGroupKeys ?? internalCollapsedGroupKeys)
-  const handleToggleGroup = isControlled
-    ? onToggleGroupCollapse
-    : (contextCollapse?.onToggleGroupCollapse ??
-      ((groupKey: string) => {
-        setInternalCollapsedGroupKeys((prev) => {
-          const next = new Set(prev)
-          if (next.has(groupKey)) {
-            next.delete(groupKey)
-          } else {
-            next.add(groupKey)
-          }
-          return next
-        })
-      }))
+  const {
+    collapsedGroupKeys: effectiveCollapsedGroupKeys,
+    onToggleGroupCollapse: handleToggleGroup
+  } = useActivityThreadGroupCollapse({ collapsedGroupKeys, onToggleGroupCollapse })
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const hasRestoredScrollRef = useRef(false)
@@ -178,16 +160,6 @@ export function ActivityThreadListPane({
       }),
     [visibleThreadGroups, groupBy, effectiveCollapsedGroupKeys]
   )
-  useActivityViewerPublication(viewerSurface, virtualItems, {
-    groupBy,
-    readFilter,
-    compact: compactMode,
-    showChildAgents: showChildAgents ?? false,
-    querySettled,
-    query,
-    selectedPaneKey,
-    markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads }
-  })
   const headerItemIndexes = useMemo(
     () => getActivityHeaderItemIndexes(virtualItems),
     [virtualItems]
@@ -201,6 +173,26 @@ export function ActivityThreadListPane({
     (thread: AgentPaneThread) => allowMarkUnreadWhenSelected || thread.paneKey !== selectedPaneKey,
     [allowMarkUnreadWhenSelected, selectedPaneKey]
   )
+  useActivityViewerPublication(viewerSurface, virtualItems, {
+    groupBy,
+    readFilter,
+    compact: compactMode,
+    showChildAgents: showChildAgents ?? false,
+    querySettled,
+    query,
+    selectedPaneKey,
+    markAllRead: { run: onMarkAllThreadsRead, hasUnreadThreads },
+    threadReads: allThreads
+      ? {
+          allThreads,
+          markRead: onMarkThreadRead,
+          markUnread: onMarkThreadUnread,
+          markManyRead: onMarkThreadsRead,
+          markManyUnread: onMarkThreadsUnread,
+          canMarkUnread: canMarkThreadUnread
+        }
+      : undefined
+  })
   const selectedItemIndex = useMemo(
     () => findActivityThreadItemIndex(virtualItems, selectedPaneKey),
     [virtualItems, selectedPaneKey]

@@ -5,6 +5,8 @@ it('requires an explicit host and activity surface with existing preference doma
     for (const command of [
       { operation: 'get' },
       { operation: 'mark-all-read' },
+      { operation: 'read-toggle', paneKey: 'tab:leaf' },
+      { operation: 'read-toggle-many', paneKeys: ['tab:one', 'tab:two'] },
       { operation: 'group', by: 'project' },
       { operation: 'read', filter: 'unread' },
       { operation: 'compact', enabled: false },
@@ -42,7 +44,10 @@ it('keeps Activity scope origins and targets explicit and closed', () => {
     { operation: 'origin', kind: 'unknown', hidden: true },
     { operation: 'origin', kind: 'cli', hidden: 'true' },
     { operation: 'host-toggle', host: '' },
-    { operation: 'scope-reset', repo: 'unexpected' }
+    { operation: 'scope-reset', repo: 'unexpected' },
+    { operation: 'read-toggle', paneKey: '' },
+    { operation: 'read-toggle-many', paneKeys: ['one'] },
+    { operation: 'read-toggle-many', paneKeys: ['one', 'one'] }
   ]) {
     expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(false)
   }

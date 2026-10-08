@@ -45,6 +45,16 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    readAction: z
+      .object({
+        operation: openEnum(['read', 'unread', 'unknown'], 'unknown'),
+        paneKeys: z.array(z.string())
+      })
+      .strip()
+      .optional(),
+    readStates: z
+      .array(z.object({ paneKey: z.string(), unread: z.boolean().nullable() }).strip())
+      .optional(),
     writeOutcome: openEnum(['accepted', 'rejected', 'unknown', 'not_requested'], 'unknown'),
     groupBy: z.string(),
     readFilter: z.string(),

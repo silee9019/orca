@@ -74,6 +74,7 @@ export default function SidebarAgentsList({
 
   const {
     storeData,
+    allThreads,
     selectedPaneKeyIsLive,
     effectiveSelectedPaneKey,
     visibleThreads,
@@ -167,6 +168,7 @@ export default function SidebarAgentsList({
         hasCompletedThreads={hasCompletedThreads}
         onClearCompleted={handleClearCompleted}
         visibleThreadGroups={visibleThreadGroups}
+        allThreads={allThreads}
         visibleThreadCount={visibleThreads.length}
         selectedPaneKey={effectiveSelectedPaneKey}
         onSelectThread={selectThread}

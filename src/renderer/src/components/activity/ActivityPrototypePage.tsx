@@ -338,6 +338,7 @@ export default function ActivityPrototypePage(): React.JSX.Element {
           hasCompletedThreads={hasCompletedThreads}
           onClearCompleted={handleClearCompleted}
           visibleThreadGroups={visibleThreadGroups}
+          allThreads={allThreads}
           visibleThreadCount={visibleThreads.length}
           selectedPaneKey={selectedThread?.paneKey ?? null}
           onSelectThread={selectThread}
