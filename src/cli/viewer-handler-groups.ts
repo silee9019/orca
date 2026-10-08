@@ -8,7 +8,7 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'setup-guide-viewer',
-    keys: ['ui setup-guide open'],
+    keys: ['ui setup-guide open', 'ui setup-guide select-step'],
     load: async () => (await import('./handlers/setup-guide-viewer.js')).SETUP_GUIDE_HANDLERS
   },
   {

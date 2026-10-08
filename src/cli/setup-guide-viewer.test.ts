@@ -58,3 +58,64 @@ it('refuses an old runtime without falling back to another viewer', async () => 
   await expect(run()).rejects.toThrow('Update the target runtime')
   expect(call).toHaveBeenCalledTimes(1)
 })
+
+it('parses and dispatches an original step with an explicit viewer', async () => {
+  const parsed = parseArgs(
+    ['ui', 'setup-guide', 'select-step', '--step', 'browser', '--viewer', 'host'],
+    SETUP_GUIDE_COMMAND_SPECS.map((spec) => spec.path),
+    SETUP_GUIDE_COMMAND_SPECS
+  )
+  call.mockResolvedValue({
+    id: 'r',
+    ok: true,
+    _meta: { runtimeId: 'target' },
+    result: {
+      viewer: 'host',
+      viewerId: 7,
+      applied: true,
+      source: 'help_menu',
+      dialogPresent: true,
+      contentPresent: true,
+      stepId: 'browser'
+    }
+  })
+  await SETUP_GUIDE_HANDLERS['ui setup-guide select-step']({
+    client,
+    flags: parsed.flags,
+    cwd: '/unused',
+    json: true
+  })
+  expect(call).toHaveBeenCalledExactlyOnceWith('ui.setupGuideViewer', {
+    viewer: 'host',
+    operation: 'select-step',
+    stepId: 'browser'
+  })
+})
+it('rejects arbitrary steps and preserves an older peer refusal without fallback', async () => {
+  const handler = SETUP_GUIDE_HANDLERS['ui setup-guide select-step']
+  await expect(
+    handler({
+      client,
+      flags: new Map([
+        ['viewer', 'host'],
+        ['step', 'arbitrary']
+      ]),
+      cwd: '/unused',
+      json: true
+    })
+  ).rejects.toThrow()
+  expect(call).not.toHaveBeenCalled()
+  call.mockRejectedValueOnce(new RuntimeClientError('invalid_params', 'unsupported operation'))
+  await expect(
+    handler({
+      client,
+      flags: new Map([
+        ['viewer', 'host'],
+        ['step', 'browser']
+      ]),
+      cwd: '/unused',
+      json: true
+    })
+  ).rejects.toThrow('unsupported operation')
+  expect(call).toHaveBeenCalledTimes(1)
+})

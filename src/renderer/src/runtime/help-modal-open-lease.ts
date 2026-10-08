@@ -4,7 +4,7 @@ import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { isActivityDestinationVisible } from './activity-workspace-destination'
 import { readSettingsViewerView } from './settings-viewer-view'
 
-export function assertHelpModalOpenAvailable(expiresAt: number, rootAvailable: () => boolean) {
+function readHelpModalViewer(expiresAt: number, rootAvailable: () => boolean) {
   if (Date.now() >= expiresAt) {
     throw new Error('request_expired')
   }
@@ -31,13 +31,28 @@ export function assertHelpModalOpenAvailable(expiresAt: number, rootAvailable: (
         '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"][data-state="open"], [data-slot="select-content"], [data-slot="popover-content"], [data-slot="sheet-content"]'
       )
     ].filter(visible)
-  if (initial.activeModal !== 'none' || overlays().length > 0) {
-    throw new Error('viewer_modal_already_open')
-  }
   if (readSettingsViewerView()?.hasUnsavedChanges) {
     throw new Error('unsaved_settings_changes')
   }
   return { initial, visible, overlays }
+}
+
+export function assertHelpModalOpenAvailable(expiresAt: number, rootAvailable: () => boolean) {
+  const view = readHelpModalViewer(expiresAt, rootAvailable)
+  if (view.initial.activeModal !== 'none' || view.overlays().length > 0) {
+    throw new Error('viewer_modal_already_open')
+  }
+  return view
+}
+
+export function acquireSetupGuideSelectionLease(expiresAt: number, rootAvailable: () => boolean) {
+  const lease = acquireHelpModalLease('setup-guide', expiresAt, rootAvailable, true)
+  lease.observe()
+  if (lease.isSuperseded() || !lease.readDialog()) {
+    lease.release()
+    throw new Error('setup_guide_not_open')
+  }
+  return lease
 }
 
 export function acquireHelpModalOpenLease(
@@ -45,7 +60,18 @@ export function acquireHelpModalOpenLease(
   expiresAt: number,
   rootAvailable: () => boolean
 ) {
-  const { initial, visible, overlays } = assertHelpModalOpenAvailable(expiresAt, rootAvailable)
+  return acquireHelpModalLease(kind, expiresAt, rootAvailable, false)
+}
+
+function acquireHelpModalLease(
+  kind: 'feature-tour' | 'setup-guide',
+  expiresAt: number,
+  rootAvailable: () => boolean,
+  existing: boolean
+) {
+  const { initial, visible, overlays } = existing
+    ? readHelpModalViewer(expiresAt, rootAvailable)
+    : assertHelpModalOpenAvailable(expiresAt, rootAvailable)
   const modal = kind === 'feature-tour' ? 'feature-wall' : 'setup-guide'
   const sourceKey = kind === 'feature-tour' ? 'source' : 'telemetrySource'
   const marker = kind === 'feature-tour' ? 'data-feature-tour-dialog' : 'data-setup-guide-dialog'
