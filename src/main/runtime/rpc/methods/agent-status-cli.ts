@@ -11,6 +11,23 @@ import {
 
 export const AGENT_STATUS_CLI_METHODS = [
   defineMethod({
+    name: 'agentAwake.status',
+    params: AgentStatusListParams,
+    handler: (_params, { runtime }) => {
+      const status = runtime.getAgentAwakeStatus()
+      if (!status) {
+        return {
+          ok: false,
+          refusal: {
+            code: 'agent_awake_unavailable',
+            message: 'The execution host has no agent awake service.'
+          }
+        }
+      }
+      return { status }
+    }
+  }),
+  defineMethod({
     name: 'agentStatus.list',
     params: AgentStatusListParams,
     handler: () =>

@@ -20,6 +20,15 @@ const HISTORY_REQUEST_NOTES = [
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
+    path: ['agent', 'awake', 'status'],
+    summary: 'Read the execution host’s current agent awake status',
+    usage: 'orca agent awake status [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: [
+      'Reads the existing service without changing its mode. A host without the service fails explicitly.'
+    ]
+  },
+  {
     path: ['agent', 'hooks', 'workspace-check'],
     summary: 'Inspect repository hooks on their execution host',
     usage: 'orca agent hooks workspace-check --request-file <path|-> [--json]',
