@@ -1,3 +1,5 @@
+import { createBrowserReaderCli } from './browser-reader-cli.fixture'
+import type { RpcAnyMethod } from '../../src/main/runtime/rpc/core'
 import { CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS } from '../../src/cli/specs/client-hosted-browser-row'
 import { CLIENT_HOSTED_BROWSER_ROW_HANDLERS } from '../../src/cli/handlers/client-hosted-browser-row'
 import { BROWSER_TAKE_BACK_COMMAND_SPECS } from '../../src/cli/specs/browser-take-back'
@@ -33,12 +35,15 @@ import { getRuntimeMetadataPath } from '../../src/shared/runtime-bootstrap'
 const Request = z.object({
   id: z.string(),
   method: z.string(),
-  params: z.unknown(),
+  params: z.unknown().optional(),
   authToken: z.literal('fixture-token')
 })
-export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
+export async function createRemotePaneCliSocket(
+  runtime: OrcaRuntimeService,
+  methods: RpcAnyMethod[] = BROWSER_VIEWER_METHODS
+) {
   const dir = await mkdtemp(path.join(tmpdir(), 'orca-remote-pane-'))
-  let dispatcher = new RpcDispatcher({ runtime, methods: BROWSER_VIEWER_METHODS })
+  let dispatcher = new RpcDispatcher({ runtime, methods })
   const endpoint =
     process.platform === 'win32'
       ? `\\\\.\\pipe\\${path.basename(dir)}`
@@ -265,6 +270,7 @@ export async function createRemotePaneCliSocket(runtime: OrcaRuntimeService) {
     })
   }
   return {
+    runBrowserReader: createBrowserReaderCli(dir),
     runClientRow,
     runTakeBack,
     runObservation,

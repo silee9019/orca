@@ -1,3 +1,4 @@
+import { BROWSER_READER_HANDLER_GROUPS } from './browser-reader-handler-groups'
 import { BROWSER_SETUP_GUIDE_HANDLER_GROUPS } from './browser-setup-guide-handler-groups'
 import { CLIENT_HOSTED_BROWSER_ROW_HANDLER_GROUPS } from './client-hosted-browser-row-handler-groups'
 import { BROWSER_FEATURE_WALL_HANDLER_GROUPS } from './browser-feature-wall-handler-groups'
@@ -5,6 +6,7 @@ import { BROWSER_TAKE_BACK_HANDLER_GROUPS } from './browser-take-back-handler-gr
 import type { HandlerGroup } from './handler-group-manifest'
 
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
+  ...BROWSER_READER_HANDLER_GROUPS,
   ...BROWSER_SETUP_GUIDE_HANDLER_GROUPS,
   ...CLIENT_HOSTED_BROWSER_ROW_HANDLER_GROUPS,
   ...BROWSER_FEATURE_WALL_HANDLER_GROUPS,

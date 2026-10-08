@@ -76,7 +76,10 @@ export function useBrowserSetupGuideInstallOwner(owner: BrowserSetupGuideInstall
   useEffect(() => {
     const receive = (event: WindowEventMap[typeof BROWSER_SETUP_GUIDE_EVENT]): void => {
       const request = event.detail
-      if (!BrowserSetupGuideCommand.safeParse(request.command).success) {
+      if (
+        request.command.action === 'try-it' ||
+        !BrowserSetupGuideCommand.safeParse(request.command).success
+      ) {
         return
       }
       request.offer(() => {

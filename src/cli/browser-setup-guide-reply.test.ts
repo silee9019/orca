@@ -65,6 +65,15 @@ it.each([
   {},
   { applied: false, browserSetupGuide: publicState },
   { applied: true, browserSetupGuide: null },
+  {
+    applied: true,
+    browserSetupGuide: {
+      busy: false,
+      browserUseEnabled: true,
+      orchestrationEnabled: false,
+      interactionRecorded: false
+    }
+  },
   { applied: true, browserSetupGuide: { private: true } }
 ])('rejects malformed or unacknowledged result without output: %j', async (result) => {
   await expect(readReply(result)).rejects.toMatchObject({ code: 'runtime_error' })

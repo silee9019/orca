@@ -36,7 +36,13 @@ export async function browserSetupGuideOwnerSocketFixture() {
   )
   Object.assign(window, {
     api: {
-      ui: { recordFeatureInteraction: recordInteraction, writeClipboardText, readClipboardText }
+      gh: { enqueuePRRefresh: vi.fn(async () => undefined) },
+      ui: {
+        recordFeatureInteraction: recordInteraction,
+        writeClipboardText,
+        readClipboardText,
+        set: async (updates: Parameters<Store['updateUI']>[0]) => store.updateUI(updates)
+      }
     }
   })
   useAppStore.setState({
@@ -49,21 +55,20 @@ export async function browserSetupGuideOwnerSocketFixture() {
     activeRepoId: null,
     projects: [],
     repos: [],
+    worktreesByRepo: {},
     runtimeEnvironments: [],
     runtimeEnvironmentCatalogSettled: true
   })
   const container = document.createElement('div')
   document.body.append(container)
   const root = createRoot(container)
-  const renderOwner = async (copies = 1): Promise<void> => {
+  const renderOwner = async (copies = 1, done = true): Promise<void> => {
     await act(async () =>
       root.render(
         createElement(
           'div',
           {},
-          Array.from({ length: copies }, (_, key) =>
-            createElement(BrowserAction, { key, done: true })
-          )
+          Array.from({ length: copies }, (_, key) => createElement(BrowserAction, { key, done }))
         )
       )
     )
@@ -116,7 +121,12 @@ export async function browserSetupGuideOwnerSocketFixture() {
   )
   const client = new RuntimeClient(directory, 5000, null, null)
   const output = vi.spyOn(console, 'log').mockImplementation(() => {})
-  const invoke = async (action: string, confirm?: string, surface = 'modal'): Promise<void> => {
+  const invoke = async (
+    action: string,
+    confirm?: string,
+    surface = 'modal',
+    extraFlags: string[] = []
+  ): Promise<void> => {
     const specs = BROWSER_SETUP_GUIDE_SPECS
     const parsed = parseArgs(
       [
@@ -132,7 +142,8 @@ export async function browserSetupGuideOwnerSocketFixture() {
         'none',
         '--surface',
         surface,
-        ...(confirm ? ['--confirm', confirm] : [])
+        ...(confirm ? ['--confirm', confirm] : []),
+        ...extraFlags
       ],
       specs.map((spec) => spec.path),
       specs

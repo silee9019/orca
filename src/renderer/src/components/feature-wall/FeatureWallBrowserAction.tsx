@@ -1,3 +1,4 @@
+import { useBrowserSetupGuideBrowserOwner } from './use-browser-setup-guide-browser-owner'
 import {
   useBrowserSetupGuideInstallOwner,
   type BrowserSetupGuideInstallReceipt
@@ -36,10 +37,10 @@ export function BrowserAction(props: { done: boolean }): React.JSX.Element {
     (s) => s.openNewBrowserTabInActiveWorkspace
   )
 
-  const handleTryIt = useCallback(() => {
+  const handleTryIt = useCallback((): Promise<boolean> => {
     if (!targetWorktree) {
       promptForSetupGuideProject(openModal)
-      return
+      return Promise.resolve(true)
     }
     closeModal()
     activateAndRevealWorktree(targetWorktree.id, { providesInitialSurface: true })
@@ -50,24 +51,35 @@ export function BrowserAction(props: { done: boolean }): React.JSX.Element {
       state.activeGroupIdByWorktree[targetWorktree.id] ??
       state.groupsByWorktree[targetWorktree.id]?.[0]?.id
     if (groupId) {
-      void openNewBrowserTabInActiveWorkspace(groupId).catch((error) => {
-        toast.error(error instanceof Error ? error.message : String(error))
-      })
-    } else {
-      toast.warning(
-        translate(
-          'auto.components.feature.wall.FeatureWallBrowserAction.5022c43a88',
-          'Browser could not open'
-        ),
-        {
-          description: translate(
-            'auto.components.feature.wall.FeatureWallBrowserAction.c9eb68b474',
-            'No workspace group is available for this worktree yet.'
-          )
-        }
-      )
+      return openNewBrowserTabInActiveWorkspace(groupId)
+        .then(() => true)
+        .catch((error) => {
+          toast.error(error instanceof Error ? error.message : String(error))
+          return false
+        })
     }
+    toast.warning(
+      translate(
+        'auto.components.feature.wall.FeatureWallBrowserAction.5022c43a88',
+        'Browser could not open'
+      ),
+      {
+        description: translate(
+          'auto.components.feature.wall.FeatureWallBrowserAction.c9eb68b474',
+          'No workspace group is available for this worktree yet.'
+        )
+      }
+    )
+
+    return Promise.resolve(false)
   }, [closeModal, openModal, openNewBrowserTabInActiveWorkspace, targetWorktree])
+
+  useBrowserSetupGuideBrowserOwner({
+    done: props.done,
+    creationEnabled: browserCreationEnabled,
+    targetWorkspaceId: targetWorktree?.id ?? null,
+    perform: handleTryIt
+  })
 
   return (
     <div className="flex flex-wrap items-center gap-2.5" data-browser-setup-guide-action>

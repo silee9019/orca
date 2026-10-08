@@ -6,17 +6,18 @@ export const BrowserObservationCommand = z.object({
   waitMs: z.number().int().min(0).max(5000)
 })
 export type BrowserObservationCommand = z.infer<typeof BrowserObservationCommand>
+export const BrowserObservationDriver = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('idle') }),
+  z.object({ kind: z.literal('desktop') }),
+  z.object({ kind: z.literal('mobile'), clientId: z.string() })
+])
 const target = { page: z.string().min(1), worktreeId: z.string().min(1), changed: z.boolean() }
 export const BrowserObservationState = z.discriminatedUnion('kind', [
   z.object({ ...target, kind: z.literal('visibility'), automationVisible: z.boolean() }),
   z.object({
     ...target,
     kind: z.literal('driver'),
-    driver: z.discriminatedUnion('kind', [
-      z.object({ kind: z.literal('idle') }),
-      z.object({ kind: z.literal('desktop') }),
-      z.object({ kind: z.literal('mobile'), clientId: z.string() })
-    ])
+    driver: BrowserObservationDriver
   })
 ])
 export type BrowserObservationState = z.infer<typeof BrowserObservationState>
