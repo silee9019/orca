@@ -1,4 +1,5 @@
 export type ProjectFilterView = {
+  runtimeContextKey?: string
   repoIds: readonly string[]
   visibleWorktreeIds: readonly string[]
   visibleFolderWorkspaceIds: readonly string[]
@@ -15,7 +16,8 @@ export function publishProjectFilterView(view: ProjectFilterView | null): void {
 
 export function waitForProjectFilterView(
   repoIds: readonly string[],
-  timeoutMs: number
+  timeoutMs: number,
+  runtimeContextKey?: string
 ): Promise<ProjectFilterView | null> {
   return new Promise((resolve) => {
     const finish = (view: ProjectFilterView | null): void => {
@@ -26,6 +28,7 @@ export function waitForProjectFilterView(
     const check = (): void => {
       if (
         published &&
+        (runtimeContextKey === undefined || published.runtimeContextKey === runtimeContextKey) &&
         published.repoIds.length === repoIds.length &&
         published.repoIds.every((id, index) => id === repoIds[index])
       ) {

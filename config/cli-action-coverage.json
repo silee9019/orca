@@ -61,7 +61,7 @@
       "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
-      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다.",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 실행 증거 범위는 macOS 격리 hidden renderer, 실제 SshGitProvider/relay frame fixture, 실제 paired RPC, 두 독립 프로필 viewer와 한쪽 unmount, runtime 세대 전환 및 제거된 peer catalog ID 거절입니다. old-peer는 미지원 메서드와 optional preload 부재 fixture로 검증합니다.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -79,9 +79,10 @@
         "src/cli/project-filter.test.ts",
         "src/main/window/project-filter-request-relay.test.ts",
         "src/renderer/src/runtime/project-filter-bridge.test.ts",
-        "tests/e2e/project-filter-cli.spec.ts"
+        "tests/e2e/project-filter-cli.spec.ts",
+        "tests/e2e/project-filter-peer.spec.ts"
       ],
-      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
+      "gap": "Runtime session fence and fixture-based peer coverage are integrated; live SSH, released version skew and native Linux/Windows are outside this integration verification."
     },
     {
       "id": "ui.project-filter.set",
@@ -91,7 +92,7 @@
       "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
-      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 같은 set 두 번과 새 repo 추가 뒤 select-all을 검사합니다.",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 같은 set 두 번과 새 repo 추가 뒤 select-all을 검사합니다. 실행 증거 범위는 macOS 격리 hidden renderer, 실제 SshGitProvider/relay frame fixture, 실제 paired RPC, 두 독립 프로필 viewer와 한쪽 unmount, runtime 세대 전환 및 제거된 peer catalog ID 거절입니다. old-peer는 미지원 메서드와 optional preload 부재 fixture로 검증합니다.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -117,9 +118,10 @@
         "src/cli/project-filter.test.ts",
         "src/main/window/project-filter-request-relay.test.ts",
         "src/renderer/src/runtime/project-filter-bridge.test.ts",
-        "tests/e2e/project-filter-cli.spec.ts"
+        "tests/e2e/project-filter-cli.spec.ts",
+        "tests/e2e/project-filter-peer.spec.ts"
       ],
-      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
+      "gap": "Runtime session fence and fixture-based peer coverage are integrated; live SSH, released version skew and native Linux/Windows are outside this integration verification."
     },
     {
       "id": "ui.project-filter.clear",
@@ -129,7 +131,7 @@
       "viewer": "explicit --viewer host; actual BrowserWindow ID returned; remote-focused/headless viewer refused; existing durable sharing preserved",
       "phase": 2,
       "bundle": "project-filter-state",
-      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 다른 sleeping/host 필터를 보존합니다.",
+      "verification": "현재값과 선택 pill/label 및 실제 목록을 대조합니다. 두 viewer의 기존 durable 공유 정책, active runtime 전환, SSH·peer·folder, stale repo ID, 빈 결과, lineage ancestor 예외를 검사합니다. 다른 sleeping/host 필터를 보존합니다. 실행 증거 범위는 macOS 격리 hidden renderer, 실제 SshGitProvider/relay frame fixture, 실제 paired RPC, 두 독립 프로필 viewer와 한쪽 unmount, runtime 세대 전환 및 제거된 peer catalog ID 거절입니다. old-peer는 미지원 메서드와 optional preload 부재 fixture로 검증합니다.",
       "support": "implemented",
       "evidence": "partial",
       "sources": [
@@ -151,9 +153,10 @@
         "src/cli/project-filter.test.ts",
         "src/main/window/project-filter-request-relay.test.ts",
         "src/renderer/src/runtime/project-filter-bridge.test.ts",
-        "tests/e2e/project-filter-cli.spec.ts"
+        "tests/e2e/project-filter-cli.spec.ts",
+        "tests/e2e/project-filter-peer.spec.ts"
       ],
-      "gap": "Implementation is present; real SSH/paired-peer/multiple-viewer and platform-native verification remain partial."
+      "gap": "Runtime session fence and fixture-based peer coverage are integrated; live SSH, released version skew and native Linux/Windows are outside this integration verification."
     },
     {
       "id": "ui.project-filter.remove",

@@ -1,8 +1,8 @@
+import { callProjectFilterCli } from './helpers/project-filter-cli'
 import { writeFileSync } from 'node:fs'
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
+import { SshGitProvider } from '../../src/main/providers/ssh-git-provider'
+import { SshChannelMultiplexer } from '../../src/main/ssh/ssh-channel-multiplexer'
 import { ProjectFilterResultSchema } from '../../src/shared/project-filter'
 
 test('project filter CLI acknowledges storage and the hidden rendered sidebar', async ({
@@ -14,7 +14,56 @@ test('project filter CLI acknowledges storage and the hidden rendered sidebar', 
       BrowserWindow.getAllWindows().every((window) => !window.isVisible() && !window.isFocused())
     )
   ).toBe(true)
-  const fixtures = await orcaPage.evaluate(() => {
+  let receiveClient = (_data: Buffer): void => {}
+  let receiveRelay = (_data: Buffer): void => {}
+  const clientMux = new SshChannelMultiplexer({
+    write: (data) => {
+      queueMicrotask(() => receiveRelay(data))
+    },
+    onData: (listener) => {
+      receiveClient = listener
+    },
+    onClose: () => {}
+  })
+  const relayMux = new SshChannelMultiplexer({
+    write: (data) => {
+      queueMicrotask(() => receiveClient(data))
+    },
+    onData: (listener) => {
+      receiveRelay = listener
+    },
+    onClose: () => {}
+  })
+  const relayRequests: unknown[] = []
+  relayMux.onRequest('git.listWorktrees', (params) => {
+    relayRequests.push(params)
+    return [
+      {
+        path: '/fixture/remote',
+        head: 'a'.repeat(40),
+        branch: 'filter-other',
+        isBare: false,
+        isMainWorktree: true
+      }
+    ]
+  })
+  let remoteRows
+  try {
+    remoteRows = await new SshGitProvider('filter-fixture-ssh', clientMux).listWorktrees(
+      '/fixture/remote'
+    )
+  } finally {
+    clientMux.dispose()
+    relayMux.dispose()
+  }
+  expect(relayRequests).toEqual([{ repoPath: '/fixture/remote' }])
+  const remoteRow = remoteRows[0]
+  expect(remoteRow.branch).toBe('filter-other')
+  writeFileSync(
+    testInfo.outputPath('ssh-relay.json'),
+    JSON.stringify({ relayRequests, remoteRows }, null, 2)
+  )
+  const fixtures = await orcaPage.evaluate((remoteRow) => {
     const store = window.__store
     if (!store) {
       throw new Error('store_unavailable')
@@ -29,16 +78,16 @@ test('project filter CLI acknowledges storage and the hidden rendered sidebar', 
       ...repo,
       id: 'project-filter-other',
       displayName: 'Filter other project',
-      path: `${repo.path}-other`,
+      path: remoteRow.path,
       connectionId: 'filter-fixture-ssh',
-      executionHostId: 'ssh:filter-fixture-ssh'
+      executionHostId: 'ssh:filter-fixture-ssh' as const
     }
     const otherWorktree = {
       ...worktree,
       id: 'project-filter-other-worktree',
       repoId: otherRepo.id,
-      path: otherRepo.path,
-      branch: 'filter-other',
+      path: remoteRow.path,
+      branch: remoteRow.branch,
       hostId: 'ssh:filter-fixture-ssh' as const
     }
     store.setState({
@@ -83,36 +132,11 @@ test('project filter CLI acknowledges storage and the hidden rendered sidebar', 
       filterRepoIds: []
     })
     return { repoId: repo.id, otherRepoId: otherRepo.id, otherWorktreeId: otherWorktree.id }
-  })
+  }, remoteRow)
   const userData = await electronApp.evaluate(({ app }) => app.getPath('userData'))
   const envelopes: unknown[] = []
   const call = async (operation: 'get' | 'set' | 'clear', repoIds?: string[]) => {
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
-    )
-    const { stdout } = await promisify(execFile)(
-      process.execPath,
-      [
-        path.join(process.cwd(), 'out/cli/index.js'),
-        'ui',
-        'project-filter',
-        operation,
-        '--viewer',
-        'host',
-        '--json',
-        ...(repoIds?.flatMap((id) => ['--repo', id]) ?? [])
-      ],
-      {
-        env: { ...env, ORCA_USER_DATA_PATH: userData, ORCA_BACKGROUND_LAUNCH: '1' },
-        timeout: 20000
-      }
-    ).catch((error: unknown) => {
-      if (error && typeof error === 'object' && 'stdout' in error) {
-        throw new Error(String(error.stdout))
-      }
-      throw error
-    })
-    const response = JSON.parse(stdout)
+    const response = await callProjectFilterCli(userData, operation, repoIds)
     envelopes.push(response)
     expect(response._meta.runtimeId).toBeTruthy()
     if (!response.ok) {
@@ -143,6 +167,16 @@ test('project filter CLI acknowledges storage and the hidden rendered sidebar', 
   expect(cleared.visibleWorktreeIds).toContain(fixtures.otherWorktreeId)
   expect(cleared.visibleFolderWorkspaceIds).toContain('filter-folder')
   await expect(orcaPage.getByRole('option').filter({ hasText: 'filter-other' })).toHaveCount(1)
+  const allRepoIds = await orcaPage.evaluate(() =>
+    window.__store!.getState().repos.map((repo) => repo.id)
+  )
+  for (let repeat = 0; repeat < 2; repeat++) {
+    const allSelected = await call('set', allRepoIds)
+    expect(allSelected).toMatchObject({ repoIds: allRepoIds, persisted: true, applied: true })
+    expect(allSelected.visibleWorktreeIds).toContain(fixtures.otherWorktreeId)
+    expect(allSelected.visibleFolderWorkspaceIds).toContain('filter-folder')
+  }
+  expect(await call('clear')).toMatchObject({ repoIds: [], persisted: true, applied: true })
   const resultsPath = testInfo.outputPath('cli-results.json')
   writeFileSync(resultsPath, JSON.stringify(envelopes, null, 2))
   await testInfo.attach('cli-results', { path: resultsPath, contentType: 'application/json' })

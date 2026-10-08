@@ -65,6 +65,7 @@ const store = vi.hoisted(() => {
       setFilterRepoIds: vi.fn((ids: string[]) => {
         store.state.filterRepoIds = ids
         publishProjectFilterView({
+          runtimeContextKey: getProviderRuntimeContextKey(store.state.settings),
           repoIds: ids,
           visibleFolderWorkspaceIds: [],
           visibleWorktreeIds: ids
@@ -77,7 +78,11 @@ const store = vi.hoisted(() => {
 })
 vi.mock('@/store', () => ({ useAppStore: { getState: () => store.state } }))
 
-import { applyProjectFilterRequest } from './project-filter-bridge'
+import { applyProjectFilterRequest, attachProjectFilterBridge } from './project-filter-bridge'
+import {
+  bumpProviderRuntimeSessionGeneration,
+  getProviderRuntimeContextKey
+} from '@/lib/provider-runtime-context'
 import type { ProjectFilterOperation } from '../../../shared/rpc-contract/project-filter-params'
 
 let durable: string[] = []
@@ -93,6 +98,7 @@ const request = (command: ProjectFilterOperation) => ({
 beforeEach(() => {
   durable = []
   store.state.filterRepoIds = []
+  store.state.repos = [{ id: 'a' }, { id: 'b' }]
   store.state.settings.activeRuntimeEnvironmentId = null
   store.state.persistedUIReady = true
   vi.clearAllMocks()
@@ -171,5 +177,67 @@ describe('project filter transaction', () => {
       visibleWorktreeIds: null
     })
     expect(store.state.filterRepoIds).toEqual(['b'])
+  })
+})
+
+describe('project filter runtime and peer boundaries', () => {
+  it('does not apply a write from a runtime session that was left and re-entered', async () => {
+    vi.useFakeTimers()
+    save.mockImplementationOnce(async (update) => {
+      durable = update.filterRepoIds
+      store.state.settings.activeRuntimeEnvironmentId = 'remote'
+      bumpProviderRuntimeSessionGeneration()
+      store.state.settings.activeRuntimeEnvironmentId = null
+      bumpProviderRuntimeSessionGeneration()
+    })
+    const pending = applyProjectFilterRequest(
+      request({ viewer: 'host', operation: 'set', repoIds: ['a'] })
+    )
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(await pending).toMatchObject({ persisted: true, applied: false })
+    expect(store.state.setFilterRepoIds).not.toHaveBeenCalled()
+  })
+
+  it('does not acknowledge a layout left over from the previous runtime session', async () => {
+    vi.useFakeTimers()
+    publishProjectFilterView({
+      runtimeContextKey: getProviderRuntimeContextKey(store.state.settings),
+      repoIds: [],
+      visibleWorktreeIds: ['stale'],
+      visibleFolderWorkspaceIds: []
+    })
+    bumpProviderRuntimeSessionGeneration()
+    const pending = applyProjectFilterRequest(request({ viewer: 'host', operation: 'get' }))
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(await pending).toMatchObject({
+      persisted: true,
+      applied: false,
+      visibleWorktreeIds: null
+    })
+  })
+
+  it('rejects a repo ID removed from the current runtime catalog without writing', async () => {
+    store.state.settings.activeRuntimeEnvironmentId = 'remote'
+    bumpProviderRuntimeSessionGeneration()
+    store.state.repos = [{ id: 'b' }]
+    store.state.settings.activeRuntimeEnvironmentId = null
+    bumpProviderRuntimeSessionGeneration()
+    await expect(
+      applyProjectFilterRequest(request({ viewer: 'host', operation: 'set', repoIds: ['a'] }))
+    ).rejects.toThrow('project_not_found')
+    expect(save).not.toHaveBeenCalled()
+  })
+
+  it('refuses mutation when an old preload has no persistence acknowledgement', async () => {
+    vi.stubGlobal('window', { api: { ui: { get: async () => ({ filterRepoIds: durable }) } } })
+    await expect(
+      applyProjectFilterRequest(request({ viewer: 'host', operation: 'set', repoIds: ['a'] }))
+    ).rejects.toThrow('persistence_ack_unavailable')
+    expect(store.state.setFilterRepoIds).not.toHaveBeenCalled()
+  })
+
+  it('leaves old preload peers without optional project-filter channels untouched', () => {
+    expect(() => attachProjectFilterBridge()()).not.toThrow()
+    expect(save).not.toHaveBeenCalled()
   })
 })

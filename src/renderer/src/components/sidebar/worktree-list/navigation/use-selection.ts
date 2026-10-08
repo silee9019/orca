@@ -1,4 +1,5 @@
 import { useAppStore } from '@/store'
+import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { publishProjectFilterView } from '@/runtime/project-filter-view'
 import { useWorkspaceListViewerPublication } from '@/runtime/use-workspace-list-viewer-publication'
 import { useWorkspaceFilterPublication } from '@/runtime/use-workspace-filter-publication'
@@ -23,6 +24,7 @@ export function useSidebarWorktreeSelection(args: {
   pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy
 }) {
   const { sectionRows, pinnedDisplayPolicy } = args
+  const runtimeContextKey = useAppStore((state) => getProviderRuntimeContextKey(state.settings))
   const filterRepoIds = useAppStore((state) => state.filterRepoIds)
   useWorkspaceListViewerPublication(sectionRows)
   // Why: derive order from the built rows, not the flat worktrees array, so Cmd+1–9 match visual positions when grouping reorders cards.
@@ -67,6 +69,7 @@ export function useSidebarWorktreeSelection(args: {
     }
     setVisibleWorktreeIds(renderedWorktreeIds)
     publishProjectFilterView({
+      runtimeContextKey,
       repoIds: filterRepoIds,
       visibleWorktreeIds: renderedWorktreeIds,
       visibleFolderWorkspaceIds: sectionRows.flatMap((row) =>
@@ -89,7 +92,7 @@ export function useSidebarWorktreeSelection(args: {
       publishProjectFilterView(null)
       setVisibleWorktreeShortcutTargets(null)
     }
-  }, [filterRepoIds, renderedWorktreeIds, renderedWorktrees, sectionRows])
+  }, [filterRepoIds, renderedWorktreeIds, renderedWorktrees, runtimeContextKey, sectionRows])
 
   return {
     renderedWorktreeIds,
