@@ -8,6 +8,7 @@ import path from 'node:path'
 import { test, expect } from './helpers/orca-app'
 import { retryTransientMainEvaluate } from './helpers/electron-main-evaluate-retry'
 import { ActivityViewerResultSchema } from '../../src/shared/activity-viewer-command'
+import { assertActivityScopeControls } from './helpers/activity-scope-assertions'
 
 test('Activity CLI applies list preferences and local search controls', async ({
   electronApp
@@ -427,5 +428,6 @@ test('Activity CLI applies list preferences and local search controls', async ({
     rendered: null,
     reason: 'activity_surface_unavailable'
   })
+  await assertActivityScopeControls(orcaPage, call, testInfo)
   await assertHidden()
 })

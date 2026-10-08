@@ -24,3 +24,25 @@ it('requires an explicit host and activity surface with existing preference doma
     expect(ActivityViewerParams.safeParse(command).success).toBe(false)
   }
 })
+
+it('keeps Activity scope origins and targets explicit and closed', () => {
+  const target = { viewer: 'host', surface: 'activity-page' }
+  for (const command of [
+    { operation: 'origin', kind: 'cli', hidden: true },
+    { operation: 'origin', kind: 'automation', hidden: false },
+    { operation: 'origin', kind: 'other-client', hidden: true },
+    { operation: 'scope-reset' },
+    { operation: 'host-toggle', host: 'ssh:fixture' },
+    { operation: 'hosts-toggle-all' }
+  ]) {
+    expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(true)
+  }
+  for (const command of [
+    { operation: 'origin', kind: 'unknown', hidden: true },
+    { operation: 'origin', kind: 'cli', hidden: 'true' },
+    { operation: 'host-toggle', host: '' },
+    { operation: 'scope-reset', repo: 'unexpected' }
+  ]) {
+    expect(ActivityViewerParams.safeParse({ ...target, ...command }).success).toBe(false)
+  }
+})

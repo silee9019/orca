@@ -1,3 +1,10 @@
+import {
+  applyActivityScopeCommand,
+  isActivityScopeCommand,
+  readActivityScope,
+  readPersistedActivityScope,
+  sameActivityScope
+} from './activity-scope-preferences'
 import { useAppStore } from '@/store'
 import { getProviderRuntimeContextKey } from '@/lib/provider-runtime-context'
 import { withTimeout } from '../../../shared/promise-timeout-fallback'
@@ -30,6 +37,13 @@ export async function applyActivityViewerRequest(
     throw new Error('persistence_ack_unavailable')
   }
   const runtime = getProviderRuntimeContextKey(initial.settings)
+  const scopeCommand = isActivityScopeCommand(command)
+  if (scopeCommand) {
+    const view = readActivityViewerView(command.surface)
+    if (!view || view.surface !== command.surface || view.runtimeContextKey !== runtime) {
+      throw new Error('activity_surface_unavailable')
+    }
+  }
   const sameRuntime = (): boolean => {
     const settings = useAppStore.getState().settings
     return settings !== null && getProviderRuntimeContextKey(settings) === runtime
@@ -61,7 +75,7 @@ export async function applyActivityViewerRequest(
     }
     button.click()
   }
-  let saving: Promise<void> | undefined
+  let saving = scopeCommand ? applyActivityScopeCommand(command, initial) : undefined
   if (command.operation === 'search-visible') {
     if (!searchControl?.setShowSearch) {
       throw new Error('activity_search_unavailable')
@@ -78,6 +92,7 @@ export async function applyActivityViewerRequest(
     saving = initial.setAgentsShowChildAgents(command.enabled)
   }
   const expected = useAppStore.getState()
+  const expectedScope = scopeCommand ? readActivityScope(expected) : undefined
   const groupBy = expected.agentsGroupBy
   const readFilter = expected.agentsReadFilter
   const compact = expected.agentsCompactMode
@@ -94,6 +109,7 @@ export async function applyActivityViewerRequest(
     const state = useAppStore.getState()
     return (
       sameRuntime() &&
+      (expectedScope === undefined || sameActivityScope(readActivityScope(state), expectedScope)) &&
       state.agentsGroupBy === groupBy &&
       state.agentsReadFilter === readFilter &&
       state.agentsCompactMode === compact &&
@@ -119,23 +135,26 @@ export async function applyActivityViewerRequest(
           null
         )
       : null
+  const persistedScope = scopeCommand && ui !== null ? readPersistedActivityScope(ui) : null
   const persisted =
-    sameRuntime() && ui !== null
+    sameRuntime() && ui !== null && (!scopeCommand || persistedScope !== null)
       ? writeOutcome !== 'rejected' &&
-        (command.operation === 'group'
-          ? ui.agentsGroupBy === groupBy
-          : command.operation === 'read'
-            ? ui.agentsReadFilter === readFilter
-            : command.operation === 'compact'
-              ? ui.agentsCompactMode === compact
-              : command.operation === 'children'
-                ? ui.agentsShowChildAgents === showChildAgents
-                : command.operation === 'search-visible'
-                  ? ui.agentsShowSearch === showSearch
-                  : ui.agentsGroupBy === groupBy &&
-                    ui.agentsReadFilter === readFilter &&
-                    ui.agentsCompactMode === compact &&
-                    ui.agentsShowChildAgents === showChildAgents)
+        (expectedScope !== undefined
+          ? sameActivityScope(persistedScope, expectedScope)
+          : command.operation === 'group'
+            ? ui.agentsGroupBy === groupBy
+            : command.operation === 'read'
+              ? ui.agentsReadFilter === readFilter
+              : command.operation === 'compact'
+                ? ui.agentsCompactMode === compact
+                : command.operation === 'children'
+                  ? ui.agentsShowChildAgents === showChildAgents
+                  : command.operation === 'search-visible'
+                    ? ui.agentsShowSearch === showSearch
+                    : ui.agentsGroupBy === groupBy &&
+                      ui.agentsReadFilter === readFilter &&
+                      ui.agentsCompactMode === compact &&
+                      ui.agentsShowChildAgents === showChildAgents)
       : null
   const matches = (): boolean => {
     const view = readActivityViewerView(command.surface)
@@ -144,6 +163,7 @@ export async function applyActivityViewerRequest(
       view !== null &&
       view.surface === command.surface &&
       view.runtimeContextKey === runtime &&
+      (expectedScope === undefined || sameActivityScope(view.scope, expectedScope)) &&
       view.groupBy === groupBy &&
       view.readFilter === readFilter &&
       view.compact === compact &&
@@ -197,6 +217,7 @@ export async function applyActivityViewerRequest(
     dispatched: saving !== undefined || localSearch,
     applied,
     persisted,
+    ...(scopeCommand ? { persistedScope } : {}),
     writeOutcome,
     groupBy,
     readFilter,

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ActivityOriginKindSchema } from '../activity-viewer-scope'
 import { UiUpdateFields } from './client-ui-params'
 
 export const ActivityViewerSurfaceSchema = z.enum(['sidebar-agents', 'activity-page'])
@@ -6,6 +7,19 @@ export type ActivityViewerSurface = z.infer<typeof ActivityViewerSurfaceSchema>
 const target = { viewer: z.literal('host'), surface: ActivityViewerSurfaceSchema }
 export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
+  z
+    .object({
+      ...target,
+      operation: z.literal('origin'),
+      kind: ActivityOriginKindSchema,
+      hidden: z.boolean()
+    })
+    .strict(),
+  z.object({ ...target, operation: z.literal('scope-reset') }).strict(),
+  z
+    .object({ ...target, operation: z.literal('host-toggle'), host: z.string().trim().min(1) })
+    .strict(),
+  z.object({ ...target, operation: z.literal('hosts-toggle-all') }).strict(),
   z
     .object({
       ...target,

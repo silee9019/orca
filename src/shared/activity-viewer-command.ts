@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ActivityViewerScopeSchema } from './activity-viewer-scope'
 import { openEnum } from './zod-salvage'
 import {
   ActivityViewerSurfaceSchema,
@@ -15,6 +16,7 @@ export const ActivityViewerSnapshotSchema = z
     showChildAgents: z.boolean(),
     querySettled: z.boolean(),
     query: z.string().optional(),
+    scope: ActivityViewerScopeSchema.optional(),
     densityMeasured: z.boolean(),
     selectedPaneKey: z.string().nullable(),
     logicalRows: z.array(
@@ -41,6 +43,7 @@ export const ActivityViewerResultSchema = z
     dispatched: z.boolean(),
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
+    persistedScope: ActivityViewerScopeSchema.nullable().optional(),
     writeOutcome: openEnum(['accepted', 'rejected', 'unknown', 'not_requested'], 'unknown'),
     groupBy: z.string(),
     readFilter: z.string(),

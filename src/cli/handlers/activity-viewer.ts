@@ -16,6 +16,10 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
     if (enabled !== undefined && enabled !== 'true' && enabled !== 'false') {
       throw new RuntimeClientError('invalid_argument', 'Use --enabled true or false.')
     }
+    const hidden = operation === 'origin' ? getRequiredStringFlag(flags, 'hidden') : undefined
+    if (hidden !== undefined && hidden !== 'true' && hidden !== 'false') {
+      throw new RuntimeClientError('invalid_argument', 'Use --hidden true or false.')
+    }
     const query = flags.get('query')
     if (operation === 'search' && typeof query !== 'string') {
       throw new RuntimeClientError(
@@ -28,6 +32,10 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
       ...(operation === 'search' ? { query } : {}),
+      ...(operation === 'origin'
+        ? { kind: getRequiredStringFlag(flags, 'kind'), hidden: hidden === 'true' }
+        : {}),
+      ...(operation === 'host-toggle' ? { host: getRequiredStringFlag(flags, 'host') } : {}),
       ...(operation === 'group' ? { by: getRequiredStringFlag(flags, 'by') } : {}),
       ...(operation === 'read' ? { filter: getRequiredStringFlag(flags, 'filter') } : {}),
       ...(enabled !== undefined ? { enabled: enabled === 'true' } : {})
@@ -58,6 +66,10 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 }
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
+  'ui activity origin': handler('origin'),
+  'ui activity scope-reset': handler('scope-reset'),
+  'ui activity host-toggle': handler('host-toggle'),
+  'ui activity hosts-toggle-all': handler('hosts-toggle-all'),
   'ui activity group': handler('group'),
   'ui activity read': handler('read'),
   'ui activity compact': handler('compact'),

@@ -1,4 +1,8 @@
 import React from 'react'
+import {
+  isActivityOtherClientFilterVisible,
+  resetActivityScope
+} from '@/runtime/activity-scope-preferences'
 import { useAppStore } from '@/store'
 import { DropdownMenuCheckboxItem, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { translate } from '@/i18n/i18n'
@@ -30,12 +34,7 @@ export function ActivityScopeFilterMenuItems(): React.JSX.Element {
   const hideFromOtherDevices = useAppStore((s) => s.agentsHideWorkspacesFromOtherDevices)
   const setHideFromOtherDevices = useAppStore((s) => s.setAgentsHideWorkspacesFromOtherDevices)
   // Same gate as the workspace menu: other-client provenance only exists with paired runtimes.
-  const showOtherClientFilter = useAppStore(
-    (s) =>
-      !s.runtimeEnvironmentCatalogHydrated ||
-      s.runtimeEnvironments.length > 0 ||
-      s.agentsHideWorkspacesFromOtherDevices
-  )
+  const showOtherClientFilter = useAppStore(isActivityOtherClientFilterVisible)
   const { hostOptions } = useSidebarHostScopeOptions()
   const showHostScopeControls = shouldShowHostScopeControls(hostOptions)
   const hasScopeFilter = agentsVisibleHostIds !== null || agentsFilterRepoIds.length > 0
@@ -96,8 +95,9 @@ export function ActivityScopeFilterMenuItems(): React.JSX.Element {
       {hasScopeFilter ? (
         <DropdownMenuItem
           onSelect={() => {
-            setAgentsVisibleHostIds(null)
-            setAgentsFilterRepoIds([])
+            void resetActivityScope({ setAgentsVisibleHostIds, setAgentsFilterRepoIds }).catch(
+              () => undefined
+            )
           }}
         >
           {translate(

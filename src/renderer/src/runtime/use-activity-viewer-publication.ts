@@ -1,3 +1,4 @@
+import { readActivityScope } from './activity-scope-preferences'
 import { useLayoutEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/store'
@@ -31,7 +32,12 @@ export function useActivityViewerPublication(
   const context = useAppStore(
     useShallow((state) => ({
       runtimeContextKey: getProviderRuntimeContextKey(state.settings),
-      defaultHostId: getSettingsFocusedExecutionHostId(state.settings)
+      defaultHostId: getSettingsFocusedExecutionHostId(state.settings),
+      agentsVisibleHostIds: state.agentsVisibleHostIds,
+      agentsFilterRepoIds: state.agentsFilterRepoIds,
+      agentsHideWorkspacesFromOtherDevices: state.agentsHideWorkspacesFromOtherDevices,
+      agentsHideAutomationGeneratedWorkspaces: state.agentsHideAutomationGeneratedWorkspaces,
+      agentsHideCliCreatedWorkspaces: state.agentsHideCliCreatedWorkspaces
     }))
   )
   const { groupBy, readFilter, compact, showChildAgents, querySettled, query, selectedPaneKey } =
@@ -49,6 +55,7 @@ export function useActivityViewerPublication(
       showChildAgents,
       querySettled,
       query,
+      scope: readActivityScope(context),
       selectedPaneKey,
       densityMeasured: false,
       renderedRows: [],
