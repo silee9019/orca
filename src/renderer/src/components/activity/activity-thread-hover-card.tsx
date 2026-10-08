@@ -1,10 +1,11 @@
+import { useActivityPreviewIssueCopyControl } from '@/runtime/use-activity-preview-issue-copy-control'
+import { copyActivityLinkedWorkItemLink } from './activity-thread-copy'
 import {
   getWorktreeExecutionHostId,
   getSettingsFocusedExecutionHostId
 } from '../../../../shared/execution-host'
 import React, { useCallback } from 'react'
 import { ExternalLink, MonitorUp, Pencil, StickyNote } from 'lucide-react'
-import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { LinearIcon } from '@/components/icons/LinearIcon'
@@ -159,43 +160,33 @@ function ActivityThreadHoverCardContent({
     settings: foundation.settings
   })
 
-  const copyLinkedWorkItemLink = useCallback(async (url: string, label: string) => {
-    try {
-      await window.api.ui.writeClipboardText(url)
-      toast.success(
-        translate('auto.components.sidebar.WorktreeCardMeta.copyLinkSuccess', '{{value0}} copied', {
-          value0: label
-        })
-      )
-    } catch {
-      toast.error(
-        translate('auto.components.sidebar.WorktreeCardMeta.copyLinkFailure', 'Failed to copy link')
-      )
-    }
-  }, [])
-
-  const handleCopyIssueLink = useCallback(() => {
+  const { closeHover } = detailsHoverControl
+  const handleCopyIssueLink = useCallback(async () => {
     if (!secondary.hoverIssue?.url) {
-      return
+      return false
     }
-    detailsHoverControl.closeHover()
-    void copyLinkedWorkItemLink(
+    closeHover()
+    return copyActivityLinkedWorkItemLink(
       secondary.hoverIssue.url,
       translate('auto.components.sidebar.WorktreeCardMeta.issueLinkLabel', 'Issue link')
     )
-  }, [copyLinkedWorkItemLink, detailsHoverControl, secondary.hoverIssue?.url])
+  }, [closeHover, secondary.hoverIssue?.url])
+  const issueCopyRef = useActivityPreviewIssueCopyControl(
+    secondary.hoverIssue?.url,
+    handleCopyIssueLink
+  )
 
   const handleCopyReviewLink = useCallback(() => {
     if (!secondary.hoverReview?.url) {
       return
     }
-    void copyLinkedWorkItemLink(
+    void copyActivityLinkedWorkItemLink(
       secondary.hoverReview.url,
       translate('auto.components.sidebar.WorktreeCardMeta.reviewLinkLabel', '{{value0}} link', {
         value0: getReviewLabel(secondary.hoverReview)
       })
     )
-  }, [copyLinkedWorkItemLink, secondary.hoverReview])
+  }, [secondary.hoverReview])
 
   const dismissAndRun = useCallback(
     (handler: ((event: React.MouseEvent) => void) | undefined) => (event: React.MouseEvent) => {
@@ -207,6 +198,7 @@ function ActivityThreadHoverCardContent({
 
   return (
     <HoverCardContent
+      ref={issueCopyRef}
       data-activity-preview-owner={previewId}
       data-activity-preview-pane={thread.paneKey}
       data-activity-preview-workspace={worktree.id}

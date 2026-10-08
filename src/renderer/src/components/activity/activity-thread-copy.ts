@@ -54,3 +54,20 @@ export async function copyActivityThreadPreviewPath(path: string): Promise<boole
     return false
   }
 }
+
+export async function copyActivityLinkedWorkItemLink(url: string, label: string): Promise<boolean> {
+  try {
+    await window.api.ui.writeClipboardText(url)
+    toast.success(
+      translate('auto.components.sidebar.WorktreeCardMeta.copyLinkSuccess', '{{value0}} copied', {
+        value0: label
+      })
+    )
+    return true
+  } catch {
+    toast.error(
+      translate('auto.components.sidebar.WorktreeCardMeta.copyLinkFailure', 'Failed to copy link')
+    )
+    return false
+  }
+}

@@ -1,3 +1,4 @@
+import { captureActivityPreviewIssueCopyTarget } from './activity-preview-issue-copy-target'
 import { captureActivityPreviewCopyTarget } from './activity-preview-copy-target'
 import { useAppStore } from '@/store'
 import {
@@ -16,14 +17,22 @@ import { captureActivityThreadCommandTarget } from './activity-thread-command-ta
 
 export async function applyActivityThreadCopyRequest(
   request: ActivityViewerRequest,
-  command: Extract<ActivityViewerCommand, { operation: 'copy' | 'preview-copy-path' }>
+  command: Extract<
+    ActivityViewerCommand,
+    { operation: 'copy' | 'preview-copy-path' | 'preview-copy-issue-link' }
+  >
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const context = captureActivityThreadCommandTarget(command.surface, command.paneKey)
   const { initial, thread, control, sameRuntime, observe } = context
+  const issue =
+    command.operation === 'preview-copy-issue-link'
+      ? captureActivityPreviewIssueCopyTarget(context)
+      : null
   const preview =
     command.operation === 'preview-copy-path' ? captureActivityPreviewCopyTarget(context) : null
-  const kind = command.operation === 'copy' ? command.kind : 'path'
+  const kind = issue ? 'issue-link' : command.operation === 'copy' ? command.kind : 'path'
   const target =
+    issue?.target ??
     preview?.target ??
     getActivityThreadCopyTargets(thread, control.canJump(thread)).find(
       (candidate) => candidate.key === kind
@@ -33,6 +42,9 @@ export async function applyActivityThreadCopyRequest(
   }
   const value = target.value
   const stillExpected = (): boolean => {
+    if (issue) {
+      return context.stillExpected() && issue.closed()
+    }
     const current = context.readCurrent()
     return (
       context.stillExpected() &&
@@ -49,15 +61,19 @@ export async function applyActivityThreadCopyRequest(
   try {
     const remaining = (): number => Math.max(0, Math.min(5000, request.expiresAt - Date.now()))
     const written = await withTimeout(
-      preview
-        ? copyActivityThreadPreviewPath(value)
-        : writeActivityThreadCopyTarget(target).then(() => true),
+      issue
+        ? issue.copy()
+        : preview
+          ? copyActivityThreadPreviewPath(value)
+          : writeActivityThreadCopyTarget(target).then(() => true),
       remaining(),
       false
     )
+    const issueClosed = !issue || (written && (await issue.waitForClose(remaining())))
     observe()
     const verified =
       written &&
+      issueClosed &&
       Date.now() < request.expiresAt &&
       stillExpected() &&
       (await withTimeout(
@@ -66,12 +82,14 @@ export async function applyActivityThreadCopyRequest(
         false
       ))
     observe()
-    const available = stillExpected()
+    const available = issue ? issue.available() && context.stillExpected() : stillExpected()
+    const stillClosed = !issue || issue.closed()
     return {
       viewer: 'host',
       surface: command.surface,
       dispatched: true,
-      applied: Date.now() < request.expiresAt && available && verified,
+      applied:
+        Date.now() < request.expiresAt && available && issueClosed && stillClosed && verified,
       persisted: null,
       writeOutcome: 'not_requested',
       groupBy: initial.agentsGroupBy,
@@ -89,12 +107,13 @@ export async function applyActivityThreadCopyRequest(
         ? { reason: 'viewer_runtime_changed' as const }
         : !available
           ? { reason: 'viewer_surface_superseded' as const }
-          : !verified || Date.now() >= request.expiresAt
+          : !verified || !stillClosed || Date.now() >= request.expiresAt
             ? { reason: 'viewer_not_applied' as const }
             : {})
     }
   } finally {
     unsubscribe()
     preview?.dispose()
+    issue?.dispose()
   }
 }

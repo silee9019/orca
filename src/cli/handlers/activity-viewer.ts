@@ -47,7 +47,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'preview-issue-menu' ||
+      ...(operation === 'preview-copy-issue-link' ||
+      operation === 'preview-issue-menu' ||
       operation === 'preview-edit' ||
       operation === 'preview-copy-path' ||
       operation === 'preview' ||
@@ -102,6 +103,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
   'ui activity copy': handler('copy'),
+  'ui activity preview-copy-issue-link': handler('preview-copy-issue-link'),
   'ui activity preview-copy-path': handler('preview-copy-path'),
   'ui activity preview': handler('preview'),
   'ui activity preview-edit': handler('preview-edit'),

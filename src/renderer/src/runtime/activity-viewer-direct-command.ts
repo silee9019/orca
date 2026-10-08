@@ -26,7 +26,11 @@ export function applyActivityViewerDirectRequest(
   if (command.operation === 'preview') {
     return applyActivityThreadPreviewRequest(request, command)
   }
-  if (command.operation === 'copy' || command.operation === 'preview-copy-path') {
+  if (
+    command.operation === 'copy' ||
+    command.operation === 'preview-copy-path' ||
+    command.operation === 'preview-copy-issue-link'
+  ) {
     return applyActivityThreadCopyRequest(request, command)
   }
   if (command.operation === 'scroll') {

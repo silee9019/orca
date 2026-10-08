@@ -9,6 +9,7 @@ function options(operation: string): { flags: string[]; usage: string } {
       return { flags: ['pane', 'enabled'], usage: ' --pane <pane-key> --enabled <true|false>' }
     case 'copy':
       return { flags: ['pane', 'kind'], usage: ' --pane <pane-key> --kind <title|path>' }
+    case 'preview-copy-issue-link':
     case 'preview-copy-path':
     case 'read-toggle':
     case 'clear-thread':
@@ -48,6 +49,7 @@ function options(operation: string): { flags: string[]; usage: string } {
 export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
   'copy',
+  'preview-copy-issue-link',
   'preview-copy-path',
   'preview',
   'preview-edit',
@@ -81,6 +83,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Preview-copy-issue-link requires the exact open issue menu and its visible Copy link item. It calls the original hover callback once, preserving hover/menu close and copy toast. The clipboard write acknowledgement and read-back are local; the URL is never returned and a timed-out write cannot be cancelled.',
     'Preview-issue-menu uses the original visible more-actions trigger and local pending-hover-close policy. Applied confirms its exact menu portal or its removal. It never opens a preview implicitly, selects a menu item, or acknowledges remote work.',
     'Preview-edit clicks the original visible issue or notes action once and never overwrites an open modal. Applied confirms the resolved local dialog owner, committed original seed and requested input focus (or its original disabled state). It does not save, close the preview explicitly, or acknowledge remote writes.',
     'Preview-copy-path requires the exact open preview and its visible path action. It preserves the original path-only gate and success/error toast. Its clipboard acknowledgement/read-back has the same timeout limits as Copy; it never opens the preview implicitly.',

@@ -10,6 +10,13 @@ export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z
     .object({
       ...target,
+      operation: z.literal('preview-copy-issue-link'),
+      paneKey: z.string().min(1)
+    })
+    .strict(),
+  z
+    .object({
+      ...target,
       operation: z.literal('preview-issue-menu'),
       paneKey: z.string().min(1),
       enabled: z.boolean()

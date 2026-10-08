@@ -76,7 +76,7 @@ export const ActivityViewerResultSchema = z
     copyAction: z
       .object({
         paneKey: z.string(),
-        kind: openEnum(['title', 'path', 'unknown'], 'unknown'),
+        kind: openEnum(['title', 'path', 'issue-link', 'unknown'], 'unknown'),
         writeAcknowledged: z.boolean(),
         verified: z.boolean()
       })
