@@ -13,6 +13,7 @@ import { requestSidebarViewerFromRenderer } from './sidebar-viewer-request-relay
 import { requestCardViewerFromRenderer } from './card-viewer-request-relay'
 import { requestStatusBarViewerFromRenderer } from './status-bar-viewer-request-relay'
 import { requestWorkspaceListViewerFromRenderer } from './workspace-list-viewer-request-relay'
+import { requestWorkspaceBoardFromRenderer } from './workspace-board-viewer-request-relay'
 import { requestWorkspaceFilterFromRenderer } from './workspace-filter-request-relay'
 import { requestPtyDataListenerCount } from './pty-data-listener-count-request'
 import { randomUUID } from 'node:crypto'
@@ -70,6 +71,7 @@ export function registerRuntimeWindowLifecycle(
     statusBarViewer: (command) => requestStatusBarViewerFromRenderer(mainWindow, command),
     activityViewer: (command) => requestActivityViewerFromRenderer(mainWindow, command),
     workspaceListViewer: (command) => requestWorkspaceListViewerFromRenderer(mainWindow, command),
+    workspaceBoardViewer: (command) => requestWorkspaceBoardFromRenderer(mainWindow, command),
     workspaceFilter: (command) => requestWorkspaceFilterFromRenderer(mainWindow, command),
     readPtyDataListenerCount: (rendererId, timeoutMs, signal) =>
       requestPtyDataListenerCount(mainWindow, ipcMain, rendererId, timeoutMs, signal),

@@ -85,6 +85,7 @@ import { SIDEBAR_VIEWER_COMMAND_SPECS } from './sidebar-viewer'
 import { CARD_VIEWER_COMMAND_SPECS } from './card-viewer'
 import { STATUS_BAR_VIEWER_COMMAND_SPECS } from './status-bar-viewer'
 import { WORKSPACE_LIST_VIEWER_COMMAND_SPECS } from './workspace-list-viewer'
+import { WORKSPACE_BOARD_COMMAND_SPECS } from './workspace-board-viewer'
 import { WORKSPACE_FILTER_COMMAND_SPECS } from './workspace-filter'
 import { TERMINAL_STARTUP_RESTORATION_COMMAND_SPECS } from './terminal-startup-restoration'
 import { PTY_PROVIDER_SESSION_COMMAND_SPECS } from './pty-provider-sessions'
@@ -216,6 +217,7 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...STATUS_BAR_VIEWER_COMMAND_SPECS,
   ...ACTIVITY_VIEWER_COMMAND_SPECS,
   ...WORKSPACE_LIST_VIEWER_COMMAND_SPECS,
+  ...WORKSPACE_BOARD_COMMAND_SPECS,
   ...WORKSPACE_FILTER_COMMAND_SPECS,
   ...TERMINAL_STARTUP_RESTORATION_COMMAND_SPECS,
   ...PTY_PROVIDER_SESSION_COMMAND_SPECS,

@@ -4,6 +4,7 @@ import { useSidebarViewerBridge } from '../runtime/use-sidebar-viewer-bridge'
 import { useCardViewerBridge } from '../runtime/use-card-viewer-bridge'
 import { useStatusBarViewerBridge } from '../runtime/use-status-bar-viewer-bridge'
 import { useWorkspaceListViewerBridge } from '../runtime/use-workspace-list-viewer-bridge'
+import { useWorkspaceBoardViewerBridge } from '../runtime/use-workspace-board-viewer-bridge'
 import { useEffect } from 'react'
 import { installAppLifetimeIpcEvents } from './ipc-events/app-lifetime-ipc-bridge'
 
@@ -15,5 +16,6 @@ export function useIpcEvents(): void {
   useStatusBarViewerBridge()
   useActivityViewerBridge()
   useWorkspaceListViewerBridge()
+  useWorkspaceBoardViewerBridge()
   useEffect(() => installAppLifetimeIpcEvents(), [])
 }

@@ -80,10 +80,26 @@ export const WORKSPACE_VIEWER_GROUPS: readonly HandlerGroup[] = [
       'ui workspace-list get',
       'ui workspace-list group',
       'ui workspace-list sort',
-      'ui workspace-list project-order'
+      'ui workspace-list project-order',
+      'ui workspace-list group-toggle'
     ],
     load: async () =>
       (await import('./handlers/workspace-list-viewer.js')).WORKSPACE_LIST_VIEWER_HANDLERS
+  },
+  {
+    name: 'workspace-board-viewer',
+    keys: [
+      'ui workspace-board get',
+      'ui workspace-board status-add',
+      'ui workspace-board status-rename',
+      'ui workspace-board status-color',
+      'ui workspace-board status-icon',
+      'ui workspace-board status-move',
+      'ui workspace-board status-remove',
+      'ui workspace-board column-width'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-board-viewer.js')).WORKSPACE_BOARD_VIEWER_HANDLERS
   },
   {
     name: 'sidebar-viewer',

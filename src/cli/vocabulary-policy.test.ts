@@ -77,6 +77,7 @@ describe('integrated command vocabulary aliases', () => {
     ['ui project-filter remove', 'ui project-filter rm'],
     ['ui sidebar get', 'ui sidebar show'],
     ['ui status-bar get', 'ui status-bar show'],
+    ['ui workspace-board get', 'ui workspace-board show'],
     ['ui workspace-filter get', 'ui workspace-filter show'],
     ['ui workspace-list get', 'ui workspace-list show']
   ])('%s exposes %s without changing its target', (command, alias) => {

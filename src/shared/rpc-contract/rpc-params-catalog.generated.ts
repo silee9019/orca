@@ -805,6 +805,7 @@ import {
   UsageViewerParams
 } from './usage-params'
 import { SpeechFileTranscription, SpeechKeySave } from './voice-control-params'
+import { WorkspaceBoardParams } from './workspace-board-params'
 import { BranchRenameFailureRead } from './workspace-branch-rename-failure-params'
 import { WorkspaceCleanupDismiss } from './workspace-cleanup-dismissal-params'
 import { DesktopCleanupScanRequest, DesktopCleanupScanStart } from './workspace-cleanup-scan-params'
@@ -2060,6 +2061,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'ui.setupGuideViewer': SetupGuideParams,
   'ui.sidebarViewer': SidebarViewerParams,
   'ui.statusBarViewer': StatusBarViewerParams,
+  'ui.workspaceBoardViewer': WorkspaceBoardParams,
   'ui.workspaceFilter': WorkspaceFilterParams,
   'ui.workspaceListViewer': WorkspaceListViewerParams,
   'updater.check': UpdaterCheckParams,

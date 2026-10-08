@@ -10,6 +10,7 @@ import { sidebarViewerBridgeApi } from './sidebar-viewer-bridge'
 import { cardViewerBridgeApi } from './card-viewer-bridge'
 import { statusBarViewerBridgeApi } from './status-bar-viewer-bridge'
 import { workspaceListViewerBridgeApi } from './workspace-list-viewer-bridge'
+import { workspaceBoardViewerBridgeApi } from './workspace-board-viewer-bridge'
 import { workspaceFilterBridgeApi } from './workspace-filter-bridge'
 import type { PreloadApi } from '../api-types'
 import { uiStateAndMenuCommandsApi } from './ui-bridge-state-and-menu-commands'
@@ -30,6 +31,7 @@ export const uiApi = {
   ...statusBarViewerBridgeApi,
   ...activityViewerBridgeApi,
   ...workspaceListViewerBridgeApi,
+  ...workspaceBoardViewerBridgeApi,
   ...workspaceFilterBridgeApi,
   ...uiStateAndMenuCommandsApi,
   ...uiTabAndBrowserCommandsApi,

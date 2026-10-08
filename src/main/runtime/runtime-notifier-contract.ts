@@ -25,6 +25,8 @@ import type { SidebarViewerResult } from '../../shared/sidebar-viewer-command'
 import type { CardViewerResult } from '../../shared/card-viewer-command'
 import type { StatusBarViewerResult } from '../../shared/status-bar-viewer-command'
 import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
+import type { WorkspaceBoardCommand } from '../../shared/rpc-contract/workspace-board-params'
+import type { WorkspaceBoardResult } from '../../shared/workspace-board-command'
 import type { WorkspaceFilterCommand } from '../../shared/rpc-contract/workspace-filter-params'
 import type { WorkspaceFilterResult } from '../../shared/workspace-filter-command'
 import type { SleepingAgentLaunchConfig } from '../../shared/agent-session-resume'
@@ -64,6 +66,7 @@ export type RuntimeNotifier = {
   statusBarViewer?(command: StatusBarViewerCommand): Promise<StatusBarViewerResult>
   activityViewer?(command: ActivityViewerCommand): Promise<ActivityViewerResult>
   workspaceListViewer?(command: WorkspaceListViewerCommand): Promise<WorkspaceListViewerResult>
+  workspaceBoardViewer?(command: WorkspaceBoardCommand): Promise<WorkspaceBoardResult>
   workspaceFilter?(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult>
   readPtyDataListenerCount?(
     rendererId: number,

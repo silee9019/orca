@@ -8,7 +8,11 @@ import type {
   WorkspaceListViewerResult,
   WorkspaceListViewerResponse
 } from '../../../shared/workspace-list-viewer-command'
-import { readWorkspaceListViewerView } from './workspace-list-viewer-view'
+import { pollPersistedUi } from './persisted-ui-readback'
+import {
+  readWorkspaceListCollapseControl,
+  readWorkspaceListViewerView
+} from './workspace-list-viewer-view'
 
 export async function applyWorkspaceListViewerRequest(
   request: WorkspaceListViewerRequest
@@ -35,6 +39,20 @@ export async function applyWorkspaceListViewerRequest(
     const settings = useAppStore.getState().settings
     return settings !== null && getProviderRuntimeContextKey(settings) === runtime
   }
+  const toggleControl =
+    command.operation === 'group-toggle' ? readWorkspaceListCollapseControl() : null
+  if (command.operation === 'group-toggle') {
+    const view = readWorkspaceListViewerView()
+    if (
+      !toggleControl ||
+      !view ||
+      view.empty ||
+      view.runtimeContextKey !== runtime ||
+      !view.collapsibleKeys?.includes(command.groupKey)
+    ) {
+      throw new Error('workspace_list_group_unavailable')
+    }
+  }
   let writeOutcome: WorkspaceListViewerResult['writeOutcome'] = 'not_requested'
   let dispatched = false
   let saving: Promise<void> | undefined
@@ -48,6 +66,10 @@ export async function applyWorkspaceListViewerRequest(
   } else if (command.operation === 'project-order' && initial.projectOrderBy !== command.by) {
     dispatched = true
     initial.setProjectOrderBy(command.by)
+    writeOutcome = 'unknown'
+  } else if (command.operation === 'group-toggle' && toggleControl) {
+    dispatched = true
+    toggleControl.toggle(command.groupKey)
     writeOutcome = 'unknown'
   }
   const expected = useAppStore.getState()
@@ -91,7 +113,17 @@ export async function applyWorkspaceListViewerRequest(
     }
   }
   let ui: PersistedUIState | null = null
-  if (sameRuntime()) {
+  let uiRead = false
+  if (command.operation === 'group-toggle') {
+    const polled = await pollPersistedUi({
+      matches: (state) => sameCollapsed(state.collapsedGroups ?? []),
+      keepWaiting: stillExpected,
+      deadline: persistenceDeadline
+    })
+    ui = sameRuntime() ? polled.ui : null
+    uiRead = polled.read
+  }
+  if (sameRuntime() && !uiRead) {
     ui = await withTimeout<PersistedUIState | null>(
       window.api.ui.get(),
       Math.max(0, request.expiresAt - Date.now() - 50),
@@ -101,7 +133,7 @@ export async function applyWorkspaceListViewerRequest(
   const persisted =
     sameRuntime() && ui !== null
       ? writeOutcome !== 'rejected' &&
-        (command.operation === 'group'
+        (command.operation === 'group' || command.operation === 'group-toggle'
           ? ui.groupBy === groupBy && sameCollapsed(ui.collapsedGroups ?? [])
           : command.operation === 'sort'
             ? ui.sortBy === sortBy

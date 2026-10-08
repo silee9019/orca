@@ -31,7 +31,8 @@ it('routes explicit list modes through the public parser and target runtime', as
     ['get'],
     ['group', '--by', 'none'],
     ['sort', '--by', 'name'],
-    ['project-order', '--by', 'recent']
+    ['project-order', '--by', 'recent'],
+    ['group-toggle', '--group-key', 'repo:one']
   ]) {
     const parsed = parseArgs(
       ['ui', 'workspace-list', ...args, '--viewer', 'host', '--json'],
@@ -58,6 +59,33 @@ it('rejects invalid options and missing viewer before RPC', async () => {
       dispatch(['ui', 'workspace-list', 'group'], { client, flags, cwd: '/unused', json: true })
     ).rejects.toThrow()
   }
+  expect(call).not.toHaveBeenCalled()
+})
+it('sends the explicit group key and rejects a missing one before RPC', async () => {
+  call.mockResolvedValue({ id: 'r', ok: true, _meta: { runtimeId: 'host' }, result })
+  await dispatch(['ui', 'workspace-list', 'group-toggle'], {
+    client,
+    flags: new Map([
+      ['viewer', 'host'],
+      ['group-key', 'repo:one']
+    ]),
+    cwd: '/unused',
+    json: true
+  })
+  expect(call).toHaveBeenCalledWith('ui.workspaceListViewer', {
+    viewer: 'host',
+    operation: 'group-toggle',
+    groupKey: 'repo:one'
+  })
+  call.mockClear()
+  await expect(
+    dispatch(['ui', 'workspace-list', 'group-toggle'], {
+      client,
+      flags: new Map([['viewer', 'host']]),
+      cwd: '/unused',
+      json: true
+    })
+  ).rejects.toThrow()
   expect(call).not.toHaveBeenCalled()
 })
 it('refuses an older runtime without a peer fallback', async () => {

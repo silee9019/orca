@@ -18,6 +18,8 @@ import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-v
 import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
 import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
 import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
+import type { WorkspaceBoardCommand } from '../../shared/rpc-contract/workspace-board-params'
+import type { WorkspaceBoardResult } from '../../shared/workspace-board-command'
 import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
 import type { StatusBarViewerCommand } from '../../shared/rpc-contract/status-bar-viewer-params'
 import type { CardViewerResult } from '../../shared/card-viewer-command'
@@ -52,13 +54,17 @@ import type { NativeChatSessionOptionSettingsMutation } from '../../shared/nativ
 import type { Automation } from '../../shared/automations-types'
 
 export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithStateFields {
+  private async requestViewer(name: string, command: unknown): Promise<unknown> {
+    if (!this.notifier?.[name]) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier[name](command)
+  }
+
   async searchSettingsViewer(
     command: SearchSettingsViewerCommand
   ): Promise<SearchSettingsViewerResult> {
-    if (!this.notifier?.searchSettingsViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.searchSettingsViewer(command)
+    return await this.requestViewer('searchSettingsViewer', command)
   }
 
   get ptyForegroundProcessReads() {
@@ -214,91 +220,56 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
   }
 
   async projectFilter(command: ProjectFilterOperation): Promise<ProjectFilterResult> {
-    if (!this.notifier?.projectFilter) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.projectFilter(command)
+    return await this.requestViewer('projectFilter', command)
   }
 
   async browserViewer(command: BrowserViewerCommand): Promise<BrowserViewerResult> {
-    if (!this.notifier?.browserViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.browserViewer(command)
+    return await this.requestViewer('browserViewer', command)
   }
 
   async voiceViewer(command: VoiceViewerOperation): Promise<VoiceViewerResult> {
-    if (!this.notifier?.voiceViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.voiceViewer(command)
+    return await this.requestViewer('voiceViewer', command)
   }
 
   async crashReportViewer(command: CrashReportCommand): Promise<CrashReportResult> {
-    if (!this.notifier?.crashReportViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.crashReportViewer(command)
+    return await this.requestViewer('crashReportViewer', command)
   }
 
   async setupGuideViewer(command: SetupGuideCommand): Promise<SetupGuideResult> {
-    if (!this.notifier?.setupGuideViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.setupGuideViewer(command)
+    return await this.requestViewer('setupGuideViewer', command)
   }
 
   async featureTourViewer(command: FeatureTourCommand): Promise<FeatureTourResult> {
-    if (!this.notifier?.featureTourViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.featureTourViewer(command)
+    return await this.requestViewer('featureTourViewer', command)
   }
 
   async settingsViewer(command: SettingsViewerCommand): Promise<SettingsViewerResult> {
-    if (!this.notifier?.settingsViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.settingsViewer(command)
+    return await this.requestViewer('settingsViewer', command)
   }
   async sidebarViewer(command: SidebarViewerCommand): Promise<SidebarViewerResult> {
-    if (!this.notifier?.sidebarViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.sidebarViewer(command)
+    return await this.requestViewer('sidebarViewer', command)
   }
   async cardViewer(command: CardViewerCommand): Promise<CardViewerResult> {
-    if (!this.notifier?.cardViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.cardViewer(command)
+    return await this.requestViewer('cardViewer', command)
   }
   async statusBarViewer(command: StatusBarViewerCommand): Promise<StatusBarViewerResult> {
-    if (!this.notifier?.statusBarViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.statusBarViewer(command)
+    return await this.requestViewer('statusBarViewer', command)
   }
   async activityViewer(command: ActivityViewerCommand): Promise<ActivityViewerResult> {
-    if (!this.notifier?.activityViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.activityViewer(command)
+    return await this.requestViewer('activityViewer', command)
   }
   async workspaceListViewer(
     command: WorkspaceListViewerCommand
   ): Promise<WorkspaceListViewerResult> {
-    if (!this.notifier?.workspaceListViewer) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.workspaceListViewer(command)
+    return await this.requestViewer('workspaceListViewer', command)
+  }
+
+  async workspaceBoardViewer(command: WorkspaceBoardCommand): Promise<WorkspaceBoardResult> {
+    return await this.requestViewer('workspaceBoardViewer', command)
   }
 
   async workspaceFilter(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult> {
-    if (!this.notifier?.workspaceFilter) {
-      throw new Error('renderer_unavailable')
-    }
-    return await this.notifier.workspaceFilter(command)
+    return await this.requestViewer('workspaceFilter', command)
   }
 
   getUIState(): PersistedUIState {

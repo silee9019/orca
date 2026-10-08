@@ -123,6 +123,7 @@ import { SIDEBAR_VIEWER_METHODS } from './sidebar-viewer'
 import { CARD_VIEWER_METHODS } from './card-viewer'
 import { STATUS_BAR_VIEWER_METHODS } from './status-bar-viewer'
 import { WORKSPACE_LIST_VIEWER_METHODS } from './workspace-list-viewer'
+import { WORKSPACE_BOARD_METHODS } from './workspace-board-viewer'
 import { WORKSPACE_FILTER_METHODS } from './workspace-filter'
 import { STATUS_METHODS } from './status'
 
@@ -217,6 +218,7 @@ export const DESKTOP_CONTROL_RPC_METHODS = [
   ...STATUS_BAR_VIEWER_METHODS,
   ...ACTIVITY_VIEWER_METHODS,
   ...WORKSPACE_LIST_VIEWER_METHODS,
+  ...WORKSPACE_BOARD_METHODS,
   ...WORKSPACE_FILTER_METHODS,
   ...STATUS_METHODS,
   ...AGENT_STATUS_CLI_METHODS,

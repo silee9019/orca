@@ -8,6 +8,7 @@ export const WorkspaceListViewerSnapshotSchema = z
     sortBy: z.string(),
     projectOrderBy: z.string(),
     collapsedGroups: z.array(z.string()),
+    collapsibleKeys: z.array(z.string()).optional(),
     runtimeContextKey: z.string(),
     empty: z.boolean(),
     rows: z.array(
