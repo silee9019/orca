@@ -1,7 +1,6 @@
 import { stopRendererOwnedPty, type PtyKillIpcDeps } from '../ipc/renderer-kill'
 import { parseExecutionHostId } from '../../../../shared/execution-host'
-import { ptyOwnership } from '../provider/ownership-state'
-import { ptyIncarnationById } from '../provider/ownership-state'
+import { ptyIncarnationById, ptyOwnership } from '../provider/ownership-state'
 import { isObservedPtyExitEvidence } from '../provider/liveness'
 
 export type RendererPtyStopOptions = {
