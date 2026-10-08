@@ -38,7 +38,7 @@ let host: 'local' | 'ssh:fixture' | 'ssh:other'
 let remote: boolean
 let onShow: (() => void) | undefined
 function ingest(paneKey: string, tabId: string) {
-  const envelope = {
+  const envelope: Parameters<typeof agentHookServer.ingestTerminalStatus>[0] = {
     paneKey,
     tabId,
     worktreeId: 'folder:fixture',
