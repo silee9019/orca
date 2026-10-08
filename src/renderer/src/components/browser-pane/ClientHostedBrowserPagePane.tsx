@@ -1,3 +1,4 @@
+import { useClientHostedReloadCommands } from './navigate/use-client-hosted-reload-commands'
 import { useClientHostedAddressOwner } from './navigate/use-client-hosted-address-owner'
 import { useClientHostedPageAttachment } from './navigate/use-client-hosted-page-attachment'
 import {
@@ -123,12 +124,24 @@ export function ClientHostedBrowserPagePane({
       startAddressBarFocusGrab
     })
   const zoom = useBrowserPageZoomFeedback(browserTab.id)
+  const addressCommandOwner = useClientHostedAddressOwner({
+    page: browserTab.id,
+    worktreeId,
+    environmentId: runtimeEnvironmentId,
+    active: isActive && !attachmentError && !restoredPageUnrecovered,
+    placement
+  })
+
   const reload = useBrowserPageReloadActions({
     browserTab,
     webviewRef,
     retryGuestRecoveryRef,
     onUpdatePageStateRef
   })
+
+  useClientHostedReloadCommands(addressCommandOwner, () =>
+    reload.reloadWebviewOrRecoverGuest(false)
+  )
 
   useBrowserClientHostedDownloadNotices(browserTab.id)
   useBrowserClientHostedPopupNotices(browserTab.id)
@@ -200,14 +213,6 @@ export function ClientHostedBrowserPagePane({
   const browserZoomIndicatorState = getBrowserPageZoomIndicatorState({
     feedbackVisible: zoom.browserZoomFeedbackVisible,
     isDefaultZoom: zoom.browserZoomPercent === zoom.browserDefaultZoomPercent
-  })
-
-  const addressCommandOwner = useClientHostedAddressOwner({
-    page: browserTab.id,
-    worktreeId,
-    environmentId: runtimeEnvironmentId,
-    active: isActive && !attachmentError && !restoredPageUnrecovered,
-    placement
   })
 
   const markup = useClientHostedBrowserMarkup({

@@ -1,3 +1,5 @@
+import { BrowserClientSubmissionReceipt } from './rpc-contract/browser-client-submission-params'
+import { BrowserClientReloadReceipt } from './rpc-contract/browser-client-reload-params'
 import { BrowserClientFindReceipt } from './rpc-contract/browser-client-find-params'
 import { BrowserClientAddressReceipt } from './rpc-contract/browser-client-address-params'
 import { BrowserPairedNewTabState } from './rpc-contract/browser-paired-new-tab-params'
@@ -50,6 +52,8 @@ import { BrowserToolbarAction, BrowserViewerPreset } from './rpc-contract/browse
 export type BrowserViewerRequest = { id: string; expiresAt: number; command: BrowserViewerCommand }
 // applied reports store read-back or service acceptance; rendering and durable saving need separate evidence.
 export const BrowserViewerResultSchema = z.object({
+  clientSubmission: BrowserClientSubmissionReceipt.optional(),
+  clientReload: BrowserClientReloadReceipt.optional(),
   clientFind: BrowserClientFindReceipt.optional(),
   clientAddress: BrowserClientAddressReceipt.optional(),
   pairedNewTab: BrowserPairedNewTabState.optional(),

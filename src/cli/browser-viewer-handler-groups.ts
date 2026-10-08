@@ -16,6 +16,18 @@ import type { HandlerGroup } from './handler-group-manifest'
 export const BROWSER_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
   ...BROWSER_PAIRED_NEW_TAB_HANDLER_GROUPS,
   {
+    name: 'browser-client-submission',
+    keys: ['browser client-submit'],
+    load: async () =>
+      (await import('./handlers/browser-client-submission.js')).BROWSER_CLIENT_SUBMISSION_HANDLERS
+  },
+  {
+    name: 'browser-client-reload',
+    keys: ['browser client-reload'],
+    load: async () =>
+      (await import('./handlers/browser-client-reload.js')).BROWSER_CLIENT_RELOAD_HANDLERS
+  },
+  {
     name: 'browser-client-find',
     keys: ['browser client-find'],
     load: async () =>

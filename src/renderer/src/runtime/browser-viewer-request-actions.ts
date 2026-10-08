@@ -1,3 +1,4 @@
+import { isBrowserPlacementViewerCommand } from './browser-placement-viewer-command'
 import { requestBrowserSshRoute } from './browser-ssh-route-request'
 import { applyBrowserPlacementViewerAction } from './browser-placement-viewer-actions'
 import { requestBrowserGrabAction } from './browser-grab-action-request'
@@ -47,33 +48,7 @@ export async function applyBrowserViewerRequest(
     throw new Error('viewer_not_ready')
   }
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
-  if (
-    command.operation === 'server-reopen' ||
-    command.operation === 'browser-import-hint' ||
-    command.operation === 'banner' ||
-    command.operation === 'egress' ||
-    command.operation === 'overlay-focus' ||
-    command.operation === 'client-hosted-row' ||
-    command.operation === 'client-address' ||
-    command.operation === 'client-find' ||
-    command.operation === 'new-tab-paired' ||
-    command.operation === 'new-tab' ||
-    command.operation === 'client-navigation' ||
-    command.operation === 'client-markup' ||
-    command.operation === 'take-back' ||
-    command.operation === 'observe-page' ||
-    command.operation === 'computer-permissions' ||
-    command.operation === 'grab-toast' ||
-    command.operation === 'webauthn-dialog-focus' ||
-    command.operation === 'webauthn-dialog' ||
-    command.operation === 'load-failure' ||
-    command.operation === 'workspace-file-open' ||
-    command.operation === 'workspace-port-open' ||
-    command.operation === 'palette-select' ||
-    command.operation === 'floating-browser' ||
-    command.operation === 'remote-picker' ||
-    command.operation === 'linked-browser'
-  ) {
+  if (isBrowserPlacementViewerCommand(command)) {
     return await applyBrowserPlacementViewerAction(command, request.expiresAt)
   }
   if (command.operation === 'remote-pane') {

@@ -41,6 +41,7 @@ beforeEach(() => {
     _meta: { runtimeId: 'viewer-runtime' },
     result: {
       applied: true,
+      clientReload: { target, accepted: true, loading: true, completionObserved: false },
       clientFind: {
         target,
         state: { open: true, query: 'needle', activeMatch: 0, totalMatches: 0 }
@@ -54,6 +55,13 @@ beforeEach(() => {
           selectedIndex: -1,
           suggestions: []
         }
+      },
+      clientSubmission: {
+        ...target,
+        url: 'https://after.test/',
+        metadataRevision: 7,
+        loading: false,
+        accepted: true
       },
       clientNavigation: {
         ...target,
@@ -76,7 +84,9 @@ afterEach(() => {
   vi.unstubAllEnvs()
   process.exitCode = originalExitCode
 })
-function args(command: 'client-navigate' | 'client-address' | 'client-find') {
+function args(
+  command: 'client-navigate' | 'client-address' | 'client-find' | 'client-reload' | 'client-submit'
+) {
   return [
     'browser',
     command,
@@ -98,13 +108,23 @@ function args(command: 'client-navigate' | 'client-address' | 'client-find') {
     '4',
     ...(command === 'client-navigate'
       ? ['--url', 'https://after.test/']
-      : command === 'client-find'
-        ? ['--action', 'query', '--query', 'needle']
-        : ['--action', 'draft', '--text', 'https://draft.test/']),
+      : command === 'client-submit'
+        ? ['--value', 'orca cli search']
+        : command === 'client-find'
+          ? ['--action', 'query', '--query', 'needle']
+          : command === 'client-reload'
+            ? []
+            : ['--action', 'draft', '--text', 'https://draft.test/']),
     '--json'
   ]
 }
-it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+it.each([
+  'client-navigate',
+  'client-address',
+  'client-find',
+  'client-reload',
+  'client-submit'
+] as const)(
   'passes the page environment as identity without selecting it as the viewer runtime',
   async (command) => {
     await main(args(command), tmpdir())
@@ -113,17 +133,32 @@ it.each(['client-navigate', 'client-address', 'client-find'] as const)(
     expect(fixture.environments).not.toHaveBeenCalled()
     expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
       viewer: 'host',
-      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      operation:
+        command === 'client-submit'
+          ? 'client-submission'
+          : command === 'client-navigate'
+            ? 'client-navigation'
+            : command,
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-find'
-          ? { action: 'query', query: 'needle' }
-          : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-submit'
+          ? { entry: 'address-bar', value: 'orca cli search' }
+          : command === 'client-find'
+            ? { action: 'query', query: 'needle' }
+            : command === 'client-reload'
+              ? { entry: 'context-menu' }
+              : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )
-it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+it.each([
+  'client-navigate',
+  'client-address',
+  'client-find',
+  'client-reload',
+  'client-submit'
+] as const)(
   'keeps explicit viewer runtime selection independent of the page environment identity',
   async (command) => {
     pairRuntimeEnvironment(fixture.environments, 'viewer-runtime')
@@ -132,17 +167,32 @@ it.each(['client-navigate', 'client-address', 'client-find'] as const)(
     expect(fixture.constructor).toHaveBeenCalledWith(undefined, 'viewer-runtime')
     expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
       viewer: 'host',
-      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      operation:
+        command === 'client-submit'
+          ? 'client-submission'
+          : command === 'client-navigate'
+            ? 'client-navigation'
+            : command,
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-find'
-          ? { action: 'query', query: 'needle' }
-          : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-submit'
+          ? { entry: 'address-bar', value: 'orca cli search' }
+          : command === 'client-find'
+            ? { action: 'query', query: 'needle' }
+            : command === 'client-reload'
+              ? { entry: 'context-menu' }
+              : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )
-it.each(['client-navigate', 'client-address', 'client-find'] as const)(
+it.each([
+  'client-navigate',
+  'client-address',
+  'client-find',
+  'client-reload',
+  'client-submit'
+] as const)(
   'preserves ambient viewer selection without replacing the page environment identity',
   async (command) => {
     vi.stubEnv('ORCA_ENVIRONMENT', 'viewer-runtime')
@@ -151,13 +201,22 @@ it.each(['client-navigate', 'client-address', 'client-find'] as const)(
     expect(fixture.constructor).toHaveBeenCalledWith(undefined, undefined)
     expect(fixture.call).toHaveBeenCalledWith('ui.browserViewer', {
       viewer: 'host',
-      operation: command === 'client-navigate' ? 'client-navigation' : command,
+      operation:
+        command === 'client-submit'
+          ? 'client-submission'
+          : command === 'client-navigate'
+            ? 'client-navigation'
+            : command,
       target,
       ...(command === 'client-navigate'
         ? { url: 'https://after.test/' }
-        : command === 'client-find'
-          ? { action: 'query', query: 'needle' }
-          : { command: { action: 'draft', text: 'https://draft.test/' } })
+        : command === 'client-submit'
+          ? { entry: 'address-bar', value: 'orca cli search' }
+          : command === 'client-find'
+            ? { action: 'query', query: 'needle' }
+            : command === 'client-reload'
+              ? { entry: 'context-menu' }
+              : { command: { action: 'draft', text: 'https://draft.test/' } })
     })
   }
 )

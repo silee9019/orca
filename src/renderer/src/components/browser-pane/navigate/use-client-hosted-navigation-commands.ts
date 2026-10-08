@@ -1,3 +1,4 @@
+import { useAppStore } from '@/store'
 import { useEffectEvent, useLayoutEffect, useRef, type RefObject } from 'react'
 import type { RuntimeBrowserClientPlacement } from '../../../../../shared/runtime-browser-placement'
 import type { BrowserClientNavigationEvent } from '@/runtime/browser-client-navigation-request'
@@ -18,6 +19,8 @@ export function useClientHostedNavigationCommands(params: {
   navigate: (url: string, onSubmitted?: (pending: Promise<void>) => void) => void
 }): void {
   const pendingRef = useRef<BrowserClientNavigationEvent | null>(null)
+  const offeredTarget = useRef<BrowserClientNavigationEvent['target'] | null>(null)
+  const epoch = useRef(0)
   const onCommand = useEffectEvent((request: BrowserClientNavigationEvent) => {
     const { target } = request
     if (
@@ -28,7 +31,13 @@ export function useClientHostedNavigationCommands(params: {
     ) {
       return
     }
+    offeredTarget.current = target
+    const offeredEpoch = epoch.current
     request.offer(params.isActive, () => {
+      if (offeredEpoch !== epoch.current) {
+        request.finish(new Error('browser_client_navigation_owner_changed_effect_unknown'))
+        return
+      }
       if (pendingRef.current?.isSettled()) {
         pendingRef.current = null
       }
@@ -98,10 +107,23 @@ export function useClientHostedNavigationCommands(params: {
     })
   })
   useLayoutEffect(() => {
+    const unsubscribe = useAppStore.subscribe(() => {
+      const target = offeredTarget.current
+      if (target && !isBrowserClientPageViewerTargetCurrent(target, params.placement)) {
+        epoch.current += 1
+        pendingRef.current?.finish(
+          new Error('browser_client_navigation_owner_changed_effect_unknown')
+        )
+        pendingRef.current = null
+      }
+    })
     const listener = (event: WindowEventMap['orca:browser-client-navigation-command']): void =>
       onCommand(event.detail)
     window.addEventListener(BROWSER_CLIENT_NAVIGATION_EVENT, listener)
     return () => {
+      epoch.current += 1
+      unsubscribe()
+      offeredTarget.current = null
       window.removeEventListener(BROWSER_CLIENT_NAVIGATION_EVENT, listener)
       pendingRef.current?.finish(
         new Error('browser_client_navigation_owner_changed_effect_unknown')

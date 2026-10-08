@@ -1,3 +1,5 @@
+import { BrowserClientSubmissionViewerCommand } from './browser-client-submission-params'
+import { BrowserClientReloadViewerCommand } from './browser-client-reload-params'
 import { BrowserClientFindViewerCommand } from './browser-client-find-params'
 import { BrowserClientAddressViewerCommand } from './browser-client-address-params'
 import { BrowserPairedNewTabCommand } from './browser-paired-new-tab-params'
@@ -65,6 +67,8 @@ export type BrowserToolbarAction = z.infer<typeof BrowserToolbarAction>
 const page = z.string().min(1)
 const viewer = z.literal('host')
 export const BrowserViewerCommand = z.discriminatedUnion('operation', [
+  BrowserClientSubmissionViewerCommand,
+  BrowserClientReloadViewerCommand,
   BrowserClientFindViewerCommand,
   BrowserClientAddressViewerCommand,
   BrowserPairedNewTabCommand,

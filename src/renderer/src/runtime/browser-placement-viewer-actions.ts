@@ -1,3 +1,5 @@
+import { applyBrowserClientSubmissionRequest } from './browser-client-submission-request'
+import { applyBrowserClientReloadRequest } from './browser-client-reload-request'
 import { applyBrowserClientFindRequest } from './browser-client-find-request'
 import { requestBrowserNewTab } from './browser-new-tab-request'
 import { applyBrowserClientAddressRequest } from './browser-client-address-request'
@@ -29,47 +31,11 @@ import { requestFloatingBrowser } from './floating-browser-request'
 import { requestRemoteFilePicker } from './remote-file-picker-request'
 import { requestLinkedBrowser } from './linked-browser-request'
 import { requestBrowserFailure } from './browser-failure-request'
-import type { BrowserViewerCommand } from '../../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserPlacementViewerCommand } from './browser-placement-viewer-command'
 import type { BrowserViewerResult } from '../../../shared/browser-viewer-command'
 
 export async function applyBrowserPlacementViewerAction(
-  command: Extract<
-    BrowserViewerCommand,
-    {
-      operation:
-        | 'server-reopen'
-        | 'browser-import-hint'
-        | 'egress'
-        | 'banner'
-        | 'viewport-pan'
-        | 'markup-hint'
-        | 'markup-editor'
-        | 'markup'
-        | 'overlay-focus'
-        | 'browser-setup-guide'
-        | 'browser-feature-wall'
-        | 'client-hosted-row'
-        | 'client-address'
-        | 'client-find'
-        | 'new-tab-paired'
-        | 'new-tab'
-        | 'client-navigation'
-        | 'client-markup'
-        | 'take-back'
-        | 'observe-page'
-        | 'computer-permissions'
-        | 'load-failure'
-        | 'grab-toast'
-        | 'webauthn-dialog-focus'
-        | 'webauthn-dialog'
-        | 'workspace-file-open'
-        | 'workspace-port-open'
-        | 'palette-select'
-        | 'floating-browser'
-        | 'remote-picker'
-        | 'linked-browser'
-    }
-  >,
+  command: BrowserPlacementViewerCommand,
   expiresAt: number
 ): Promise<BrowserViewerResult> {
   const base = { viewer: 'host', viewerId: 0, persisted: false, rendered: false } as const
@@ -144,6 +110,12 @@ export async function applyBrowserPlacementViewerAction(
       applied: true,
       pairedNewTab: await requestBrowserPairedNewTab(command.target, expiresAt)
     }
+  }
+  if (command.operation === 'client-submission') {
+    return applyBrowserClientSubmissionRequest(command, expiresAt)
+  }
+  if (command.operation === 'client-reload') {
+    return applyBrowserClientReloadRequest(command, expiresAt)
   }
   if (command.operation === 'client-find') {
     return applyBrowserClientFindRequest(command, expiresAt)

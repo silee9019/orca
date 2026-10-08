@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useRef, useState, type Dispatch, type SetStateAction, type MutableRefObject } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { useAppStore } from '@/store'
@@ -32,6 +32,7 @@ function mount() {
     height: 1
   }
   let active = true
+  let currentTimer: MutableRefObject<ReturnType<typeof setTimeout> | undefined> | undefined
   let replace: Dispatch<SetStateAction<BrowserPageGrabToastState | null>> = () => {
     throw new Error('not mounted')
   }
@@ -46,6 +47,7 @@ function mount() {
     })
     replace = setToast
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+    currentTimer = timer
     return toast ? (
       <BrowserPageGrabToast
         commandOwner={{ page: 'page', active }}
@@ -59,6 +61,7 @@ function mount() {
   const view = render(<Surface />)
   return {
     target,
+    getTimer: () => currentTimer,
     write,
     view,
     replace,
@@ -225,4 +228,41 @@ it('keeps SSH folder identity while clipboard delivery belongs to the host viewe
     await Promise.resolve()
   })
   expect((await outcome)?.executionHostId).toBe('ssh:fixture')
+})
+
+it('pauses the retained toast expiry while its actual menu is open and rearms it on close', async () => {
+  const owner = mount()
+  const open = async () => {
+    fireEvent.pointerDown(screen.getByRole('button'), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: 'mouse'
+    })
+    await act(async () => {})
+  }
+  const close = async () => {
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    await act(async () => {})
+  }
+  await open()
+  await close()
+  const timer = owner.getTimer()
+  const firstTimer = timer?.current
+  if (!timer || firstTimer === undefined) {
+    throw new Error('actual toast owner did not arm its expiry')
+  }
+  try {
+    const cancel = vi.spyOn(globalThis, 'clearTimeout')
+    const schedule = vi.spyOn(globalThis, 'setTimeout')
+    await open()
+    expect(screen.getByRole('menu')).not.toBeNull()
+    expect(cancel).toHaveBeenCalledWith(firstTimer)
+    await close()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(schedule).toHaveBeenCalledWith(expect.any(Function), 1200)
+    expect(timer.current).not.toBe(firstTimer)
+  } finally {
+    clearTimeout(firstTimer)
+    clearTimeout(timer.current)
+  }
 })
