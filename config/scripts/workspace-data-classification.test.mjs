@@ -4,6 +4,7 @@ import { classifyActionSources } from './cli-action-classification.mjs'
 
 test('workspace command declarations keep workspace ownership without moving existing provider or app actions', () => {
   const input = [
+    ['git desktop-status-start', 'workspace-git-status', 'workspace-data'],
     ['file log-tail-start', 'workspace-log-tail', 'workspace-data'],
     ['notebook kernel-start', 'workspace-notebook-kernel', 'workspace-data'],
     ['repo clone-desktop-local-start', 'workspace-local-clone', 'workspace-data'],
