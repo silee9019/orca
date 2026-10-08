@@ -11,7 +11,7 @@ const ownerVisibilityDefaultsHydrationByStore = new WeakMap<SettingsStateGetter,
 let settingsPublicationGeneration = 0
 let ownerSettingsHydrationGeneration = 0
 
-function mergeOwnerDefaultsIntoCurrentSettings(
+export function mergeOwnerDefaultsIntoCurrentSettings(
   current: GlobalSettings | null,
   hydrated: GlobalSettings
 ): GlobalSettings {

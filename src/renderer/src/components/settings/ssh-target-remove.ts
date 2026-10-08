@@ -1,4 +1,4 @@
-import { SSH_TERMINATE_RECONNECT_REQUIRED } from '../../../../shared/constants'
+import { removeSshTargetAfterSessionCleanup } from '../../../../shared/ssh-session-cleanup'
 
 export type SshTargetRemoveApi = {
   terminateSessions: (args: { targetId: string }) => Promise<unknown>
@@ -15,23 +15,10 @@ export async function removeSshTargetWithBestEffortCleanup(
   api: SshTargetRemoveApi,
   id: string
 ): Promise<void> {
-  try {
-    await api.terminateSessions({ targetId: id })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    if (message.includes(SSH_TERMINATE_RECONNECT_REQUIRED)) {
-      try {
-        await api.connect({ targetId: id })
-        await api.terminateSessions({ targetId: id })
-      } catch (reconnectErr) {
-        console.warn(
-          '[ssh] Skipping remote session cleanup during target removal:',
-          reconnectErr instanceof Error ? reconnectErr.message : String(reconnectErr)
-        )
-      }
-    } else {
-      console.warn('[ssh] Skipping remote session cleanup during target removal:', message)
-    }
-  }
-  await api.removeTarget({ id })
+  await removeSshTargetAfterSessionCleanup(api, id, (error) => {
+    console.warn(
+      '[ssh] Skipping remote session cleanup during target removal:',
+      error instanceof Error ? error.message : String(error)
+    )
+  })
 }

@@ -120,7 +120,11 @@ export async function saveNewSshHostFromForm({
 
     const result = await ssh.addTarget({ target })
     recordSshRepoReadoptions(result.repoReadoptions)
-    setSshTargetsMetadata(await ssh.listTargets())
+    const refreshed = await ssh.listTargets()
+    setSshTargetsMetadata(refreshed)
+    if (!refreshed.some((target) => target.id === result.target.id)) {
+      return 'failed'
+    }
     recordFeatureInteraction('ssh')
     toast.success(
       translate('auto.components.sidebar.AddRemoteHostDialog.sshSaved', 'SSH host added.')
@@ -183,7 +187,11 @@ export async function addAllSshConfigHostsToOrca({
     // Settings → Import stays the explicit re-adopt path.
     const result = await ssh.importConfig()
     recordSshRepoReadoptions(result.repoReadoptions)
-    setSshTargetsMetadata(await ssh.listTargets())
+    const refreshed = await ssh.listTargets()
+    setSshTargetsMetadata(refreshed)
+    if (result.targets.some((imported) => !refreshed.some((target) => target.id === imported.id))) {
+      return { kind: 'failed' }
+    }
     recordFeatureInteraction('ssh')
     if (result.targets.length === 0) {
       toast(

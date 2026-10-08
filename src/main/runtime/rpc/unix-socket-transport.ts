@@ -227,6 +227,17 @@ export class UnixSocketTransport implements RpcTransport {
         if (!replied && !socket.destroyed && socket.writable) {
           socket.write(`${response}\n`)
         }
+      },
+      stream: {
+        emit: (response) => {
+          if (!replied && !cleanedUp && !socket.destroyed && socket.writable) {
+            socket.write(`${response}\n`)
+          }
+        },
+        finish: () => {
+          replied = true
+          cleanupDispatch(false)
+        }
       }
     })
   }

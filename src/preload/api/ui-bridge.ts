@@ -1,5 +1,6 @@
 import { uiVoiceViewerApi } from './ui-voice-viewer-api'
 import { uiSearchSettingsViewerApi } from './ui-search-settings-viewer-api'
+import { connectionsViewerUiApi } from './connections-viewer-bridge'
 import type { PreloadApi } from '../api-types'
 import { uiStateAndMenuCommandsApi } from './ui-bridge-state-and-menu-commands'
 import { uiTabAndBrowserCommandsApi } from './ui-bridge-tab-and-browser-commands'
@@ -9,6 +10,7 @@ import { uiClipboardAndWindowControlsApi } from './ui-bridge-clipboard-and-windo
 export const uiApi = {
   ...uiVoiceViewerApi,
   ...uiSearchSettingsViewerApi,
+  ...connectionsViewerUiApi,
   ...uiStateAndMenuCommandsApi,
   ...uiTabAndBrowserCommandsApi,
   ...uiTerminalAndSessionTabsApi,

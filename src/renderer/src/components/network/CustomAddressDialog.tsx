@@ -1,3 +1,4 @@
+import { useAddressDialogViewerController } from '@/hooks/useAddressConnectionsViewerController'
 import React, { useEffect, useState } from 'react'
 import {
   Dialog,
@@ -98,6 +99,18 @@ export function CustomAddressDialog({
     }
   }
 
+  useAddressDialogViewerController({
+    id: inputId,
+    read: () => ({ draftSet: Boolean(value), valid: parsed.ok, submitting, confirmationFailed }),
+    draft: (next) => {
+      setValue(next)
+      setConfirmationFailed(false)
+    },
+    matchesDraft: (next) => value === next,
+    confirmedValue: () => (parsed.ok ? parsed.value : null),
+    close,
+    submit
+  })
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">

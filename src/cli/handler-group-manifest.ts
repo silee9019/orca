@@ -1,3 +1,4 @@
+import { CONNECTIONS_HANDLER_GROUPS } from './connections-handler-groups'
 import { APP_LIFECYCLE_HANDLER_GROUPS } from './app-lifecycle-handler-groups'
 import { SETTINGS_HANDLER_GROUPS } from './settings-handler-groups'
 import { TCC_THRESHOLD_OBSERVE_HANDLER_GROUPS } from './tcc-threshold-observe-handler-groups'
@@ -60,6 +61,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
 
   ...COMPUTER_PERMISSIONS_HANDLER_GROUPS,
   ...BROWSER_OBSERVATION_HANDLER_GROUPS,
+  ...CONNECTIONS_HANDLER_GROUPS,
   {
     name: 'core',
     keys: ['claude-teams', 'open', 'serve', 'status'],
@@ -294,10 +296,5 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     name: 'skills',
     keys: ['skills list', 'skills get', 'skills install', 'skills update'],
     load: async () => (await import('./handlers/skills.js')).SKILL_HANDLERS
-  },
-  {
-    name: 'search',
-    keys: ['search'],
-    load: async () => (await import('./handlers/search.js')).SEARCH_HANDLERS
   }
 ]

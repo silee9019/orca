@@ -8,6 +8,10 @@ import type {
   SearchSettingsViewerRequest,
   SearchSettingsViewerResponse
 } from '../../shared/search-settings-viewer'
+import type {
+  ConnectionsViewerRequest,
+  ConnectionsViewerResponse
+} from '../../shared/connections-viewer'
 import type { MarkdownDocument } from '../../shared/filesystem-entry-types'
 import type { PersistedUIState } from '../../shared/persisted-ui-state-types'
 import type { TuiAgent } from '../../shared/tui-agent'
@@ -61,6 +65,8 @@ export type UiCommandEventApi = {
     callback: (request: SearchSettingsViewerRequest) => void
   ) => () => void
   respondSearchSettingsViewer?: (response: SearchSettingsViewerResponse) => void
+  onConnectionsViewerRequest?: (callback: (request: ConnectionsViewerRequest) => void) => () => void
+  respondConnectionsViewer?: (response: ConnectionsViewerResponse) => void
   get: () => Promise<PersistedUIState>
   set: (args: Partial<PersistedUIState>) => Promise<void>
   /** Like set, but REJECTS when the update did not reach the host (the web preload's set

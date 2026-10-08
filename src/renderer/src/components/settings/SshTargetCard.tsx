@@ -87,11 +87,11 @@ type SshTargetCardProps = {
   state: SshConnectionState | undefined
   testing: boolean
   busyAction?: SshTargetBusyAction
-  onConnect: (targetId: string) => void | Promise<void>
-  onDisconnect: (targetId: string) => void | Promise<void>
-  onTerminateSessions: (targetId: string) => void | Promise<void>
-  onResetRelay: (targetId: string) => void | Promise<void>
-  onTest: (targetId: string) => void | Promise<void>
+  onConnect: (targetId: string) => void | Promise<void | boolean>
+  onDisconnect: (targetId: string) => void | Promise<void | boolean>
+  onTerminateSessions: (targetId: string) => void | Promise<void | boolean>
+  onResetRelay: (targetId: string) => void | Promise<void | boolean>
+  onTest: (targetId: string) => void | Promise<void | boolean>
   onEdit: (target: SshTarget) => void
   onRemove: (targetId: string) => void
 }

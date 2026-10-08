@@ -1,5 +1,6 @@
+import { useNetworkProxyViewer, type ProxyCommitResult } from '@/runtime/network-proxy-viewer'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { normalizeProxyBypassRules, normalizeProxyUrl } from '../../../../shared/network-proxy'
@@ -116,7 +117,7 @@ export function updateHttpProxyBypassRulesDraftState(
 
 type AdvancedNetworkSettingsSectionProps = {
   settings: GlobalSettings
-  updateSettings: (updates: Partial<GlobalSettings>) => void
+  updateSettings: (updates: Partial<GlobalSettings>) => void | Promise<void>
 }
 
 export function AdvancedNetworkSettingsSection({
@@ -161,43 +162,116 @@ export function AdvancedNetworkSettingsSection({
   }
   const httpProxyBypassRulesDraft = resolvedHttpProxyBypassRulesDraftState.draft
 
+  const urlRevision = useRef(0)
+  const bypassRevision = useRef(0)
+  const latestEditedDraft = useRef({ url: httpProxyUrlDraft, bypass: httpProxyBypassRulesDraft })
+  const saving = useRef({ url: false, bypass: false })
+  const committedDrafts = useRef({ url: httpProxyUrlDraft, bypass: httpProxyBypassRulesDraft })
+  useEffect(() => {
+    committedDrafts.current = { url: httpProxyUrlDraft, bypass: httpProxyBypassRulesDraft }
+  })
+
   const updateHttpProxyUrlDraft = (draft: string): void => {
+    urlRevision.current += 1
+    latestEditedDraft.current.url = draft
     setHttpProxyUrlDraftState((current) =>
       updateHttpProxyUrlDraftState(current, settings.httpProxyUrl, draft)
     )
   }
 
   const updateHttpProxyBypassRulesDraft = (draft: string): void => {
+    bypassRevision.current += 1
+    latestEditedDraft.current.bypass = draft
     setHttpProxyBypassRulesDraftState((current) =>
       updateHttpProxyBypassRulesDraftState(current, settings.httpProxyBypassRules, draft)
     )
   }
 
-  const commitHttpProxyUrl = (): void => {
+  const persistProxySetting = async (
+    kind: 'url' | 'bypass',
+    value: string
+  ): Promise<ProxyCommitResult | null> => {
+    if (saving.current[kind]) {
+      return null
+    }
+    const key = kind === 'url' ? 'httpProxyUrl' : 'httpProxyBypassRules'
+    const source = settings[key] ?? ''
+    const currentSettings = useAppStore.getState().settings
+    if (currentSettings && (currentSettings[key] ?? '') !== source) {
+      return null
+    }
+    const revisionRef = kind === 'url' ? urlRevision : bypassRevision
+    const revision = revisionRef.current
+    saving.current[kind] = true
+    try {
+      if (value !== source) {
+        await updateSettings({ [key]: value })
+      }
+      if (
+        revision !== revisionRef.current &&
+        (useAppStore.getState().settings?.[key] ?? '') === value
+      ) {
+        const draft = latestEditedDraft.current[kind]
+        if (kind === 'url') {
+          setHttpProxyUrlDraftState((state) => updateHttpProxyUrlDraftState(state, value, draft))
+        } else {
+          setHttpProxyBypassRulesDraftState((state) =>
+            updateHttpProxyBypassRulesDraftState(state, value, draft)
+          )
+        }
+      }
+      const persisted = (await window.api.settings.get())[key] ?? ''
+      const readCurrent = () => useAppStore.getState().settings?.[key] ?? source
+      const current = () =>
+        revision === revisionRef.current && (readCurrent() === source || readCurrent() === value)
+      return {
+        persisted: persisted === value,
+        current,
+        matches: () =>
+          current() && readCurrent() === value && committedDrafts.current[kind] === value
+      }
+    } catch {
+      return null
+    } finally {
+      saving.current[kind] = false
+    }
+  }
+  const commitHttpProxyUrl = async (): Promise<ProxyCommitResult | null> => {
     const normalized = normalizeProxyUrl(httpProxyUrlDraft)
     if (!normalized.ok) {
       setHttpProxyUrlDraftState((current) =>
         setHttpProxyUrlDraftErrorState(current, settings.httpProxyUrl, normalized.message)
       )
-      return
+      return null
     }
     setHttpProxyUrlDraftState((current) =>
       updateHttpProxyUrlDraftState(current, settings.httpProxyUrl, normalized.value)
     )
-    if (normalized.value !== (settings.httpProxyUrl ?? '')) {
-      updateSettings({ httpProxyUrl: normalized.value })
-    }
+    return persistProxySetting('url', normalized.value)
   }
-
-  const commitHttpProxyBypassRules = (): void => {
+  const commitHttpProxyBypassRules = async (): Promise<ProxyCommitResult | null> => {
     const normalized = normalizeProxyBypassRules(httpProxyBypassRulesDraft)
     setHttpProxyBypassRulesDraftState((current) =>
       updateHttpProxyBypassRulesDraftState(current, settings.httpProxyBypassRules, normalized)
     )
-    if (normalized !== (settings.httpProxyBypassRules ?? '')) {
-      updateSettings({ httpProxyBypassRules: normalized })
-    }
+    return persistProxySetting('bypass', normalized)
   }
+
+  useNetworkProxyViewer({
+    read: () => ({
+      open: proxyConfigExpanded,
+      forcedOpen: proxyConfigForcedOpen,
+      urlDraftSet: Boolean(httpProxyUrlDraft),
+      bypassDraftSet: Boolean(httpProxyBypassRulesDraft),
+      urlInvalid: httpProxyUrlError !== null
+    }),
+    disclosure: setProxyConfigOpen,
+    commit: (kind) => (kind === 'url' ? commitHttpProxyUrl() : commitHttpProxyBypassRules()),
+    url: updateHttpProxyUrlDraft,
+    bypass: updateHttpProxyBypassRulesDraft,
+    matches: (kind, value) =>
+      (kind === 'url' ? httpProxyUrlDraft : httpProxyBypassRulesDraft) === value
+  })
 
   return (
     <SearchableSetting

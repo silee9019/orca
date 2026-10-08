@@ -47,6 +47,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
   'ui.onCloseFloatingItem',
   'ui.onCloseSessionTab',
   'ui.onCloseTerminal',
+  'ui.onConnectionsViewerRequest',
   'ui.onCreateTerminal',
   'ui.onDeleteCurrentWorkspace',
   'ui.onFocusEditorTab',
@@ -113,6 +114,7 @@ const EXPECTED_DIRECT_CALLBACK_METHODS = [
 
 const EXPECTED_CALLBACK_REGISTRATION_SEQUENCE = [
   'ui.onSearchSettingsViewerRequest',
+  'ui.onConnectionsViewerRequest',
   'ui.onMobileMarkdownRequest',
   'ui.onProjectFilterRequest',
   'ui.onBrowserViewerRequest',
@@ -403,6 +405,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       )
     ).toEqual([
       'ui.onSearchSettingsViewerRequest',
+      'ui.onConnectionsViewerRequest',
       'ui.onMobileMarkdownRequest',
       'ui.onProjectFilterRequest',
       'ui.onBrowserViewerRequest',
@@ -410,7 +413,7 @@ describe('useIpcEvents App-lifetime lifecycle', () => {
       'automations.onChanged',
       'runtimeEnvironments.onStatusChanged',
       'runtimeEnvironments.subscribe',
-      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(7)
+      ...EXPECTED_CALLBACK_REGISTRATION_SEQUENCE.slice(8)
     ])
     const groupOrder = (names: readonly string[]): string[] =>
       registrationOrder.filter((entry) => names.includes(entry))

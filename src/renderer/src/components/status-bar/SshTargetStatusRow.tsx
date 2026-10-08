@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useSshWorkspaceOverlayViewerController } from '@/hooks/useSshConfirmationViewerController'
+import { toSshExecutionHostId } from '../../../../shared/execution-host'
+import { useCallback, useRef, useState } from 'react'
 import { AlertTriangle, Cloud, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
@@ -64,6 +66,7 @@ export function SshTargetStatusRow({
   syncStatus: RemoteWorkspaceSyncStatus | undefined
 }): React.JSX.Element {
   const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false)
   const mountedRef = useMountedRef()
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
   // Why: shared with the sidebar card control and terminal overlay — a connect started here
@@ -71,22 +74,35 @@ export function SshTargetStatusRow({
   const connectInFlight = useSshConnectInFlight(targetId)
   const visibleSyncStatusLabel = syncStatusLabel(syncStatus)
 
-  const handleConnect = useCallback(async () => {
-    if (isSshConnectInFlight(targetId)) {
-      return
+  const handleConnect = useCallback(async (): Promise<boolean> => {
+    const state = useAppStore.getState()
+    const current = state.sshConnectionStates.get(targetId)?.status ?? 'disconnected'
+    if (
+      !mountedRef.current ||
+      busyRef.current ||
+      isSshConnectInFlight(targetId) ||
+      !state.sshTargetsHydrated ||
+      !state.sshTargetLabels.has(targetId) ||
+      !canConnectSshStatus(current)
+    ) {
+      return false
     }
+    busyRef.current = true
     beginSshConnect(targetId)
     setBusy(true)
     try {
-      await window.api.ssh.connect({ targetId })
+      const result = await window.api.ssh.connect({ targetId })
       recordFeatureInteraction('ssh')
+      return result?.targetId === targetId && result.status === 'connected'
     } catch (err) {
       toast.error(
         err instanceof Error
           ? err.message
           : translate('auto.components.status.bar.SshStatusSegment.2c29e2de68', 'Connection failed')
       )
+      return false
     } finally {
+      busyRef.current = false
       endSshConnect(targetId)
       if (mountedRef.current) {
         setBusy(false)
@@ -94,23 +110,68 @@ export function SshTargetStatusRow({
     }
   }, [mountedRef, recordFeatureInteraction, targetId])
 
-  const handleDisconnect = useCallback(async () => {
+  const handleDisconnect = useCallback(async (): Promise<boolean> => {
+    const state = useAppStore.getState()
+    if (
+      !mountedRef.current ||
+      busyRef.current ||
+      !state.sshTargetsHydrated ||
+      !state.sshTargetLabels.has(targetId) ||
+      state.sshConnectionStates.get(targetId)?.status !== 'connected'
+    ) {
+      return false
+    }
+    busyRef.current = true
     setBusy(true)
     try {
       await window.api.ssh.disconnect({ targetId })
       recordFeatureInteraction('ssh')
+      const result = await window.api.ssh.getState({ targetId })
+      return result
+        ? result.targetId === targetId && result.status === 'disconnected'
+        : useAppStore.getState().sshTargetsHydrated &&
+            useAppStore.getState().sshTargetLabels.has(targetId) &&
+            useAppStore.getState().sshConnectionStates.get(targetId)?.status === 'disconnected'
     } catch (err) {
       toast.error(
         err instanceof Error
           ? err.message
           : translate('auto.components.status.bar.SshStatusSegment.bf07aee59e', 'Disconnect failed')
       )
+      return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setBusy(false)
       }
     }
   }, [mountedRef, recordFeatureInteraction, targetId])
+
+  useSshWorkspaceOverlayViewerController({
+    read: () => {
+      const state = useAppStore.getState()
+      const configured = state.sshTargetsHydrated && state.sshTargetLabels.has(targetId)
+      const current = state.sshConnectionStates.get(targetId)?.status ?? 'disconnected'
+      return {
+        surface: 'status-row',
+        workspaceId: null,
+        targetId,
+        expectedHostId: toSshExecutionHostId(targetId),
+        removed: !configured,
+        canConnect:
+          configured &&
+          !busyRef.current &&
+          !isSshConnectInFlight(targetId) &&
+          canConnectSshStatus(current) &&
+          canConnectSshStatus(status),
+        canDisconnect:
+          configured && !busyRef.current && current === 'connected' && status === 'connected',
+        connected: current === 'connected' && status === 'connected'
+      }
+    },
+    connect: handleConnect,
+    disconnect: handleDisconnect
+  })
 
   return (
     <div className="flex items-center gap-2.5 px-2 py-1.5">

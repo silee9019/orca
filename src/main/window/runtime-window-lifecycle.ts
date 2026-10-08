@@ -2,6 +2,8 @@ import { requestProjectFilterFromRenderer } from './project-filter-request-relay
 import { requestBrowserViewerFromRenderer } from './browser-viewer-request-relay'
 import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
 import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
+import { registerConnectionsViewerManagement } from '../ipc/connections-viewer-management'
+import { requestConnectionsViewerFromRenderer } from './connections-viewer-request-relay'
 import { randomUUID } from 'node:crypto'
 
 import { ipcMain } from 'electron'
@@ -29,6 +31,10 @@ export function registerRuntimeWindowLifecycle(
   mainWindow: BrowserWindow,
   runtime: OrcaRuntimeService
 ): void {
+  const unregisterConnectionsViewer = registerConnectionsViewerManagement(
+    mainWindow.id,
+    (command) => requestConnectionsViewerFromRenderer(mainWindow, command)
+  )
   const notifierToken = ++runtimeNotifierTokenCounter
   activeRuntimeNotifierToken = notifierToken
   runtime.attachWindow(mainWindow.id)
@@ -243,6 +249,7 @@ export function registerRuntimeWindowLifecycle(
     rendererNotifications.onRendererProcessGone()
   })
   mainWindow.on('closed', () => {
+    unregisterConnectionsViewer()
     rendererNotifications.close()
     runtime.markGraphUnavailable(mainWindow.id)
     if (activeRuntimeNotifierToken === notifierToken) {

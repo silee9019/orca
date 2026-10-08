@@ -11,5 +11,10 @@ export const SEARCH_VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     keys: ['search viewer'],
     load: async () =>
       (await import('./handlers/search-settings-viewer.js')).SEARCH_SETTINGS_VIEWER_HANDLERS
+  },
+  {
+    name: 'search',
+    keys: ['search'],
+    load: async () => (await import('./handlers/search.js')).SEARCH_HANDLERS
   }
 ]

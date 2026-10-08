@@ -1,15 +1,19 @@
+import { saveRemoteServerFromPairingCode } from './add-remote-host-server-action'
+import { useSshConnectionsViewerController } from '@/hooks/useSshConnectionsViewerController'
+import { readSshAdvancedViewerState } from '@/runtime/ssh-connections-viewer-controller'
+import { readSshFormConfigured } from '../settings/use-ssh-pane-viewer-controller'
 import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import { EMPTY_FORM, type EditingTarget } from '../settings/ssh-target-draft'
-import type { SshConfigHostSummary } from '../../../../shared/ssh-types'
-import { parseHostAccessLink } from '../../../../shared/remote-pairing-address'
 import {
-  translateHostAccessLinkError,
-  translateRemotePairingFailureDescription
-} from '@/lib/remote-pairing-copy'
+  EMPTY_FORM,
+  applyParsedSshHostInput,
+  type EditingTarget
+} from '../settings/ssh-target-draft'
+import type { SshConfigHostSummary, SshConfigHostListResult } from '../../../../shared/ssh-types'
+import { parseHostAccessLink } from '../../../../shared/remote-pairing-address'
 import { AddRemoteHostSshConfigPicker } from './AddRemoteHostSshConfigPicker'
 import { AddRemoteHostSshFormPanel } from './AddRemoteHostSshFormPanel'
 import { AddRemoteHostServerFormPanel } from './AddRemoteHostServerFormPanel'
@@ -33,6 +37,10 @@ export function AddRemoteHostDialog({
   mode,
   onOpenChange
 }: AddRemoteHostDialogProps): React.JSX.Element {
+  const hasOpenedSsh = useRef(mode === 'ssh')
+  if (mode === 'ssh') {
+    hasOpenedSsh.current = true
+  }
   const open = mode !== null
   // Why: `mode` drives both open-state and which form renders. On close it goes null while the
   // dialog is still animating out, so the title/fields would flash to the SSH default. Latch the
@@ -43,6 +51,7 @@ export function AddRemoteHostDialog({
   }
   const [sshForm, setSshForm] = useState<EditingTarget>(EMPTY_FORM)
   const [sshView, setSshView] = useState<SshDialogView>('form')
+  const [configQuery, setConfigQuery] = useState('')
   const [configHosts, setConfigHosts] = useState<SshConfigHostSummary[]>([])
   const [configHostCount, setConfigHostCount] = useState(0)
   const [newConfigHostCount, setNewConfigHostCount] = useState(0)
@@ -57,9 +66,11 @@ export function AddRemoteHostDialog({
   const [pairingCode, setPairingCode] = useState('')
   const [allowLoopback, setAllowLoopback] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const saveInProgress = useRef(false)
   const configSearchGeneration = useRef(0)
   const configSearchQuery = useRef('')
   const configResolveGeneration = useRef(0)
+  const configResolving = useRef(false)
   const parsedServerLink = useMemo(() => parseHostAccessLink(pairingCode), [pairingCode])
   const serverFormCanSubmit =
     serverName.trim() !== '' &&
@@ -76,6 +87,7 @@ export function AddRemoteHostDialog({
   // Why: a pending resolve must never write into a form the user has moved on from.
   const invalidatePendingConfigResolve = () => {
     configResolveGeneration.current += 1
+    configResolving.current = false
     setResolvingConfigAlias(null)
   }
 
@@ -88,6 +100,8 @@ export function AddRemoteHostDialog({
     setConfigHostMatchesTruncated(false)
     setConfigHostsError(null)
     configSearchQuery.current = ''
+    setConfigQuery('')
+    configSearchGeneration.current += 1
     invalidatePendingConfigResolve()
     setPreferAdvancedOpen(false)
     setConfigFilledAlias(null)
@@ -106,7 +120,11 @@ export function AddRemoteHostDialog({
     onOpenChange(null)
   }
 
-  const saveSshHost = async () => {
+  const saveSshHost = async (): Promise<boolean> => {
+    if (saveInProgress.current || busy || mode !== 'ssh') {
+      return false
+    }
+    saveInProgress.current = true
     setIsSaving(true)
     try {
       const outcome = await saveNewSshHostFromForm({
@@ -120,13 +138,19 @@ export function AddRemoteHostDialog({
         reset()
         onOpenChange(null)
       }
+      return outcome === 'saved'
     } finally {
+      saveInProgress.current = false
       setIsSaving(false)
     }
   }
 
-  const loadSshConfigHosts = async (query = '', options?: { refresh?: boolean }) => {
+  const loadSshConfigHosts = async (
+    query = '',
+    options?: { refresh?: boolean }
+  ): Promise<SshConfigHostListResult | null> => {
     configSearchQuery.current = query
+    setConfigQuery(query)
     const generation = configSearchGeneration.current + 1
     configSearchGeneration.current = generation
     setIsLoadingConfigHosts(true)
@@ -136,7 +160,7 @@ export function AddRemoteHostDialog({
       ...(options?.refresh ? { refresh: true } : {})
     })
     if (generation !== configSearchGeneration.current) {
-      return
+      return null
     }
     if (result.ok) {
       setConfigHosts(result.result.hosts)
@@ -148,20 +172,26 @@ export function AddRemoteHostDialog({
       setConfigHostsError(result.error)
     }
     setIsLoadingConfigHosts(false)
+    return result.ok ? result.result : null
   }
 
   const openSshConfigPicker = async () => {
     setSshView('config-picker')
     // Why: re-read ~/.ssh/config on open; the filter keystrokes reuse that parse.
-    await loadSshConfigHosts('', { refresh: true })
+    return loadSshConfigHosts('', { refresh: true })
   }
 
   const leaveSshConfigPicker = () => {
     invalidatePendingConfigResolve()
+    configSearchGeneration.current += 1
     setSshView('form')
   }
 
-  const selectSshConfigHost = async (host: SshConfigHostSummary) => {
+  const selectSshConfigHost = async (host: SshConfigHostSummary): Promise<EditingTarget | null> => {
+    if (configResolving.current) {
+      return null
+    }
+    configResolving.current = true
     const generation = configResolveGeneration.current + 1
     configResolveGeneration.current = generation
     setResolvingConfigAlias(host.alias)
@@ -172,8 +202,9 @@ export function AddRemoteHostDialog({
       resolved = await prefillFormFromSshConfigHost(host, window.api.ssh)
     } catch (error) {
       if (isStale()) {
-        return
+        return null
       }
+      configResolving.current = false
       setResolvingConfigAlias(null)
       toast.error(
         error instanceof Error
@@ -183,11 +214,12 @@ export function AddRemoteHostDialog({
               'Failed to resolve that SSH config host.'
             )
       )
-      return
+      return null
     }
     if (isStale()) {
-      return
+      return null
     }
+    configResolving.current = false
     setResolvingConfigAlias(null)
     if (!resolved) {
       toast.error(
@@ -196,7 +228,7 @@ export function AddRemoteHostDialog({
           'Failed to resolve that SSH config host.'
         )
       )
-      return
+      return null
     }
     const { form, preferAdvancedOpen: openAdvanced } = resolved
     setSshForm(form)
@@ -211,9 +243,14 @@ export function AddRemoteHostDialog({
         { value0: host.alias }
       )
     )
+    return form
   }
 
-  const addAllConfigHostsToOrca = async () => {
+  const addAllConfigHostsToOrca = async (): Promise<'added' | 'already-synced' | 'failed'> => {
+    if (saveInProgress.current || busy) {
+      return 'failed'
+    }
+    saveInProgress.current = true
     setIsBulkImporting(true)
     try {
       const result = await addAllSshConfigHostsToOrca({
@@ -225,83 +262,84 @@ export function AddRemoteHostDialog({
       if (result.kind === 'added') {
         reset()
         onOpenChange(null)
-        return
+        return 'added'
       }
       if (result.kind === 'already-synced') {
         // Why: reuse the loader so the refresh keeps the active filter and stays inside the
         // generation guard against an in-flight debounced search.
-        await loadSshConfigHosts(configSearchQuery.current)
+        if (!(await loadSshConfigHosts(configSearchQuery.current))) {
+          return 'failed'
+        }
       }
+      return result.kind
     } finally {
+      saveInProgress.current = false
       setIsBulkImporting(false)
     }
   }
 
-  const saveRemoteServer = async () => {
-    const trimmedName = serverName.trim()
-    const trimmedPairingCode = pairingCode.trim()
-    if (!trimmedName || !trimmedPairingCode) {
-      toast.error(
-        translate(
-          'auto.components.sidebar.AddRemoteHostDialog.serverFieldsRequired',
-          'Server name and pairing code are required.'
-        )
-      )
-      return
-    }
-    if (!parsedServerLink.ok) {
-      toast.error(translateHostAccessLinkError(parsedServerLink.kind))
-      return
-    }
-    if (parsedServerLink.value.endpointKind === 'loopback' && !allowLoopback) {
-      toast.error(
-        translate(
-          'auto.components.sidebar.AddRemoteHostDialog.loopbackBlocked',
-          'Enable the SSH tunnel override or create a new link using the other host’s Tailscale or LAN address.'
-        )
-      )
-      return
-    }
+  const saveRemoteServer = () =>
+    saveRemoteServerFromPairingCode({
+      serverName,
+      pairingCode,
+      parsedServerLink,
+      allowLoopback,
+      setIsSaving,
+      setRuntimeEnvironments,
+      readRuntimeHostStatusSnapshots,
+      reset,
+      onOpenChange
+    })
 
-    setIsSaving(true)
-    try {
-      const result = await window.api.runtimeEnvironments.verifyAndAddFromPairingCode({
-        name: trimmedName,
-        pairingCode: trimmedPairingCode,
-        allowLoopback
-      })
-      if (!result.ok) {
-        toast.error(
-          result.kind === 'environment-save-failed'
-            ? result.message
-            : translateRemotePairingFailureDescription(
-                result.kind,
-                parsedServerLink.value.displayEndpoint
-              )
-        )
-        return
+  useSshConnectionsViewerController(
+    {
+      read: () => ({
+        formOpen: mode === 'ssh' && sshView === 'form',
+        editingId: null,
+        saving: isSaving || isBulkImporting || saveInProgress.current,
+        advancedOpen: readSshAdvancedViewerState('add-host'),
+        configPickerOpen: mode === 'ssh' && sshView === 'config-picker',
+        configLoading: isLoadingConfigHosts,
+        configError: configHostsError !== null,
+        configVisibleCount: configHosts.length,
+        configured: readSshFormConfigured(sshForm)
+      }),
+      matchesDraft: (updates) =>
+        Object.entries(updates).every(([key, value]) => Reflect.get(sshForm, key) === value),
+      open: () => {
+        leaveSshConfigPicker()
+      },
+      edit: () => false,
+      cancel: close,
+      draft: (updates) => setSshForm((current) => ({ ...current, ...updates })),
+      save: saveSshHost,
+      normalize: () => {
+        const normalized = applyParsedSshHostInput(sshForm)
+        setSshForm(normalized)
+        return normalized
+      },
+      config: {
+        open: openSshConfigPicker,
+        search: (query, refresh) =>
+          configResolving.current ? Promise.resolve(null) : loadSshConfigHosts(query, { refresh }),
+        select: (alias) => {
+          const host = configHosts.find((entry) => entry.alias === alias && !entry.alreadyInOrca)
+          return host ? selectSshConfigHost(host) : Promise.resolve(null)
+        },
+        importNew: () =>
+          isLoadingConfigHosts ||
+          configHostsError !== null ||
+          newConfigHostCount <= 0 ||
+          configResolving.current
+            ? Promise.resolve('failed')
+            : addAllConfigHostsToOrca(),
+        matchesList: (result, query) =>
+          !isLoadingConfigHosts && configHosts === result.hosts && configQuery === query
       }
-      const environments = await window.api.runtimeEnvironments.list()
-      setRuntimeEnvironments(environments)
-      await readRuntimeHostStatusSnapshots()
-      toast.success(
-        translate('auto.components.sidebar.AddRemoteHostDialog.serverSaved', 'Remote server added.')
-      )
-      reset()
-      onOpenChange(null)
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.sidebar.AddRemoteHostDialog.serverSaveFailed',
-              'Failed to add remote server.'
-            )
-      )
-    } finally {
-      setIsSaving(false)
-    }
-  }
+    },
+    'add-host',
+    mode !== 'server' && hasOpenedSsh.current
+  )
 
   const showSshConfigPicker = renderMode === 'ssh' && sshView === 'config-picker'
 
@@ -324,6 +362,8 @@ export function AddRemoteHostDialog({
         {showSshConfigPicker ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <AddRemoteHostSshConfigPicker
+              query={configQuery}
+              onQueryDraftChange={setConfigQuery}
               hosts={configHosts}
               totalHostCount={configHostCount}
               newHostCount={newConfigHostCount}

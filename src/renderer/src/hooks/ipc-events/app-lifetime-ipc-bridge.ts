@@ -4,6 +4,7 @@ import { registerAccountViewerBridge } from '../../runtime/account-viewer-bridge
 import { attachBrowserViewerBridge } from '@/runtime/browser-viewer-bridge'
 import { attachVoiceViewerBridge } from '@/runtime/voice-viewer-bridge'
 import { attachSearchSettingsViewerBridge } from '@/runtime/search-settings-viewer-bridge'
+import { attachConnectionsViewerBridge } from '@/runtime/connections-viewer-bridge'
 import type { RuntimeHostStatusSnapshot } from '../../../../shared/runtime-host-status'
 import { getTabIdsAwaitingHostHydrationRemount } from '@/lib/parked-terminal-host-hydration'
 import { emitAutomationsChangedWindowEvent } from '@/lib/automations-changed-window-event'
@@ -64,6 +65,14 @@ export function installAppLifetimeIpcEvents(
 ): () => void {
   const unsubs: (() => void)[] = [registerAppSurfaceIpcBridge()]
   unsubs.push(attachSearchSettingsViewerBridge())
+  if (window.api.ui.onConnectionsViewerRequest && window.api.ui.respondConnectionsViewer) {
+    unsubs.push(
+      attachConnectionsViewerBridge({
+        onRequest: window.api.ui.onConnectionsViewerRequest,
+        respond: window.api.ui.respondConnectionsViewer
+      })
+    )
+  }
   const directSshRuntime = createDirectSshBridgeRuntime()
   const backgroundWakeDispatcher = createBackgroundSleepingAgentWakeDispatcher()
   unsubs.push(backgroundWakeDispatcher.dispose)

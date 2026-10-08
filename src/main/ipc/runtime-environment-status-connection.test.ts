@@ -12,6 +12,7 @@ import {
 import { getRuntimeEnvironmentStatus } from './runtime-environment-transport-routing'
 import {
   getRuntimeEnvironmentStatusOwner,
+  getRuntimeEnvironmentStatusSnapshots,
   resetRuntimeEnvironmentStatusOwners
 } from './runtime-environment-request-connections'
 
@@ -47,6 +48,7 @@ it('publishes real same-socket verification after every authenticated reconnect'
     { timeout: 3_000 }
   )
   expect(server.connectionCount()).toBe(2) // Bootstrap plus persistent control.
+  expect(getRuntimeEnvironmentStatusSnapshots()).toEqual([owner.read()])
   runtimeId = 'host-after'
   server.closeClients()
   await vi.waitFor(
@@ -57,9 +59,12 @@ it('publishes real same-socket verification after every authenticated reconnect'
     { timeout: 3_000 }
   )
   expect(server.connectionCount()).toBe(3)
+  expect(getRuntimeEnvironmentStatusSnapshots()).toEqual([owner.read()])
   expect(server.requests.map((request) => request.method)).toEqual([
     'status.get',
     'status.get',
     'status.get'
   ])
+  resetRuntimeEnvironmentStatusOwners()
+  expect(getRuntimeEnvironmentStatusSnapshots()).toEqual([])
 })

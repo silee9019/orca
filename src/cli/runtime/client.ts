@@ -4,6 +4,7 @@ import {
   createTccThresholdObserver
 } from './account-observation-transport'
 import type { EmulatorSubscriptionArguments } from './emulator-subscription'
+import { watchConnectionEvents } from './connection-event-watch'
 import { randomUUID } from 'node:crypto'
 import type { CliStatusResult, RuntimeStatus } from '../../shared/runtime-types'
 import { runtimeHostConnectionState } from '../../shared/runtime-host-connection-state'
@@ -79,6 +80,20 @@ export class RuntimeClient {
     this.observeRateLimits = createRateLimitObserver(userDataPath, this.remotePairing)
     this.observeTccThreshold = createTccThresholdObserver(userDataPath, this.remotePairing)
     this.remoteCompat = new RemoteRuntimeCompatGate(userDataPath, environmentSelector)
+  }
+
+  async watchConnections(options: Parameters<typeof watchConnectionEvents>[1]) {
+    if (this.remotePairing || this.environmentSelector) {
+      throw new RuntimeClientError(
+        'invalid_argument',
+        'SSH management observation requires the local runtime.'
+      )
+    }
+    return watchConnectionEvents(readMetadata(this.userDataPath), options)
+  }
+
+  async watchSshState(options: Parameters<typeof watchConnectionEvents>[1]) {
+    return this.watchConnections(options)
   }
 
   get isRemote(): boolean {

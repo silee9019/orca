@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
 import { unwrapRuntimeRpcResult } from '@/runtime/runtime-rpc-client'
@@ -26,6 +26,7 @@ export function useRuntimeEnvironmentConnectionActions({
   setActiveRuntimeEnvironmentPreference,
   getEnvironmentLabel
 }: RuntimeEnvironmentConnectionActionParams) {
+  const connectionBusyRef = useRef(false)
   const [connectingId, setConnectingId] = useState<string | null>(null)
   const [switchingValue, setSwitchingValue] = useState<string | null>(null)
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
@@ -34,6 +35,10 @@ export function useRuntimeEnvironmentConnectionActions({
   const disconnectEnvironment = async (
     environment: PublicKnownRuntimeEnvironment
   ): Promise<boolean> => {
+    if (connectionBusyRef.current) {
+      return false
+    }
+    connectionBusyRef.current = true
     setDisconnectingId(environment.id)
     setSwitchError(null)
     try {
@@ -69,6 +74,7 @@ export function useRuntimeEnvironmentConnectionActions({
       }
       return false
     } finally {
+      connectionBusyRef.current = false
       if (mountedRef.current) {
         setDisconnectingId(null)
       }
@@ -78,6 +84,10 @@ export function useRuntimeEnvironmentConnectionActions({
   const connectEnvironment = async (
     environment: PublicKnownRuntimeEnvironment
   ): Promise<boolean> => {
+    if (connectionBusyRef.current) {
+      return false
+    }
+    connectionBusyRef.current = true
     setConnectingId(environment.id)
     setSwitchError(null)
     try {
@@ -150,6 +160,7 @@ export function useRuntimeEnvironmentConnectionActions({
       }
       return false
     } finally {
+      connectionBusyRef.current = false
       if (mountedRef.current) {
         setConnectingId(null)
       }

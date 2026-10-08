@@ -1,3 +1,4 @@
+import { setSshDirectoryManagement } from '../ssh/ssh-target-registry'
 import { ipcMain } from 'electron'
 import type { SshConnectionManager } from '../ssh/ssh-connection-manager'
 import type { SshExecOptions } from '../ssh/ssh-connection-utils'
@@ -36,35 +37,11 @@ class RemoteBrowseError extends Error {
 export function registerSshBrowseHandler(
   getConnectionManager: () => SshConnectionManager | null
 ): void {
+  setSshDirectoryManagement((args) => browseManagedSshDirectory(getConnectionManager, args))
   ipcMain.removeHandler('ssh:browseDir')
 
-  ipcMain.handle(
-    'ssh:browseDir',
-    async (_event, args: { targetId: string; dirPath: string }): Promise<RemoteBrowseResult> => {
-      const mgr = getConnectionManager()
-      if (!mgr) {
-        throw new Error('SSH connection manager not initialized')
-      }
-      const conn = mgr.getConnection(args.targetId)
-      if (!conn) {
-        throw new Error(`SSH connection "${args.targetId}" not found`)
-      }
-
-      try {
-        return await browseWithPosixShell(conn, args.dirPath)
-      } catch (posixError) {
-        // Why: only a RemoteBrowseError (ran, non-zero exit) signals a Windows shell; don't retry transport errors/timeouts as Windows.
-        if (!(posixError instanceof RemoteBrowseError)) {
-          throw posixError
-        }
-        try {
-          return await browseWithWindowsPowerShell(conn, args.dirPath)
-        } catch (fallbackError) {
-          // Why: exit 127 (no powershell.exe) → host isn't Windows, surface the original POSIX failure; otherwise PowerShell's own error is the real cause.
-          throw isPosixCommandNotFound(fallbackError) ? posixError : fallbackError
-        }
-      }
-    }
+  ipcMain.handle('ssh:browseDir', (_event, args: { targetId: string; dirPath: string }) =>
+    browseManagedSshDirectory(getConnectionManager, args)
   )
 }
 
@@ -275,4 +252,33 @@ function powerShellPathExpression(s: string): string {
 function normalizeWindowsDrivePath(s: string): string {
   const stripped = s.replace(/^\/(?=[A-Za-z]:(?:[/\\]|$))/, '')
   return /^[A-Za-z]:$/.test(stripped) ? `${stripped}/` : stripped
+}
+
+export async function browseManagedSshDirectory(
+  getConnectionManager: () => SshConnectionManager | null,
+  args: { targetId: string; dirPath: string }
+): Promise<RemoteBrowseResult> {
+  const mgr = getConnectionManager()
+  if (!mgr) {
+    throw new Error('SSH connection manager not initialized')
+  }
+  const conn = mgr.getConnection(args.targetId)
+  if (!conn) {
+    throw new Error(`SSH connection "${args.targetId}" not found`)
+  }
+
+  try {
+    return await browseWithPosixShell(conn, args.dirPath)
+  } catch (posixError) {
+    // Why: only a RemoteBrowseError (ran, non-zero exit) signals a Windows shell; don't retry transport errors/timeouts as Windows.
+    if (!(posixError instanceof RemoteBrowseError)) {
+      throw posixError
+    }
+    try {
+      return await browseWithWindowsPowerShell(conn, args.dirPath)
+    } catch (fallbackError) {
+      // Why: exit 127 (no powershell.exe) → host isn't Windows, surface the original POSIX failure; otherwise PowerShell's own error is the real cause.
+      throw isPosixCommandNotFound(fallbackError) ? posixError : fallbackError
+    }
+  }
 }

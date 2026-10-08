@@ -1,3 +1,5 @@
+import { useSshCredentialViewer } from '@/runtime/ssh-credential-viewer'
+import { useMountedRef } from '@/hooks/useMountedRef'
 import React, { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -19,6 +21,8 @@ export function SshPassphraseDialog(): React.JSX.Element | null {
   const removeRequest = useAppStore((s) => s.removeSshCredentialRequest)
   const [value, setValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const mountedRef = useMountedRef()
+  const submittingRef = useRef<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const focusFrameRef = useRef<number | null>(null)
 
@@ -60,49 +64,80 @@ export function SshPassphraseDialog(): React.JSX.Element | null {
     [requestId]
   )
 
-  const handleSubmit = useCallback(async () => {
-    // Why: keyboard-interactive servers may accept an empty response (e.g.
-    // plain Enter to trigger a default MFA push); passwords and passphrases
-    // are never empty.
-    if (!request || (!value && request.kind !== 'keyboard-interactive')) {
-      return
-    }
-    setSubmitting(true)
-    try {
-      await window.api.ssh.submitCredential({ requestId: request.requestId, value })
-      removeRequest(request.requestId)
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : translate(
-              'auto.components.settings.SshPassphraseDialog.b8e88fd0de',
-              'Failed to submit SSH credential'
-            )
-      )
-      setSubmitting(false)
-    }
-  }, [request, value, removeRequest])
-
-  const handleCancel = useCallback(async () => {
-    if (request) {
+  const completeCredential = useCallback(
+    async (answer: string | null): Promise<boolean> => {
+      if (
+        !request ||
+        !mountedRef.current ||
+        submittingRef.current !== null ||
+        useAppStore.getState().sshCredentialQueue[0] !== request ||
+        (answer !== null && !answer && request.kind !== 'keyboard-interactive')
+      ) {
+        return false
+      }
+      submittingRef.current = request.requestId
       setSubmitting(true)
       try {
-        await window.api.ssh.submitCredential({ requestId: request.requestId, value: null })
+        await window.api.ssh.submitCredential({ requestId: request.requestId, value: answer })
+        if (!mountedRef.current || useAppStore.getState().sshCredentialQueue[0] !== request) {
+          return false
+        }
         removeRequest(request.requestId)
+        setValue('')
+        return !useAppStore
+          .getState()
+          .sshCredentialQueue.some((entry) => entry.requestId === request.requestId)
       } catch (err) {
+        if (!mountedRef.current || useAppStore.getState().sshCredentialQueue[0] !== request) {
+          return false
+        }
         toast.error(
           err instanceof Error
             ? err.message
-            : translate(
-                'auto.components.settings.SshPassphraseDialog.c55f105262',
-                'Failed to cancel SSH credential request'
-              )
+            : answer === null
+              ? translate(
+                  'auto.components.settings.SshPassphraseDialog.c55f105262',
+                  'Failed to cancel SSH credential request'
+                )
+              : translate(
+                  'auto.components.settings.SshPassphraseDialog.b8e88fd0de',
+                  'Failed to submit SSH credential'
+                )
         )
-        setSubmitting(false)
+        return false
+      } finally {
+        submittingRef.current = null
+        if (mountedRef.current) {
+          setSubmitting(false)
+        }
       }
-    }
-  }, [request, removeRequest])
+    },
+    [request, removeRequest, mountedRef]
+  )
+  const handleSubmit = useCallback(() => completeCredential(value), [completeCredential, value])
+  const handleCancel = useCallback(() => completeCredential(null), [completeCredential])
+  useSshCredentialViewer({
+    requestId: request?.requestId ?? null,
+    targetId: request?.targetId ?? null,
+    value,
+    busy: () => submittingRef.current !== null,
+    isCurrent: () =>
+      mountedRef.current &&
+      request !== null &&
+      useAppStore.getState().sshCredentialQueue[0] === request,
+    draft: (next) => {
+      if (
+        mountedRef.current &&
+        submittingRef.current === null &&
+        request &&
+        useAppStore.getState().sshCredentialQueue[0] === request
+      ) {
+        setValue(next)
+      }
+    },
+    submit: handleSubmit,
+    cancel: handleCancel
+  })
 
   if (!request) {
     return null

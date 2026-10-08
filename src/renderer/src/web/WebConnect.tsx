@@ -1,3 +1,4 @@
+import { usePairingInputViewer } from '@/runtime/pairing-input-viewer'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cable, Loader2, Server, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -29,6 +30,12 @@ export default function WebConnect({
   const [pairingCode, setPairingCode] = useState(initialPairingInput ?? '')
   const [error, setError] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
+  usePairingInputViewer({
+    surface: 'web',
+    value: pairingCode,
+    disabled: connecting,
+    set: setPairingCode
+  })
   const parsedOffer = useMemo(() => parseWebPairingInput(pairingCode), [pairingCode])
   const autoConnectAttempted = useRef(false)
 

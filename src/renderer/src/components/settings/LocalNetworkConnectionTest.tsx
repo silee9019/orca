@@ -1,4 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import {
+  useLocalNetworkTestViewer,
+  type LocalNetworkTestCompletion
+} from '@/runtime/local-network-test-viewer'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { CheckCircle2, ChevronDown } from 'lucide-react'
 import type {
   LocalNetworkConnectionTestFailure,
@@ -63,14 +67,54 @@ function formatTarget(success: LocalNetworkConnectionSuccess): string {
 
 export function LocalNetworkConnectionTest(): React.JSX.Element {
   const [lastSuccess, setLastSuccess] = useState(loadLocalNetworkConnectionSuccess)
-  const [open, setOpen] = useState(false)
-  const [host, setHost] = useState(lastSuccess?.host ?? '')
-  const [port, setPort] = useState(lastSuccess ? String(lastSuccess.port) : '')
+  const [open, setOpenState] = useState(false)
+  const [host, setHostState] = useState(lastSuccess?.host ?? '')
+  const [port, setPortState] = useState(lastSuccess ? String(lastSuccess.port) : '')
   const [running, setRunning] = useState(false)
   const [failure, setFailure] = useState<LocalNetworkConnectionTestFailure | null>(null)
 
-  const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault()
+  const mounted = useRef(true)
+  const busy = useRef(false)
+  const openRef = useRef(open)
+  const committed = useRef({ host, port, failure, running, lastSuccess })
+  useEffect(() => {
+    committed.current = { host, port, failure, running, lastSuccess }
+  })
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  const setOpen = (value: boolean): void => {
+    openRef.current = value
+    setOpenState(value)
+  }
+  const setHost = (value: string): boolean => {
+    if (busy.current || !openRef.current || !mounted.current) {
+      return false
+    }
+    setHostState(value)
+    return true
+  }
+  const setPort = (value: string): boolean => {
+    if (busy.current || !openRef.current || !mounted.current) {
+      return false
+    }
+    const candidate = document.createElement('input')
+    candidate.type = 'number'
+    candidate.value = value
+    if (candidate.value !== value) {
+      return false
+    }
+    setPortState(value)
+    return true
+  }
+  const runTest = async (): Promise<LocalNetworkTestCompletion | null> => {
+    if (busy.current || !openRef.current || !mounted.current || !host || !port) {
+      return null
+    }
+    busy.current = true
     setRunning(true)
     setFailure(null)
     try {
@@ -79,23 +123,74 @@ export function LocalNetworkConnectionTest(): React.JSX.Element {
           host,
           port: Number(port)
         })
+      if (!mounted.current) {
+        return null
+      }
       if (result.ok) {
-        const success = {
-          host: result.host,
-          port: result.port,
-          testedAt: result.testedAt
-        }
+        const success = { host: result.host, port: result.port, testedAt: result.testedAt }
         saveLocalNetworkConnectionSuccess(success)
         setLastSuccess(success)
-      } else {
-        setFailure(result.failure ?? 'failed')
+        const matchesSaved = (): boolean => {
+          const saved = loadLocalNetworkConnectionSuccess()
+          return (
+            saved?.host === success.host &&
+            saved.port === success.port &&
+            saved.testedAt === success.testedAt
+          )
+        }
+        const persisted = matchesSaved()
+        return {
+          completed: true,
+          persisted,
+          matches: () =>
+            !committed.current.running &&
+            committed.current.lastSuccess === success &&
+            (!persisted || matchesSaved())
+        }
+      }
+      const failed = result.failure ?? 'failed'
+      setFailure(failed)
+      return {
+        completed: true,
+        persisted: null,
+        matches: () => !committed.current.running && committed.current.failure === failed
       }
     } catch {
-      setFailure('failed')
+      if (mounted.current) {
+        setFailure('failed')
+      }
+      return {
+        completed: false,
+        persisted: null,
+        matches: () => !committed.current.running && committed.current.failure === 'failed'
+      }
     } finally {
-      setRunning(false)
+      busy.current = false
+      if (mounted.current) {
+        setRunning(false)
+      }
     }
   }
+  const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault()
+    await runTest()
+  }
+  useLocalNetworkTestViewer({
+    read: () => ({
+      open,
+      running,
+      hostSet: Boolean(host),
+      portSet: Boolean(port),
+      hasSuccess: lastSuccess !== null,
+      failure
+    }),
+    disclosure: setOpen,
+    host: setHost,
+    port: setPort,
+    matches: (kind, value) => (kind === 'host' ? host : port) === value,
+    target: (targetHost, targetPort) => host === targetHost && Number(port) === targetPort,
+    submit: runTest
+  })
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="mr-4 mb-3 ml-11">

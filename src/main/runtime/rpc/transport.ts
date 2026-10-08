@@ -15,6 +15,7 @@ export type RpcMessageContext = {
   streamReply?: (response: string) => void
   signal: AbortSignal
   startKeepalive: () => void
+  stream?: { emit(response: string): void; finish(): void }
 }
 
 export type RpcTransport = {

@@ -5,7 +5,11 @@ import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
-import { useMobileSidebarOnboardingBadge } from './mobile-sidebar-onboarding-badge'
+import { useMobileNavigationViewer } from '@/runtime/mobile-navigation-viewer'
+import {
+  isMobileSidebarOnboardingDismissed,
+  useMobileSidebarOnboardingBadge
+} from './mobile-sidebar-onboarding-badge'
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -73,8 +77,8 @@ const SidebarNav = React.memo(function SidebarNav() {
   const hideAutomationsButton = React.useCallback(() => {
     void updateSettings({ showAutomationsButton: false })
   }, [updateSettings])
-  const hideMobileButton = React.useCallback(() => {
-    void updateSettings({ showMobileButton: false })
+  const hideMobileButton = React.useCallback(async () => {
+    await updateSettings({ showMobileButton: false })
   }, [updateSettings])
   const hideArtifactsButton = React.useCallback(() => {
     void updateSettings({ showArtifactsButton: false })
@@ -83,6 +87,22 @@ const SidebarNav = React.memo(function SidebarNav() {
     void updateSettings({ showSkillsButton: false })
   }, [updateSettings])
 
+  useMobileNavigationViewer({
+    surface: 'sidebar',
+    read: () => ({ showButton: showMobileButton, badgeVisible: mobileOnboardingBadge.visible }),
+    visibility: async (shown) => {
+      if (shown) {
+        return false
+      }
+      await hideMobileButton()
+      return true
+    },
+    dismissBadge: mobileOnboardingBadge.dismiss,
+    persisted: async (kind, shown) =>
+      kind === 'badge'
+        ? isMobileSidebarOnboardingDismissed()
+        : ((await window.api.settings.get()).showMobileButton !== false) === shown
+  })
   return (
     <div
       className="flex flex-col gap-0.5 px-2 pt-2 pb-1"

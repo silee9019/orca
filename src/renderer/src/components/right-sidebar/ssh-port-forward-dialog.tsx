@@ -1,4 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import type { SshPortsFormDraft } from '../../../../shared/ssh-ports-viewer'
+import type { SshPortsFormOwner } from '@/runtime/ssh-ports-viewer'
+import { useAppStore } from '@/store'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -37,12 +40,15 @@ const INPUT_CLASS =
 export function SshPortForwardDialog({
   state,
   activeConnectionId,
-  onClose
+  registerForm,
+  onClose: closeDialog
 }: {
   state: PortForwardDialogState
+  registerForm?: (owner: SshPortsFormOwner) => () => void
   activeConnectionId: string | null
-  onClose: () => void
+  onClose: (expected?: PortForwardDialogState) => boolean | void
 }): React.JSX.Element {
+  const onClose = useCallback(() => closeDialog(state), [closeDialog, state])
   const isOpen = state.mode !== 'closed'
   const isEdit = state.mode === 'edit'
 
@@ -122,6 +128,7 @@ export function SshPortForwardDialog({
                 ? `edit-${state.entry.id}`
                 : `add-${targetId}-${initialRemotePort}-${initialRemoteHost}`
             }
+            registerForm={registerForm}
             mode={state.mode}
             editId={state.mode === 'edit' ? state.entry.id : undefined}
             initialRemotePort={initialRemotePort}
@@ -138,6 +145,7 @@ export function SshPortForwardDialog({
 }
 
 function PortForwardForm({
+  registerForm,
   mode,
   editId,
   initialRemotePort,
@@ -147,6 +155,7 @@ function PortForwardForm({
   targetId,
   onClose
 }: {
+  registerForm?: (owner: SshPortsFormOwner) => () => void
   mode: 'add' | 'edit'
   editId?: string
   initialRemotePort: string
@@ -154,8 +163,19 @@ function PortForwardForm({
   initialRemoteHost: string
   initialLabel: string
   targetId: string
-  onClose: () => void
+  onClose: () => boolean | void
 }): React.JSX.Element {
+  const revision = useRef(0)
+  const inFlight = useRef(false)
+  const mounted = useRef(true)
+  const currentClose = useRef(onClose)
+  currentClose.current = onClose
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   const [remotePort, setRemotePort] = useState(initialRemotePort)
   const [localPort, setLocalPort] = useState(initialLocalPort)
   const [remoteHost, setRemoteHost] = useState(initialRemoteHost)
@@ -164,8 +184,11 @@ function PortForwardForm({
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault()
+    async (e?: React.FormEvent): Promise<boolean> => {
+      e?.preventDefault()
+      if (inFlight.current || !mounted.current) {
+        return false
+      }
       setError(null)
 
       const rPort = Number.parseInt(remotePort, 10)
@@ -173,16 +196,22 @@ function PortForwardForm({
 
       if (Number.isNaN(rPort) || rPort < 1 || rPort > 65535) {
         setError('Remote port must be 1\u201365535')
-        return
+        return false
       }
       if (Number.isNaN(lPort) || lPort < 1 || lPort > 65535) {
         setError('Local port must be 1\u201365535')
-        return
+        return false
       }
 
+      if (useAppStore.getState().sshConnectionStates.get(targetId)?.status !== 'connected') {
+        return false
+      }
+      inFlight.current = true
       setSubmitting(true)
+      const close = currentClose.current
+      const savedRevision = revision.current
       try {
-        await (mode === 'edit' && editId
+        const saved = await (mode === 'edit' && editId
           ? window.api.ssh.updatePortForward({
               id: editId,
               targetId,
@@ -198,20 +227,98 @@ function PortForwardForm({
               remotePort: rPort,
               label: label || undefined
             }))
-        onClose()
+        const canonical = await window.api.ssh.listPortForwards({ targetId })
+        if (
+          !mounted.current ||
+          currentClose.current !== close ||
+          savedRevision !== revision.current
+        ) {
+          return false
+        }
+        const confirmed = canonical.some(
+          (entry) =>
+            entry.id === (mode === 'edit' ? editId : saved.id) &&
+            entry.connectionId === targetId &&
+            entry.localPort === lPort &&
+            entry.remotePort === rPort &&
+            entry.remoteHost === (remoteHost || 'localhost') &&
+            (entry.label ?? '') === label
+        )
+        if (confirmed) {
+          return close() !== false
+        }
+        setError('Port forward could not be confirmed.')
+        return false
       } catch (err) {
+        if (
+          !mounted.current ||
+          currentClose.current !== close ||
+          savedRevision !== revision.current
+        ) {
+          return false
+        }
         const msg = err instanceof Error ? err.message : String(err)
         if (msg.includes('EADDRINUSE') || msg.includes('already in use')) {
           setError(`Port ${lPort} is already in use. Choose a different local port.`)
         } else if (msg.includes('EACCES') || msg.includes('permission denied')) {
           setError(`Port ${lPort} requires elevated privileges. Use a local port \u2265 1024.`)
         } else {
-          setError(msg)
+          setError('Port forward could not be saved.')
+        }
+        return false
+      } finally {
+        inFlight.current = false
+        if (mounted.current) {
+          setSubmitting(false)
         }
       }
-      setSubmitting(false)
     },
-    [mode, editId, remotePort, localPort, remoteHost, label, targetId, onClose]
+    [mode, editId, remotePort, localPort, remoteHost, label, targetId]
+  )
+
+  const changeDraft = (value: SshPortsFormDraft): boolean => {
+    if (!mounted.current) {
+      return false
+    }
+    revision.current += 1
+    if (value.remotePort !== undefined) {
+      const val = digitsOnly(value.remotePort)
+      setRemotePort(val)
+      const prev = Number.parseInt(remotePort, 10)
+      const cur = Number.parseInt(localPort, 10)
+      if (!localPort || cur === prev || cur === safeLocalPort(prev)) {
+        const parsed = Number.parseInt(val, 10)
+        setLocalPort(Number.isNaN(parsed) ? '' : safeLocalPort(parsed).toString())
+      }
+    }
+    if (value.localPort !== undefined) {
+      setLocalPort(digitsOnly(value.localPort))
+    }
+    if (value.remoteHost !== undefined) {
+      setRemoteHost(value.remoteHost)
+    }
+    if (value.label !== undefined) {
+      setLabel(value.label)
+    }
+    return true
+  }
+  const editor = useRef({ changeDraft, handleSubmit, remotePort, localPort, remoteHost, label })
+  editor.current = { changeDraft, handleSubmit, remotePort, localPort, remoteHost, label }
+  useEffect(
+    () =>
+      registerForm?.({
+        targetId,
+        draft: (value) => editor.current.changeDraft(value),
+        save: () => editor.current.handleSubmit(),
+        matches: (value) =>
+          Object.entries(value).every(
+            ([key, expected]) =>
+              typeof expected === 'string' &&
+              Reflect.get(editor.current, key) ===
+                (key === 'remotePort' || key === 'localPort' ? digitsOnly(expected) : expected)
+          )
+      }),
+    [registerForm, targetId]
   )
 
   return (
@@ -225,16 +332,7 @@ function PortForwardForm({
             type="text"
             inputMode="numeric"
             value={remotePort}
-            onChange={(e) => {
-              const val = digitsOnly(e.target.value)
-              setRemotePort(val)
-              const prev = Number.parseInt(remotePort, 10)
-              const cur = Number.parseInt(localPort, 10)
-              if (!localPort || cur === prev || cur === safeLocalPort(prev)) {
-                const parsed = Number.parseInt(val, 10)
-                setLocalPort(Number.isNaN(parsed) ? '' : safeLocalPort(parsed).toString())
-              }
-            }}
+            onChange={(e) => changeDraft({ remotePort: e.target.value })}
             className={INPUT_CLASS}
             placeholder="3000"
             autoFocus
@@ -250,7 +348,7 @@ function PortForwardForm({
             type="text"
             inputMode="numeric"
             value={localPort}
-            onChange={(e) => setLocalPort(digitsOnly(e.target.value))}
+            onChange={(e) => changeDraft({ localPort: e.target.value })}
             className={INPUT_CLASS}
             placeholder={translate(
               'auto.components.right.sidebar.PortsPanel.d57545ff92',
@@ -266,7 +364,7 @@ function PortForwardForm({
           <input
             type="text"
             value={remoteHost}
-            onChange={(e) => setRemoteHost(e.target.value)}
+            onChange={(e) => changeDraft({ remoteHost: e.target.value })}
             className={INPUT_CLASS}
             placeholder={translate(
               'auto.components.right.sidebar.PortsPanel.17bea6e391',
@@ -282,7 +380,7 @@ function PortForwardForm({
           <input
             type="text"
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e) => changeDraft({ label: e.target.value })}
             className={INPUT_CLASS}
             placeholder={translate(
               'auto.components.right.sidebar.PortsPanel.4eb801ce93',

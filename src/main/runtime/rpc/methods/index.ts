@@ -30,6 +30,12 @@ import { BROWSER_PROFILE_FILE_METHODS } from './browser-profile-file'
 import { BROWSER_VIEWER_METHODS } from './browser-viewer'
 import { SEARCH_SETTINGS_VIEWER_METHODS } from './search-settings-viewer'
 import { browserReaderMethods } from './browser-readers'
+import { CONNECTIONS_VIEWER_METHODS } from './connections-viewer'
+import { SSH_MANAGEMENT_METHODS } from './ssh-management'
+import { ENVIRONMENT_MANAGEMENT_METHODS } from './environment-management'
+import { MOBILE_CONNECTION_METHODS } from './mobile-connections'
+import { NETWORK_CONNECTION_METHODS } from './network-connections'
+import { MOBILE_NETWORK_HUMAN_METHODS } from './mobile-network-human-actions'
 import { STATUS_METHODS } from './status'
 import { AI_VAULT_METHODS } from './ai-vault'
 import { AUTOMATION_METHODS } from './automations'
@@ -119,6 +125,13 @@ export const ALL_RPC_METHODS = [
   ...APP_VAULT_METHODS,
   ...SEARCH_SETTINGS_VIEWER_METHODS,
   ...browserReaderMethods,
+  ...CONNECTIONS_VIEWER_METHODS,
+  ...SSH_MANAGEMENT_METHODS,
+  ...ENVIRONMENT_MANAGEMENT_METHODS,
+  ...MOBILE_CONNECTION_METHODS,
+  ...NETWORK_CONNECTION_METHODS,
+  ...MOBILE_NETWORK_HUMAN_METHODS,
+
   ...STATUS_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,

@@ -46,6 +46,12 @@ import { CLIENT_HOSTED_BROWSER_ROW_COMMAND_SPECS } from './client-hosted-browser
 import { BROWSER_SETUP_GUIDE_SPECS } from './browser-setup-guide'
 import { BROWSER_READER_COMMAND_SPECS } from './browser-readers'
 import { BROWSER_OVERLAY_FOCUS_COMMAND_SPECS } from './browser-overlay-focus'
+import { CONNECTIONS_VIEWER_COMMAND_SPECS } from './connections-viewer'
+import { SSH_COMMAND_SPECS } from './ssh'
+import { ENVIRONMENT_CONNECTION_COMMAND_SPECS } from './environment-connections'
+import { MOBILE_CONNECTION_COMMAND_SPECS } from './mobile-connections'
+import { NETWORK_CONNECTION_COMMAND_SPECS } from './network-connections'
+import { MOBILE_NETWORK_HUMAN_COMMAND_SPECS } from './mobile-network-human-actions'
 import type { CommandSpec } from '../args'
 import { BROWSER_SESSION_COMMAND_SPECS } from './browser-session'
 import { BROWSER_VIEWER_COMMAND_SPECS } from './browser-viewer'
@@ -125,6 +131,13 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...BROWSER_SETUP_GUIDE_SPECS,
   ...BROWSER_READER_COMMAND_SPECS,
   ...BROWSER_OVERLAY_FOCUS_COMMAND_SPECS,
+  ...CONNECTIONS_VIEWER_COMMAND_SPECS,
+  ...SSH_COMMAND_SPECS,
+  ...ENVIRONMENT_CONNECTION_COMMAND_SPECS,
+  ...MOBILE_CONNECTION_COMMAND_SPECS,
+  ...NETWORK_CONNECTION_COMMAND_SPECS,
+  ...MOBILE_NETWORK_HUMAN_COMMAND_SPECS,
+
   ...CORE_COMMAND_SPECS,
   ...ARTIFACT_COMMAND_SPECS,
   ...ACCOUNT_COMMAND_SPECS,

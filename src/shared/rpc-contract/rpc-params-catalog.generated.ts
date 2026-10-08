@@ -179,7 +179,7 @@ import { BrowserProfileImportFile } from './browser-profile-file-params'
 import { ScreencastUnsubscribe } from './browser-screencast-params'
 import { BrowserOpenUrlParams, BrowserTabCreateParams } from './browser-tab-create-params'
 import { BrowserViewerCommand } from './browser-viewer-params'
-import { ClientEventsUnsubscribeParams } from './client-events-params'
+import { ClientEventsSubscribeParams, ClientEventsUnsubscribeParams } from './client-events-params'
 import {
   NativeChatSessionOptionsMutation,
   PRBotAuthorOverrideUpdate,
@@ -209,6 +209,7 @@ import {
   SetValue,
   TypeText
 } from './computer-schemas-params'
+import { ConnectionsViewerParams } from './connections-viewer-params'
 import { EmulatorControlParams, EmulatorFocusParams } from './emulator-control-params'
 import { EmulatorObservationParams, EmulatorStreamStopParams } from './emulator-observation-params'
 import {
@@ -231,6 +232,14 @@ import {
   TapParams,
   TypeParams
 } from './emulator-params'
+import {
+  EnvironmentBrowserPlacement,
+  EnvironmentConnect,
+  EnvironmentPairing,
+  EnvironmentProbe,
+  EnvironmentRemove,
+  EnvironmentSelector
+} from './environment-management-params'
 import {
   VmAttach,
   VmProvision,
@@ -429,7 +438,17 @@ import {
   WorkspaceSelection
 } from './linear-params'
 import { CreateProject } from './linear-project-create-params'
+import {
+  MobileAddressParams,
+  MobileNetworkHumanComplete,
+  MobileNetworkHumanRequest,
+  MobileNetworkHumanStart,
+  MobilePairingParams,
+  MobileRevokeParams,
+  RuntimePairingParams
+} from './mobile-connection-params'
 import { NativeChatSession, NativeChatUnsubscribe } from './native-chat-params'
+import { LocalNetworkConnectionTestParams } from './network-connection-params'
 import {
   NotificationGetMissedSinceParams,
   NotificationRegisterPushParams,
@@ -607,6 +626,20 @@ import {
   DictationStart,
   SpeechModelAction
 } from './speech-params'
+import {
+  SshManagedAddForward,
+  SshManagedAddTarget,
+  SshManagedBrowse,
+  SshManagedConfigAlias,
+  SshManagedConfigQuery,
+  SshManagedCredential,
+  SshManagedDestructiveTarget,
+  SshManagedImportConfig,
+  SshManagedRemoveForward,
+  SshManagedTarget,
+  SshManagedUpdateForward,
+  SshManagedUpdateTarget
+} from './ssh-management-params'
 import { SshTarget } from './ssh-params'
 import {
   AgentsParams,
@@ -947,6 +980,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'computer.scroll': ScrollOfComputerSchemasParams,
   'computer.setValue': SetValue,
   'computer.typeText': TypeText,
+  'connections.viewer.apply': ConnectionsViewerParams,
   'desktopCli.getInstallStatus': null,
   'desktopCli.getWslInstallStatus': DesktopCliDistroParams,
   'desktopCli.install': DesktopCliMutationParams,
@@ -1022,6 +1056,15 @@ export const RPC_PARAMS_BY_METHOD = {
   'emulator.type': TypeParams,
   'emulator.unregisterActive': EmulatorUnregisterActiveParams,
   'emulator.wheel': EmulatorWheelParams,
+  'environment.management.connect': EnvironmentConnect,
+  'environment.management.disconnect': EnvironmentSelector,
+  'environment.management.list': null,
+  'environment.management.prepareBrowserPlacement': EnvironmentBrowserPlacement,
+  'environment.management.probe': EnvironmentProbe,
+  'environment.management.remove': EnvironmentRemove,
+  'environment.management.resolve': EnvironmentSelector,
+  'environment.management.status': null,
+  'environment.management.verifyAndAdd': EnvironmentPairing,
   'files.browseServerDir': ServerDirectoryBrowse,
   'files.commitUpload': FileCommitUpload,
   'files.copy': FileCopy,
@@ -1251,6 +1294,21 @@ export const RPC_PARAMS_BY_METHOD = {
   'macosTccPrompts.releasePending': TccPromptReleaseParams,
   'markdown.readTab': ActivateTab,
   'markdown.saveTab': SaveMarkdownTab,
+  'mobile.connection.devices': null,
+  'mobile.connection.firewall': MobileAddressParams,
+  'mobile.connection.grants': null,
+  'mobile.connection.networkInterfaces': null,
+  'mobile.connection.pairing': MobilePairingParams,
+  'mobile.connection.relay': null,
+  'mobile.connection.revokeDevice': MobileRevokeParams,
+  'mobile.connection.revokeGrant': MobileRevokeParams,
+  'mobile.connection.runtimePairing': RuntimePairingParams,
+  'mobile.connection.status': null,
+  'mobile.networkAction.cancel': MobileNetworkHumanRequest,
+  'mobile.networkAction.complete': MobileNetworkHumanComplete,
+  'mobile.networkAction.start': MobileNetworkHumanStart,
+  'mobile.networkAction.status': MobileNetworkHumanRequest,
+  'mobile.networkAction.verify': MobileNetworkHumanRequest,
   'mobileWeb.bundle.chunk': MobileWebBundleChunkParamsSchema,
   'mobileWeb.bundle.manifest': null,
   'mobileWeb.bundle.range': MobileWebBundleChunkParamsSchema,
@@ -1258,6 +1316,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'nativeChat.subscribe': NativeChatSession,
   'nativeChat.unsubscribe': NativeChatUnsubscribe,
   'network.browserTunnel': BrowserNetworkTunnelAttachParams,
+  'network.connection.testLocal': LocalNetworkConnectionTestParams,
   'notifications.dismiss': NotificationDismissParams,
   'notifications.dispatch': NotificationDispatchParams,
   'notifications.getDesktopAwayState': OsPermissionViewerParams,
@@ -1413,7 +1472,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'resourceManager.viewer': ResourceManagerViewerParams,
   'runtime.browserDrivers': null,
   'runtime.clientCapabilities.update': ClientCapabilitiesUpdate,
-  'runtime.clientEvents.subscribe': null,
+  'runtime.clientEvents.subscribe': ClientEventsSubscribeParams,
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
   'runtime.clientHostedBrowserRows': null,
   'search.viewer': SearchSettingsViewerParams,
@@ -1501,6 +1560,26 @@ export const RPC_PARAMS_BY_METHOD = {
   'ssh.listRemovedTargetLabels': null,
   'ssh.listTargetSummaries': null,
   'ssh.listTargets': null,
+  'ssh.management.addPortForward': SshManagedAddForward,
+  'ssh.management.addTarget': SshManagedAddTarget,
+  'ssh.management.browseDir': SshManagedBrowse,
+  'ssh.management.credentialRequests': null,
+  'ssh.management.disconnect': SshManagedTarget,
+  'ssh.management.importConfig': SshManagedImportConfig,
+  'ssh.management.listConfigHosts': SshManagedConfigQuery,
+  'ssh.management.listDetectedPorts': SshManagedTarget,
+  'ssh.management.listPortForwards': SshManagedTarget,
+  'ssh.management.listRemovedTargetLabels': null,
+  'ssh.management.needsPassphrasePrompt': SshManagedTarget,
+  'ssh.management.removePortForward': SshManagedRemoveForward,
+  'ssh.management.removeTarget': SshManagedDestructiveTarget,
+  'ssh.management.resetRelay': SshManagedDestructiveTarget,
+  'ssh.management.resolveConfigHost': SshManagedConfigAlias,
+  'ssh.management.submitCredential': SshManagedCredential,
+  'ssh.management.terminateSessions': SshManagedDestructiveTarget,
+  'ssh.management.testConnection': SshManagedTarget,
+  'ssh.management.updatePortForward': SshManagedUpdateForward,
+  'ssh.management.updateTarget': SshManagedUpdateTarget,
   'stats.summary': null,
   'status.get': null,
   'terminal.adoptOrphans': TerminalAdoptOrphans,

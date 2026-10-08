@@ -6,3 +6,11 @@ export const ClientEventsUnsubscribeParams = z.object({
     .transform((value) => (typeof value === 'string' && value.length > 0 ? value : ''))
     .pipe(z.string().min(1, 'Missing subscriptionId'))
 })
+
+export const ClientEventsSubscribeParams = z
+  .object({
+    connections: z.boolean().optional(),
+    ports: z.boolean().optional(),
+    relay: z.boolean().optional()
+  })
+  .optional()

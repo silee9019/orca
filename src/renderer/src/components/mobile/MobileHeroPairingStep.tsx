@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { usePairingSetupConnectionsViewerController } from '@/hooks/usePairingSetupConnectionsViewerController'
 import { ChevronDown, CircleAlert, Copy, RefreshCw } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible'
@@ -122,6 +123,14 @@ export function MobileHeroPairingStep({
   // A custom address is a deliberate override: show the row outright rather than
   // behind a trigger that could not collapse it anyway.
   const networkDisclosurePinned = selectedAddressIsCustom
+  usePairingSetupConnectionsViewerController({
+    read: () => ({
+      open: !usingRelay || networkDisclosurePinned || networkDisclosureOpen,
+      pinned: networkDisclosurePinned,
+      usingRelay
+    }),
+    setOpen: setNetworkDisclosureOpen
+  })
   const emptyQrMessage =
     !pairLoading && pairQrDataUrl == null
       ? emptyPairingQrMessage({

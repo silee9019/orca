@@ -5,6 +5,18 @@ import {
   RuntimeRateLimitController,
   type RuntimeRateLimitService
 } from './runtime-rate-limit-controller'
+import {
+  MobileRelayObservationSchema,
+  type MobileRelayObservation
+} from '../../shared/mobile-relay-observation'
+import {
+  SshPortObservationSchema,
+  type SshPortObservation
+} from '../../shared/ssh-port-observation'
+import {
+  SshCredentialObservationSchema,
+  type SshCredentialObservation
+} from '../../shared/ssh-credential-observation'
 import { installRuntimeLinearCommandSurface } from './runtime-linear-command-surface'
 import { OrcaRuntimeWithResolveWaiter } from './orca-runtime-resolve-waiter'
 import type { RuntimeCommandSurfaceHost } from './orca-runtime-core'
@@ -49,6 +61,27 @@ class OrcaRuntimeService extends OrcaRuntimeWithResolveWaiter {
       throw new Error('Rate-limit services are not configured on this runtime')
     }
     return this.rateLimitController
+  }
+
+  notifySshCredentialObservation(observation: SshCredentialObservation): void {
+    const parsed = SshCredentialObservationSchema.safeParse(observation)
+    if (parsed.success) {
+      this.emitClientEvent({ type: 'sshCredentialsChanged', observation: parsed.data })
+    }
+  }
+
+  notifySshPortObservation(observation: SshPortObservation): void {
+    const parsed = SshPortObservationSchema.safeParse(observation)
+    if (parsed.success) {
+      this.emitClientEvent({ type: 'sshPortsChanged', observation: parsed.data })
+    }
+  }
+
+  notifyMobileRelayObservation(observation: MobileRelayObservation): void {
+    const parsed = MobileRelayObservationSchema.safeParse(observation)
+    if (parsed.success) {
+      this.emitClientEvent({ type: 'mobileRelayChanged', observation: parsed.data })
+    }
   }
 
   constructor(...args: ConstructorParameters<typeof OrcaRuntimeWithResolveWaiter>) {

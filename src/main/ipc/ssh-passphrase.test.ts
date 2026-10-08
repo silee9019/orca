@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
-import { requestCredential } from './ssh-passphrase'
+import { listManagedSshCredentialRequests, requestCredential } from './ssh-passphrase'
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -37,4 +37,28 @@ describe('SSH credential requests', () => {
       requestId: request.requestId
     })
   })
+})
+
+it('queries the same pending credential owner without exposing prompt detail and removes aborted requests', async () => {
+  const controller = new AbortController()
+  const pending = requestCredential(
+    () => null,
+    'fixture-query-target',
+    'keyboard-interactive',
+    'private-prompt-canary',
+    false,
+    controller.signal
+  )
+  const requests = listManagedSshCredentialRequests()
+  expect(requests).toHaveLength(1)
+  expect(requests[0]).toMatchObject({
+    targetId: 'fixture-query-target',
+    kind: 'keyboard-interactive',
+    echo: false
+  })
+  expect(JSON.stringify(requests)).not.toContain('private-prompt-canary')
+  controller.abort()
+  controller.abort()
+  await expect(pending).resolves.toBeNull()
+  expect(listManagedSshCredentialRequests()).toEqual([])
 })

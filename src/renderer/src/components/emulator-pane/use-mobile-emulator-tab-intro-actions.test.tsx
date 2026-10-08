@@ -1,6 +1,12 @@
+import { getDefaultSettings } from '../../../../shared/constants'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { fireEvent, screen } from '@testing-library/react'
+import { MobileEmulatorTabIntroCallout } from './MobileEmulatorTabIntroCallout'
+import { applyEmulatorConnectionsViewerRequest } from '@/runtime/emulator-connections-viewer-controller'
+import type { ConnectionsViewerCommand } from '../../../../shared/rpc-contract/connections-viewer-params'
 // @vitest-environment happy-dom
 
-import { act } from 'react'
+import { act, type ReactElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { toast } from 'sonner'
@@ -25,12 +31,12 @@ function Probe(): null {
   return null
 }
 
-async function renderProbe(): Promise<void> {
+async function renderProbe(content: ReactElement = <Probe />): Promise<void> {
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
   await act(async () => {
-    root?.render(<Probe />)
+    root?.render(content)
   })
 }
 
@@ -141,5 +147,159 @@ describe('useMobileEmulatorTabIntroActions', () => {
     expect(closeUnifiedTab).not.toHaveBeenCalled()
     expect(toast.info).not.toHaveBeenCalled()
     expect(toast.error).toHaveBeenCalledWith('Could not hide Mobile Emulator.')
+  })
+})
+
+async function applyIntro(command: ConnectionsViewerCommand) {
+  let pending: ReturnType<typeof applyEmulatorConnectionsViewerRequest> | undefined
+  await act(async () => {
+    pending = applyEmulatorConnectionsViewerRequest({
+      id: 'intro-real-parent',
+      expiresAt: Date.now() + 100,
+      command
+    })
+  })
+  if (!pending) {
+    throw new Error('missing_request')
+  }
+  return pending
+}
+function configureRealIntro(failWrite = false) {
+  let storedDismissed = false
+  let storedEnabled = true
+  Object.defineProperty(window, 'api', {
+    configurable: true,
+    value: {
+      ui: {
+        set: vi.fn(async (updates: { mobileEmulatorTabIntroDismissed: boolean }) => {
+          storedDismissed = updates.mobileEmulatorTabIntroDismissed
+        }),
+        get: vi.fn(async () => ({ mobileEmulatorTabIntroDismissed: storedDismissed }))
+      },
+      settings: { get: vi.fn(async () => ({ mobileEmulatorEnabled: storedEnabled })) }
+    }
+  })
+  const dismiss = useAppStore.getInitialState().dismissMobileEmulatorTabIntro
+  const close = vi.fn<AppState['closeUnifiedTab']>((id) => {
+    const current = useAppStore.getState()
+    useAppStore.setState({
+      unifiedTabsByWorktree: Object.fromEntries(
+        Object.entries(current.unifiedTabsByWorktree).map(([key, tabs]) => [
+          key,
+          tabs.filter((tab) => tab.id !== id)
+        ])
+      )
+    })
+    return { closedTabId: id, wasLastTab: false, worktreeId: 'worktree-1' }
+  })
+  const updateSettings = vi.fn<AppState['updateSettings']>(async () => {
+    if (failWrite) {
+      return
+    }
+    storedEnabled = false
+    const settings = useAppStore.getState().settings
+    if (settings) {
+      useAppStore.setState({ settings: { ...settings, mobileEmulatorEnabled: false } })
+    }
+  })
+  configureStoreForHideAction({
+    updateSettings,
+    closeUnifiedTab: close,
+    dismissMobileEmulatorTabIntro: dismiss
+  })
+  useAppStore.setState({
+    settings: getDefaultSettings('/fixture'),
+    mobileEmulatorTabIntroDismissed: false
+  })
+  const originalTabs = useAppStore.getState().unifiedTabsByWorktree
+  return {
+    close,
+    updateSettings,
+    reset: () => {
+      storedDismissed = false
+      storedEnabled = true
+      useAppStore.setState({
+        mobileEmulatorTabIntroDismissed: false,
+        settings: getDefaultSettings('/fixture'),
+        unifiedTabsByWorktree: originalTabs
+      })
+    }
+  }
+}
+describe('actual intro callout and typed parent effects', () => {
+  it('pairs native Keep/Dismiss with typed actions and the existing UI persistence owner', async () => {
+    const owner = configureRealIntro()
+    await renderProbe(
+      <TooltipProvider>
+        <MobileEmulatorTabIntroCallout />
+      </TooltipProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Keep' }))
+    await flushAsyncAction()
+    expect(useAppStore.getState().mobileEmulatorTabIntroDismissed).toBe(true)
+    await act(async () => owner.reset())
+    expect(await applyIntro({ viewerId: 7, operation: 'emulator.intro-keep' })).toMatchObject({
+      applied: true,
+      persisted: true
+    })
+    await act(async () => owner.reset())
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+    await flushAsyncAction()
+    expect(useAppStore.getState().mobileEmulatorTabIntroDismissed).toBe(true)
+    await act(async () => owner.reset())
+    expect(await applyIntro({ viewerId: 7, operation: 'emulator.intro-dismiss' })).toMatchObject({
+      applied: true,
+      persisted: true
+    })
+    expect(owner.updateSettings).not.toHaveBeenCalled()
+    expect(owner.close).not.toHaveBeenCalled()
+  })
+  it('pairs native and typed Hide with actual simulator-tab closure while preserving terminal tabs and menu pointer semantics', async () => {
+    const owner = configureRealIntro()
+    await renderProbe(
+      <TooltipProvider>
+        <MobileEmulatorTabIntroCallout />
+      </TooltipProvider>
+    )
+    const callout = container?.querySelector('.mobile-emulator-tab-intro-callout--menu')
+    if (!callout) {
+      throw new Error('missing_callout')
+    }
+    const pointer = new Event('pointerdown', { bubbles: true, cancelable: true })
+    callout.dispatchEvent(pointer)
+    expect(pointer.defaultPrevented).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
+    await flushAsyncAction()
+    expect(owner.close).toHaveBeenCalledExactlyOnceWith('simulator-tab')
+    expect(useAppStore.getState().unifiedTabsByWorktree['worktree-1'].map((tab) => tab.id)).toEqual(
+      ['terminal-tab']
+    )
+    await act(async () => owner.reset())
+    expect(await applyIntro({ viewerId: 7, operation: 'emulator.intro-hide' })).toMatchObject({
+      applied: true,
+      persisted: true,
+      state: { enabled: false, introDismissed: true }
+    })
+    expect(owner.close).toHaveBeenCalledTimes(2)
+    expect(useAppStore.getState().unifiedTabsByWorktree['worktree-1'].map((tab) => tab.id)).toEqual(
+      ['terminal-tab']
+    )
+  })
+  it('retains tabs and intro when the settings owner does not apply the hide', async () => {
+    const owner = configureRealIntro(true)
+    await renderProbe(
+      <TooltipProvider>
+        <MobileEmulatorTabIntroCallout />
+      </TooltipProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
+    await flushAsyncAction()
+    expect(await applyIntro({ viewerId: 7, operation: 'emulator.intro-hide' })).toMatchObject({
+      applied: false,
+      persisted: false,
+      state: { enabled: true, introDismissed: false }
+    })
+    expect(owner.close).not.toHaveBeenCalled()
+    expect(useAppStore.getState().unifiedTabsByWorktree['worktree-1']).toHaveLength(2)
   })
 })

@@ -11,22 +11,27 @@ const EMULATOR_EXAMPLE_PROMPTS = [
   'Using Orca CLI, grant camera permission, scan a test QR code or inject a camera fixture, finish the account-linking flow, and report whether the app reaches the success state.'
 ] as const
 
-async function copyPrompt(prompt: string): Promise<void> {
+async function copyPrompt(prompt: string): Promise<boolean> {
   try {
     await window.api.ui.writeClipboardText(prompt)
     toast.success(
       translate('auto.components.settings.MobileEmulatorExamples.2b077b5544', 'Copied prompt.')
     )
-  } catch (error) {
+    return true
+  } catch {
     toast.error(
-      error instanceof Error
-        ? error.message
-        : translate(
-            'auto.components.settings.MobileEmulatorExamples.1f608e7d60',
-            'Failed to copy prompt.'
-          )
+      translate(
+        'auto.components.settings.MobileEmulatorExamples.1f608e7d60',
+        'Failed to copy prompt.'
+      )
     )
+    return false
   }
+}
+
+export function copyEmulatorExamplePrompt(index: number): Promise<boolean> {
+  const prompt = EMULATOR_EXAMPLE_PROMPTS[index]
+  return prompt === undefined ? Promise.resolve(false) : copyPrompt(prompt)
 }
 
 type MobileEmulatorExamplesProps = {

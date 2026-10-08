@@ -69,6 +69,8 @@ export type SshTarget = {
   /** Grace period in seconds before relay shuts down after disconnect.
    *  0 disables expiry. Default: 0 (until reset). Max: 604800 (7 days). */
   relayGracePeriodSeconds?: number
+  /** Owner stamp distinguishing an explicit timeout from the retired form default. */
+  relayGracePeriodExplicit?: true
   /** Set to true after a successful connection that triggered a credential
    *  prompt (passphrase or password). Persisted so startup reconnect can
    *  partition targets into eager (no passphrase) vs deferred (passphrase)
@@ -91,7 +93,7 @@ export type SshTarget = {
 }
 
 /** Renderer-authored target fields; registration generations are allocated and owned by main. */
-export type SshTargetCreateInput = Omit<SshTarget, 'id' | 'generation'>
+export type SshTargetCreateInput = Omit<SshTarget, 'id' | 'generation' | 'relayGracePeriodExplicit'>
 export type SshTargetUpdateInput = Partial<SshTargetCreateInput>
 
 /** Public target identity and observed host metadata safe to mirror to a paired client. */

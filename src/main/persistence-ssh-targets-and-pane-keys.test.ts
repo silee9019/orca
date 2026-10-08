@@ -176,7 +176,7 @@ describe('Store', () => {
     }
   })
 
-  it('drops the legacy SSH relay default when updating targets', async () => {
+  it('preserves an explicitly updated three hour SSH grace through disk reload', async () => {
     const store = await createStore()
     store.addSshTarget({
       id: 'ssh-update-legacy-default',
@@ -190,15 +190,65 @@ describe('Store', () => {
       relayGracePeriodSeconds: LEGACY_DEFAULT_SSH_RELAY_GRACE_PERIOD_SECONDS
     })
 
-    expect(updated).not.toHaveProperty('relayGracePeriodSeconds')
-    expect(store.getSshTarget('ssh-update-legacy-default')).not.toHaveProperty(
-      'relayGracePeriodSeconds'
-    )
+    expect(updated?.relayGracePeriodSeconds).toBe(10800)
+    expect(store.getSshTarget('ssh-update-legacy-default')?.relayGracePeriodSeconds).toBe(10800)
 
     store.flush()
     const persisted = readDataFile() as { sshTargets?: Record<string, unknown>[] }
     const onDisk = persisted.sshTargets?.find((t) => t.id === 'ssh-update-legacy-default')
-    expect(onDisk).not.toHaveProperty('relayGracePeriodSeconds')
+    expect(onDisk?.relayGracePeriodSeconds).toBe(10800)
+    const reloaded = await createStore()
+    expect(reloaded.getSshTarget('ssh-update-legacy-default')?.relayGracePeriodSeconds).toBe(10800)
+  })
+
+  it('preserves explicitly created three hour SSH grace through normalization and disk reload', async () => {
+    const store = await createStore()
+    store.addSshTarget({
+      id: 'explicit-grace',
+      label: 'Explicit',
+      host: 'fixture.example',
+      port: 22,
+      username: 'user',
+      relayGracePeriodSeconds: 10800
+    })
+    expect(store.getSshTarget('explicit-grace')?.relayGracePeriodSeconds).toBe(10800)
+    store.flush()
+    const reloaded = await createStore()
+    expect(reloaded.getSshTarget('explicit-grace')?.relayGracePeriodSeconds).toBe(10800)
+    reloaded.updateSshTarget('explicit-grace', { relayGracePeriodSeconds: undefined })
+    expect(reloaded.getSshTarget('explicit-grace')?.relayGracePeriodSeconds).toBeUndefined()
+  })
+
+  it('retains explicit zero and day timeouts and clears unspecified grace through disk reload', async () => {
+    const store = await createStore()
+    for (const grace of [0, 86400]) {
+      const id = `grace-${grace}`
+      store.addSshTarget({
+        id,
+        label: id,
+        host: 'fixture.example',
+        port: 22,
+        username: 'user',
+        relayGracePeriodSeconds: grace
+      })
+      store.updateSshTarget(id, { label: 'Renamed' })
+      expect(
+        store.getSshTargets().find((target) => target.id === id)?.relayGracePeriodSeconds
+      ).toBe(grace)
+    }
+    store.flush()
+    const reloaded = await createStore()
+    for (const grace of [0, 86400]) {
+      expect(reloaded.getSshTarget(`grace-${grace}`)?.relayGracePeriodSeconds).toBe(grace)
+      reloaded.updateSshTarget(`grace-${grace}`, { relayGracePeriodSeconds: undefined })
+    }
+    reloaded.flush()
+    const cleared = await createStore()
+    for (const grace of [0, 86400]) {
+      const target = cleared.getSshTarget(`grace-${grace}`)
+      expect(target).not.toHaveProperty('relayGracePeriodSeconds')
+      expect(target).not.toHaveProperty('relayGracePeriodExplicit')
+    }
   })
 
   it('persists the SSH target source field through add, update, and disk round-trip', async () => {
