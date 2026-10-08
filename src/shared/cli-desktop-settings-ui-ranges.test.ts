@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CliDesktopSettingsUpdate, projectCliDesktopSettings } from './cli-desktop-settings'
+import { MAX_QUICK_COMMANDS } from './terminal-quick-commands'
 
 const accepts = (input: Record<string, unknown>) =>
   CliDesktopSettingsUpdate.safeParse(input).success
@@ -62,6 +63,18 @@ describe('desktop settings update keeps the Settings UI value ranges', () => {
       terminalScrollbackRows: 120,
       nativeChatAppearance: { fontSize: 30 }
     })
+  })
+
+  it('rejects a quick command list the host would silently truncate', () => {
+    const list = (length: number) =>
+      Array.from({ length }, (_, index) => ({
+        id: `c${index}`,
+        label: `c${index}`,
+        command: 'ls',
+        appendEnter: true
+      }))
+    expect(accepts({ terminalQuickCommands: list(MAX_QUICK_COMMANDS) })).toBe(true)
+    expect(accepts({ terminalQuickCommands: list(MAX_QUICK_COMMANDS + 1) })).toBe(false)
   })
 
   it('takes only shell-valid names for native chat environment variables', () => {

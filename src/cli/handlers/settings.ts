@@ -19,6 +19,7 @@ import {
   SettingsKeybindingUpdate
 } from '../../shared/rpc-contract/settings-control-params'
 import { SETTINGS_DETECTION_HANDLERS } from './settings-detection'
+import { SETTINGS_QUICK_COMMAND_HANDLERS } from './settings-quick-commands'
 import {
   CliDesktopSettingsUpdate,
   projectCliDesktopSettings
@@ -28,6 +29,7 @@ type SettingsResult = { settings: unknown }
 
 export const SETTINGS_HANDLERS: Record<string, CommandHandler> = {
   ...SETTINGS_DETECTION_HANDLERS,
+  ...SETTINGS_QUICK_COMMAND_HANDLERS,
   'settings fields': async () => {
     const result = {
       desktop: Object.keys(CliDesktopSettingsUpdate.shape).sort(),

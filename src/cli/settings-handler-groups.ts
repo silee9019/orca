@@ -17,6 +17,8 @@ export const SETTINGS_HANDLER_GROUPS: readonly HandlerGroup[] = [
       'settings agents detect',
       'settings agents refresh',
       'settings agents zcode-capability',
+      'settings quick-commands list',
+      'settings quick-commands update',
       'settings get',
       'settings update',
       'settings review-bot'
