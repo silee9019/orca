@@ -1,3 +1,4 @@
+import { WORKSPACE_NOTEBOOK_ENVIRONMENT_COMMAND_SPECS } from './workspace-notebook-environments'
 import { WORKSPACE_SHELL_ACTION_COMMAND_SPECS } from './workspace-shell-actions'
 import { WORKSPACE_IMPORT_PREVIEW_COMMAND_SPECS } from './workspace-import-previews'
 import { WORKSPACE_REPO_UPDATE_COMMAND_SPECS } from './workspace-repo-update'
@@ -43,6 +44,7 @@ import { WORKSPACE_LINEAR_DATA_COMMAND_SPECS } from './workspace-linear-data'
 import { WORKSPACE_INTEGRATION_COMMAND_SPECS } from './workspace-integrations'
 
 export const WORKSPACE_DATA_COMMAND_SPECS: CommandSpec[] = [
+  ...WORKSPACE_NOTEBOOK_ENVIRONMENT_COMMAND_SPECS,
   ...WORKSPACE_SHELL_ACTION_COMMAND_SPECS,
   ...WORKSPACE_VISIBLE_WORKTREE_COMMAND_SPECS,
   ...WORKSPACE_DESKTOP_META_COMMAND_SPECS,

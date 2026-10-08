@@ -3,6 +3,18 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-notebook-environments',
+    keys: [
+      'notebook environments',
+      'notebook describe-python',
+      'notebook create-venv',
+      'notebook install-ipykernel'
+    ],
+    load: async () =>
+      (await import('./handlers/workspace-notebook-environments.js'))
+        .WORKSPACE_NOTEBOOK_ENVIRONMENT_HANDLERS
+  },
+  {
     name: 'workspace-shell-actions',
     keys: ['shell reveal', 'shell open-editor', 'shell open-file', 'shell open-file-uri'],
     load: async () =>
