@@ -13,6 +13,7 @@ test('workspace command declarations keep workspace ownership without moving exi
     ['worktree update-desktop-meta', 'workspace-desktop-meta', 'workspace-data'],
     ['repo git-username-for-host', 'workspace-repo-username', 'workspace-data'],
     ['repo update-desktop', 'workspace-repo-update', 'workspace-data'],
+    ['settings preview-ghostty-import', 'workspace-import-previews', 'workspace-data'],
     ['file host-path-exists', 'workspace-host-path', 'workspace-data'],
     ['crash-report latest', 'workspace-crash-reports', 'workspace-data'],
     ['git await-environment', 'workspace-git-startup', 'workspace-data'],

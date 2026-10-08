@@ -3,6 +3,12 @@ import { WORKSPACE_PROVIDER_HANDLER_GROUPS } from './workspace-provider-handler-
 
 export const WORKSPACE_DATA_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'workspace-import-previews',
+    keys: ['settings preview-ghostty-import', 'settings preview-warp-auto'],
+    load: async () =>
+      (await import('./handlers/workspace-import-previews.js')).WORKSPACE_IMPORT_PREVIEW_HANDLERS
+  },
+  {
     name: 'workspace-repo-update',
     keys: ['repo update-desktop'],
     load: async () =>
