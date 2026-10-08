@@ -1,3 +1,4 @@
+import { applyActivityListScrollRequest } from './activity-list-scroll-command'
 import { applyActivityThreadListResizeRequest } from './activity-thread-list-resize-command'
 import { applyActivityPageCloseRequest } from './activity-page-close-command'
 import { readActivityViewerCommandContext } from './activity-viewer-command-context'
@@ -50,7 +51,11 @@ import { captureActivitySearchControl } from './activity-search-controls'
 export async function applyActivityViewerRequest(
   request: ActivityViewerRequest
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
-  const { command, initial } = readActivityViewerCommandContext(request)
+  const { command, initial, localSearch, markAllRead, threadRead, completed } =
+    readActivityViewerCommandContext(request)
+  if (command.operation === 'scroll') {
+    return applyActivityListScrollRequest(request, command)
+  }
   if (command.operation === 'resize') {
     return applyActivityThreadListResizeRequest(request, command)
   }
@@ -63,13 +68,6 @@ export async function applyActivityViewerRequest(
   if (command.operation === 'jump' || command.operation === 'select') {
     return applyActivityNavigationRequest(request, command)
   }
-  const localSearch = command.operation === 'search' || command.operation === 'search-clear'
-  const markAllRead = command.operation === 'mark-all-read'
-  const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
-  const completed =
-    command.operation === 'clear-completed' ||
-    command.operation === 'clear-thread' ||
-    command.operation === 'clear-threads'
   const localOnly = localSearch || markAllRead || threadRead || completed
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {
     throw new Error('persistence_ack_unavailable')
@@ -89,7 +87,9 @@ export async function applyActivityViewerRequest(
   }
   const readQuery = threadRead ? readActivityViewerView(command.surface)?.query : undefined
   const readAction =
-    threadRead && readControl ? applyActivityThreadReadCommand(command, readControl) : null
+    (command.operation === 'read-toggle' || command.operation === 'read-toggle-many') && readControl
+      ? applyActivityThreadReadCommand(command, readControl)
+      : null
   const markAllControl = markAllRead ? readActivityMarkAllReadControl(command.surface) : null
   if (markAllRead && !markAllControl) {
     throw new Error('activity_read_control_unavailable')

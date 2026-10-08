@@ -56,6 +56,17 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    scrollAction: z
+      .object({
+        requestedTop: z.number(),
+        targetTop: z.number(),
+        scrollTop: z.number().nullable(),
+        clientHeight: z.number().nullable(),
+        scrollHeight: z.number().nullable(),
+        visibleRowKeys: z.array(z.string())
+      })
+      .strip()
+      .optional(),
     resizeAction: z
       .object({
         requestedWidth: z.number(),

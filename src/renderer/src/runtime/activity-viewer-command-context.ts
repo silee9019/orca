@@ -14,5 +14,12 @@ export function readActivityViewerCommandContext(request: ActivityViewerRequest)
   if (initial.settings.activeRuntimeEnvironmentId) {
     throw new Error('viewer_runtime_mismatch')
   }
-  return { command, initial }
+  const localSearch = command.operation === 'search' || command.operation === 'search-clear'
+  const markAllRead = command.operation === 'mark-all-read'
+  const threadRead = command.operation === 'read-toggle' || command.operation === 'read-toggle-many'
+  const completed =
+    command.operation === 'clear-completed' ||
+    command.operation === 'clear-thread' ||
+    command.operation === 'clear-threads'
+  return { command, initial, localSearch, markAllRead, threadRead, completed }
 }

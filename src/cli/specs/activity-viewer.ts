@@ -10,6 +10,8 @@ function options(operation: string): { flags: string[]; usage: string } {
     case 'read-toggle-many':
     case 'clear-threads':
       return { flags: ['panes'], usage: ' --panes <json-pane-key-array>' }
+    case 'scroll':
+      return { flags: ['top'], usage: ' --top <pixels>' }
     case 'resize':
       return { flags: ['width'], usage: ' --width <pixels>' }
     case 'group-toggle':
@@ -39,6 +41,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'get',
   'close',
   'resize',
+  'scroll',
   'jump',
   'select',
   'group-toggle',
@@ -65,6 +68,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],
   notes: [
+    'Scroll moves the original surface scroll container once. Target is clamped to the extent at dispatch. Applied requires its native scroll acknowledgement and actual viewport-intersecting rows, excluding overscan. Sidebar offset memory uses the existing local ref; no durable persistence is claimed.',
     'Resize uses the original page list drag and its 320–720 pixel clamp. Applied requires its actual visible width and drag cleanup; local width is not durable persistence.',
     'Close clicks the original page back button once and restores its saved previous view. Applied confirms the local page entry commit and, for a resident terminal workspace, its visible workspace and resolved host. Creation panels remain unverified; no content readiness or remote acknowledgement is implied.',
     'Group-toggle uses the requested surface original collapse control. Applied requires its visible group header and matching logical rows; the local collapse state does not claim durable persistence.',

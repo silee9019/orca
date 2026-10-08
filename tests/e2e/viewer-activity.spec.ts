@@ -1,3 +1,5 @@
+import { assertActivityScroll } from './helpers/activity-scroll-assertions'
+import { SidebarViewerResultSchema } from '../../src/shared/sidebar-viewer-command'
 import { assertActivityResize } from './helpers/activity-resize-assertions'
 import { assertActivityPageClose } from './helpers/activity-page-close-assertions'
 import type { Repo } from '../../src/shared/repo-types'
@@ -63,7 +65,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
     mkdirSync(path.join(userData, 'activity-fixture', id, 'worktree'), { recursive: true })
   }
   const results: unknown[] = []
-  const call = async (args: string[], surface = 'activity-page') => {
+  const callViewer = async (args: string[], surface?: string) => {
     const env = Object.fromEntries(
       Object.entries(process.env).filter(([key]) => !key.startsWith('ORCA_'))
     )
@@ -73,8 +75,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
         path.join(process.cwd(), 'out/cli/index.js'),
         'ui',
         ...args,
-        '--surface',
-        surface,
+        ...(surface ? ['--surface', surface] : []),
         '--viewer',
         'host',
         '--json'
@@ -94,8 +95,14 @@ test('Activity CLI applies list preferences and local search controls', async ({
     results.push(envelope)
     writeFileSync(testInfo.outputPath('cli-results.json'), JSON.stringify(results, null, 2))
     expect(envelope._meta.runtimeId).toBeTruthy()
-    return ActivityViewerResultSchema.parse(envelope.result)
+    return envelope
   }
+  const call = async (args: string[], surface = 'activity-page') =>
+    ActivityViewerResultSchema.parse((await callViewer(args, surface)).result)
+  const toggleSidebar = async () =>
+    SidebarViewerResultSchema.parse(
+      (await callViewer(['sidebar', 'toggle', '--side', 'left'])).result
+    )
   await assertHidden()
   await orcaPage.evaluate(() => {
     window.__store?.setState({
@@ -449,6 +456,7 @@ test('Activity CLI applies list preferences and local search controls', async ({
   await assertActivityJump(orcaPage, call, testInfo)
   await assertActivitySelect(orcaPage, call, testInfo)
   await assertActivityResize(orcaPage, call, testInfo)
+  await assertActivityScroll(orcaPage, call, toggleSidebar, testInfo)
   await assertActivityPageClose(orcaPage, call, testInfo)
   await assertHidden()
 })

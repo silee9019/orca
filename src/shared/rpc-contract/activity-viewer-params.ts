@@ -8,6 +8,9 @@ const target = { viewer: z.literal('host'), surface: ActivityViewerSurfaceSchema
 export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
   z
+    .object({ ...target, operation: z.literal('scroll'), top: z.number().finite().nonnegative() })
+    .strict(),
+  z
     .object({
       ...target,
       surface: z.literal('activity-page'),

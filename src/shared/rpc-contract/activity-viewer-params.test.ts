@@ -125,3 +125,13 @@ it('accepts finite positive page resize and rejects extra or foreign targets', (
   )
   expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
 })
+
+it('accepts nonnegative finite offsets and rejects viewport selectors or delta fields', () => {
+  const command = { viewer: 'host', surface: 'sidebar-agents', operation: 'scroll', top: 0 }
+  expect(ActivityViewerParams.safeParse(command).success).toBe(true)
+  for (const top of [-1, Number.NaN, Infinity]) {
+    expect(ActivityViewerParams.safeParse({ ...command, top }).success).toBe(false)
+  }
+  expect(ActivityViewerParams.safeParse({ ...command, selector: 'body' }).success).toBe(false)
+  expect(ActivityViewerParams.safeParse({ ...command, delta: 5 }).success).toBe(false)
+})
