@@ -126,6 +126,7 @@ const SidebarRepositoryFilterSection = React.memo(function SidebarRepositoryFilt
         </div>
 
         <SidebarProjectFilterPanel
+          workspaceFilter={filterRepoIdsProp === undefined && setFilterRepoIdsProp === undefined}
           availableRepos={availableRepos}
           selectedRepos={selectedRepos}
           hasRepoFilter={hasRepoFilter}
