@@ -147,5 +147,13 @@ export const NODE_RUNTIME_INCLUDE = [
   'tests/e2e/workspace-data-cli-repo-host-effect.unit.test.ts',
   'tests/e2e/workspace-data-cli-repo-update-effect.unit.test.ts',
   'tests/e2e/workspace-data-cli-visible-worktrees-effect.unit.test.ts',
-  'tests/e2e/workspace-data-cli-worktree-lifecycle-effect.unit.test.ts'
+  'tests/e2e/workspace-data-cli-worktree-lifecycle-effect.unit.test.ts',
+  // Bun runtime differences (observed on 1.3.11, unchecked on 1.4.2): CLI effect tests that pass on Node.
+  'tests/e2e/cli-daemon-folder-access-workflow.unit.test.ts',
+  'tests/e2e/cli-daemon-restart-guard.unit.test.ts',
+  'tests/e2e/cli-session-hooks-effect.unit.test.ts',
+  'tests/e2e/emulator-session-view-cli-effect.unit.test.ts',
+  'tests/e2e/workspace-data-cli-jira-read-cancellation-effect.unit.test.ts',
+  'tests/e2e/workspace-data-cli-local-clone-effect.unit.test.ts',
+  'tests/e2e/workspace-data-cli-remote-clone-effect.unit.test.ts'
 ]
