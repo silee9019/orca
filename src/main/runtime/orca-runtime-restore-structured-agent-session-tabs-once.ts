@@ -224,12 +224,20 @@ export class OrcaRuntimeWithRestoreStructuredAgentSessionTabsOnce extends OrcaRu
     }
   }
 
+  async sendTerminalSignal(ptyId: string, signal: string): Promise<boolean> {
+    if (!this.ptyController?.sendSignal) {
+      return false
+    }
+    await this.ptyController.sendSignal(ptyId, signal)
+    return true
+  }
+
   async inspectTerminalProcess(
     terminalSelector: string,
     options?: { expectedIncarnationId?: string; scanChildProcesses?: boolean }
   ): Promise<PtyProcessInspection> {
     const leaf = this.resolveLiveLeafForHandle(terminalSelector)
-    if (!leaf?.ptyId || !this.ptyController) {
+    if (!leaf?.ptyId || !this.ptyController || this.isPtyKnownExited(leaf.ptyId)) {
       throw new Error('terminal_gone')
     }
     if (this.ptyController.inspectProcess) {

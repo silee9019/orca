@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useUsageTabSelection } from '../../runtime/usage-tab-selection'
 import { BarChart3, Bot, Check, ChevronDown, Clock, GitPullRequest } from 'lucide-react'
 import { useAppStore } from '../../store'
 import { StatCard } from './StatCard'
@@ -105,7 +106,8 @@ export function StatsPane(): React.JSX.Element {
   const summary = useAppStore((s) => s.statsSummary)
   const fetchStatsSummary = useAppStore((s) => s.fetchStatsSummary)
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
-  const [activeUsageTab, setActiveUsageTab] = useState<UsageTab>('overview')
+  const activeUsageTab = useUsageTabSelection((state) => state.activeUsageTab)
+  const setActiveUsageTab = useUsageTabSelection((state) => state.setActiveUsageTab)
   const activeUsageOption =
     USAGE_ANALYTICS_OPTIONS.find((option) => option.id === activeUsageTab) ??
     USAGE_ANALYTICS_OPTIONS[0]

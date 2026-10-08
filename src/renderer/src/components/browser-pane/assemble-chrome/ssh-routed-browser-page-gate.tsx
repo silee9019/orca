@@ -1,3 +1,4 @@
+import { useBrowserSshRouteCommands } from '../use-browser-ssh-route-commands'
 import { useEffect } from 'react'
 import { Globe } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { destroyPersistentWebview } from '../host-guest/webview-registry'
 import {
   useSshWorkspaceBrowserRoute,
+  useSshWorkspaceProbeSkipRecheck,
   type SshWorkspaceBrowserRouteErrorKind
 } from '../use-ssh-workspace-browser-route'
 
@@ -28,10 +30,21 @@ export function SshRoutedBrowserPageGate({
   pageIds: readonly string[]
   children: (routedPartition: string | null) => React.JSX.Element
 }): React.JSX.Element {
-  const { state, retry, tryWithoutProbe, browseFromThisDevice } = useSshWorkspaceBrowserRoute(
+  const { state, targetId, attempt, retry, tryWithoutProbe, browseFromThisDevice } =
+    useSshWorkspaceBrowserRoute(worktreeId, sessionProfileId)
+  const recheck = useSshWorkspaceProbeSkipRecheck(worktreeId)
+  useBrowserSshRouteCommands({
     worktreeId,
-    sessionProfileId
-  )
+    pageIds,
+    targetId,
+    profileId: sessionProfileId ?? 'default',
+    state,
+    attempt,
+    retry,
+    recheck,
+    tryWithoutProbe,
+    browseFromThisDevice
+  })
   const mountable = state.kind === 'unrouted' || state.kind === 'ready'
   useEffect(() => {
     if (mountable) {

@@ -1,10 +1,11 @@
+import { publishPtyControlRequest } from '../../../runtime/pty-control-request-observers'
 import type { IPtyProvider } from '../../../providers/types'
 import { LocalPtyProvider } from '../../../providers/local-pty-provider'
 import { parseAppSshPtyId } from '../../../providers/ssh-pty-id'
 import { ptyOwnership } from '../provider/ownership-state'
 import { ptySizes } from '../delivery/visibility-state'
 import { rendererSerializerReadiness } from '../pane/serializer-state'
-import { getProviderForPty, localProvider } from '../provider/registry'
+import { getProviderForPty, localProvider, tryGetProviderForPty } from '../provider/registry'
 import { inspectPtyProviderProcess } from '../../../providers/pty-process-inspection'
 import type { PtyRuntimeControllerDeps } from './controller-deps'
 import {
@@ -128,6 +129,13 @@ export async function attachPtyFromRuntimeController(
   }
 }
 
+export async function sendSignalFromRuntimeController(
+  ptyId: string,
+  signal: string
+): Promise<void> {
+  await getProviderForPty(ptyId).sendSignal(ptyId, signal)
+}
+
 export async function getForegroundProcessFromRuntimeController(ptyId: string) {
   try {
     return await getProviderForPty(ptyId).getForegroundProcess(ptyId)
@@ -179,12 +187,17 @@ export async function hasChildProcessesFromRuntimeController(ptyId: string) {
 }
 
 export async function clearBufferFromRuntimeController(
-  deps: PtyRuntimeControllerDeps,
+  deps: Pick<PtyRuntimeControllerDeps, 'mainWindow' | 'runtime'>,
   ptyId: string
 ): Promise<void> {
   // Why: desktop xterm and daemon/SSH providers hold separate buffers; clear both so mobile resubscribe can't resurrect cleared history.
   if (deps.mainWindow && !deps.mainWindow.isDestroyed()) {
     deps.mainWindow.webContents.send('pty:clearBuffer:request', { ptyId })
+    publishPtyControlRequest(deps.runtime, {
+      kind: 'clear-buffer',
+      ptyId,
+      rendererId: deps.mainWindow.webContents.id
+    })
   }
   try {
     await getProviderForPty(ptyId).clearBuffer(ptyId)
@@ -194,12 +207,17 @@ export async function clearBufferFromRuntimeController(
 }
 
 export async function resetInputModesFromRuntimeController(
-  deps: PtyRuntimeControllerDeps,
+  deps: Pick<PtyRuntimeControllerDeps, 'mainWindow' | 'runtime'>,
   ptyId: string
 ): Promise<void> {
   // Why: a remote client's reset must also ground this host window's view of the pane.
   if (deps.mainWindow && !deps.mainWindow.isDestroyed()) {
     deps.mainWindow.webContents.send('pty:resetInputModes:request', { ptyId })
+    publishPtyControlRequest(deps.runtime, {
+      kind: 'reset-input-modes',
+      ptyId,
+      rendererId: deps.mainWindow.webContents.id
+    })
   }
   try {
     await getProviderForPty(ptyId).resetInputModes(ptyId)
@@ -273,6 +291,19 @@ export function waitForRendererSerializerFromRuntimeController(
 
 export function getSizeFromRuntimeController(ptyId: string) {
   return ptySizes.get(ptyId) ?? null
+}
+
+export async function getAppliedSizeFromRuntimeController(ptyId: string) {
+  const provider = tryGetProviderForPty(ptyId)
+  try {
+    // Provider-owned null must not become a requested size that the provider never confirmed.
+    if (provider?.getAppliedSize) {
+      return await provider.getAppliedSize(ptyId)
+    }
+  } catch {
+    // Preserve the renderer's existing fallback when a daemon or relay cannot answer.
+  }
+  return getSizeFromRuntimeController(ptyId)
 }
 
 export async function serializeProviderBufferFromRuntimeController(

@@ -1,9 +1,14 @@
+import type { BrowserGrabCopyPriority } from '../../shared/browser-grab-copy-priority'
 import { ipcRenderer } from 'electron'
 import type { PreloadApi } from '../api-types'
 import type { BrowserUserAgentMode } from '../../shared/browser-user-agent-mode'
 import type { GrabIntent } from '../../shared/browser-grab-types'
 
 export const browserPageInteractionAndSessionsApi = {
+  getGrabCopyShortcutPriority: (args: {
+    browserPageId: string
+  }): Promise<BrowserGrabCopyPriority> =>
+    ipcRenderer.invoke('browser:grabCopyShortcutPriority', args),
   onContextMenuRequested: (
     callback: (event: {
       browserPageId: string

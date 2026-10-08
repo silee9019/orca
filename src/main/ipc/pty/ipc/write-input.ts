@@ -32,6 +32,7 @@ export type PtyViewportClaimPayload = { id: string; cols: number; rows: number }
 export function createPtyWriteInput(deps: {
   mainWindow?: PtyRendererDelivery
   runtime?: OrcaRuntimeService
+  assertTarget?: (id: string) => void
 }): {
   writePtyInput: (args: PtyWritePayload) => boolean | Promise<boolean>
   writePtyInputAccepted: (args: PtyWritePayload) => boolean | Promise<boolean>
@@ -62,11 +63,13 @@ export function createPtyWriteInput(deps: {
     const chunks = iterateTerminalInputChunks(data)
     const first = chunks.next()
     if (first.done) {
+      deps.assertTarget?.(id)
       provider.write(id, data)
       return true
     }
     const second = chunks.next()
     if (second.done) {
+      deps.assertTarget?.(id)
       provider.write(id, first.value)
       return true
     }
@@ -111,6 +114,7 @@ export function createPtyWriteInput(deps: {
       let chunk: IteratorResult<string> = { done: false, value: firstChunk }
       let nextChunk: IteratorResult<string> = { done: false, value: secondChunk }
       while (!chunk.done) {
+        deps.assertTarget?.(id)
         provider.write(id, chunk.value)
         if (!nextChunk.done) {
           // setImmediate, not setTimeout(0): the yield exists to let abort/data callbacks run

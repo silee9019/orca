@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useAgentSkillSetupViewer } from '../../runtime/agent-skill-setup-viewer'
+import { useCallback, useMemo } from 'react'
 import { Copy, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { IntegrationStatusPill } from '@/components/integration-status-pill'
@@ -67,7 +68,7 @@ export function LinearAgentSkillInstallCta({
   const subordinateRowClass = useIntegrationSubordinateRowClass('space-y-1.5')
   const commandRowClass = useIntegrationCommandRowClass()
 
-  const copyCommand = async (): Promise<void> => {
+  const copyCommand = useCallback(async (): Promise<boolean> => {
     try {
       await window.api.ui.writeClipboardText(command)
       toast.success(
@@ -76,6 +77,7 @@ export function LinearAgentSkillInstallCta({
           'Copied command.'
         )
       )
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -85,8 +87,20 @@ export function LinearAgentSkillInstallCta({
               'Failed to copy command.'
             )
       )
+      return false
     }
-  }
+  }, [command])
+  useAgentSkillSetupViewer({
+    panelKey: 'settings-linear-install-command',
+    title: 'Linear agent skill',
+    ownerKey: JSON.stringify([command, agentRuntime, settings?.activeRuntimeEnvironmentId]),
+    source: skill.refresh,
+    recheckOwnerKey: JSON.stringify([agentRuntime, settings?.activeRuntimeEnvironmentId]),
+    status: { installed: skill.installed, loading: skill.loading, error: skill.error },
+    canRecheck: !skill.loading,
+    recheck: skill.refresh,
+    copy: !skill.loading ? { target: command, run: copyCommand } : undefined
+  })
 
   return (
     <div className={subordinateRowClass}>

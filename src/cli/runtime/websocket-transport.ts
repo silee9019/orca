@@ -1,3 +1,4 @@
+import { agentSessionCliCapabilities } from '../agent-session-capabilities'
 import type { PairingOffer } from '../../shared/pairing'
 import type { RuntimeOrchestrationEnvelope } from '../../shared/runtime-rpc-envelope'
 import {
@@ -16,7 +17,15 @@ export async function sendWebSocketRequest<TResult>(
   envelope?: RuntimeOrchestrationEnvelope
 ): Promise<RuntimeRpcResponse<TResult>> {
   try {
-    return await sendRemoteRuntimeRequest<TResult>(pairing, method, params, timeoutMs, envelope)
+    return await sendRemoteRuntimeRequest<TResult>(
+      pairing,
+      method,
+      params,
+      timeoutMs,
+      envelope,
+      undefined,
+      agentSessionCliCapabilities(method)
+    )
   } catch (error) {
     if (error instanceof RemoteRuntimeClientError) {
       throw new RuntimeClientError(error.code, error.message, error.data)
@@ -40,7 +49,8 @@ export async function sendWebSocketRequestWithStatusPreflight<TResult>(
       params,
       timeoutMs,
       validateStatus,
-      envelope
+      envelope,
+      agentSessionCliCapabilities(method)
     )
   } catch (error) {
     if (error instanceof RemoteRuntimeClientError) {

@@ -4,7 +4,7 @@ import {
   type FleetAgentStatusEvidence,
   type FleetEvidenceBinding
 } from '../../shared/orchestration-fleet-agent-status-evidence'
-import { isValidTerminalTabId } from '../../shared/terminal-tab-id'
+export { isValidAgentStatusDropTabId } from '../../shared/terminal-tab-id'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
 
 export type AgentStatusRuntimeEnrichment = Pick<
@@ -13,8 +13,6 @@ export type AgentStatusRuntimeEnrichment = Pick<
   | 'getAgentStatusOrchestrationContextForPaneKey'
   | 'getTerminalProcessIncarnation'
 >
-
-const MAX_AGENT_STATUS_DROP_TAB_ID_LENGTH = 160
 
 /** What the runtime resolved for a pane at the moment a status row was ingested. Captured by
  *  `AgentStatusObservedPaneIdentities`, which is where the arms are documented. */
@@ -110,13 +108,4 @@ export function enrichAgentStatusIpcPayload(
     ...(terminalHandle ? { terminalHandle } : {}),
     ...(orchestration ? { orchestration } : {})
   }
-}
-
-export function isValidAgentStatusDropTabId(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    value.length <= MAX_AGENT_STATUS_DROP_TAB_ID_LENGTH &&
-    value.trim() === value &&
-    isValidTerminalTabId(value)
-  )
 }

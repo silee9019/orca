@@ -33,7 +33,14 @@ export function getSshTarget(state: PersistedState, id: string): SshTarget | und
 
 export function addSshTarget(operations: SshTargetStateOperations, target: SshTarget): void {
   // Replaced, not pushed in place: the automation list projection caches on array identity.
-  operations.state.sshTargets = [...(operations.state.sshTargets ?? []), normalizeSshTarget(target)]
+  operations.state.sshTargets = [
+    ...(operations.state.sshTargets ?? []),
+    normalizeSshTarget({
+      ...target,
+      relayGracePeriodExplicit:
+        typeof target.relayGracePeriodSeconds === 'number' ? true : undefined
+    })
+  ]
   operations.scheduleSave()
 }
 
@@ -46,7 +53,16 @@ export function updateSshTarget(
   if (!target) {
     return null
   }
-  const normalized = normalizeSshTarget({ ...target, ...updates })
+  const normalized = normalizeSshTarget({
+    ...target,
+    ...updates,
+    ...(Object.hasOwn(updates, 'relayGracePeriodSeconds')
+      ? {
+          relayGracePeriodExplicit:
+            typeof updates.relayGracePeriodSeconds === 'number' ? true : undefined
+        }
+      : {})
+  })
   const previousHostIdentity = sshHostIdentity(target)
   // Why: Object.assign only adds keys, so anything normalization stripped (retired sync fields, implicit defaults) must be deleted off the live target.
   const mutableTarget = target as Record<string, unknown>

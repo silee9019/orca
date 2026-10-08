@@ -1,3 +1,9 @@
+import { useMobileDriverViewer } from '@/runtime/mobile-driver-viewer'
+import { getDriverForPty, getAllDrivers } from '@/lib/pane-manager/mobile-driver-state'
+import {
+  getFitOverrideForPty,
+  getMobileFitOverridePtyIds
+} from '@/lib/pane-manager/mobile-fit-overrides'
 import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react'
 import { Minimize2, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,10 +18,11 @@ import {
 import { translate } from '@/i18n/i18n'
 
 type Props = {
+  ptyId?: string
   driver: DriverState
   hasFitOverride: boolean
-  onAction: () => void | Promise<void>
-  onAllAction?: () => void | Promise<void>
+  onAction: () => void | boolean | Promise<void | boolean>
+  onAllAction?: () => void | boolean | Promise<void | boolean>
   /** Identifier class on the rendered root, used by e2e selectors. */
   rootClassName?: string
 }
@@ -24,6 +31,7 @@ type Props = {
 // so the chip mode lets users keep watching; held-fit state has no live output to
 // preserve, so it stays loud until Restore.
 export function MobileDriverOverlay({
+  ptyId,
   driver,
   hasFitOverride,
   onAction,
@@ -37,6 +45,7 @@ export function MobileDriverOverlay({
   const [collapseState, setCollapseState] = useState(() =>
     createMobileDriverOverlayCollapseState(driverClientId)
   )
+  const busyRef = useRef(false)
   const [actionPending, setActionPending] = useState(false)
   const [allActionPending, setAllActionPending] = useState(false)
   const mountedRef = useRef(false)
@@ -58,32 +67,83 @@ export function MobileDriverOverlay({
   }
   const collapsed = currentCollapseState.collapsed
 
+  const actorCurrent = (): boolean => {
+    if (!ptyId) {
+      return true
+    }
+    const current = getDriverForPty(ptyId)
+    return (
+      current.kind === driver.kind &&
+      (current.kind !== 'mobile' ||
+        (driver.kind === 'mobile' && current.clientId === driver.clientId)) &&
+      (current.kind === 'mobile' || getFitOverrideForPty(ptyId)?.mode === 'mobile-fit')
+    )
+  }
+  const setCollapsed = (value: boolean): boolean => {
+    if (!mountedRef.current || !actorCurrent() || !isMobileDriving) {
+      return false
+    }
+    setCollapseState({ driverClientId, collapsed: value })
+    return true
+  }
+  useMobileDriverViewer({
+    ptyId,
+    visible: isMobileDriving || isHeldAtPhoneFit,
+    current: () => mountedRef.current && actorCurrent(),
+    read: () => {
+      const owned = new Set(getMobileFitOverridePtyIds())
+      for (const [id, value] of getAllDrivers()) {
+        if (value.kind === 'mobile') {
+          owned.add(id)
+        }
+      }
+      const current = ptyId ? getDriverForPty(ptyId) : driver
+      return {
+        driving: current.kind === 'mobile',
+        heldFit: Boolean(ptyId && getFitOverrideForPty(ptyId)?.mode === 'mobile-fit'),
+        collapsed,
+        pending: busyRef.current,
+        remainingCount: owned.size
+      }
+    },
+    collapse: setCollapsed,
+    restore: (all) => (all ? handleAllAction() : handleAction())
+  })
+
   if (!isMobileDriving && !isHeldAtPhoneFit) {
     return null
   }
 
-  const handleAction = async (): Promise<void> => {
-    if (actionPending || allActionPending) {
-      return
+  const handleAction = async (): Promise<boolean> => {
+    if (busyRef.current || !actorCurrent()) {
+      return false
     }
+    busyRef.current = true
     setActionPending(true)
     try {
-      await onAction()
+      return (await onAction()) === true
+    } catch {
+      return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setActionPending(false)
       }
     }
   }
 
-  const handleAllAction = async (): Promise<void> => {
-    if (!onAllAction || actionPending || allActionPending) {
-      return
+  const handleAllAction = async (): Promise<boolean> => {
+    if (!onAllAction || busyRef.current || !actorCurrent()) {
+      return false
     }
+    busyRef.current = true
     setAllActionPending(true)
     try {
-      await onAllAction()
+      return (await onAllAction()) === true
+    } catch {
+      return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setAllActionPending(false)
       }
@@ -125,7 +185,7 @@ export function MobileDriverOverlay({
       <LockChip
         actionPending={actionPending}
         onAction={handleAction}
-        onExpand={() => setCollapseState(createMobileDriverOverlayCollapseState(driverClientId))}
+        onExpand={() => setCollapsed(false)}
         rootRef={setOverlayRootRef}
         rootClassName={rootClassName}
       />
@@ -154,7 +214,7 @@ export function MobileDriverOverlay({
       allActionPending={allActionPending}
       onAction={handleAction}
       onAllAction={onAllAction ? handleAllAction : undefined}
-      onCollapse={() => setCollapseState({ driverClientId, collapsed: true })}
+      onCollapse={() => setCollapsed(true)}
       tone="driving"
       rootRef={setOverlayRootRef}
       rootClassName={rootClassName}
@@ -169,8 +229,8 @@ type LoudOverlayProps = {
   actionPending: boolean
   allActionLabel?: string
   allActionPending?: boolean
-  onAction: () => void | Promise<void>
-  onAllAction?: () => void | Promise<void>
+  onAction: () => void | boolean | Promise<void | boolean>
+  onAllAction?: () => void | boolean | Promise<void | boolean>
   onCollapse?: () => void
   tone: 'driving' | 'held'
   rootRef?: (node: HTMLDivElement | null) => void
@@ -299,7 +359,7 @@ function LoudOverlay({
 
 type ChipProps = {
   actionPending: boolean
-  onAction: () => void | Promise<void>
+  onAction: () => void | boolean | Promise<void | boolean>
   onExpand: () => void
   rootRef?: (node: HTMLDivElement | null) => void
   rootClassName?: string

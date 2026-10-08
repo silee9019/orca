@@ -1,3 +1,4 @@
+import { useMountedClaudeSwitcherControls } from '../../runtime/account-mounted-switcher-controls'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -198,6 +199,8 @@ export function ClaudeSwitcherMenu({
   const selectedGroup =
     switchGroups.find((group) => group.key === selectedRuntimeKey) ?? switchGroups[0]
   const activeTarget = selectedGroup?.targets.find((target) => target.active)
+
+  useMountedClaudeSwitcherControls(switchGroups, handleAccountsExpandedToggle, handleSelectRuntime)
 
   return (
     <ProviderDetailsMenu

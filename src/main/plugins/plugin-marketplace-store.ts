@@ -13,7 +13,8 @@ import {
 import { writePluginFileAtomically } from './plugin-atomic-file-write'
 
 export const PLUGIN_MARKETPLACE_SOURCE_LIMIT = 64
-export const PLUGIN_MARKETPLACE_SOURCE_ID_PATTERN = /^[0-9a-f]{32}$/
+export { PLUGIN_MARKETPLACE_SOURCE_ID_PATTERN } from '../../shared/rpc-contract/plugins-management-params'
+import { PLUGIN_MARKETPLACE_SOURCE_ID_PATTERN } from '../../shared/rpc-contract/plugins-management-params'
 
 const sourceIdSchema = z.string().regex(PLUGIN_MARKETPLACE_SOURCE_ID_PATTERN)
 const registeredSourceSchema = z.strictObject({

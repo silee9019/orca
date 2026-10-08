@@ -1,3 +1,4 @@
+import { setAutomationCustomCronDraft } from './automation-schedule-draft'
 import React from 'react'
 import { CheckCircle2, CircleAlert } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -102,11 +103,7 @@ export function AutomationCustomCronPanel({
           aria-invalid={customScheduleInvalid}
           aria-describedby="automation-cron-status"
           onChange={(event) =>
-            onDraftChange((current) => ({
-              ...current,
-              customSchedule: event.target.value,
-              scheduleWarning: null
-            }))
+            onDraftChange((current) => setAutomationCustomCronDraft(current, event.target.value))
           }
         />
         <div className="mt-2 grid grid-cols-5 gap-1.5">

@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import type { FloatingTerminalCwdRequest } from '../../shared/ui-chrome-types'
 import { OrcaRuntimeWithLinearCommands } from './orca-runtime-linear-commands'
 import type { ExecutionHostScope } from '../../shared/execution-host'
 import type { RuntimeStore } from './runtime-store-contract'
@@ -15,6 +16,7 @@ import type {
   AiVaultPrepareSessionResumeArgs,
   AiVaultPrepareSessionResumeResult
 } from '../../shared/ai-vault-resume-preparation'
+import type { ComputerAwakeStatus } from '../../shared/computer-awake-mode'
 import type { RuntimeDesktopWindowStatus } from '../../shared/runtime-types'
 import type { AgentSessionClaimSigner } from './agent-session-claim-identity'
 import type { OrchestrationEnvironmentTransport } from './orchestration/environment-transport'
@@ -45,6 +47,11 @@ import { RuntimeMachineName } from './runtime-machine-name'
 import type { RuntimeSettingsActions } from './runtime-settings-actions'
 
 export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
+  readonly getAgentAwakeStatus: () => ComputerAwakeStatus | null
+  readonly subscribeAgentAwakeChanges: (
+    listener: (status: ComputerAwakeStatus) => void
+  ) => (() => void) | null
+
   protected readonly prepareClaudeAuth?: PrepareClaudeAuth
 
   protected readonly getAgentStatusSnapshotForPaneFn:
@@ -55,6 +62,10 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     () => this.store?.getSettings?.().machineName
   )
 
+  readonly resolveFloatingTerminalCwd:
+    | ((args?: FloatingTerminalCwdRequest) => Promise<string>)
+    | null
+
   constructor(
     store: RuntimeStore | null = null,
     stats?: StatsCollector,
@@ -63,6 +74,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       getLocalProvider?: () => IPtyProvider
       getSshProvider?: (connectionId: string) => IPtyProvider | undefined
       prepareClaudeAuth?: PrepareClaudeAuth
+      resolveFloatingTerminalCwd?: (args?: FloatingTerminalCwdRequest) => Promise<string>
       onPtyStopped?: (ptyId: string) => void
       onTerminalAgentStatus?: (event: RuntimeTerminalAgentStatusEvent) => void
       onTerminalSideEffects?: (batch: TerminalSideEffectBatch) => void
@@ -118,6 +130,10 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       }) => string | null | Promise<string | null>
       buildAgentHookPtyEnv?: () => Record<string, string>
       getDesktopWindowStatus?: () => RuntimeDesktopWindowStatus
+      getAgentAwakeStatus?: () => ComputerAwakeStatus | null
+      subscribeAgentAwakeChanges?: (
+        listener: (status: ComputerAwakeStatus) => void
+      ) => (() => void) | null
       agentSessionClaimSigner?: AgentSessionClaimSigner
       skillTransactionRecovery?: Promise<unknown>
       // Why a host hook and not a direct call: the process that owns this runtime's index
@@ -130,6 +146,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     super()
     this.store = store
     this.machineName.start()
+    this.resolveFloatingTerminalCwd = deps?.resolveFloatingTerminalCwd ?? null
     this.prepareClaudeAuth = deps?.prepareClaudeAuth
     const runtime = this as RuntimeCommandSurfaceHost<this>
     installRuntimeFileCommandSurface(runtime, this.fileCommands)
@@ -266,6 +283,8 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     this.onTerminalAgentStatus = deps?.onTerminalAgentStatus ?? null
     this.buildAgentHookPtyEnv = deps?.buildAgentHookPtyEnv ?? null
     this.getDesktopWindowStatusFn = deps?.getDesktopWindowStatus ?? (() => 'openable')
+    this.getAgentAwakeStatus = deps?.getAgentAwakeStatus ?? (() => null)
+    this.subscribeAgentAwakeChanges = deps?.subscribeAgentAwakeChanges ?? (() => null)
     this.prepareAiVaultSessionResumeFn = deps?.prepareAiVaultSessionResume ?? null
     this.prepareCodexStructuredLaunchFn = deps?.prepareCodexStructuredLaunch ?? null
     this.resolveCodexStructuredLaunchHomeFn = deps?.resolveCodexStructuredLaunchHome ?? null

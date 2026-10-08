@@ -71,6 +71,13 @@ export default function MobilePage(): React.JSX.Element {
   const networkInterfacesRequestIdRef = useRef(0)
   const mountedRef = useMountedRef()
   const closeMobilePage = useAppStore((s) => s.closeMobilePage)
+  const closeForViewer = useCallback((): boolean => {
+    if (useAppStore.getState().activeView !== 'mobile') {
+      return false
+    }
+    closeMobilePage()
+    return useAppStore.getState().activeView !== 'mobile'
+  }, [closeMobilePage])
   const showMobileButton = useAppStore((s) => s.settings?.showMobileButton !== false)
   const updateSettings = useAppStore((s) => s.updateSettings)
   const {
@@ -149,9 +156,9 @@ export default function MobilePage(): React.JSX.Element {
     [connectionMode, updateSettings, setConnectionMode]
   )
 
-  const copyRelayDiagnostics = useCallback(async (): Promise<void> => {
+  const copyRelayDiagnostics = useCallback(async (): Promise<boolean> => {
     if (relayMintFailure == null) {
-      return
+      return false
     }
     // Why: users share this payload — the selected address would leak a LAN/Tailscale IP or hostname.
     const payload = {
@@ -167,6 +174,7 @@ export default function MobilePage(): React.JSX.Element {
           translate('auto.components.mobile.MobilePage.diagnosticsCopied', 'Diagnostics copied')
         )
       }
+      return true
     } catch {
       if (mountedRef.current) {
         toast.error(
@@ -176,6 +184,7 @@ export default function MobilePage(): React.JSX.Element {
           )
         )
       }
+      return false
     }
   }, [connectionMode, mountedRef, relayMintFailure])
 
@@ -194,7 +203,7 @@ export default function MobilePage(): React.JSX.Element {
     regenerate: (mode, opts) => void generatePairing(opts.rotate, undefined, mode)
   })
 
-  const loadNetworkInterfaces = useCallback(async () => {
+  const loadNetworkInterfaces = useCallback(async (): Promise<MobileNetworkInterface[] | null> => {
     const requestId = ++networkInterfacesRequestIdRef.current
     const visit = pairingFlowVisit
     if (mountedRef.current) {
@@ -207,9 +216,12 @@ export default function MobilePage(): React.JSX.Element {
       if (mountedRef.current && requestId === networkInterfacesRequestIdRef.current) {
         setNetworkInterfaces(result.interfaces)
         selectAddressAfterRefresh(result.interfaces)
+        return result.interfaces
       }
+      return null
     } catch {
       // Network list is non-critical; the QR will still mint with default routing.
+      return null
     } finally {
       // Why: only the newest lookup may report a completion — a superseded one
       // marking its visit addressed releases the mint against an address its own
@@ -245,9 +257,9 @@ export default function MobilePage(): React.JSX.Element {
     [connectionMode, signedIn]
   )
 
-  const copyPairingCode = useCallback(async () => {
+  const copyPairingCode = useCallback(async (): Promise<boolean> => {
     if (!pairingUrl) {
-      return
+      return false
     }
     try {
       await window.api.ui.writeClipboardText(pairingUrl)
@@ -256,13 +268,15 @@ export default function MobilePage(): React.JSX.Element {
           translate('auto.components.mobile.MobilePage.3c1f7168bb', 'Pairing code copied')
         )
       }
-    } catch (err) {
-      console.error('writeClipboardText failed', err)
+      return true
+    } catch {
+      console.error('writeClipboardText failed')
       if (mountedRef.current) {
         toast.error(
           translate('auto.components.mobile.MobilePage.6a66e38943', 'Failed to copy pairing code')
         )
       }
+      return false
     }
   }, [mountedRef, pairingUrl])
 
@@ -322,9 +336,8 @@ export default function MobilePage(): React.JSX.Element {
     }
   }
 
-  const toggleMobileSidebarButton = useCallback(() => {
+  const toggleMobileSidebarButton = useCallback(async () => {
     const nextShowMobileButton = !showMobileButton
-    void updateSettings({ showMobileButton: nextShowMobileButton })
     if (!nextShowMobileButton) {
       toast.message(
         translate(
@@ -333,9 +346,23 @@ export default function MobilePage(): React.JSX.Element {
         )
       )
     }
+    try {
+      await updateSettings({ showMobileButton: nextShowMobileButton })
+      const settings = await window.api.settings.get()
+      const currentSettings = useAppStore.getState().settings
+      return {
+        applied:
+          currentSettings !== null &&
+          (currentSettings.showMobileButton !== false) === nextShowMobileButton,
+        persisted: (settings.showMobileButton !== false) === nextShowMobileButton,
+        value: nextShowMobileButton
+      }
+    } catch {
+      return { applied: false, persisted: false, value: nextShowMobileButton }
+    }
   }, [showMobileButton, updateSettings])
 
-  useMobilePageEscape(closeMobilePage)
+  useMobilePageEscape(closeForViewer)
 
   // Why: while the deferred first mint waits on the address, Step 2 would
   // otherwise read "Generate a pairing code to continue" — a prompt for work it
@@ -347,9 +374,10 @@ export default function MobilePage(): React.JSX.Element {
 
   return (
     <MobilePageContent
-      closeMobilePage={closeMobilePage}
-      copyInstallUrl={() => void copyInstallUrl()}
-      copyPairingCode={() => void copyPairingCode()}
+      closeMobilePage={closeForViewer}
+      readPageOpen={() => useAppStore.getState().activeView === 'mobile'}
+      copyInstallUrl={copyInstallUrl}
+      copyPairingCode={copyPairingCode}
       devices={devices}
       enterFlow={enterFlow}
       generatePairing={(rotate) => void generatePairing(rotate)}
@@ -365,7 +393,7 @@ export default function MobilePage(): React.JSX.Element {
       installQrUrl={installQrUrl}
       iosChannel={iosChannel}
       setIosChannel={setIosChannel}
-      loadNetworkInterfaces={() => void loadNetworkInterfaces()}
+      loadNetworkInterfaces={loadNetworkInterfaces}
       networkInterfaces={networkInterfaces}
       openAndroidInstallGuide={openAndroidInstallGuide}
       openInstallUrl={openInstallUrl}
@@ -382,10 +410,10 @@ export default function MobilePage(): React.JSX.Element {
       }
       onUseLan={() => handleConnectionModeChange('local-only')}
       onRetryRelay={() => void generatePairing(true)}
-      onCopyRelayDiagnostics={() => void copyRelayDiagnostics()}
+      onCopyRelayDiagnostics={copyRelayDiagnostics}
       platform={platform}
       refreshingNetworkInterfaces={refreshingNetworkInterfaces}
-      revokeDevice={(id) => void revokeDevice(id)}
+      revokeDevice={revokeDevice}
       revokingDeviceIds={revokingDeviceIds}
       selectedAddress={selectedAddress}
       setPlatform={setPlatform}

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { usePluginConsentViewerController } from '@/runtime/plugin-consent-viewer-controller'
 import { AlertTriangle, Check, Loader2 } from 'lucide-react'
 import type { PluginHostListEntry } from '../../../../preload/api-types'
 import { translate } from '@/i18n/i18n'
@@ -107,22 +108,26 @@ export function PluginConsentDialog({
   const keepDisabledRef = useRef<HTMLButtonElement>(null)
   const [busyDecision, setBusyDecision] = useState<'approve' | 'keep-disabled' | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const decide = async (decision: 'approve' | 'keep-disabled'): Promise<void> => {
+  const decide = async (decision: 'approve' | 'keep-disabled'): Promise<boolean> => {
     if (!plugin?.consentFingerprint || busyDecision) {
-      return
+      return false
     }
     setBusyDecision(decision)
     setError(null)
     try {
       // Why: consent is conditional on the exact trust boundary rendered by this dialog.
       await onDecision(plugin.pluginKey, plugin.consentFingerprint, decision)
+      return true
     } catch (cause) {
       console.warn('[plugins] consent update failed:', cause)
       setError(pluginConsentErrorMessage(cause))
+      return false
     } finally {
       setBusyDecision(null)
     }
   }
+
+  usePluginConsentViewerController({ plugin, busyDecision, error, decide })
 
   return (
     <Dialog

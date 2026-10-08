@@ -1,5 +1,8 @@
+import { SkillUpdateRunLog } from './skill-update-run-log'
+import { useSkillsViewerDialog } from '@/runtime/skills-viewer-dialog'
+import { useSkillFreshnessViewerController } from '@/runtime/skill-freshness-viewer-controller'
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { AlertTriangle, CheckCircle2, ChevronDown, Copy, Loader2, RefreshCw } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Copy, Loader2, RefreshCw } from 'lucide-react'
 import {
   buildTargetedSkillUpdateCommand,
   isSkillScanIssueNeedingAttention,
@@ -18,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { groupSkillFreshness } from './skill-freshness-grouping'
 import { SkillFreshnessScanIssues } from './skill-freshness-scan-issues'
@@ -33,35 +35,9 @@ import {
 import {
   consumeSkillFreshnessUpdateDialogRequest,
   getSkillFreshnessUpdateDialogRequest,
+  requestSkillFreshnessUpdateDialog,
   subscribeSkillFreshnessUpdateDialog
 } from './skill-freshness-update-dialog'
-
-function RunLog({ output }: { output: string }): React.JSX.Element | null {
-  if (!output.trim()) {
-    return null
-  }
-  return (
-    <Collapsible className="min-w-0">
-      <CollapsibleTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          className="group -ml-2 gap-1.5 text-muted-foreground"
-        >
-          <ChevronDown className="size-3.5 transition-transform group-data-[state=open]:rotate-180" />
-          {translate('auto.components.skills.SkillFreshnessUpdateDialog.showLog', 'Show log')}
-        </Button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-1 min-w-0">
-        {/* Displayed verbatim, never parsed — `skills update` has no --json. */}
-        <pre className="scrollbar-sleek max-h-40 overflow-auto whitespace-pre-wrap [overflow-wrap:anywhere] rounded-md border border-border bg-muted px-3 py-2.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
-          {output.trim()}
-        </pre>
-      </CollapsibleContent>
-    </Collapsible>
-  )
-}
 
 export function SkillFreshnessUpdateDialog(): React.JSX.Element {
   const activeSkillRuntime = useActiveProjectSkillRuntime()
@@ -143,9 +119,9 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
     })
   }, [groups, isRunning, failedNamesKey, runNames])
 
-  const handleOpenChange = (next: boolean): void => {
+  const handleOpenChange = async (next: boolean): Promise<boolean> => {
     if (next) {
-      return
+      return true
     }
     // Why: closing never cancels. The run is owned by main and keeps going; the
     // status-bar segment carries it from here.
@@ -157,35 +133,53 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
     if (run.state === 'idle') {
       lastInventoryRef.current = null
     }
-    if (showResult) {
-      void acknowledgeSkillUpdateRun()
-    }
+    const acknowledged = !showResult || (await acknowledgeSkillUpdateRun())
     notifyInstalledAgentSkillsChanged()
+    return acknowledged
   }
 
-  const handleUpdate = (names: readonly string[]): void => {
-    void startSkillUpdateRun(names)
-  }
+  const handleUpdate = (names: readonly string[]) => startSkillUpdateRun(names)
 
-  const handleCopyCommand = (): void => {
+  const handleCopyCommand = async (): Promise<boolean> => {
     const command = buildTargetedSkillUpdateCommand(
       run.state === 'error' ? run.failedNames : eligibleNames
     )
     if (!command) {
-      return
+      return false
     }
     // Clipboard writes reject on a denied permission or an unfocused document;
     // without this the button just never flips to "Copied".
-    void navigator.clipboard
+    return navigator.clipboard
       .writeText(command)
       .then(() => {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
+        return true
       })
       .catch((error: unknown) => {
         console.error('Failed to copy skill update command', error)
+        return false
       })
   }
+
+  useSkillsViewerDialog('freshness', open, false, () => {
+    void handleOpenChange(false)
+  })
+  useSkillFreshnessViewerController({
+    open,
+    localInventoryAvailable: activeSkillRuntime.canUseLocalSkillFreshness,
+    inventory: state.inventory,
+    loading: state.loading,
+    error: state.error,
+    run,
+    copied,
+    openDialog: requestSkillFreshnessUpdateDialog,
+    closeDialog: () => handleOpenChange(false),
+    refresh: state.refresh,
+    update: handleUpdate,
+    stop: cancelSkillUpdateRun,
+    copyCommand: handleCopyCommand
+  })
 
   const headline = ((): React.JSX.Element => {
     if (isStopping) {
@@ -364,7 +358,7 @@ export function SkillFreshnessUpdateDialog(): React.JSX.Element {
           </div>
         ) : null}
 
-        {isRunning || showResult ? <RunLog output={run.output} /> : null}
+        {isRunning || showResult ? <SkillUpdateRunLog output={run.output} /> : null}
 
         <DialogFooter className="sm:justify-between">
           {isRunning ? (

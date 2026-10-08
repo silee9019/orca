@@ -1,3 +1,4 @@
+import { useAppSurfaceControl } from '../../hooks/ipc-events/app-surface-ipc-bridge'
 import { useCallback, useRef, useState } from 'react'
 import { BellRing, Upload } from 'lucide-react'
 import { toast } from 'sonner'
@@ -155,6 +156,41 @@ export function NotificationStep({
       setMacPermissionState('blocked')
     }
   }
+
+  useAppSurfaceControl('notification-step', async (input) => {
+    if (input.kind !== 'notification-step') {
+      return
+    }
+    if (input.action === 'status') {
+      return {
+        loaded: Boolean(notificationSettings),
+        picking: isPickingSound,
+        sound: notificationSettings?.customSoundId,
+        permission: macPermissionState
+      }
+    }
+    if (!notificationSettings || isPickingSound) {
+      throw new Error('Notification settings are unavailable or busy')
+    }
+    if (input.action === 'sound') {
+      if (
+        !getNotificationSoundOptions(notificationSettings.customSoundPath).some(
+          (option) => option.id === input.sound
+        )
+      ) {
+        throw new Error(
+          'Specify an available sound; custom paths use the settings and explicit host file commands'
+        )
+      }
+      if (!input.sound) {
+        throw new Error('Specify sound')
+      }
+      await handleSoundSelect(input.sound)
+    } else {
+      await handleSendTestNotification()
+    }
+    return { state: 'requested' }
+  })
 
   if (!notificationSettings) {
     return (

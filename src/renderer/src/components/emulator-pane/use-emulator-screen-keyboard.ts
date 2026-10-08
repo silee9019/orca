@@ -107,6 +107,29 @@ export function useEmulatorScreenKeyboard({
     [canInteract, sendKeyboardFrames, setCaptureActive]
   )
 
+  const pasteText = useCallback(
+    (text: string): Promise<EmulatorKeyboardPasteResult> => {
+      if (!canInteract || !captureActiveRef.current) {
+        return Promise.resolve({ byteLength: 0, reason: 'target-unavailable', status: 'rejected' })
+      }
+      cancelActivePaste()
+      const pasteRequestId = pasteRequestIdRef.current
+      return pasteTextIntoEmulatorKeyboard({
+        isCancelled: () =>
+          pasteRequestIdRef.current !== pasteRequestId ||
+          !captureActiveRef.current ||
+          !canInteractRef.current,
+        sendKeyboardFrames,
+        text
+      }).then((result) => {
+        if (pasteRequestIdRef.current === pasteRequestId || result.status === 'cancelled') {
+          showEmulatorKeyboardPasteResult(result)
+        }
+        return result
+      })
+    },
+    [canInteract, cancelActivePaste, sendKeyboardFrames]
+  )
   const handlePaste = useCallback(
     (event: ClipboardEvent<HTMLDivElement>) => {
       if (!canInteract || !captureActiveRef.current) {
@@ -118,31 +141,18 @@ export function useEmulatorScreenKeyboard({
       }
       event.preventDefault()
       event.stopPropagation()
-
-      cancelActivePaste()
-      const pasteRequestId = pasteRequestIdRef.current
-      void pasteTextIntoEmulatorKeyboard({
-        isCancelled: () =>
-          pasteRequestIdRef.current !== pasteRequestId ||
-          !captureActiveRef.current ||
-          !canInteractRef.current,
-        sendKeyboardFrames,
-        text
-      }).then((result) => {
-        if (pasteRequestIdRef.current !== pasteRequestId && result.status !== 'cancelled') {
-          return
-        }
-        showEmulatorKeyboardPasteResult(result)
-      })
+      void pasteText(text)
     },
-    [canInteract, cancelActivePaste, sendKeyboardFrames]
+    [canInteract, pasteText]
   )
+  useEffect(() => () => cancelActivePaste(), [cancelActivePaste])
 
   return {
     enableKeyboardCapture,
     handleBlur,
     handleKeyDown,
     handlePaste,
+    pasteText,
     keyboardCaptureActive
   }
 }

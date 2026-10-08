@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSkillDiscoveryScan } from './use-skill-discovery-scan'
+import { useSkillsViewerController } from '../../runtime/skills-viewer-controller'
+import { NO_SKILL_FILTERS } from '../../../../shared/skills-viewer-command'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Share2, Trash2 } from 'lucide-react'
-import { readIpcErrorDetail } from '@/lib/ipc-error'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import { discoverSkillsForRuntimeTarget } from '@/runtime/runtime-skills-client'
-import type { RuntimeClientTarget } from '@/runtime/runtime-rpc-client'
 import { useActiveSkillDiscoveryRuntimeTarget } from '@/hooks/use-active-skill-discovery-runtime-target'
-import { useMountedRef } from '@/hooks/useMountedRef'
-import type { DiscoveredSkill, SkillDiscoveryResult } from '../../../../shared/skills'
+import type { DiscoveredSkill } from '../../../../shared/skills'
 import { MAX_SKILL_DELETE_BATCH } from '../../../../shared/skill-delete-contract'
 import { SkillsList } from './SkillsList'
 import { SkillShareDialog } from './SkillShareDialog'
@@ -28,7 +27,7 @@ import { scannedSkillSourceCount, summarizeSkillSources } from './skill-source-i
 import { useSkillDiscoveryHostLabel } from './use-skill-discovery-host-label'
 import { countSkillsBySource, filterSkills, type SkillsFilterState } from './skills-filter'
 import { skillAgentByRootPath, skillAgentOptions } from './skill-agent-filter'
-import { SkillSharedLinksView } from './SkillSharedLinksView'
+import { SkillSharedLinksView, matchesSkillShareQuery } from './SkillSharedLinksView'
 import { useOwnedSkillShares } from './use-owned-skill-shares'
 import type { SkillsPageView } from './skills-page-view'
 import { useSkillsPageKeyboardNavigation } from './use-skills-page-keyboard-navigation'
@@ -40,31 +39,16 @@ import {
 import {
   addShareableSkillResults,
   eligibleShareSkillCount,
-  retainedShareableSkillSelection,
   updatedSkillSelection
 } from './skill-share-selection'
-import {
-  addDeletableSkillResults,
-  eligibleDeleteSkillCount,
-  retainedDeletableSkillSelection
-} from './skill-delete-selection'
+import { addDeletableSkillResults, eligibleDeleteSkillCount } from './skill-delete-selection'
 import { skillDeleteActionLabel } from './skill-delete-copy'
 import { shareSelectionActionLabel } from './skill-display-labels'
 import { SkillDeleteResultBand } from './SkillDeleteResultBand'
 import { useSkillDeleteFlow } from './use-skill-delete-flow'
 
 const EMPTY_SKILLS: DiscoveredSkill[] = []
-const NO_FILTERS: SkillsFilterState = {
-  query: '',
-  sourceKind: 'all',
-  agent: 'all'
-}
-
-type SkillScanState = {
-  runtimeTarget: RuntimeClientTarget
-  result: SkillDiscoveryResult | null
-  error: { detail?: string } | null
-}
+const NO_FILTERS = NO_SKILL_FILTERS
 
 export default function SkillsPage(): React.JSX.Element {
   const closeSkillsPage = useAppStore((s) => s.closeSkillsPage)
@@ -74,12 +58,6 @@ export default function SkillsPage(): React.JSX.Element {
   const clearPendingSkillsSharedView = useAppStore((s) => s.clearPendingSkillsSharedView)
   const runtimeTarget = useActiveSkillDiscoveryRuntimeTarget()
   const hostLabel = useSkillDiscoveryHostLabel(runtimeTarget)
-  const [scanState, setScanState] = useState<SkillScanState | null>(null)
-  // Target identity changes on host switches and same-ID re-pairs.
-  const currentScan = scanState?.runtimeTarget === runtimeTarget ? scanState : null
-  const result = currentScan?.result ?? null
-  const [loading, setLoading] = useState(true)
-  const scanError = currentScan?.error ?? null
   const [shareSkills, setShareSkills] = useState<DiscoveredSkill[]>([])
   const [selectionMode, setSelectionMode] = useState<'share' | 'delete' | null>(null)
   const [selectedSkillIds, setSelectedSkillIds] = useState<Set<string>>(() => new Set())
@@ -89,66 +67,11 @@ export default function SkillsPage(): React.JSX.Element {
   const [filters, setFilters] = useState<SkillsFilterState>(NO_FILTERS)
   const [view, setView] = useState<SkillsPageView>('skills')
   const ownedShares = useOwnedSkillShares()
-  const mountedRef = useMountedRef()
-  const scanGenerationRef = useRef(0)
-  // Why a ref: `loadSkills` must not re-identify (and re-scan) when the user
-  // merely switches selection mode. Switching modes clears the selection anyway,
-  // so a one-render lag here cannot retain the wrong rows.
-  const selectionModeRef = useRef(selectionMode)
-  useEffect(() => {
-    selectionModeRef.current = selectionMode
-  }, [selectionMode])
-
-  const loadSkills = useCallback(
-    async (refresh = false): Promise<void> => {
-      setLoading(true)
-      // Why: a cold local scan walks every skill root, so switching runtimes can
-      // land a stale result after a newer one. Only the newest scan may write.
-      const scanGeneration = ++scanGenerationRef.current
-      const isCurrentScan = (): boolean =>
-        mountedRef.current && scanGeneration === scanGenerationRef.current
-      if (!runtimeTarget) {
-        // Why: keep scanning until the owning runtime is known, rather than
-        // showing the client's skills to someone whose skills live remotely.
-        return
-      }
-      try {
-        const nextResult = await discoverSkillsForRuntimeTarget(
-          runtimeTarget,
-          refresh ? { refresh: true } : undefined
-        )
-        const local = runtimeTarget.kind === 'local'
-        if (isCurrentScan()) {
-          setScanState({ runtimeTarget, result: nextResult, error: null })
-          setSelectedSkillIds((current) =>
-            selectionModeRef.current === 'delete'
-              ? retainedDeletableSkillSelection(current, nextResult.skills)
-              : retainedShareableSkillSelection(current, nextResult.skills, local)
-          )
-        }
-      } catch (error) {
-        console.error('Failed to discover skills:', error)
-        if (isCurrentScan()) {
-          // Why: a failed scan needs to stay on screen with a retry — a toast
-          // disappears before the user can act on it.
-          setScanState((current) => ({
-            runtimeTarget,
-            result: current?.runtimeTarget === runtimeTarget ? current.result : null,
-            error: { detail: readIpcErrorDetail(error) }
-          }))
-        }
-      } finally {
-        if (isCurrentScan()) {
-          setLoading(false)
-        }
-      }
-    },
-    [mountedRef, runtimeTarget]
+  const { result, loading, scanError, loadSkills } = useSkillDiscoveryScan(
+    runtimeTarget,
+    selectionMode,
+    setSelectedSkillIds
   )
-
-  useEffect(() => {
-    void loadSkills()
-  }, [loadSkills])
 
   useEffect(() => {
     const refresh = (): void => void loadSkills()
@@ -233,6 +156,55 @@ export default function SkillsPage(): React.JSX.Element {
     setInstallLink('')
     setInstallOpen(true)
   }
+
+  useSkillsViewerController({
+    target: runtimeTarget,
+    close: closeSkillsPage,
+    deleteRunning: deleteFlow.running,
+    deleteResult: deleteFlow.result,
+    dismissDeleteResult: deleteFlow.dismissResult,
+    deleteSelected: () =>
+      deleteFlow.requestDelete(skills.filter((skill) => selectedSkillIds.has(skill.id))),
+    filters,
+    setFilters,
+    agents: agentOptions.map((agent) => agent.id),
+    visibleSkills,
+    visibleShareIds: ownedShares.error
+      ? []
+      : ownedShares.shares
+          .filter((share) => matchesSkillShareQuery(share.name, filters.query))
+          .map((share) => share.id),
+    selectedIds: selectedSkillIds,
+    setSelectedIds: setSelectedSkillIds,
+    mode: selectionMode,
+    setMode: setSelectionMode,
+    deleteSupported: deleteFlow.supported,
+    addSelected,
+    view,
+    changeView: (next) => (next === 'shared' ? openSharedLinks() : exitSharedLinks()),
+    installOpen,
+    setInstallOpen,
+    setInstallLink,
+    managementOpen,
+    setManagementOpen,
+    shareSkills,
+    setShareSkills,
+    shareSelection: (ids) => {
+      const matches = skills.filter((skill) => ids.includes(skill.id))
+      const eligible = addShareableSkillResults(new Set(), skills, matches, local)
+      return matches.filter((skill) => eligible.has(skill.id))
+    },
+    loading: view === 'shared' ? ownedShares.loading : loading,
+    error: view === 'shared' ? ownedShares.error !== null : scanError !== null,
+    refresh: async () => {
+      if (view === 'shared') {
+        await ownedShares.refresh()
+      } else {
+        deleteFlow.reprobe()
+        await loadSkills()
+      }
+    }
+  })
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-background">
@@ -337,7 +309,11 @@ export default function SkillsPage(): React.JSX.Element {
       <section className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto">
         <div className={cn(SKILLS_PAGE_COLUMN, 'py-2')} data-skills-page-list="true">
           {view === 'shared' ? (
-            <SkillSharedLinksView query={filters.query} shares={ownedShares} />
+            <SkillSharedLinksView
+              query={filters.query}
+              shares={ownedShares}
+              locked={installOpen || managementOpen || shareSkills.length > 0}
+            />
           ) : (
             <>
               {hostLabel && !local ? <SkillsRemoteShareNotice hostLabel={hostLabel} /> : null}
@@ -346,6 +322,9 @@ export default function SkillsPage(): React.JSX.Element {
               ) : visibleSkills.length > 0 ? (
                 <SkillsList
                   skills={visibleSkills}
+                  target={runtimeTarget}
+                  busy={loading}
+                  locked={installOpen || managementOpen || shareSkills.length > 0}
                   allSkills={skills}
                   local={local}
                   agentByRootPath={agentByRootPath}
@@ -367,7 +346,7 @@ export default function SkillsPage(): React.JSX.Element {
                     setSelectedSkillIds((current) => addSelected(current, results))
                   }
                   onShare={(skill) => setShareSkills([skill])}
-                  onDelete={(skill) => void deleteFlow.requestDelete([skill])}
+                  onDelete={(skill) => deleteFlow.requestDelete([skill])}
                 />
               ) : skills.length > 0 ? (
                 <SkillsNoMatchesState onClearFilters={() => setFilters(NO_FILTERS)} />

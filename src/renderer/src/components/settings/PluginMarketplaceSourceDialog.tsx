@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { Loader2, RefreshCw, Trash2 } from 'lucide-react'
 import type { PluginMarketplaceHostSourceState } from '../../../../preload/api-types'
+import { usePluginMarketplaceSourceViewerController } from '@/runtime/plugin-marketplace-source-viewer-controller'
 import { translate } from '@/i18n/i18n'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
@@ -20,10 +21,11 @@ type PluginMarketplaceSourceDialogProps = {
   sources: readonly PluginMarketplaceHostSourceState[]
   onOpenChange: (open: boolean) => void
   onChanged: () => Promise<void>
+  closeRequestRef?: RefObject<(() => boolean) | null>
 }
 
-function sourceError(cause: unknown, fallback: string): string {
-  console.warn('[plugins] marketplace source action failed:', cause)
+function sourceError(fallback: string): string {
+  console.warn('[plugins] marketplace source action failed:', fallback)
   return fallback
 }
 
@@ -31,12 +33,36 @@ export function PluginMarketplaceSourceDialog({
   open,
   sources,
   onOpenChange,
-  onChanged
+  onChanged,
+  closeRequestRef
 }: PluginMarketplaceSourceDialogProps): React.JSX.Element {
   const urlRef = useRef<HTMLInputElement>(null)
   const [url, setUrl] = useState('')
   const [gitRef, setGitRef] = useState('main')
   const [busyAction, setBusyAction] = useState<string | null>(null)
+  const activeSourceOperationsRef = useRef(0)
+  const setBusyRequest = useCallback((action: string | null): void => {
+    activeSourceOperationsRef.current += action === null ? -1 : 1
+    setBusyAction(action)
+  }, [])
+  useEffect(() => {
+    if (!closeRequestRef) {
+      return
+    }
+    const close = (): boolean => {
+      if (!open || activeSourceOperationsRef.current > 0) {
+        return false
+      }
+      onOpenChange(false)
+      return true
+    }
+    closeRequestRef.current = close
+    return () => {
+      if (closeRequestRef.current === close) {
+        closeRequestRef.current = null
+      }
+    }
+  }, [open, onOpenChange, closeRequestRef])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -46,11 +72,11 @@ export function PluginMarketplaceSourceDialog({
     }
   }, [open])
 
-  const add = async (): Promise<void> => {
+  const add = async (): Promise<boolean> => {
     if (!url.trim() || !gitRef.trim() || busyAction) {
-      return
+      return false
     }
-    setBusyAction('add')
+    setBusyRequest('add')
     setError(null)
     try {
       await window.api.plugins.addMarketplace({
@@ -61,62 +87,81 @@ export function PluginMarketplaceSourceDialog({
       setUrl('')
       setGitRef('main')
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.addFailed',
             'Could not add this marketplace. Check the Git URL, ref, and your Git credentials.'
           )
         )
       )
+      return false
     } finally {
-      setBusyAction(null)
+      setBusyRequest(null)
     }
   }
 
-  const refresh = async (sourceId: string): Promise<void> => {
-    setBusyAction(`refresh:${sourceId}`)
+  const refresh = async (sourceId: string): Promise<boolean> => {
+    setBusyRequest(`refresh:${sourceId}`)
     setError(null)
     try {
       await window.api.plugins.refreshMarketplaces({ sourceId })
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.refreshFailed',
             'Could not refresh this marketplace. Its last valid cached index is still available.'
           )
         )
       )
+      return false
     } finally {
-      setBusyAction(null)
+      setBusyRequest(null)
     }
   }
 
-  const remove = async (sourceId: string): Promise<void> => {
-    setBusyAction(`remove:${sourceId}`)
+  const remove = async (sourceId: string): Promise<boolean> => {
+    setBusyRequest(`remove:${sourceId}`)
     setError(null)
     try {
       await window.api.plugins.removeMarketplace({ sourceId })
       await onChanged()
-    } catch (cause) {
+      return true
+    } catch {
       setError(
         sourceError(
-          cause,
           translate(
             'auto.components.settings.PluginMarketplaceSourceDialog.removeFailed',
             'Could not remove this marketplace.'
           )
         )
       )
+      return false
     } finally {
-      setBusyAction(null)
+      setBusyRequest(null)
     }
   }
+
+  usePluginMarketplaceSourceViewerController({
+    open,
+    sources,
+    url,
+    gitRef,
+    busyAction,
+    error,
+    urlRef,
+    setUrl,
+    setGitRef,
+    add,
+    refresh,
+    remove,
+    close: () => onOpenChange(false)
+  })
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !busyAction && onOpenChange(nextOpen)}>

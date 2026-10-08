@@ -56,6 +56,7 @@ import { registerEmulatorVideoStreamHandlers } from '../emulator-video-stream'
 import { registerSpeechHandlers } from '../speech'
 import { registerTerminalRenderDesyncEvidenceHandler } from '../terminal-render-desync-evidence'
 import { registerOrcaProfileHandlers } from '../orca-profiles'
+import { getProfileUserDataPath } from '../../orca-profiles/profile-storage-paths'
 import { registerCodexAccountHandlers } from '../codex-accounts'
 import { registerAgentHookHandlers } from '../agent-hooks'
 import { registerCodexConfigSyncHandlers } from '../codex-config-sync'
@@ -201,6 +202,11 @@ export function registerCoreHandlers(
   registerTelemetryHandlers(store)
   registerOrcaProfileHandlers(store, {
     onBeforeRelaunch: lifecycleOptions.onBeforeRelaunch,
+    onAuthMutation: lifecycleOptions.onOrcaProfileAuthMutation,
+    onBeforeSignOut: lifecycleOptions.onBeforeOrcaProfileSignOut
+  })
+  runtime.configureProfileAuth({
+    userDataPath: getProfileUserDataPath(),
     onAuthMutation: lifecycleOptions.onOrcaProfileAuthMutation,
     onBeforeSignOut: lifecycleOptions.onBeforeOrcaProfileSignOut
   })

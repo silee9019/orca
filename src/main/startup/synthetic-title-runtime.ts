@@ -1,3 +1,4 @@
+import { publishPtyControlRequest } from '../runtime/pty-control-request-observers'
 import { registerPaneKeyTeardownListener, getPtyIdForPaneKey } from '../ipc/pty'
 import { agentHookServer } from '../agent-hooks/server'
 import type { AgentStatusState } from '../../shared/agent-status-types'
@@ -49,6 +50,13 @@ function sendSyntheticTitle(ptyId: string, data: string, options: { force?: bool
   // Why: only the kill-switch-off renderer byte-parses synthetic frames; under main authority the copy mints phantom ACKs (see synthetic-title-frame-routing.ts).
   if (shouldCopySyntheticTitleFrameToPtyData(state.store?.getSettings())) {
     window.webContents.send('pty:data', { id: ptyId, data })
+    publishPtyControlRequest(state.runtime ?? undefined, {
+      kind: 'renderer-data',
+      ptyId,
+      rendererId: window.webContents.id,
+      origin: 'synthetic-title',
+      payload: { id: ptyId, data }
+    })
   }
 }
 

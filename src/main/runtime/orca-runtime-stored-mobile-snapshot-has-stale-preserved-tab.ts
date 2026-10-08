@@ -129,6 +129,10 @@ export class OrcaRuntimeWithStoredMobileSnapshotHasStalePreservedTab extends Orc
     return this.clientHostedBrowserRows.deliverHydrationSnapshot()
   }
 
+  readClientHostedBrowserRows(): ClientHostedBrowserRowsEvent[] {
+    return this.clientHostedBrowserRows.readSnapshot()
+  }
+
   protected notifyMobileSessionTabsRemoved(worktreeId: string): void {
     const removed: RuntimeMobileSessionTabsRemovedResult = {
       worktree: worktreeId,

@@ -89,6 +89,7 @@ export function useAutomationsPageListState({
   const selected = selectedRow?.automation ?? null
   const {
     isListSearchQueryTooLarge,
+    searchSettled,
     filteredRows,
     filteredExternalAutomationEntries,
     hasListItems,
@@ -149,7 +150,15 @@ export function useAutomationsPageListState({
     [filteredExternalAutomationEntries, filteredRows, listSort, sortLocale]
   )
 
+  const changeListFilter = (next: typeof listFilter): void => {
+    local.setListFilter(next)
+    if ((next.hostStableKeys?.length ?? 0) > 0 && hostCatalog.resolution.effective.kind !== 'all') {
+      hostCatalog.selectHost({ kind: 'all' })
+    }
+  }
+
   return {
+    changeListFilter,
     hostCatalog,
     externalScopeEntries,
     scopedExternal,
@@ -163,6 +172,7 @@ export function useAutomationsPageListState({
     selected,
     selectedAutomationRunsWithWorkspaceNames,
     isListSearchQueryTooLarge,
+    searchSettled,
     filteredRows,
     filteredExternalAutomationEntries,
     sortedListItems,

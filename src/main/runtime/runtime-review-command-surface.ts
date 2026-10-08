@@ -61,6 +61,12 @@ export function installRuntimeReviewCommandSurface(
   const comments = owners.gitHubIssueComments
   const projects = owners.gitHubProjects
   Object.assign(target, {
+    getGitLabViewer: glq.getGitLabViewer.bind(glq),
+    getGitLabRepoIssue: glq.getGitLabRepoIssue.bind(glq),
+    getGitLabRepoMergeRequest: glq.getGitLabRepoMergeRequest.bind(glq),
+    getGitLabRepoMergeRequestForBranch: glq.getGitLabRepoMergeRequestForBranch.bind(glq),
+    getGitLabRepoProjectSlug: glq.getGitLabRepoProjectSlug.bind(glq),
+    listGitLabRepoAssignableUsers: glq.listGitLabRepoAssignableUsers.bind(glq),
     listGitLabRepoWorkItems: glq.listGitLabRepoWorkItems.bind(glq),
     listGitLabRepoMRs: glq.listGitLabRepoMRs.bind(glq),
     listGitLabRepoIssues: glq.listGitLabRepoIssues.bind(glq),

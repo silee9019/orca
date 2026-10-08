@@ -1,4 +1,5 @@
 import React from 'react'
+import { attachResourceManagerViewerController } from '../../runtime/resource-manager-viewer-actions'
 import { Popover, PopoverContent } from '@/components/ui/popover'
 import { DaemonActionDialog } from '../shared/useDaemonActions'
 import { STATUS_BAR_CONTEXT_MENU_EXEMPT_PROPS } from './status-bar-context-menu-policy'
@@ -28,6 +29,7 @@ export function ResourceUsageStatusSegment({
   iconOnly: boolean
 }): React.JSX.Element {
   const controller = useResourceUsageStatusController()
+  React.useLayoutEffect(() => attachResourceManagerViewerController(controller), [controller])
   const {
     open,
     setOpen,

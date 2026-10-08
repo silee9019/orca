@@ -1,4 +1,4 @@
-import { normalizeNativeChatAppearanceSettings } from '../../../../shared/native-chat-appearance-settings'
+import { normalizeSettingsUpdates } from './settings-update-normalization'
 import type { StateCreator } from 'zustand'
 import type { AppState } from '../types'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
@@ -10,25 +10,10 @@ import {
 } from '@/runtime/runtime-rpc-client'
 import { assertRuntimeStatusCompatible } from '@/runtime/runtime-protocol-compat'
 import type { RuntimeStatus } from '../../../../shared/runtime-types'
-import { normalizeTerminalQuickCommands } from '../../../../shared/terminal-quick-commands'
-import { normalizeTerminalCustomThemes } from '../../../../shared/terminal-custom-themes'
-import { normalizeTaskProviderSettings } from '../../../../shared/task-providers'
-import { normalizeOpenInApplications } from '../../../../shared/open-in-applications'
 import { createSettingsSearchState, type SettingsSearchState } from './settings-search-state'
 import { isRuntimeCatalogListingStale } from './runtime-status-hydration'
-import { normalizeDisabledTuiAgents } from '../../../../shared/tui-agent-selection'
-import {
-  normalizeTuiAgentArgsRecord,
-  normalizeTuiAgentEnvRecord
-} from '../../../../shared/tui-agent-launch-defaults'
 import { bumpProviderRuntimeSessionGeneration } from '@/lib/provider-runtime-context'
-import { normalizeUiLanguage } from '../../../../shared/ui-language'
-import { normalizeDesktopTerminalScrollbackRows } from '../../../../shared/terminal-scrollback-policy'
 import { translate } from '@/i18n/i18n'
-import {
-  normalizeMobilePairingCustomAddress,
-  normalizeMobilePairingCustomAddresses
-} from '../../../../shared/mobile-pairing-custom-address'
 import {
   hydrateOwnerWorktreeVisibilityDefaults,
   type WorktreeVisibilityDefaultsByHost
@@ -36,7 +21,6 @@ import {
 import * as ownerHydration from './settings-owner-hydration-publication'
 import { persistVisibilityAwareSettings } from './worktree-visibility-settings-write'
 import { getSettingsFocusedExecutionHostId } from '../../../../shared/execution-host'
-import { createBrowserUuid } from '@/lib/browser-uuid'
 
 export type SettingsSlice = SettingsSearchState & {
   settings: GlobalSettings | null
@@ -47,89 +31,15 @@ export type SettingsSlice = SettingsSearchState & {
   awaitOwnerWorktreeVisibilityDefaultsHydration: () => Promise<void>
   updateSettings: (updates: Partial<GlobalSettings>) => Promise<void>
   updateSettingsOrThrow: (updates: Partial<GlobalSettings>) => Promise<void>
-  setActiveRuntimeEnvironmentPreference: (environmentId: string | null) => Promise<boolean>
-}
-
-type LegacyTerminalScrollbackSettingsUpdate = Partial<GlobalSettings> & {
-  terminalScrollbackBytes?: unknown
+  setActiveRuntimeEnvironmentPreference: (
+    environmentId: string | null,
+    options?: { scope: 'viewer' | 'profile' }
+  ) => Promise<boolean>
 }
 
 function normalizeRuntimeEnvironmentId(value: string | null | undefined): string | null {
   const trimmed = value?.trim()
   return trimmed ? trimmed : null
-}
-
-function normalizeSettingsUpdates(
-  updates: Partial<GlobalSettings>,
-  currentSettings: GlobalSettings | null
-): Partial<GlobalSettings> {
-  const { terminalScrollbackBytes: _legacyScrollbackBytes, ...sanitizedUpdates } =
-    updates as LegacyTerminalScrollbackSettingsUpdate
-  void _legacyScrollbackBytes
-  if ('terminalQuickCommands' in updates) {
-    sanitizedUpdates.terminalQuickCommands = normalizeTerminalQuickCommands(
-      updates.terminalQuickCommands
-    )
-  }
-  if ('terminalCustomThemes' in updates) {
-    sanitizedUpdates.terminalCustomThemes = normalizeTerminalCustomThemes(
-      updates.terminalCustomThemes
-    )
-  }
-  if ('visibleTaskProviders' in updates || 'defaultTaskSource' in updates) {
-    const taskProviderSettings = normalizeTaskProviderSettings({
-      visibleTaskProviders:
-        'visibleTaskProviders' in updates
-          ? updates.visibleTaskProviders
-          : currentSettings?.visibleTaskProviders,
-      defaultTaskSource:
-        'defaultTaskSource' in updates
-          ? updates.defaultTaskSource
-          : currentSettings?.defaultTaskSource
-    })
-    sanitizedUpdates.defaultTaskSource = taskProviderSettings.defaultTaskSource
-    sanitizedUpdates.visibleTaskProviders = taskProviderSettings.visibleTaskProviders
-  }
-  if ('openInApplications' in updates) {
-    sanitizedUpdates.openInApplications = normalizeOpenInApplications(updates.openInApplications, {
-      createId: createBrowserUuid
-    })
-  }
-  if ('nativeChatAppearance' in updates) {
-    sanitizedUpdates.nativeChatAppearance = normalizeNativeChatAppearanceSettings(
-      updates.nativeChatAppearance
-    )
-  }
-  if ('disabledTuiAgents' in updates) {
-    sanitizedUpdates.disabledTuiAgents = normalizeDisabledTuiAgents(updates.disabledTuiAgents)
-  }
-  if ('agentDefaultArgs' in updates) {
-    sanitizedUpdates.agentDefaultArgs = normalizeTuiAgentArgsRecord(updates.agentDefaultArgs)
-    sanitizedUpdates.agentYoloDefaultsMigrated = true
-  }
-  if ('agentDefaultEnv' in updates) {
-    sanitizedUpdates.agentDefaultEnv = normalizeTuiAgentEnvRecord(updates.agentDefaultEnv)
-    sanitizedUpdates.agentYoloDefaultsMigrated = true
-  }
-  if ('uiLanguage' in updates) {
-    sanitizedUpdates.uiLanguage = normalizeUiLanguage(updates.uiLanguage)
-  }
-  if ('terminalScrollbackRows' in updates) {
-    sanitizedUpdates.terminalScrollbackRows = normalizeDesktopTerminalScrollbackRows(
-      updates.terminalScrollbackRows
-    )
-  }
-  if ('mobilePairingCustomAddress' in updates) {
-    sanitizedUpdates.mobilePairingCustomAddress = normalizeMobilePairingCustomAddress(
-      updates.mobilePairingCustomAddress
-    )
-  }
-  if ('mobilePairingCustomAddresses' in updates) {
-    sanitizedUpdates.mobilePairingCustomAddresses = normalizeMobilePairingCustomAddresses(
-      updates.mobilePairingCustomAddresses
-    )
-  }
-  return sanitizedUpdates
 }
 
 async function persistSettingsUpdates(
@@ -243,10 +153,13 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
     }
   },
 
-  setActiveRuntimeEnvironmentPreference: async (environmentId) => {
+  setActiveRuntimeEnvironmentPreference: async (environmentId, options) => {
+    if (options?.scope === 'viewer' && !get().settings) {
+      return false
+    }
     const nextId = normalizeRuntimeEnvironmentId(environmentId)
     const previousId = normalizeRuntimeEnvironmentId(get().settings?.activeRuntimeEnvironmentId)
-    if (previousId === nextId) {
+    if (previousId === nextId && options?.scope !== 'profile') {
       return true
     }
     const shouldPublish = ownerHydration.createSettingsPublicationFence(true)
@@ -256,15 +169,23 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
       if (!shouldPublish()) {
         return true
       }
-      const nextSettings = await window.api.settings.setActiveRuntimeEnvironmentPreference({
-        environmentId: nextId
-      })
+      const viewerSettings = get().settings
+      if (options?.scope === 'viewer' && !viewerSettings) {
+        return false
+      }
+      const nextSettings =
+        options?.scope === 'viewer' && viewerSettings
+          ? { ...viewerSettings, activeRuntimeEnvironmentId: nextId }
+          : await window.api.settings.setActiveRuntimeEnvironmentPreference({
+              environmentId: nextId
+            })
       bumpProviderRuntimeSessionGeneration()
       // Why: this is a focus change, so keep other host state while hydrating only the new owner's default.
       const focusedSettings =
         (nextSettings as GlobalSettings | undefined) ??
         (get().settings ? { ...get().settings!, activeRuntimeEnvironmentId: nextId } : null)
       if (focusedSettings) {
+        const settingsAtHydrationStart = get().settings
         const hydrated = await hydrateOwnerWorktreeVisibilityDefaults(
           focusedSettings,
           get().worktreeVisibilityDefaultsByHost
@@ -273,7 +194,16 @@ export const createSettingsSlice: StateCreator<AppState, [], [], SettingsSlice> 
           return true
         }
         set((state) => ({
-          settings: hydrated.settings,
+          settings:
+            options?.scope === 'viewer' && state.settings !== settingsAtHydrationStart
+              ? {
+                  ...ownerHydration.mergeOwnerDefaultsIntoCurrentSettings(
+                    state.settings,
+                    hydrated.settings
+                  ),
+                  activeRuntimeEnvironmentId: nextId
+                }
+              : hydrated.settings,
           worktreeVisibilityDefaultsByHost: {
             ...state.worktreeVisibilityDefaultsByHost,
             ...hydrated.defaultsByHost

@@ -2,9 +2,15 @@ import type { GitLabProjectRef, GitLabWorkItem, MRListState } from '../../shared
 import type { Repo } from '../../shared/repo-types'
 import {
   diagnoseAuth,
+  getAuthenticatedViewer,
+  getIssue,
+  getMergeRequest,
+  getMergeRequestForBranch,
+  getProjectSlug,
   getRateLimit,
   getWorkItemByProjectRef,
   listIssues,
+  listAssignableUsers,
   listLabels,
   listMergeRequests,
   listTodos,
@@ -28,6 +34,67 @@ export type RuntimeGitLabQueryCommandsDeps = {
 
 export class RuntimeGitLabQueryCommands {
   constructor(private readonly deps: RuntimeGitLabQueryCommandsDeps) {}
+
+  getGitLabViewer() {
+    return getAuthenticatedViewer()
+  }
+
+  async getGitLabRepoIssue(selector: string, number: number) {
+    const repo = await this.deps.resolveRepo(selector)
+    return getIssue(
+      repo.path,
+      number,
+      repo.connectionId ?? null,
+      ...this.deps.getLocalGitArgs(repo)
+    )
+  }
+
+  async getGitLabRepoMergeRequest(selector: string, iid: number) {
+    const repo = await this.deps.resolveRepo(selector)
+    const localGitExecOptions = this.deps.getLocalGitArgs(repo)[0]
+    return getMergeRequest(
+      repo.path,
+      iid,
+      repo.connectionId ?? null,
+      localGitExecOptions ? { localGitExecOptions } : {}
+    )
+  }
+
+  async getGitLabRepoMergeRequestForBranch(
+    selector: string,
+    branch: string,
+    linkedMRIid?: number | null
+  ) {
+    const repo = await this.deps.resolveRepo(selector)
+    const localGitExecOptions = this.deps.getLocalGitArgs(repo)[0]
+    return getMergeRequestForBranch(
+      repo.path,
+      branch,
+      linkedMRIid ?? null,
+      repo.connectionId ?? null,
+      localGitExecOptions ? { localGitExecOptions } : {}
+    )
+  }
+
+  async getGitLabRepoProjectSlug(selector: string) {
+    const repo = await this.deps.resolveRepo(selector)
+    const localGitExecOptions = this.deps.getLocalGitArgs(repo)[0]
+    return getProjectSlug(
+      repo.path,
+      repo.connectionId ?? null,
+      localGitExecOptions ? { localGitExecOptions } : {}
+    )
+  }
+
+  async listGitLabRepoAssignableUsers(selector: string) {
+    const repo = await this.deps.resolveRepo(selector)
+    return listAssignableUsers(
+      repo.path,
+      repo.issueSourcePreference,
+      repo.connectionId ?? null,
+      ...this.deps.getLocalGitArgs(repo)
+    )
+  }
 
   async listGitLabRepoWorkItems(
     repoSelector: string,

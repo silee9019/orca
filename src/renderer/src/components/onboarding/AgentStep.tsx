@@ -1,3 +1,4 @@
+import { useMountedOnboardingYoloDraftControls } from '../../runtime/use-mounted-account-dialog-controls'
 import { useId, useState } from 'react'
 import { Check, ExternalLink } from 'lucide-react'
 import { getAgentCatalog, AgentIcon, type AgentCatalogEntry } from '@/lib/agent-catalog'
@@ -28,6 +29,9 @@ export function AgentStep({
   yoloPermissions = true,
   onYoloPermissionsChange
 }: AgentStepProps) {
+  useMountedOnboardingYoloDraftControls(
+    onYoloPermissionsChange ? { set: onYoloPermissionsChange } : null
+  )
   const agentCatalog = getAgentCatalog()
   const detected = agentCatalog.filter((agent) => detectedSet.has(agent.id))
   const rest = agentCatalog.filter((agent) => !detectedSet.has(agent.id))

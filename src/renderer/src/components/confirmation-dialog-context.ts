@@ -4,6 +4,8 @@ import type { LucideIcon } from 'lucide-react'
 // Keep the context component-free so Fast Refresh preserves its identity.
 
 export type ConfirmationDialogOptions = {
+  signal?: AbortSignal
+  onViewerControl?: (settle: (confirmed: boolean) => void) => () => void
   title: string
   description?: string
   descriptionClassName?: string

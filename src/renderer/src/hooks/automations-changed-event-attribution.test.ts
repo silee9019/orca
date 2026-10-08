@@ -89,7 +89,8 @@ async function mountIpcEvents(): Promise<Mounted> {
     removeEventListener: () => {}
   })
 
-  const { useIpcEvents } = await import('./useIpcEvents')
+  const { installAppLifetimeIpcEvents: useIpcEvents } =
+    await import('./ipc-events/app-lifetime-ipc-bridge')
 
   return {
     useIpcEvents,

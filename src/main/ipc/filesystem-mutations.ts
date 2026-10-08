@@ -1,28 +1,30 @@
+import {
+  importExternalPathsForDesktop,
+  resolveDroppedPathsForDesktop
+} from '../desktop-external-path-import'
+import { setDesktopExternalPathImportForRpc } from '../runtime/rpc/methods/workspace-external-path-import'
+import { createDesktopDirectory } from '../desktop-filesystem-path-commands'
+import { setDesktopDirectoryCreateForRpc } from '../runtime/rpc/methods/workspace-host-path'
 import { app, ipcMain } from 'electron'
 import { constants } from 'node:fs'
 import { copyFile, mkdir, writeFile } from 'node:fs/promises'
-import { basename, dirname } from 'node:path'
+import { dirname } from 'node:path'
 import type { Store } from '../persistence'
 import {
   resolveDesktopAuthorizedPath,
-  resolveLocalRenamePaths,
-  resolveLocalRequestPath
+  resolveLocalRenamePaths
 } from './local-file-access-resolution'
 import type { LocalFileAccess } from '../../shared/local-file-access'
 import { requireSshFilesystemProvider } from '../providers/ssh-filesystem-dispatch'
-import { resolveLocalDroppedPathsForAgent } from './dropped-path-resolution'
-import { importExternalPathsSsh } from './filesystem-import-ssh'
 import type { SshMutationExpectation } from '../../shared/ssh-types'
 import { assertSshMutationExpectation } from '../ssh/ssh-connection-generation'
 import { renameLocalPathSerializedByDestination } from '../destination-serialized-local-rename'
-import { assertNotExists, rethrowWithUserMessage } from './filesystem-create-path-guards'
+import { rethrowWithUserMessage } from './filesystem-create-path-guards'
 import type {
   ImportItemResult,
-  ImportSkipReason,
   ResolveDroppedPathsResult,
   StagedExternalImportSource
 } from '../../shared/filesystem-import-result-types'
-import { importOneSource } from './filesystem-import-local'
 import {
   stagedRuntimeUploadByteLength,
   stageOneSourceForRuntimeUpload
@@ -38,6 +40,11 @@ import { resolveEnvironment } from '../../shared/runtime-environment-store'
  * Deletion is handled separately via `fs:deletePath` (shell.trashItem).
  */
 export function registerFilesystemMutationHandlers(store: Store): void {
+  setDesktopDirectoryCreateForRpc((args) => createDesktopDirectory(store, args))
+  setDesktopExternalPathImportForRpc({
+    importPaths: (args) => importExternalPathsForDesktop(store, args),
+    resolveDropped: resolveDroppedPathsForDesktop
+  })
   ipcMain.handle(
     'fs:createFile',
     async (
@@ -71,19 +78,7 @@ export function registerFilesystemMutationHandlers(store: Store): void {
       _event,
       args: { dirPath: string; connectionId?: string } & SshMutationExpectation
     ): Promise<void> => {
-      assertSshMutationExpectation(
-        args.connectionId,
-        args.expectedSshTargetId,
-        args.expectedSshConnectionGeneration,
-        args.expectedExecutionHostId
-      )
-      if (args.connectionId) {
-        const provider = requireSshFilesystemProvider(args.connectionId)
-        return provider.createDir(args.dirPath)
-      }
-      const dirPath = await resolveDesktopAuthorizedPath(args.dirPath, store)
-      await assertNotExists(dirPath)
-      await mkdir(dirPath, { recursive: true })
+      return createDesktopDirectory(store, args)
     }
   )
 
@@ -172,51 +167,7 @@ export function registerFilesystemMutationHandlers(store: Store): void {
         ensureDir?: boolean
         access?: LocalFileAccess
       } & SshMutationExpectation
-    ): Promise<{ results: ImportItemResult[] }> => {
-      assertSshMutationExpectation(
-        args.connectionId,
-        args.expectedSshTargetId,
-        args.expectedSshConnectionGeneration,
-        args.expectedExecutionHostId
-      )
-      if (args.connectionId) {
-        return importExternalPathsSsh(args.sourcePaths, args.destDir, args.connectionId, {
-          ensureDir: args.ensureDir,
-          assertCurrent: () =>
-            assertSshMutationExpectation(
-              args.connectionId,
-              args.expectedSshTargetId,
-              args.expectedSshConnectionGeneration,
-              args.expectedExecutionHostId
-            )
-        })
-      }
-
-      // Why: destDir must be authorized before any copy work begins. If the
-      // destination is outside allowed roots, the entire import fails.
-      // This only applies to local imports — remote paths are authorized by
-      // the SSH connection boundary (see importExternalPathsSsh).
-      // An image inserted into a document the user opened lands in that document's own folder.
-      const resolvedDest = await resolveLocalRequestPath(
-        args.destDir,
-        args.access,
-        store,
-        'import-into'
-      )
-
-      const results: ImportItemResult[] = []
-      const reservedNames = new Set<string>()
-
-      for (const sourcePath of args.sourcePaths) {
-        const result = await importOneSource(sourcePath, resolvedDest, reservedNames)
-        results.push(result)
-        if (result.status === 'imported') {
-          reservedNames.add(basename(result.destPath))
-        }
-      }
-
-      return { results }
-    }
+    ): Promise<{ results: ImportItemResult[] }> => importExternalPathsForDesktop(store, args)
   )
 
   ipcMain.handle(
@@ -289,48 +240,6 @@ export function registerFilesystemMutationHandlers(store: Store): void {
         worktreePath: string
         connectionId?: string
       } & SshMutationExpectation
-    ): Promise<ResolveDroppedPathsResult> => {
-      assertSshMutationExpectation(
-        args.connectionId,
-        args.expectedSshTargetId,
-        args.expectedSshConnectionGeneration,
-        args.expectedExecutionHostId
-      )
-      // Why: `== null` (not `!args.connectionId`) so an empty string is
-      // treated as a renderer error, not silently routed to the local branch.
-      if (args.connectionId == null) {
-        return {
-          resolvedPaths: resolveLocalDroppedPathsForAgent(args.paths, args.worktreePath),
-          skipped: [],
-          failed: []
-        }
-      }
-      const worktreePath = args.worktreePath.replace(/\/+$/, '')
-      const destDir = `${worktreePath}/.orca/drops`
-      const { results } = await importExternalPathsSsh(args.paths, destDir, args.connectionId, {
-        ensureDir: true,
-        assertCurrent: () =>
-          assertSshMutationExpectation(
-            args.connectionId,
-            args.expectedSshTargetId,
-            args.expectedSshConnectionGeneration,
-            args.expectedExecutionHostId
-          )
-      })
-      const resolvedPaths: string[] = []
-      const skipped: { sourcePath: string; reason: ImportSkipReason }[] = []
-      const failed: { sourcePath: string; reason: string }[] = []
-      // Iterate in input order so injected paths align with the user's drop order.
-      for (const r of results) {
-        if (r.status === 'imported') {
-          resolvedPaths.push(r.destPath)
-        } else if (r.status === 'skipped') {
-          skipped.push({ sourcePath: r.sourcePath, reason: r.reason })
-        } else {
-          failed.push({ sourcePath: r.sourcePath, reason: r.reason })
-        }
-      }
-      return { resolvedPaths, skipped, failed }
-    }
+    ): Promise<ResolveDroppedPathsResult> => resolveDroppedPathsForDesktop(args)
   )
 }

@@ -1,3 +1,4 @@
+import { shouldPreventResourceKillDismissal } from './resource-kill-dialog-dismissal'
 import React, { type Dispatch, type SetStateAction } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,7 @@ export function renderResourceUsageKillDialog({
         if (next) {
           return
         }
-        if (killing) {
+        if (shouldPreventResourceKillDismissal(killing)) {
           return
         }
         setKillConfirm(null)
@@ -40,12 +41,12 @@ export function renderResourceUsageKillDialog({
         className="max-w-md"
         showCloseButton={!killing}
         onPointerDownOutside={(e) => {
-          if (killing) {
+          if (shouldPreventResourceKillDismissal(killing)) {
             e.preventDefault()
           }
         }}
         onEscapeKeyDown={(e) => {
-          if (killing) {
+          if (shouldPreventResourceKillDismissal(killing)) {
             e.preventDefault()
           }
         }}

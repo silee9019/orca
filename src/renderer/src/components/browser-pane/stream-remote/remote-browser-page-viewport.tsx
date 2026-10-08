@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useRemoteBrowserFailureCommands } from './use-remote-browser-failure-commands'
 import { Globe, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -17,7 +18,10 @@ import type { BrowserScreencastFrameMetadata } from '../../../../../shared/brows
 import { getRemoteBrowserFrameStyle } from './remote-browser-frame-style'
 import { MarkupOverlay } from '../annotate/MarkupOverlay'
 import type { MarkupModeController } from '../annotate/useMarkupMode'
-import { BrowserLoadFailureOverlay } from '../navigate/browser-load-failure-overlay'
+import {
+  BrowserLoadFailureOverlay,
+  getMatchingCertificateFailure
+} from '../navigate/browser-load-failure-overlay'
 import { ReopenBrowserPageOnServerButton } from '../ReopenBrowserPageOnServerButton'
 import { toDisplayUrl } from '../describe-page/browser-page-url-display'
 import {
@@ -28,6 +32,7 @@ import { callRuntimeRpc } from '@/runtime/runtime-rpc-client'
 import type { RemoteBrowserRuntimeTarget } from './remote-browser-page-input-model'
 
 export function RemoteBrowserPageViewport({
+  isActive = false,
   remoteViewportRef,
   imageRef,
   frameUrl,
@@ -52,6 +57,7 @@ export function RemoteBrowserPageViewport({
   handleRemoteContextMenu,
   handleRemoteScreenshotKeyDown
 }: {
+  isActive?: boolean
   remoteViewportRef: React.RefObject<HTMLDivElement | null>
   imageRef: React.RefObject<HTMLImageElement | null>
   frameUrl: string | null
@@ -84,6 +90,54 @@ export function RemoteBrowserPageViewport({
     remoteFailureUrl !== 'about:blank' &&
     remoteFailureUrl !== ORCA_BROWSER_BLANK_URL
 
+  const proceedCertificate = async (
+    challengeId: string
+  ): Promise<BrowserCertificateProceedResult> => {
+    const target = runtimeTarget()
+    if (
+      !target ||
+      remotePageHandle?.environmentId !== target.environmentId ||
+      remotePageHandle.remotePageId !== certificateFailure?.browserPageId
+    ) {
+      return { ok: false, reason: 'missing' }
+    }
+    return callRuntimeRpc<BrowserCertificateProceedResult>(
+      target,
+      'browser.certificate.proceed',
+      { worktree: runtimeWorktree, page: remotePageHandle.remotePageId, challengeId },
+      { timeoutMs: 15_000, suppressFeatureInteraction: true }
+    )
+  }
+  const copyFailureAddress = (url: string): Promise<void> => window.api.ui.writeClipboardText(url)
+  const openFailureExternal = (url: string): Promise<void> => window.api.shell.openUrl(url)
+  useRemoteBrowserFailureCommands({
+    page: browserTab.id,
+    active: isActive && !markup.isActive,
+    visible: showRemoteFailureOverlay,
+    environmentId: activeRuntimeEnvironmentId,
+    remotePageId:
+      remotePageHandle?.environmentId === activeRuntimeEnvironmentId
+        ? remotePageHandle.remotePageId
+        : null,
+    failureUrl: remoteFailureUrl,
+    capable: remoteCertificateTrustSupported,
+    failure: browserTab.loadError
+      ? getMatchingCertificateFailure({
+          loadError: browserTab.loadError,
+          certificateFailure,
+          expectedBrowserPageId:
+            remotePageHandle?.environmentId === activeRuntimeEnvironmentId
+              ? remotePageHandle.remotePageId
+              : null,
+          canProceed: remoteCertificateTrustSupported
+        })
+      : null,
+    externalAvailable: remoteFailureExternalUrl !== null,
+    copy: () => copyFailureAddress(toDisplayUrl(remoteFailureUrl)),
+    openExternal: () => openFailureExternal(remoteFailureExternalUrl ?? ''),
+    proceed: proceedCertificate
+  })
+
   return (
     <div
       ref={remoteViewportRef}
@@ -94,6 +148,8 @@ export function RemoteBrowserPageViewport({
         <MarkupOverlay
           baseImage={markup.baseImage}
           busy={markup.state === 'composing'}
+          commandOwner={markup.commandOwner}
+          onCompleteVerified={markup.completeVerified}
           onComplete={(input) => void markup.complete(input)}
           onCancel={markup.cancel}
         />
@@ -149,34 +205,15 @@ export function RemoteBrowserPageViewport({
           httpsRecoveryUrl={toHttpsRecoveryUrl(remoteFailureUrl)}
           onRetry={onReload}
           onTryHttps={onGoto}
-          onCopy={(url) => void window.api.ui.writeClipboardText(url)}
-          onOpenExternal={(url) => void window.api.shell.openUrl(url)}
+          onCopy={(url) => void copyFailureAddress(url)}
+          onOpenExternal={(url) => void openFailureExternal(url)}
           certificateFailure={remoteCertificateTrustSupported ? certificateFailure : null}
           expectedBrowserPageId={
             remotePageHandle?.environmentId === activeRuntimeEnvironmentId
               ? remotePageHandle.remotePageId
               : null
           }
-          onProceedCertificate={async (challengeId) => {
-            const target = runtimeTarget()
-            if (
-              !target ||
-              remotePageHandle?.environmentId !== target.environmentId ||
-              remotePageHandle.remotePageId !== certificateFailure?.browserPageId
-            ) {
-              return { ok: false, reason: 'missing' }
-            }
-            return callRuntimeRpc<BrowserCertificateProceedResult>(
-              target,
-              'browser.certificate.proceed',
-              {
-                worktree: runtimeWorktree,
-                page: remotePageHandle.remotePageId,
-                challengeId
-              },
-              { timeoutMs: 15_000, suppressFeatureInteraction: true }
-            )
-          }}
+          onProceedCertificate={proceedCertificate}
         />
       ) : null}
       {/* Why the reconnect control also opens this toast: the control renders inside it, so
@@ -198,6 +235,11 @@ export function RemoteBrowserPageViewport({
               can never render it here. A new server-placed page is the only way through. */}
           {remotePageHandle?.placement?.kind === 'client' ? (
             <ReopenBrowserPageOnServerButton
+              commandOwner={{
+                page: browserTab.id,
+                active: isActive && !markup.isActive,
+                clientPlacement: remotePageHandle.placement
+              }}
               environmentId={remotePageHandle.environmentId}
               worktreeId={worktreeId}
               lastCommittedUrl={browserTab.url}

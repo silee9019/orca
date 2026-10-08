@@ -63,6 +63,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     handleOpenReviewInBrowser,
     handleOpenAutomation,
     handleOpenAutomationRun,
+    automationNavigationTarget,
     canUnlinkReview,
     handleUnlinkReview,
     detailsHoverControl,
@@ -148,6 +149,8 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
     : compactCards && (showBranchIdentityHover || hasDetails || hasPorts)
       ? (title: React.ReactElement): React.ReactElement => (
           <WorktreeCardDetailsHover
+            linkedBrowserWorkspaceId={worktree.id}
+            linkedBrowserSurface="card-details"
             issue={metaIssue}
             linearIssue={metaLinearIssue}
             jiraIssue={metaJiraIssue}
@@ -181,6 +184,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
                 : undefined
             }
             onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
+            automationNavigationTarget={automationNavigationTarget}
             onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
             onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
             // Why: compact mode hides the metadata badge row, so title hover carries the review affordance.
@@ -223,6 +227,8 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
   const detailsAndPorts =
     detailsAndPortsContent && !newCardStyle ? (
       <WorktreeCardDetailsHover
+        linkedBrowserWorkspaceId={worktree.id}
+        linkedBrowserSurface="card-title"
         issue={metaIssue}
         linearIssue={metaLinearIssue}
         jiraIssue={metaJiraIssue}
@@ -245,6 +251,7 @@ export function buildWorktreeCardPresentation(card: WorktreeCardController) {
           metaReview?.url && metaReview.provider === 'github' ? handleOpenReviewInOrca : undefined
         }
         onOpenReviewInBrowser={metaReview?.url ? handleOpenReviewInBrowser : undefined}
+        automationNavigationTarget={automationNavigationTarget}
         onOpenAutomation={affiliateListMode ? undefined : handleOpenAutomation}
         onOpenAutomationRun={affiliateListMode ? undefined : handleOpenAutomationRun}
         onUnlinkReview={!affiliateListMode && canUnlinkReview ? handleUnlinkReview : undefined}

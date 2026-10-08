@@ -1,3 +1,6 @@
+import { useEffect, useRef } from 'react'
+import type { EmulatorSkillActions } from '@/runtime/emulator-settings-viewer'
+import { syncSurfacesAfterAgentSkillRecheck } from './agent-skill-recheck-surface-sync'
 import { Import } from 'lucide-react'
 import {
   ORCA_CLI_SKILL_INSTALL_COMMAND,
@@ -18,9 +21,54 @@ const EMULATOR_CLI_COMMANDS = [
   'orca emulator type "hello" --json'
 ] as const
 
-export function MobileEmulatorAgentControlRow(): React.JSX.Element {
+export function MobileEmulatorAgentControlRow({
+  registerSkillActions
+}: {
+  registerSkillActions?: (actions: EmulatorSkillActions) => () => void
+} = {}): React.JSX.Element {
   const setup = useMobileEmulatorAgentSetupState(true)
+  const busy = useRef(false)
+  const committed = useRef(setup)
+  useEffect(() => {
+    committed.current = setup
+  })
+  const refreshCliSkill = async (): Promise<boolean | null> => {
+    if (busy.current || committed.current.cliSkillLoading) {
+      return null
+    }
+    busy.current = true
+    try {
+      return await committed.current.refreshCliSkill()
+    } catch {
+      return null
+    } finally {
+      busy.current = false
+    }
+  }
+  const refresh = useRef(refreshCliSkill)
+  useEffect(() => {
+    refresh.current = refreshCliSkill
+  })
   const activeSkillRuntime = useActiveProjectSkillRuntime()
+  useEffect(
+    () =>
+      registerSkillActions?.({
+        refresh: async () => {
+          const result = await refresh.current()
+          if (result !== null) {
+            syncSurfacesAfterAgentSkillRecheck(
+              activeSkillRuntime.canUseLocalSkillFreshness ? ORCA_CLI_SKILL_NAME : undefined
+            )
+          }
+          return result
+        },
+        matches: (installed) =>
+          !committed.current.cliSkillLoading &&
+          committed.current.cliSkillError === null &&
+          committed.current.cliSkillInstalled === installed
+      }),
+    [registerSkillActions, activeSkillRuntime.canUseLocalSkillFreshness]
+  )
   // Why: skill detection here scans the local host only, so keep building host
   // commands; routing them to a WSL runtime would install where we never look.
   const cliSkillInstallCommand = buildSkillCommandForRuntime(ORCA_CLI_SKILL_INSTALL_COMMAND)
@@ -66,7 +114,7 @@ export function MobileEmulatorAgentControlRow(): React.JSX.Element {
             installed={setup.cliSkillInstalled}
             loading={setup.cliSkillLoading}
             error={setup.cliSkillError}
-            onRecheck={setup.refreshCliSkill}
+            onRecheck={refreshCliSkill}
             freshnessSkillName={
               activeSkillRuntime.canUseLocalSkillFreshness ? ORCA_CLI_SKILL_NAME : undefined
             }

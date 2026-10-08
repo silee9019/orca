@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import type { RuntimeTransportMetadata } from '../../../shared/runtime-bootstrap'
 import { watchRuntimeMetadataOwnership } from '../runtime-metadata-ownership-watch'
 import type { RpcTransport } from '../rpc/transport'
@@ -45,9 +46,27 @@ export class RuntimeRpcLifecycle extends RuntimeRpcWebSocketDispatch {
 
     // Why: the `.catch` guarantees reply() always fires so a throw can't strand the client or leak the AbortController.
     socketTransport.onMessage((msg, reply, context) => {
+      const parsed = this.parseAndAuth(msg)
+      if (
+        !('error' in parsed) &&
+        parsed.request.method === 'runtime.clientEvents.subscribe' &&
+        context?.clientEventStream
+      ) {
+        const stream = context.clientEventStream
+        context.startKeepalive()
+        void this.dispatcher
+          .dispatchStreaming(parsed.request, stream.emit, {
+            connectionId: `local-client-events-${randomUUID()}`,
+            signal: context.signal
+          })
+          .finally(stream.finish)
+        return
+      }
       void this.handleMessage(msg, context)
         .then((response) => {
-          reply(JSON.stringify(response))
+          if (response !== undefined) {
+            reply(JSON.stringify(response))
+          }
         })
         .catch((error) => {
           const message = error instanceof Error ? error.message : String(error)

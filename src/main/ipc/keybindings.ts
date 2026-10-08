@@ -1,6 +1,7 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import type { KeybindingActionId, KeybindingFileSnapshot } from '../../shared/keybindings'
 import type { KeybindingService } from '../keybindings/keybinding-service'
+import { createKeybindingFileOperations } from '../keybindings/keybinding-file-operations'
 import { rebuildAppMenu } from '../menu/register-app-menu'
 
 export function broadcastKeybindingsChanged(snapshot: KeybindingFileSnapshot): void {
@@ -16,14 +17,17 @@ export function registerKeybindingHandlers(
   service: KeybindingService,
   onChanged?: () => void
 ): void {
+  const files = createKeybindingFileOperations(service, {
+    onChanged: (snapshot) => {
+      broadcastKeybindingsChanged(snapshot)
+      onChanged?.()
+    },
+    openPath: (path) => shell.openPath(path),
+    showItemInFolder: (path) => shell.showItemInFolder(path)
+  })
   ipcMain.handle('keybindings:get', () => service.getSnapshot())
 
-  ipcMain.handle('keybindings:ensureFile', () => {
-    const snapshot = service.ensureFile()
-    broadcastKeybindingsChanged(snapshot)
-    onChanged?.()
-    return snapshot
-  })
+  ipcMain.handle('keybindings:ensureFile', () => files.ensureFile())
 
   ipcMain.handle(
     'keybindings:setAction',
@@ -42,18 +46,6 @@ export function registerKeybindingHandlers(
     return snapshot
   })
 
-  ipcMain.handle('keybindings:openFile', async () => {
-    const snapshot = service.ensureFile()
-    const error = await shell.openPath(snapshot.path)
-    if (error) {
-      throw new Error(error)
-    }
-    return snapshot
-  })
-
-  ipcMain.handle('keybindings:revealFile', () => {
-    const snapshot = service.ensureFile()
-    shell.showItemInFolder(snapshot.path)
-    return snapshot
-  })
+  ipcMain.handle('keybindings:openFile', () => files.openFile())
+  ipcMain.handle('keybindings:revealFile', () => files.revealFile())
 }

@@ -23,6 +23,8 @@ export function buildTerminalCreateWindow(args: {
     newTerminalTabListenerRef
   } = args
   return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     dispatchEvent,
     api: {
       repos: { onChanged: () => () => {} },

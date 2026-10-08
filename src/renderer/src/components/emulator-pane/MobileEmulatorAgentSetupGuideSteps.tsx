@@ -9,11 +9,13 @@ import { translate } from '@/i18n/i18n'
 type MobileEmulatorAgentSetupGuideStepsProps = {
   setup: ReturnType<typeof useMobileEmulatorAgentSetupState>
   worktreeId: string
+  recheck: () => Promise<object | null>
 }
 
 export function MobileEmulatorAgentSetupGuideSteps({
   setup,
-  worktreeId
+  worktreeId,
+  recheck
 }: MobileEmulatorAgentSetupGuideStepsProps): React.JSX.Element {
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
   const activeSkillRuntime = useActiveProjectSkillRuntime()
@@ -62,8 +64,7 @@ export function MobileEmulatorAgentSetupGuideSteps({
           recordFeatureInteraction('mobile-emulator-agent-setup')
         }}
         onRecheck={() => {
-          recordFeatureInteraction('mobile-emulator-agent-setup')
-          void setup.recheckSetup()
+          void recheck()
         }}
       />
     </div>

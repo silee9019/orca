@@ -26,6 +26,8 @@ vi.mock('@/store', () => ({
   }
 }))
 
+vi.mock('./use-floating-browser-request', () => ({ useFloatingBrowserRequest: () => {} }))
+
 vi.mock('@/lib/focus-terminal-tab-surface', () => ({ focusTerminalTabSurface }))
 
 createStoreCascadesMockApi()
@@ -60,6 +62,7 @@ describe('floating "+" New Terminal', () => {
       activateTab: seeded.activateTab,
       setActiveTab: seeded.setActiveTab,
       createBrowserTab: seeded.createBrowserTab,
+      browserTabs: [],
       browserDefaultUrl: seeded.browserDefaultUrl,
       openFile: seeded.openFile,
       activeGroup: floatingGroup,

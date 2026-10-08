@@ -1,4 +1,5 @@
 import React from 'react'
+import { useLinkedBrowserRequest } from './use-linked-browser-request'
 import { Badge } from '@/components/ui/badge'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import { ExternalLink, MonitorUp, Pencil, StickyNote } from 'lucide-react'
@@ -53,6 +54,8 @@ function hasComment(comment: string | null): boolean {
 }
 
 export function WorktreeCardDetailsHover({
+  linkedBrowserWorkspaceId,
+  linkedBrowserSurface,
   issue,
   linearIssue,
   jiraIssue,
@@ -80,6 +83,7 @@ export function WorktreeCardDetailsHover({
   onUnlinkReview,
   onOpenAutomation,
   onOpenAutomationRun,
+  automationNavigationTarget,
   hoverControl
 }: WorktreeCardDetailsHoverProps): React.JSX.Element {
   const internalHoverControl = useWorktreeCardDetailsHoverControl()
@@ -92,6 +96,16 @@ export function WorktreeCardDetailsHover({
     handleReviewMenuOpenChange,
     closeHover
   } = hoverControl ?? internalHoverControl
+  useLinkedBrowserRequest({
+    workspaceId: linkedBrowserWorkspaceId,
+    surface: linkedBrowserSurface,
+    open: hoverOpen,
+    issue,
+    review,
+    closeHover,
+    openIssue: onOpenIssueInBrowser,
+    openReview: onOpenReviewInBrowser
+  })
   const [workspaceTitleEditing, setWorkspaceTitleEditing] = React.useState(false)
   const pendingWorkspaceTitleCloseRef = React.useRef(false)
   const handleWorkspaceTitleEditingChange = React.useCallback(
@@ -122,6 +136,20 @@ export function WorktreeCardDetailsHover({
       handler?.(event)
     },
     [closeHover]
+  )
+  const dismissAndOpenAutomation = React.useCallback(
+    (event?: React.MouseEvent) => {
+      closeHover()
+      onOpenAutomation?.(event)
+    },
+    [closeHover, onOpenAutomation]
+  )
+  const dismissAndOpenAutomationRun = React.useCallback(
+    (event?: React.MouseEvent) => {
+      closeHover()
+      onOpenAutomationRun?.(event)
+    },
+    [closeHover, onOpenAutomationRun]
   )
   const copyLinkedWorkItemLink = React.useCallback(async (url: string, label: string) => {
     try {
@@ -334,9 +362,12 @@ export function WorktreeCardDetailsHover({
           {automationProvenance && (
             <WorktreeCardAutomationDetailSection
               provenance={automationProvenance}
-              onOpenAutomation={onOpenAutomation ? dismissAndRun(onOpenAutomation) : undefined}
-              onOpenAutomationRun={
-                onOpenAutomationRun ? dismissAndRun(onOpenAutomationRun) : undefined
+              automationNavigationTarget={automationNavigationTarget}
+              onOpenAutomation={onOpenAutomation ? dismissAndOpenAutomation : undefined}
+              onOpenAutomationRun={onOpenAutomationRun ? dismissAndOpenAutomationRun : undefined}
+              onNavigateAutomation={onOpenAutomation ? dismissAndOpenAutomation : undefined}
+              onNavigateAutomationRun={
+                onOpenAutomationRun ? dismissAndOpenAutomationRun : undefined
               }
             />
           )}

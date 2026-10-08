@@ -31,6 +31,8 @@ export default function FeatureWallModal(): JSX.Element | null {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
+        data-feature-tour-dialog="true"
+        data-feature-tour-source={source}
         className="grid h-[min(780px,calc(100vh-2rem))] w-[min(1240px,calc(100vw-2rem))] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 p-0 sm:max-w-none"
         tabIndex={-1}
       >

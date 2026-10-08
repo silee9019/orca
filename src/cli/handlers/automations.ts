@@ -1,3 +1,4 @@
+import { SetupDecision } from '../../shared/rpc-contract/automation-params'
 import type {
   Automation,
   AutomationCreateInput,
@@ -158,6 +159,17 @@ function buildAutomationRunContextFromSetup(setup: ProjectHostSetup): WorkspaceR
   return runContext
 }
 
+function getSetupDecision(flags: Map<string, string | boolean>) {
+  const parsed = SetupDecision.safeParse(flags.get('setup-decision'))
+  if (!parsed.success) {
+    throw new RuntimeClientError(
+      'invalid_argument',
+      '--setup-decision must be inherit, run, or skip.'
+    )
+  }
+  return parsed.data
+}
+
 export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
   'automations list': async ({ client, json }) => {
     const result = await client.call<{ automations: Automation[] }>('automation.list')
@@ -170,6 +182,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
     printResult(result, json, formatAutomationShow)
   },
   'automations create': async ({ flags, client, cwd, json }) => {
+    const setupDecision = getSetupDecision(flags)
     const schedule = getScheduleFlag(flags, true)
     if (!schedule) {
       throw new RuntimeClientError('invalid_argument', 'Missing required --trigger')
@@ -190,6 +203,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       workspace: target.workspace,
       workspaceMode,
       baseBranch: getOptionalStringFlag(flags, 'base-branch'),
+      ...(setupDecision !== undefined ? { setupDecision } : {}),
       reuseSession: getReuseSessionFlag(flags),
       timezone: getOptionalStringFlag(flags, 'timezone'),
       enabled: getEnabledFlag(flags),
@@ -204,6 +218,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
     printResult(result, json, formatAutomationShow)
   },
   'automations edit': async ({ flags, client, cwd, json }) => {
+    const setupDecision = getSetupDecision(flags)
     const target = await getExplicitTarget(flags, cwd, client)
     const schedule = getScheduleFlag(flags, false)
     const sourceContext = getSourceContextFlag(flags)
@@ -220,6 +235,7 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
       workspace: target.workspace,
       workspaceMode: getWorkspaceModeFlag(flags),
       baseBranch: getOptionalStringFlag(flags, 'base-branch'),
+      ...(setupDecision !== undefined ? { setupDecision } : {}),
       reuseSession: getReuseSessionFlag(flags),
       timezone: getOptionalStringFlag(flags, 'timezone'),
       enabled: getEnabledFlag(flags),
@@ -256,9 +272,21 @@ export const AUTOMATION_HANDLERS: Record<string, CommandHandler> = {
     printResult(result, json, formatAutomationRun)
   },
   'automations runs': async ({ flags, client, json }) => {
-    const result = await client.call<{ runs: AutomationRun[] }>('automation.runs', {
-      automationId: getOptionalStringFlag(flags, 'id')
+    const limit = getOptionalPositiveIntegerFlag(flags, 'limit')
+    const cursor = getOptionalStringFlag(flags, 'cursor')
+    const bounded = limit !== undefined || cursor !== undefined
+    const result = await client.call<{ runs: AutomationRun[]; nextCursor?: string }>(
+      bounded ? 'automation.runsPage' : 'automation.runs',
+      {
+        automationId: getOptionalStringFlag(flags, 'id'),
+        ...(bounded ? { limit: limit ?? 100, ...(cursor ? { cursor } : {}) } : {})
+      }
+    )
+    printResult(result, json, (page) => {
+      const rows = formatAutomationRuns(page)
+      return page.nextCursor
+        ? `${rows}\nMore runs: --limit ${limit ?? 100} --cursor ${page.nextCursor}`
+        : rows
     })
-    printResult(result, json, formatAutomationRuns)
   }
 }

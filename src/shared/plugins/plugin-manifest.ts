@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { pluginCommandInputSchema } from './plugin-command-input'
 import { pluginCapabilitySchema } from './plugin-capabilities'
 import {
   PLUGIN_AGENT_PROFILE_LIMIT,
@@ -55,7 +56,8 @@ const commandContributionSchema = z.object({
   title: z.string().min(1).max(256),
   context: z.enum(['global', 'worktree']).optional(),
   /** Built-in action aliases remain declarative and do not activate a worker. */
-  action: pluginCommandIdSchema.optional()
+  action: pluginCommandIdSchema.optional(),
+  input: pluginCommandInputSchema.optional()
 })
 
 /** Domain events a plugin can subscribe to in v0. Closed set: server-side

@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import { publishLegacyWorkerRecovery } from './legacy-worker-recovery-observers'
 import { OrcaRuntimeWithTerminalDrivers } from './orca-runtime-terminal-drivers'
 import { ALL_EXECUTION_HOSTS_SCOPE, type ExecutionHostScope } from '../../shared/execution-host'
 import { RuntimePreservedBranchCleanup } from './runtime-preserved-branch-cleanup'
@@ -185,7 +186,7 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
     reconcileMissing: (candidate) =>
       this.legacyWorkerRecoveryPersistence.reconcileMissing(candidate),
     notifyResolution: (candidate, resolution) =>
-      this.notifier?.resolveLegacyWorkerTerminalRecovery?.(candidate.paneKey, resolution),
+      publishLegacyWorkerRecovery(this, this.notifier, { paneKey: candidate.paneKey, resolution }),
     canRecoverPersistentLocalPtys: () => this.canRecoverPersistentLocalPtysFn(),
     isTerminalProvenAbsent: (candidate) => this.isLeafPtyProvenAbsent(candidate.ptyId),
     hasRequestedReleases: () =>
@@ -294,7 +295,8 @@ export class OrcaRuntimeWithPreservedBranchCleanup extends OrcaRuntimeWithTermin
 
   protected readonly repositorySparsePresets = new RuntimeRepositorySparsePresets({
     getStore: () => this.store,
-    resolveRepo: (selector) => this.resolveRepoSelector(selector)
+    resolveRepo: (selector) => this.resolveRepoSelector(selector),
+    changed: (repoId) => this.notifier?.sparsePresetsChanged?.(repoId)
   })
 
   protected readonly repositoryRefQueries = new RuntimeRepositoryRefQueries({

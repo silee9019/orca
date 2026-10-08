@@ -10,7 +10,7 @@ import {
   resolveUserSshConfigHost
 } from '../ssh/ssh-config-host-picker'
 import { rotateSshProviderAuthority } from '../ssh/ssh-provider-authority'
-import { getSshTargetRegistryStore } from '../ssh/ssh-target-registry'
+import { getSshTargetRegistryStore, setSshTargetManagement } from '../ssh/ssh-target-registry'
 import { getCurrentMainWindow } from './ssh-ipc-context'
 import { removeRegisteredSshTarget } from './ssh-session-teardown'
 
@@ -47,6 +47,14 @@ function omitRendererSshTargetGeneration<
 }
 
 export function registerSshTargetCrudHandlers(): void {
+  setSshTargetManagement({
+    addTarget: addManagedSshTarget,
+    updateTarget: updateManagedSshTarget,
+    removeTarget: removeManagedSshTarget,
+    importConfig: importManagedSshConfig,
+    listConfigHosts: listManagedSshConfigHosts,
+    resolveConfigHost: resolveManagedSshConfigHost
+  })
   ipcMain.handle('ssh:listTargets', () => {
     return getSshTargetRegistryStore()!.listTargets()
   })
@@ -55,47 +63,67 @@ export function registerSshTargetCrudHandlers(): void {
     return getSshTargetRegistryStore()!.listRemovedTargetLabels()
   })
 
-  ipcMain.handle('ssh:addTarget', (_event, args: { target: SshTargetCreateInput }) => {
-    const target = getSshTargetRegistryStore()!.addTarget(
-      omitRendererSshTargetGeneration(args.target)
-    )
-    // Why: re-adding a removed host can re-adopt orphaned workspaces; refresh the renderer's repo list so they move back onto the live host.
-    const repoReadoptions = takeRepoReadoptions()
-    return { target, repoReadoptions }
-  })
+  ipcMain.handle('ssh:addTarget', (_event, args: { target: SshTargetCreateInput }) =>
+    addManagedSshTarget(args)
+  )
 
   ipcMain.handle(
     'ssh:updateTarget',
-    (_event, args: { id: string; updates: SshTargetUpdateInput }) => {
-      return getSshTargetRegistryStore()!.updateTarget(
-        args.id,
-        omitRendererSshTargetGeneration(args.updates)
-      )
-    }
+    (_event, args: { id: string; updates: SshTargetUpdateInput }) => updateManagedSshTarget(args)
   )
 
-  ipcMain.handle('ssh:removeTarget', async (_event, args: { id: string }) => {
-    await removeRegisteredSshTarget(args.id)
-  })
+  ipcMain.handle('ssh:removeTarget', (_event, args: { id: string }) => removeManagedSshTarget(args))
 
-  ipcMain.handle('ssh:importConfig', (_event, args?: { reAdopt?: boolean }) => {
-    const targets = getSshTargetRegistryStore()!.importFromSshConfig(args)
-    const repoReadoptions = takeRepoReadoptions()
-    return { targets, repoReadoptions }
-  })
+  ipcMain.handle('ssh:importConfig', (_event, args?: { reAdopt?: boolean }) =>
+    importManagedSshConfig(args)
+  )
 
   // Why: add-host dialog picks one config entry to prefill the form; does not
   // mutate the target store (bulk sync stays on Settings → Import).
-  ipcMain.handle('ssh:listConfigHosts', (_event, args?: SshConfigHostListArgs) => {
-    return listUserSshConfigHostSummaries(
-      getSshTargetRegistryStore()!.listTargets(),
-      args?.query,
-      getSshTargetRegistryStore()!.listSuppressedSshConfigAliases(),
-      { refresh: args?.refresh === true }
-    )
-  })
+  ipcMain.handle('ssh:listConfigHosts', (_event, args?: SshConfigHostListArgs) =>
+    listManagedSshConfigHosts(args)
+  )
 
-  ipcMain.handle('ssh:resolveConfigHost', (_event, args: { alias: string }) => {
-    return resolveUserSshConfigHost(args.alias)
-  })
+  ipcMain.handle('ssh:resolveConfigHost', (_event, args: { alias: string }) =>
+    resolveManagedSshConfigHost(args)
+  )
+}
+
+export function addManagedSshTarget(args: { target: SshTargetCreateInput }) {
+  const target = getSshTargetRegistryStore()!.addTarget(
+    omitRendererSshTargetGeneration(args.target)
+  )
+  // Why: re-adding a removed host can re-adopt orphaned workspaces; refresh the renderer's repo list so they move back onto the live host.
+  const repoReadoptions = takeRepoReadoptions()
+  return { target, repoReadoptions }
+}
+
+export function updateManagedSshTarget(args: { id: string; updates: SshTargetUpdateInput }) {
+  return getSshTargetRegistryStore()!.updateTarget(
+    args.id,
+    omitRendererSshTargetGeneration(args.updates)
+  )
+}
+
+export async function removeManagedSshTarget(args: { id: string }) {
+  await removeRegisteredSshTarget(args.id)
+}
+
+export function importManagedSshConfig(args?: { reAdopt?: boolean }) {
+  const targets = getSshTargetRegistryStore()!.importFromSshConfig(args)
+  const repoReadoptions = takeRepoReadoptions()
+  return { targets, repoReadoptions }
+}
+
+export function listManagedSshConfigHosts(args?: SshConfigHostListArgs) {
+  return listUserSshConfigHostSummaries(
+    getSshTargetRegistryStore()!.listTargets(),
+    args?.query,
+    getSshTargetRegistryStore()!.listSuppressedSshConfigAliases(),
+    { refresh: args?.refresh === true }
+  )
+}
+
+export function resolveManagedSshConfigHost(args: { alias: string }) {
+  return resolveUserSshConfigHost(args.alias)
 }

@@ -1,3 +1,4 @@
+import { useMobileConnectionsViewerController } from '@/hooks/useMobileConnectionsViewerController'
 import { translate } from '@/i18n/i18n'
 import type { MobileNetworkInterface } from '../settings/mobile-network-interface-selection'
 import {
@@ -16,9 +17,10 @@ import type { MobilePairingConnectionMode } from '../../../../shared/mobile-pair
 import type { MobileRelayMintFailure } from '../../../../shared/mobile-relay-mint-failure'
 
 type MobilePageContentProps = {
-  closeMobilePage: () => void
-  copyInstallUrl: () => void
-  copyPairingCode: () => void
+  closeMobilePage: () => boolean | void
+  readPageOpen?: () => boolean
+  copyInstallUrl: () => Promise<boolean> | void
+  copyPairingCode: () => Promise<boolean> | void
   devices: readonly PairedDevice[]
   enterFlow: () => void
   generatePairing: (rotate: boolean) => void
@@ -34,10 +36,10 @@ type MobilePageContentProps = {
   installQrUrl: string | null
   iosChannel: IosChannel
   setIosChannel: (channel: IosChannel) => void
-  loadNetworkInterfaces: () => void
+  loadNetworkInterfaces: () => Promise<readonly MobileNetworkInterface[] | null> | void
   networkInterfaces: MobileNetworkInterface[]
-  openAndroidInstallGuide: () => void
-  openInstallUrl: () => void
+  openAndroidInstallGuide: () => Promise<boolean> | void
+  openInstallUrl: () => Promise<boolean> | void
   pairAnotherDevice: () => void
   pairLoading: boolean
   connectionMode: MobilePairingConnectionMode
@@ -49,10 +51,10 @@ type MobilePageContentProps = {
   relayMintFailure: MobileRelayMintFailure | null
   onUseLan: () => void
   onRetryRelay: () => void
-  onCopyRelayDiagnostics: () => void
+  onCopyRelayDiagnostics: () => Promise<boolean> | void
   platform: Platform
   refreshingNetworkInterfaces: boolean
-  revokeDevice: (id: string) => void
+  revokeDevice: (id: string) => Promise<boolean> | void
   revokingDeviceIds: readonly string[]
   selectedAddress: string | undefined
   setPlatform: (platform: Platform) => void
@@ -60,11 +62,16 @@ type MobilePageContentProps = {
   showPairedDevices: (deviceCount: number) => void
   stage: MobilePageStage | null
   stepIdx: StepIndex
-  toggleMobileSidebarButton: () => void
+  toggleMobileSidebarButton: () => Promise<{
+    applied: boolean
+    persisted: boolean
+    value: boolean
+  }> | void
 }
 
 export function MobilePageContent({
   closeMobilePage,
+  readPageOpen,
   copyInstallUrl,
   copyPairingCode,
   devices,
@@ -110,6 +117,55 @@ export function MobilePageContent({
   stepIdx,
   toggleMobileSidebarButton
 }: MobilePageContentProps): React.JSX.Element {
+  useMobileConnectionsViewerController({
+    closePage: closeMobilePage,
+    pageOpen: readPageOpen,
+    toggleSidebar: async () => toggleMobileSidebarButton(),
+    sidebarShown: () => showMobileButton,
+    refreshNetwork: async () => loadNetworkInterfaces(),
+    networkInterfaces: () => networkInterfaces,
+    copyDiagnostics: async () => onCopyRelayDiagnostics(),
+    hasDevice: (id) => devices.some((device) => device.deviceId === id),
+    isRevokingDevice: (id) => revokingDeviceIds.includes(id),
+    revokeDevice: async (id) => revokeDevice(id),
+    copyPairing: async () => copyPairingCode(),
+    copyInstall: async () => copyInstallUrl(),
+    openInstall: async () => openInstallUrl(),
+    openAndroidGuide: async () => openAndroidInstallGuide(),
+    read: () => ({
+      pageOpen: readPageOpen?.(),
+      showMobileButton,
+      platform,
+      iosChannel,
+      connectionMode,
+      selectedAddress: selectedAddress ?? null,
+      customAddresses: [...customAddresses],
+      stage,
+      step: stepIdx,
+      pairingAvailable: pairingUrl !== null,
+      pairingLoading: pairLoading,
+      relayFailed: relayMintFailure !== null,
+      deviceCount: devices.length
+    }),
+    pairingIdentity: () => pairingUrl,
+    relayFailureIdentity: () => relayMintFailure,
+    canGeneratePairing: () => canGeneratePairing,
+    setPlatform,
+    setIosChannel,
+    setConnectionMode: handleConnectionModeChange,
+    selectAddress: handleAddressChange,
+    beforeCustomAddressChange,
+    addCustomAddress: onCustomAddressSelect,
+    removeCustomAddress: onCustomAddressRemove,
+    start: enterFlow,
+    back: handleBack,
+    continue: handleContinue,
+    done: showPairedDevices,
+    pairAnother: pairAnotherDevice,
+    useLan: onUseLan,
+    generate: () => generatePairing(true),
+    retryRelay: onRetryRelay
+  })
   return (
     <div className="mobile-page-root scrollbar-sleek">
       <MobilePageToolbar

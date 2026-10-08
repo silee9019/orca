@@ -3,12 +3,19 @@ import { getPtyIpc } from '../../pty-host-bindings'
 import type { OrcaRuntimeService } from '../../../runtime/orca-runtime'
 import { createPtyWriteInput } from './write-input'
 
+import {
+  bindHostViewportClaimOwner,
+  claimHostViewport,
+  writeAfterHostViewportClaim
+} from '../runtime/host-viewport-claims'
+export { writeAfterHostViewportClaim } from '../runtime/host-viewport-claims'
+
 export function installPtyWriteIpcHandlers(deps: {
   mainWindow?: PtyRendererDelivery
   runtime?: OrcaRuntimeService
 }): void {
   const ipcMain = getPtyIpc()
-  const { runtime } = deps
+  const { runtime, mainWindow } = deps
   const {
     writePtyInput,
     writePtyInputAccepted,
@@ -17,27 +24,19 @@ export function installPtyWriteIpcHandlers(deps: {
     isPtyWriteEventFromMainWindow
   } = createPtyWriteInput(deps)
 
-  const hostViewportClaimTails = new Map<string, Promise<boolean>>()
+  bindHostViewportClaimOwner(deps)
 
   ipcMain.on('pty:write', (event, args: unknown) => {
     if (!isPtyWriteEventFromMainWindow(event) || !isPtyWritePayload(args)) {
       return
     }
-    const claimTail = hostViewportClaimTails.get(args.id)
-    if (claimTail) {
-      void claimTail.then((claimed) => (claimed ? writePtyInput(args) : false))
-      return
-    }
-    writePtyInput(args)
+    void writeAfterHostViewportClaim(args.id, () => writePtyInput(args))
   })
   ipcMain.handle('pty:writeAccepted', (event, args: unknown): boolean | Promise<boolean> => {
     if (!isPtyWriteEventFromMainWindow(event) || !isPtyWritePayload(args)) {
       return false
     }
-    const claimTail = hostViewportClaimTails.get(args.id)
-    return claimTail
-      ? claimTail.then((claimed) => (claimed ? writePtyInputAccepted(args) : false))
-      : writePtyInputAccepted(args)
+    return writeAfterHostViewportClaim(args.id, () => writePtyInputAccepted(args))
   })
 
   ipcMain.removeAllListeners('pty:claimViewport')
@@ -45,25 +44,11 @@ export function installPtyWriteIpcHandlers(deps: {
     if (!isPtyWriteEventFromMainWindow(event) || !runtime || !isPtyViewportClaimPayload(args)) {
       return
     }
-    const prior = hostViewportClaimTails.get(args.id)
-    // Why: two panes can mirror one PTY — never let a later no-op claim replace the in-flight resize that the following host input must await.
-    const claim = (
-      prior
-        ? prior.then(
-            () => runtime.claimRemoteDesktopHost(args.id, args.cols, args.rows),
-            () => runtime.claimRemoteDesktopHost(args.id, args.cols, args.rows)
-          )
-        : runtime.claimRemoteDesktopHost(args.id, args.cols, args.rows)
-    ).catch((error) => {
-      // Why: a failed claim silently discards every gated keystroke for this pane.
+    if (!mainWindow) {
+      return
+    }
+    void claimHostViewport(runtime, mainWindow.webContents.id, args, undefined, (error) => {
       console.error('[pty] remote desktop host claim failed; gated input will be discarded', error)
-      return false
-    })
-    hostViewportClaimTails.set(args.id, claim)
-    void claim.then(() => {
-      if (hostViewportClaimTails.get(args.id) === claim) {
-        hostViewportClaimTails.delete(args.id)
-      }
     })
   })
 }

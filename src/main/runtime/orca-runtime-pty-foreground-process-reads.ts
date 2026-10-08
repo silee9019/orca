@@ -1,4 +1,33 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
+import type { ProjectFilterResult } from '../../shared/project-filter'
+import type { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
+import type { VoiceViewerOperation, VoiceViewerResult } from '../../shared/voice-viewer'
+import type {
+  SearchSettingsViewerCommand,
+  SearchSettingsViewerResult
+} from '../../shared/search-settings-viewer'
+import type { CrashReportCommand } from '../../shared/rpc-contract/crash-report-params'
+import type { CrashReportResult } from '../../shared/crash-report-command'
+import type { SetupGuideCommand } from '../../shared/rpc-contract/setup-guide-params'
+import type { SetupGuideResult } from '../../shared/setup-guide-command'
+import type { FeatureTourCommand } from '../../shared/rpc-contract/feature-tour-params'
+import type { FeatureTourResult } from '../../shared/feature-tour-command'
+import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
+import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
+import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
+import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
+import type { StatusBarViewerCommand } from '../../shared/rpc-contract/status-bar-viewer-params'
+import type { CardViewerResult } from '../../shared/card-viewer-command'
+import type { StatusBarViewerResult } from '../../shared/status-bar-viewer-command'
+import type { SettingsViewerCommand } from '../../shared/rpc-contract/settings-viewer-params'
+import type { SidebarViewerCommand } from '../../shared/rpc-contract/sidebar-viewer-params'
+import type { SettingsViewerResult } from '../../shared/settings-viewer-command'
+import type { SidebarViewerResult } from '../../shared/sidebar-viewer-command'
+import type { WorkspaceFilterCommand } from '../../shared/rpc-contract/workspace-filter-params'
+import type { WorkspaceFilterResult } from '../../shared/workspace-filter-command'
 import { OrcaRuntimeWithStateFields } from './orca-runtime-state-fields'
 import {
   persistClientHostedBrowserPages,
@@ -23,6 +52,15 @@ import type { NativeChatSessionOptionSettingsMutation } from '../../shared/nativ
 import type { Automation } from '../../shared/automations-types'
 
 export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithStateFields {
+  async searchSettingsViewer(
+    command: SearchSettingsViewerCommand
+  ): Promise<SearchSettingsViewerResult> {
+    if (!this.notifier?.searchSettingsViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.searchSettingsViewer(command)
+  }
+
   get ptyForegroundProcessReads() {
     return this.ptyForegroundAgent.getReads()
   }
@@ -173,6 +211,94 @@ export class OrcaRuntimeWithPtyForegroundProcessReads extends OrcaRuntimeWithSta
       throw new Error('runtime_unavailable')
     }
     return collectMemorySnapshot(this.store)
+  }
+
+  async projectFilter(command: ProjectFilterOperation): Promise<ProjectFilterResult> {
+    if (!this.notifier?.projectFilter) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.projectFilter(command)
+  }
+
+  async browserViewer(command: BrowserViewerCommand): Promise<BrowserViewerResult> {
+    if (!this.notifier?.browserViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.browserViewer(command)
+  }
+
+  async voiceViewer(command: VoiceViewerOperation): Promise<VoiceViewerResult> {
+    if (!this.notifier?.voiceViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.voiceViewer(command)
+  }
+
+  async crashReportViewer(command: CrashReportCommand): Promise<CrashReportResult> {
+    if (!this.notifier?.crashReportViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.crashReportViewer(command)
+  }
+
+  async setupGuideViewer(command: SetupGuideCommand): Promise<SetupGuideResult> {
+    if (!this.notifier?.setupGuideViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.setupGuideViewer(command)
+  }
+
+  async featureTourViewer(command: FeatureTourCommand): Promise<FeatureTourResult> {
+    if (!this.notifier?.featureTourViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.featureTourViewer(command)
+  }
+
+  async settingsViewer(command: SettingsViewerCommand): Promise<SettingsViewerResult> {
+    if (!this.notifier?.settingsViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.settingsViewer(command)
+  }
+  async sidebarViewer(command: SidebarViewerCommand): Promise<SidebarViewerResult> {
+    if (!this.notifier?.sidebarViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.sidebarViewer(command)
+  }
+  async cardViewer(command: CardViewerCommand): Promise<CardViewerResult> {
+    if (!this.notifier?.cardViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.cardViewer(command)
+  }
+  async statusBarViewer(command: StatusBarViewerCommand): Promise<StatusBarViewerResult> {
+    if (!this.notifier?.statusBarViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.statusBarViewer(command)
+  }
+  async activityViewer(command: ActivityViewerCommand): Promise<ActivityViewerResult> {
+    if (!this.notifier?.activityViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.activityViewer(command)
+  }
+  async workspaceListViewer(
+    command: WorkspaceListViewerCommand
+  ): Promise<WorkspaceListViewerResult> {
+    if (!this.notifier?.workspaceListViewer) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.workspaceListViewer(command)
+  }
+
+  async workspaceFilter(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult> {
+    if (!this.notifier?.workspaceFilter) {
+      throw new Error('renderer_unavailable')
+    }
+    return await this.notifier.workspaceFilter(command)
   }
 
   getUIState(): PersistedUIState {

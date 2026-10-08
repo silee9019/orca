@@ -1,3 +1,4 @@
+import { registerStarNagCliOperations, broadcastStarNagHide } from './cli-operations'
 import { BrowserWindow, ipcMain } from 'electron'
 import { STAR_NAG_INITIAL_THRESHOLD } from '../../shared/constants'
 import { checkOrcaStarred } from '../github/client'
@@ -12,14 +13,13 @@ import type {
 import { type StarNagPromptSession, trackStarNagSessionOutcome } from './prompt-session-telemetry'
 import { createStarNagPromptContext } from './prompt-context'
 import { logStarNagConsoleEvent } from './console-events'
-import { StarNagAgentValueMoment, type AgentValueMomentPreparation } from './agent-value-moment'
+import { StarNagAgentValueMoment } from './agent-value-moment'
 import { deferAfterStarNagWebHandoff } from './web-handoff'
 import { runStarNagDirectStarAttempt } from './direct-star-attempt'
 import { handleStarNagOnboardingCompleted } from './onboarding-completed'
 import { ensureStarNagBaseline, shouldShowStarNagThresholdPrompt } from './threshold-trigger'
 
-const STAR_NAG_COOLDOWN_DAYS = 3
-const STAR_NAG_COOLDOWN_MS = STAR_NAG_COOLDOWN_DAYS * 24 * 60 * 60 * 1000
+const STAR_NAG_COOLDOWN = { days: 3, ms: 3 * 24 * 60 * 60 * 1000 }
 type StarNagSurface = 'card' | 'toast'
 
 export class StarNagService {
@@ -75,15 +75,34 @@ export class StarNagService {
   }
 
   registerIpcHandlers(): void {
-    ipcMain.handle('star-nag:dismiss', () => this.dismiss())
+    registerStarNagCliOperations({
+      status: () => ({
+        visible: this.promptVisible,
+        evaluating: this.evaluating,
+        completed: this.store.getUI().starNagCompleted === true
+      }),
+      dismiss: () => this.defer('dismissed'),
+      later: () => this.defer('later'),
+      disable: () => this.disable(),
+      complete: () => this.markCompleted(),
+      openWeb: () => this.openWeb(),
+      star: () => this.starOrcaFromNag(),
+      show: (viewer: BrowserWindow) => {
+        if (this.evaluating) {
+          throw new Error('Star prompt evaluation is in progress')
+        }
+        return this.promptVisible ? false : this.broadcastShow('force_show', 'gh', 'card', viewer)
+      }
+    })
+    ipcMain.handle('star-nag:dismiss', () => this.defer('dismissed'))
     ipcMain.handle('star-nag:later', () => this.defer('later'))
     ipcMain.handle('star-nag:complete', () => this.markCompleted())
     ipcMain.handle('star-nag:disable', () => this.disable())
     ipcMain.handle('star-nag:openWeb', () => this.openWeb())
     ipcMain.handle('star-nag:starOrca', () => this.starOrcaFromNag())
     ipcMain.handle('star-nag:forceShow', () => this.forceShow())
-    ipcMain.handle('star-nag:agentValueMoment', () => this.prepareAgentValueMoment())
-    ipcMain.handle('star-nag:showAgentValueMoment', () => this.showPreparedAgentValueMoment())
+    ipcMain.handle('star-nag:agentValueMoment', () => this.agentValueMoment.prepare())
+    ipcMain.handle('star-nag:showAgentValueMoment', () => this.agentValueMoment.showPrepared())
     ipcMain.handle('star-nag:onboardingCompleted', () => this.onboardingCompleted())
   }
 
@@ -172,9 +191,10 @@ export class StarNagService {
   private broadcastShow(
     source: StarNagPromptSource,
     mode: StarNagPromptMode,
-    surface: StarNagSurface = 'card'
+    surface: StarNagSurface = 'card',
+    viewer?: BrowserWindow
   ): boolean {
-    const win = BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
+    const win = viewer ?? BrowserWindow.getAllWindows().find((w) => !w.isDestroyed())
     if (!win) {
       this.promptVisible = false
       this.promptSession = null
@@ -187,14 +207,6 @@ export class StarNagService {
     this.trackOutcome('shown')
     logStarNagConsoleEvent(this.store, this.stats, 'star_nag_shown', source)
     return true
-  }
-
-  private broadcastHide(): void {
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (!win.isDestroyed()) {
-        win.webContents.send('star-nag:hide')
-      }
-    }
   }
 
   private trackOutcome(
@@ -217,16 +229,6 @@ export class StarNagService {
 
   // ── Public actions (invoked from IPC) ─────────────────────────────
 
-  private async prepareAgentValueMoment(): Promise<AgentValueMomentPreparation> {
-    return this.agentValueMoment.prepare()
-  }
-
-  private showPreparedAgentValueMoment(): void {
-    // Why: renderer re-confirms "not typing / no active agent" after the slow
-    // gh check before invoking this show step.
-    this.agentValueMoment.showPrepared()
-  }
-
   private async onboardingCompleted(): Promise<void> {
     await handleStarNagOnboardingCompleted({
       store: this.store,
@@ -247,16 +249,7 @@ export class StarNagService {
     this.promptVisible = false
     this.promptSession = null
     this.agentValueMoment.clear()
-    this.broadcastHide()
-  }
-
-  /**
-   * User closed the notification without starring → defer threshold prompts
-   * for a substantial cross-version cooldown. We still maintain the legacy
-   * threshold fields so historical dashboards and old builds remain coherent.
-   */
-  private dismiss(): void {
-    this.defer('dismissed')
+    broadcastStarNagHide()
   }
 
   private defer(outcome: Extract<StarNagOutcome, 'dismissed' | 'later'>): void {
@@ -268,7 +261,7 @@ export class StarNagService {
     const ui = this.store.getUI()
     const threshold = ui.starNagNextThreshold ?? STAR_NAG_INITIAL_THRESHOLD
     const nextThreshold = threshold * 2
-    this.trackOutcome(outcome, { nextThreshold, cooldownDays: STAR_NAG_COOLDOWN_DAYS })
+    this.trackOutcome(outcome, { nextThreshold, cooldownDays: STAR_NAG_COOLDOWN.days })
     logStarNagConsoleEvent(
       this.store,
       this.stats,
@@ -279,7 +272,7 @@ export class StarNagService {
     this.store.updateUI({
       starNagNextThreshold: nextThreshold,
       starNagBaselineAgents: this.stats.getTotalAgentsSpawned(),
-      starNagDeferredUntil: Date.now() + STAR_NAG_COOLDOWN_MS
+      starNagDeferredUntil: Date.now() + STAR_NAG_COOLDOWN.ms
     })
     this.promptVisible = false
     this.promptSession = null
@@ -299,7 +292,7 @@ export class StarNagService {
     trackStarNagSessionOutcome(session, 'opened_repo', { mode: 'web' })
     // Why: opening GitHub is only a handoff, not verified star success. Keep the
     // ask quiet for the normal cooldown, but do not set starNagCompleted.
-    deferAfterStarNagWebHandoff(this.store, this.stats, STAR_NAG_COOLDOWN_MS)
+    deferAfterStarNagWebHandoff(this.store, this.stats, STAR_NAG_COOLDOWN.ms)
     this.promptVisible = false
     this.promptSession = null
   }

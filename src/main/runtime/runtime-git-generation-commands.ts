@@ -122,9 +122,10 @@ export class RuntimeGitGenerationCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const route = runtimeGitRouteForTarget(target)
     if (route.kind === 'ssh') {
-      // Cancelling an unreachable host is a no-op, not a local cancel: the local registry is keyed
-      // by path and would abort an unrelated generation running here for the same path.
-      await route.provider?.cancelGenerateCommitMessage(target.worktree.path, 'commit-message')
+      if (!route.provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      await route.provider.cancelGenerateCommitMessage(target.worktree.path, 'commit-message')
       return { ok: true }
     }
     cancelGenerateCommitMessageLocal(target.worktree.path)
@@ -242,7 +243,10 @@ export class RuntimeGitGenerationCommands {
     const target = await this.host.resolveRuntimeGitTarget(worktreeSelector)
     const route = runtimeGitRouteForTarget(target)
     if (route.kind === 'ssh') {
-      await route.provider?.cancelGenerateCommitMessage(target.worktree.path, 'pull-request-fields')
+      if (!route.provider) {
+        throw new Error(SSH_GIT_PROVIDER_UNAVAILABLE_MESSAGE)
+      }
+      await route.provider.cancelGenerateCommitMessage(target.worktree.path, 'pull-request-fields')
       return { ok: true }
     }
     cancelGeneratePullRequestFieldsLocal(target.worktree.path)

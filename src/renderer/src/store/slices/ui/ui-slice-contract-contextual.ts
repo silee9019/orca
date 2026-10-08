@@ -103,7 +103,10 @@ export type UISliceContextual = {
   setupGuideBrowserMilestoneLegacyComplete: boolean
   markSetupGuideBrowserMilestoneMigrated: (legacyComplete: boolean) => void
   browserImportHintHidden: boolean
-  setBrowserImportHintHidden: (hidden: boolean) => void
+  setBrowserImportHintHidden: (
+    hidden: boolean,
+    acknowledged?: (saved: boolean, isCurrent: () => boolean) => void
+  ) => void
   mobileEmulatorTabIntroDismissed: boolean
   dismissMobileEmulatorTabIntro: () => void
   mobileEmulatorAgentSetupDismissed: boolean

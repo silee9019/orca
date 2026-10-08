@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
 import { ORCA_BROWSER_BLANK_URL } from '../../../../shared/constants'
 import { normalizeBrowserNavigationUrl } from '../../../../shared/browser-url'
 import { Button } from '../ui/button'
@@ -8,16 +9,44 @@ import { SearchableSetting } from './SearchableSetting'
 import { translate } from '@/i18n/i18n'
 
 type BrowserHomePageSettingProps = {
+  hostId?: string
+  saved?: boolean
   value: string
   onChange: (value: string) => void
   onSave: (url: string | null) => void
 }
 
 export function BrowserHomePageSetting({
+  hostId,
+  saved = false,
   value,
   onChange,
   onSave
 }: BrowserHomePageSettingProps): React.JSX.Element {
+  const saveHomePage = (): boolean => {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      onSave(null)
+      return true
+    }
+    const normalized = normalizeBrowserNavigationUrl(trimmed)
+    if (normalized && normalized !== ORCA_BROWSER_BLANK_URL) {
+      onSave(normalized)
+      toast.success(
+        translate('auto.components.settings.BrowserHomePageSetting.c6cbd1c105', 'Home page saved.')
+      )
+    }
+    return !!normalized && normalized !== ORCA_BROWSER_BLANK_URL
+  }
+  useBrowserSettingsRequest({
+    accepts: (command) => command.action === 'homepage-save',
+    apply: () => {
+      if (!saveHomePage()) {
+        throw new Error('invalid_home_page')
+      }
+    },
+    read: () => ({ hostId, homePageDraftPresent: value.length > 0, homePageDraftSaved: saved })
+  })
   return (
     <SearchableSetting
       title={translate(
@@ -49,21 +78,7 @@ export function BrowserHomePageSetting({
         className="flex shrink-0 items-center gap-2"
         onSubmit={(event) => {
           event.preventDefault()
-          const trimmed = value.trim()
-          if (!trimmed) {
-            onSave(null)
-            return
-          }
-          const normalized = normalizeBrowserNavigationUrl(trimmed)
-          if (normalized && normalized !== ORCA_BROWSER_BLANK_URL) {
-            onSave(normalized)
-            toast.success(
-              translate(
-                'auto.components.settings.BrowserHomePageSetting.c6cbd1c105',
-                'Home page saved.'
-              )
-            )
-          }
+          saveHomePage()
         }}
       >
         <Input

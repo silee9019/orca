@@ -50,7 +50,9 @@ export function EphemeralVmCleanupStopDialog({
         </DialogHeader>
         {runtime ? (
           <div className="rounded-md border border-border/70 bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
-            <div className="truncate">{runtime.workspaceName || runtime.recipeId}</div>
+            <div data-vm-cleanup-confirm-runtime={runtime.id} className="truncate">
+              {runtime.workspaceName || runtime.recipeId}
+            </div>
           </div>
         ) : null}
         <DialogFooter>

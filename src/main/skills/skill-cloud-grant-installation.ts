@@ -100,7 +100,7 @@ export async function installSkillBundleCloudGrant(
     if (!input.environmentId) {
       return {
         status: 'ok' as const,
-        value: await runtime.installSharedSkillBundleRequest(request, undefined, onProgress)
+        value: await runtime.installSharedSkillBundleRequest(request, signal, onProgress)
       }
     }
     const userDataPath = app.getPath('userData')
@@ -167,7 +167,10 @@ export async function installSkillCloudGrant(
   }
   try {
     if (!input.environmentId) {
-      return { status: 'ok' as const, value: await runtime.installSharedSkillRequest(request) }
+      return {
+        status: 'ok' as const,
+        value: await runtime.installSharedSkillRequest(request, signal)
+      }
     }
     const userDataPath = app.getPath('userData')
     const status = await getRuntimeEnvironmentStatus(userDataPath, input.environmentId, 15_000)

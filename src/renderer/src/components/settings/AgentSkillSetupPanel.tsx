@@ -1,19 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useAgentSkillSetupViewer } from '../../runtime/agent-skill-setup-viewer'
+import { useCallback, useEffect, useState } from 'react'
 import { Copy, Loader2, RefreshCw, Terminal } from 'lucide-react'
-import { toast } from 'sonner'
+import { copyAgentSkillSetupCommand } from './agent-skill-setup-clipboard'
 import { IntegrationStatusPill } from '../integration-status-pill'
 import { SkillFreshnessStatusPill } from '../skills/SkillFreshnessStatusPill'
 import { OnboardingInlineCommandTerminal } from '../onboarding/OnboardingInlineCommandTerminal'
 import { AgentSkillSetupFailureNotice } from './AgentSkillSetupFailureNotice'
-import { createTerminalSnapshot, type SkillTerminalSnapshot } from './agent-skill-terminal-snapshot'
+import { createTerminalSnapshot } from './agent-skill-terminal-snapshot'
+import { useAgentSkillSetupTerminal } from './use-agent-skill-setup-terminal'
 import type { AgentSkillSetupPanelProps } from './agent-skill-setup-panel-props'
 import { Button } from '../ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import { useMountedRef } from '@/hooks/useMountedRef'
-import {
-  recheckSurfacesAfterAgentSkillTerminal,
-  syncSurfacesAfterAgentSkillRecheck
-} from './agent-skill-recheck-surface-sync'
+import { syncSurfacesAfterAgentSkillRecheck } from './agent-skill-recheck-surface-sync'
 import { isOrcaCliAvailableOnPath } from '@/lib/agent-skill-cli-prerequisite'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -59,13 +58,6 @@ export function AgentSkillSetupPanel({
   const resolvedInstalledInstallLabel =
     installedInstallLabel ??
     translate('auto.components.settings.AgentSkillSetupPanel.updateLabel', 'Update')
-  const [terminalOpen, setTerminalOpen] = useState(false)
-  const [terminalSnapshot, setTerminalSnapshot] = useState<SkillTerminalSnapshot | null>(null)
-  const [terminalAttempt, setTerminalAttempt] = useState(0)
-  const [terminalOpening, setTerminalOpening] = useState(false)
-  const [setupAttemptRunning, setSetupAttemptRunning] = useState(false)
-  const [setupCommandFailedCode, setSetupCommandFailedCode] = useState<number | null>(null)
-  const setupAttemptRunningRef = useRef(false)
   const [preInstallNoticeVisible, setPreInstallNoticeVisible] = useState(
     Boolean(preInstallNotice && !installed)
   )
@@ -75,69 +67,6 @@ export function AgentSkillSetupPanel({
     [getPrerequisiteStatus]
   )
   const activeCommand = installed ? (installedCommand ?? command) : command
-  // Why: the inline terminal auto-inserts when its command changes, so keep the
-  // already-open terminal pinned to the command and runtime selected at click.
-  const openTerminalCommand = terminalSnapshot?.copiedCommand ?? activeCommand
-
-  const openSetupTerminal = (): void => {
-    if (terminalOpening || setupAttemptRunning) {
-      return
-    }
-    const nextSnapshot = createTerminalSnapshot(activeCommand, shellOverride, runtime)
-    setTerminalOpening(true)
-    if (setupCommandFailedCode !== null) {
-      setTerminalOpen(false)
-    }
-    void (async () => {
-      let shouldOpenTerminal = false
-      try {
-        await onBeforeOpenTerminal?.()
-        await refreshPreInstallNotice()
-        shouldOpenTerminal = true
-      } catch {
-        shouldOpenTerminal = false
-      } finally {
-        if (mountedRef.current) {
-          setTerminalOpening(false)
-          if (shouldOpenTerminal) {
-            setTerminalSnapshot(nextSnapshot)
-            setTerminalAttempt((attempt) => attempt + 1)
-            setTerminalOpen(true)
-            setupAttemptRunningRef.current = true
-            setSetupAttemptRunning(true)
-          }
-        }
-      }
-    })()
-  }
-
-  // Why: PTY exit is the shell's status; OSC 133;D reports the install command.
-  const handleSetupCommandFinished = useCallback(
-    (bestEffortExitCode: number | null): void => {
-      // Nested shells can emit duplicate completion markers in one PTY chunk.
-      if (!setupAttemptRunningRef.current) {
-        return
-      }
-      setupAttemptRunningRef.current = false
-      setSetupAttemptRunning(false)
-      if (bestEffortExitCode !== null) {
-        setSetupCommandFailedCode(bestEffortExitCode === 0 ? null : bestEffortExitCode)
-      }
-      recheckSurfacesAfterAgentSkillTerminal(onRecheck, freshnessSkillName)
-    },
-    [freshnessSkillName, onRecheck]
-  )
-
-  const handleTerminalExit = useCallback((): void => {
-    const shouldRecheck = setupAttemptRunningRef.current
-    if (mountedRef.current) {
-      setupAttemptRunningRef.current = false
-      setTerminalOpen(false)
-      setSetupAttemptRunning(false)
-    }
-    void (shouldRecheck && recheckSurfacesAfterAgentSkillTerminal(onRecheck, freshnessSkillName))
-  }, [freshnessSkillName, mountedRef, onRecheck])
-
   useEffect(() => {
     if (!preInstallNotice) {
       setPreInstallNoticeVisible(false)
@@ -182,24 +111,69 @@ export function AgentSkillSetupPanel({
     }
   }
 
-  const copyActiveCommand = async (): Promise<void> => {
-    try {
-      await window.api.ui.writeClipboardText(openTerminalCommand)
-      toast.success(
-        translate('auto.components.settings.AgentSkillSetupPanel.copiedCommand', 'Copied command.')
-      )
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.AgentSkillSetupPanel.failedToCopyCommand',
-              'Failed to copy command.'
-            )
-      )
-    }
-  }
+  const {
+    terminalOpen,
+    terminalSnapshot,
+    terminalAttempt,
+    terminalOpening,
+    setupAttemptRunning,
+    setupCommandFailedCode,
+    openSetupTerminal,
+    openTerminal,
+    handleSetupCommandFinished,
+    handleTerminalExit
+  } = useAgentSkillSetupTerminal({
+    snapshot: () => createTerminalSnapshot(activeCommand, shellOverride, runtime),
+    beforeOpen: onBeforeOpenTerminal,
+    refreshNotice: refreshPreInstallNotice,
+    onRecheck,
+    freshnessSkillName
+  })
+  // Keep an open terminal pinned to its original command and runtime.
+  const openTerminalCommand = terminalSnapshot?.copiedCommand ?? activeCommand
+  const copyActiveCommand = (): Promise<boolean> => copyAgentSkillSetupCommand(openTerminalCommand)
 
+  const recheckSetup = async (): Promise<void> => {
+    await onRecheck()
+    syncSurfacesAfterAgentSkillRecheck(freshnessSkillName)
+  }
+  useAgentSkillSetupViewer({
+    panelKey: terminalWorktreeId,
+    source: onRecheck,
+    recheckOwnerKey: JSON.stringify([runtime, shellOverride, command, installedCommand]),
+    status: { installed, loading, error },
+    title,
+    ownerKey: JSON.stringify([
+      runtime,
+      shellOverride,
+      command,
+      installedCommand,
+      activeCommand,
+      installDisabled,
+      showInstallWhenInstalled
+    ]),
+    canRecheck:
+      !loading && setupCommandFailedCode === null && (!installed || showRecheckWhenInstalled),
+    recheck: recheckSetup,
+    terminal: {
+      open: terminalOpen,
+      attempt: terminalAttempt,
+      running: setupAttemptRunning,
+      failedCode: setupCommandFailedCode
+    },
+    open:
+      !installDisabled &&
+      !terminalOpening &&
+      !setupAttemptRunning &&
+      (setupCommandFailedCode !== null ||
+        ((!installed || showInstallWhenInstalled) && !terminalOpen))
+        ? openTerminal
+        : undefined,
+    copy:
+      terminalOpen && terminalSnapshot
+        ? { target: JSON.stringify([terminalAttempt, terminalSnapshot]), run: copyActiveCommand }
+        : undefined
+  })
   const actionRow = (
     <div className="mt-3 flex flex-wrap items-center gap-2">
       {(!installed || showInstallWhenInstalled) && setupCommandFailedCode === null ? (
@@ -233,9 +207,7 @@ export function AgentSkillSetupPanel({
               openSetupTerminal()
               return
             }
-            void Promise.resolve(onRecheck()).then(() => {
-              syncSurfacesAfterAgentSkillRecheck(freshnessSkillName)
-            })
+            void recheckSetup()
           }}
           disabled={
             setupCommandFailedCode !== null

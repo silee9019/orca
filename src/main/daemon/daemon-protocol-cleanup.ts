@@ -1,3 +1,5 @@
+import type { DaemonEndpointIdentity } from './daemon-hello-protocol'
+import { assertDaemonRestartIdentity } from './daemon-restart-identity'
 import { unlinkSync } from 'node:fs'
 import { DaemonClient } from './client'
 import { DaemonEndpointOwnershipError } from './daemon-endpoint-adoption'
@@ -17,14 +19,21 @@ export type OrphanedDaemonCleanupResult = {
 
 export async function cleanupDaemonForProtocol(
   runtimeDir: string,
-  protocolVersion: number
+  protocolVersion: number,
+  expectedIdentity?: DaemonEndpointIdentity
 ): Promise<OrphanedDaemonCleanupResult> {
+  if (expectedIdentity && protocolVersion < CLEAN_DISCONNECT_PROTOCOL_VERSION) {
+    throw new Error('daemon_restart_protocol_unverifiable')
+  }
   const socketPath = getDaemonSocketPath(runtimeDir, protocolVersion)
   const tokenPath = getDaemonTokenPath(runtimeDir, protocolVersion)
   const pidPath = getDaemonPidPath(runtimeDir, protocolVersion)
 
   const alive = await probeSocket(socketPath)
   if (!alive) {
+    if (expectedIdentity) {
+      throw new Error('daemon_restart_owner_unverifiable')
+    }
     if (protocolVersion >= CLEAN_DISCONNECT_PROTOCOL_VERSION) {
       // Endpoint absence doesn't prove the PID record belongs to the current protocol; leave artifact cleanup to the owning daemon.
       return { cleaned: false, killedCount: 0 }
@@ -43,17 +52,34 @@ export async function cleanupDaemonForProtocol(
   let didKillStaleDaemon = false
   try {
     await client.ensureConnected()
+    if (expectedIdentity) {
+      assertDaemonRestartIdentity(client.getDaemonIdentity(), expectedIdentity)
+    }
     const sessions = await client
       .request<ListSessionsResult>('listSessions', undefined)
-      .catch(() => ({ sessions: [] }))
+      .catch((error: unknown) => {
+        if (expectedIdentity) {
+          throw error
+        }
+        return { sessions: [] }
+      })
     killedCount = sessions.sessions.filter((s) => s.isAlive).length
 
     // Use the single-shot `shutdown` RPC (kills all sessions then exits) to avoid racing per-session `kill` calls against the daemon exiting.
-    await client.request('shutdown', { killSessions: true }).catch(() => {
+    if (expectedIdentity) {
+      assertDaemonRestartIdentity(client.getDaemonIdentity(), expectedIdentity)
+    }
+    await client.request('shutdown', { killSessions: true }).catch((error: unknown) => {
+      if (expectedIdentity && client.getDaemonIdentity()) {
+        throw error
+      }
       // Daemon exits immediately after the RPC, so the socket may close before the reply arrives; treat as success.
     })
     didRequestShutdown = true
-  } catch {
+  } catch (error) {
+    if (expectedIdentity) {
+      throw error
+    }
     // Previous-protocol daemons may be wedged or too old for the RPC path; fall back to PID cleanup (only unlinks a live socket after proving the process is killed).
     const killOutcome = await killStaleDaemon(runtimeDir, socketPath, tokenPath, protocolVersion)
     didKillStaleDaemon = killOutcome.killed

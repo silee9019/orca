@@ -189,6 +189,27 @@ describe('activity thread host routing', () => {
     )
   })
 
+  it.each([
+    ['workspace-unavailable', false, false, true],
+    ['workspace-only', true, false, false],
+    ['structured-requested', true, true, false],
+    ['terminal-focus-requested', true, false, true]
+  ] as const)(
+    'reports %s without replacing the original activation sequence',
+    (outcome, available, structured, resident) => {
+      mocks.activateAndRevealWorkspace.mockReturnValue(available ? { primaryTabId: null } : false)
+      mocks.activateStructuredAgentSessionTab.mockReturnValue(structured)
+      state.tabsByWorktree = resident ? { [thread.worktree.id]: [thread.tab] } : {}
+      expect(makeActions().selectThread(thread)).toBe(outcome)
+      expect(setSelectedPaneKey).toHaveBeenCalledExactlyOnceWith(thread.paneKey)
+      expect(acknowledgeAgents).not.toHaveBeenCalled()
+      expect(mocks.activateAndRevealWorkspace).toHaveBeenCalledTimes(1)
+      expect(mocks.activateTabAndFocusPane).toHaveBeenCalledTimes(
+        outcome === 'terminal-focus-requested' ? 1 : 0
+      )
+    }
+  )
+
   it('opens a cold-parked remote thread whose tab activation revives', () => {
     // The reported SSH symptom: the tab is not resident because the session was never
     // revived, so a residency probe before activation made the click a silent no-op.
@@ -254,7 +275,7 @@ describe('activity thread host routing', () => {
   it('jumps to and probes the matching host-qualified workspace', () => {
     expect(hasActivityThreadWorkspace(thread)).toBe(true)
 
-    makeActions().jumpToWorkspace(thread)
+    expect(makeActions().jumpToWorkspace(thread)).toBe(true)
 
     expect(acknowledgeAgents).toHaveBeenCalledWith([thread.paneKey])
     expect(mocks.activateAndRevealWorkspace).toHaveBeenCalledWith(thread.worktree.id, {
@@ -262,6 +283,13 @@ describe('activity thread host routing', () => {
       showWorkspaceList: true,
       executionHostId: REMOTE_HOST
     })
+  })
+
+  it('returns a rejected activation while preserving the original read-before-jump order', () => {
+    mocks.activateAndRevealWorkspace.mockReturnValue(false)
+    expect(makeActions().jumpToWorkspace(thread)).toBe(false)
+    expect(acknowledgeAgents).toHaveBeenCalledExactlyOnceWith([thread.paneKey])
+    expect(mocks.activateAndRevealWorkspace).toHaveBeenCalledTimes(1)
   })
 
   it('marks all unread threads in the mark-all set, reading it at call time', () => {

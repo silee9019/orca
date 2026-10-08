@@ -185,6 +185,7 @@ export function useMarkupEditor(busy: boolean, onCancel: () => void) {
     width,
     fontSize,
     pendingText,
+    hasGesture: gesture !== null,
     shapes,
     canUndo: canUndoMarkup({ doc, gesture }),
     canRedo: canRedo(doc),

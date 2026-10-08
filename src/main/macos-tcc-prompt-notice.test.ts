@@ -33,11 +33,13 @@ const {
   TCC_PROMPT_NOTICE_VERSION,
   TCC_PROMPT_WATCH_START_FALLBACK_MS,
   acknowledgePendingTccPromptNotice,
+  acknowledgePendingTccPromptClaim,
   consumePendingTccPromptNotice,
   dismissTccPromptNotice,
   handleTccPromptForTests,
   initTccPromptNotice,
   releasePendingTccPromptNotice,
+  releasePendingTccPromptClaim,
   resetTccPromptNoticeForTests,
   stopTccPromptNotice
 } = await import('./macos-tcc-prompt-notice')
@@ -439,3 +441,23 @@ function createWindowStub() {
     }
   }
 }
+
+it('keeps a renderer claim intact when CLI capabilities acknowledge or release it', () => {
+  handleTccPromptForTests()
+  const rendererClaim = consumePendingTccPromptNotice(1)
+  if (!rendererClaim) {
+    throw new Error('renderer fixture claim missing')
+  }
+  expect(acknowledgePendingTccPromptClaim(-123, rendererClaim.claimId)).toBe(false)
+  expect(releasePendingTccPromptClaim(-123, rendererClaim.claimId)).toBe(false)
+  expect(consumePendingTccPromptNotice(-123)).toBeNull()
+  expect(releasePendingTccPromptClaim(1, rendererClaim.claimId)).toBe(true)
+  const cliClaim = consumePendingTccPromptNotice(-123)
+  if (!cliClaim) {
+    throw new Error('CLI fixture claim missing')
+  }
+  expect(acknowledgePendingTccPromptClaim(1, cliClaim.claimId)).toBe(false)
+  expect(releasePendingTccPromptClaim(-124, cliClaim.claimId)).toBe(false)
+  expect(acknowledgePendingTccPromptClaim(-123, cliClaim.claimId)).toBe(true)
+  expect(consumePendingTccPromptNotice(1)).toBeNull()
+})

@@ -1,4 +1,7 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { useAgentSkillSetupViewer } from '@/runtime/agent-skill-setup-viewer'
+import { useLinearSkillPromptViewer } from '@/runtime/linear-skill-prompt-viewer'
+import { syncSurfacesAfterAgentSkillRecheck } from '../settings/agent-skill-recheck-surface-sync'
 import { RefreshCw, TicketCheck, X } from 'lucide-react'
 import type { ProjectExecutionRuntimeResolution } from '../../../../shared/project-execution-runtime'
 import { Button } from '@/components/ui/button'
@@ -157,17 +160,17 @@ export function LinearAgentSkillSetupPrompt({
       setSetupCheckResult('idle')
     }
   }, [explicitCheckMatchesContext, missingSetup, setupCheckResult, setupReady])
-  const dismissPermanently = (): void => {
+  const dismissPermanently = useCallback((): void => {
     localStorage.setItem(localDismissStorageKey, '1')
     setLocalDismissed(true)
     setSetupDialogOpen(false)
     dismissLinearAgentSkillSetupReminderToast(localDismissStorageKey)
-  }
+  }, [localDismissStorageKey])
 
-  const closeSuccessModal = (): void => {
+  const closeSuccessModal = useCallback((): void => {
     setSetupDialogOpen(false)
     resetLinearAgentSkillSetupReminderToastForRuntime(localDismissStorageKey)
-  }
+  }, [localDismissStorageKey])
 
   const successDescription = remote
     ? translate(
@@ -194,6 +197,56 @@ export function LinearAgentSkillSetupPrompt({
 
   const toastDescription = getLinearAgentSkillSetupToastDescription(remote, agentRuntime)
   const openSetupDialog = useCallback(() => setSetupDialogOpen(true), [])
+  const refreshSkill = skill.refresh
+  const recheckSkill = useCallback(async () => {
+    if (surface === 'modal') {
+      setActiveSetupCheckIdentity(setupCheckIdentity)
+      setSetupCheckResult('checking')
+    }
+    await refreshSkill()
+  }, [setupCheckIdentity, refreshSkill, surface])
+  const promptId = useId()
+  useLinearSkillPromptViewer({
+    promptKey: `sidebar-linear-prompt:${promptId}`,
+    ownerKey: JSON.stringify([setupCheckIdentity, localDismissStorageKey, surface, linked]),
+    source: refreshSkill,
+    open: showSetupModal,
+    dismissed: localDismissed,
+    canDismiss:
+      (showSetupModal && !showSuccessModal) ||
+      (surface !== 'modal' && missingSetup && !setupDialogOpen),
+    canFinish: showSuccessModal,
+    dismiss: dismissPermanently,
+    finish: closeSuccessModal
+  })
+  useAgentSkillSetupViewer({
+    panelKey: `sidebar-linear-prompt:${promptId}`,
+    title: 'Linear agent skill discovery',
+    ownerKey: JSON.stringify([
+      setupCheckIdentity,
+      localDismissStorageKey,
+      surface,
+      linked,
+      localDismissed,
+      setupDialogOpen
+    ]),
+    source: refreshSkill,
+    status: {
+      installed: skill.installed,
+      loading: showCheckingModal || skill.loading,
+      error: skill.error
+    },
+    canRecheck:
+      !skill.loading &&
+      ((showSetupModal && !showSuccessModal && !showCheckingModal) ||
+        (surface !== 'modal' && missingSetup && !setupDialogOpen)),
+    recheck: async () => {
+      await recheckSkill()
+      if (setupDialogOpen) {
+        syncSurfacesAfterAgentSkillRecheck()
+      }
+    }
+  })
 
   useLinearAgentSkillSetupReminderToast({
     localDismissStorageKey,
@@ -227,15 +280,7 @@ export function LinearAgentSkillSetupPrompt({
         installed={skill.installed}
         loading={showCheckingModal || skill.loading}
         error={skill.error}
-        onRecheck={async () => {
-          if (surface === 'modal') {
-            setActiveSetupCheckIdentity(setupCheckIdentity)
-            setSetupCheckResult('checking')
-            await skill.refresh()
-            return
-          }
-          await skill.refresh()
-        }}
+        onRecheck={recheckSkill}
         onOpenChange={(open) => {
           if (open) {
             setSetupDialogOpen(true)

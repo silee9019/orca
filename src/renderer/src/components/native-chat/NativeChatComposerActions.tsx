@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+import type { NativeContextViewerTarget } from '../../../../shared/rpc-contract/usage-params'
 import { ArrowUp, CircleAlert, Mic, Plus, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -35,6 +37,7 @@ export type NativeChatComposerActionsProps = {
   /** Present while the composer is in goal mode; the chip calls it to leave. */
   onExitGoalMode?: () => void
   /** Absent until the session has reported or the transcript can estimate. */
+  contextUsageTarget?: z.infer<typeof NativeContextViewerTarget>
   contextUsage?: NativeChatContextUsageSummary | null
 }
 
@@ -57,6 +60,7 @@ export function NativeChatComposerActions({
   sessionOptionsSnapshot,
   sessionOptionsPickerRequest,
   onExitGoalMode,
+  contextUsageTarget,
   contextUsage
 }: NativeChatComposerActionsProps): React.JSX.Element {
   const handleCriticalAction = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -126,7 +130,9 @@ export function NativeChatComposerActions({
           isWorking={isWorking}
           pickerRequest={sessionOptionsPickerRequest}
         />
-        {contextUsage ? <NativeChatContextUsageRing usage={contextUsage} /> : null}
+        {contextUsage ? (
+          <NativeChatContextUsageRing target={contextUsageTarget} usage={contextUsage} />
+        ) : null}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

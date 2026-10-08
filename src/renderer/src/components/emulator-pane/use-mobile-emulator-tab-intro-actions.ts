@@ -1,3 +1,4 @@
+import { useEmulatorConnectionsViewerController } from '@/hooks/useEmulatorConnectionsViewerController'
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
@@ -67,6 +68,13 @@ export function useMobileEmulatorTabIntroActions(): {
       }
     })()
   }, [dismissIntro, openSettingsPage, openSettingsTarget, updateSettings])
+
+  useEmulatorConnectionsViewerController({
+    surface: 'intro',
+    keep: keepIntro,
+    hide: hideIntro,
+    dismiss: dismissIntro
+  })
 
   return { keepIntro, hideIntro, dismissIntro }
 }

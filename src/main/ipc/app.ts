@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { readMacKeyboardCommandStdout as readCommandStdout } from '../macos-keyboard-probes'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -7,14 +7,12 @@ import { is } from '@electron-toolkit/utils'
 import type { AppIdentity } from '../../shared/app-identity'
 import type { MarkdownDocument } from '../../shared/filesystem-entry-types'
 import type { FloatingTerminalCwdRequest } from '../../shared/ui-chrome-types'
-import { relaunchApp } from '../app-relaunch'
 import type { Store } from '../persistence'
 import { getDevInstanceIdentity } from '../startup/dev-instance-identity'
 import { isPwshAvailableAsync } from '../pwsh'
 import { isWslAvailableAsync, listWslDistrosAsync } from '../wsl'
 import { isGitBashAvailable } from '../git-bash'
 import { setUnreadDockBadgeCount } from '../dock/unread-badge'
-import { destroySystemTray } from '../tray/system-tray'
 import {
   ensureDefaultFloatingWorkspacePath,
   trustFloatingWorkspaceDirectory,
@@ -26,7 +24,13 @@ import { registerRendererShutdownCheckpointHandler } from './renderer-shutdown-c
 import { readMacKeyboardLayoutSnapshot } from './macos-keyboard-layout-snapshot'
 import { registerMacKeyboardLayoutChangeNotifications } from './macos-keyboard-layout-change-notifications'
 
-const KEYBOARD_INPUT_SOURCE_TIMEOUT_MS = 500
+import {
+  configureDesktopAppRestart,
+  requestDesktopAppRestart,
+  type RegisterAppHandlersOptions
+} from './app-restart'
+export { requestDesktopAppRestart } from './app-restart'
+
 const MAC_HITOOLBOX_DOMAIN = 'com.apple.HIToolbox'
 // Why: defaults export reads live prefs (on-disk plist lags cfprefsd); xml1 dodges plutil's json abort on macOS 15 input-source arrays; absolute paths so a minimal PATH can't shadow the tools.
 const MAC_SELECTED_INPUT_SOURCES_JSON_COMMAND = [
@@ -34,10 +38,6 @@ const MAC_SELECTED_INPUT_SOURCES_JSON_COMMAND = [
   '/usr/bin/plutil -extract AppleSelectedInputSources xml1 -o - -',
   '/usr/bin/plutil -convert json -o - -'
 ].join(' | ')
-
-type RegisterAppHandlersOptions = {
-  onBeforeRelaunch?: () => void | Promise<void>
-}
 
 async function pickFloatingMarkdownDocument(
   event: IpcMainInvokeEvent
@@ -83,7 +83,7 @@ async function pickFloatingWorkspaceDirectory(
   return selectedDir
 }
 
-function getFeatureWallAssetBaseUrl(): string {
+export function getFeatureWallAssetBaseUrl(): string {
   const assetDir = app.isPackaged
     ? path.join(process.resourcesPath, 'onboarding', 'feature-wall')
     : resolveDevFeatureWallAssetDir()
@@ -108,77 +108,6 @@ function resolveDevFeatureWallAssetDir(): string {
 
   // Why: E2E launches out/main, so app.getAppPath() can point there while dev resources live at the repo root.
   return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
-}
-
-function readCommandStdout(
-  command: string,
-  args: string[],
-  timeoutMessage: string
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let settled = false
-    let child: ReturnType<typeof spawn> | undefined
-
-    // Why: killing only the shell orphans pipeline stages; detached spawn lets one negative-pid SIGKILL reap the whole group.
-    const killTree = (): void => {
-      if (!child?.pid) {
-        return
-      }
-      try {
-        process.kill(-child.pid, 'SIGKILL')
-      } catch {
-        child.kill()
-      }
-    }
-
-    // Why: short timeout so a wedged macOS probe never hangs; this timer owns the process-group kill.
-    const timer = setTimeout(() => {
-      if (settled) {
-        return
-      }
-      settled = true
-      killTree()
-      reject(new Error(timeoutMessage))
-    }, KEYBOARD_INPUT_SOURCE_TIMEOUT_MS)
-
-    const settle = (callback: () => void): void => {
-      if (settled) {
-        return
-      }
-      settled = true
-      clearTimeout(timer)
-      callback()
-    }
-
-    try {
-      child = spawn(command, args, { detached: true, stdio: ['ignore', 'pipe', 'ignore'] })
-      let stdout = ''
-      child.stdout?.setEncoding('utf8')
-      child.stdout?.on('data', (chunk: string) => {
-        stdout += chunk
-      })
-      const failWith = (error: Error): void => {
-        killTree()
-        settle(() => reject(error))
-      }
-      // Why: an unhandled Readable 'error' would crash the main process; treat stdout errors like spawn errors.
-      child.stdout?.on('error', failWith)
-      child.on('error', failWith)
-      child.on('close', (code, signal) => {
-        settle(() =>
-          code === 0
-            ? resolve(stdout)
-            : reject(
-                new Error(
-                  `${command} exited with ${signal ? `signal ${signal}` : `code ${code ?? 'unknown'}`}`
-                )
-              )
-        )
-      })
-    } catch (error) {
-      settle(() => reject(error))
-    }
-  })
 }
 
 type SelectedKeyboardInputSource = { kind: 'inputSource'; id: string } | { kind: 'keyboardLayout' }
@@ -253,6 +182,7 @@ async function readKeyboardInputSourceId(): Promise<string | null> {
 }
 
 export function registerAppHandlers(store: Store, options: RegisterAppHandlersOptions = {}): void {
+  configureDesktopAppRestart(options)
   registerRendererShutdownCheckpointHandler(store)
   registerMacKeyboardLayoutChangeNotifications()
 
@@ -279,42 +209,12 @@ export function registerAppHandlers(store: Store, options: RegisterAppHandlersOp
   ipcMain.handle('gitBash:isAvailable', (): boolean => isGitBashAvailable())
 
   // The selected IME identity must win over its US-shaped backing keyboard layout.
-  ipcMain.handle('app:getKeyboardInputSourceId', async (): Promise<string | null> => {
-    if (process.platform !== 'darwin') {
-      return null
-    }
-    try {
-      // Why: async so the focus-in probe (see option-as-alt-probe.ts) never blocks the main event loop.
-      const stdout = await readKeyboardInputSourceId()
-      const trimmed = stdout?.trim() ?? ''
-      return trimmed.length > 0 ? trimmed : null
-    } catch {
-      // A failed probe must not promote an IME's backing layout into an Alt default.
-      return null
-    }
-  })
+  ipcMain.handle('app:getKeyboardInputSourceId', getKeyboardInputSourceId)
 
   ipcMain.handle('app:getKeyboardLayoutSnapshot', () => readMacKeyboardLayoutSnapshot())
 
-  ipcMain.handle('app:relaunch', async () => {
-    // Why: brief delay lets the renderer paint "Restarting…" before the window tears down.
-    await runBeforeRelaunchCleanup(options.onBeforeRelaunch)
-    setTimeout(() => {
-      // Why: app.exit(0) skips before-quit, so destroy the Windows tray manually to avoid a stale icon.
-      destroySystemTray()
-      relaunchApp('renderer-request')
-      app.exit(0)
-    }, 150)
-  })
-
-  ipcMain.handle('app:restart', async () => {
-    // Why: use the normal quit pipeline so daemon checkpoints and telemetry flush before exit.
-    await runBeforeRelaunchCleanup(options.onBeforeRelaunch)
-    setTimeout(() => {
-      relaunchApp('admin-restart')
-      app.quit()
-    }, 150)
-  })
+  ipcMain.handle('app:relaunch', () => requestDesktopAppRestart('relaunch'))
+  ipcMain.handle('app:restart', () => requestDesktopAppRestart('restart'))
 
   registerMacSymbolicHotkeysProbeHandler(readCommandStdout)
 
@@ -335,16 +235,17 @@ export function registerAppHandlers(store: Store, options: RegisterAppHandlersOp
   )
 }
 
-async function runBeforeRelaunchCleanup(
-  onBeforeRelaunch?: () => void | Promise<void>
-): Promise<void> {
+export async function getKeyboardInputSourceId(): Promise<string | null> {
+  if (process.platform !== 'darwin') {
+    return null
+  }
   try {
-    await onBeforeRelaunch?.()
-  } catch (error) {
-    // Why: best-effort cleanup must never block relaunch; log only error.name to avoid leaking secrets.
-    console.warn(
-      '[app] Pre-relaunch cleanup failed; continuing relaunch:',
-      error instanceof Error ? error.name : typeof error
-    )
+    // Why: async so the focus-in probe (see option-as-alt-probe.ts) never blocks the main event loop.
+    const stdout = await readKeyboardInputSourceId()
+    const trimmed = stdout?.trim() ?? ''
+    return trimmed.length > 0 ? trimmed : null
+  } catch {
+    // A failed probe must not promote an IME's backing layout into an Alt default.
+    return null
   }
 }

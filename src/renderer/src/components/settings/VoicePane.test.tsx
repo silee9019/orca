@@ -1,5 +1,9 @@
+import type * as VoiceStoreModule from '@/store'
+import { startVoicePaneRequest, readVoicePaneRequest } from '@/runtime/voice-pane-request'
 // @vitest-environment happy-dom
 
+import { requestVoiceKeyDialog } from '@/runtime/voice-key-dialog-request'
+import { requestVoiceKeyDraft } from '@/runtime/voice-key-draft-request'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,7 +18,15 @@ const { useAppStoreMock, useShortcutLabelMock } = vi.hoisted(() => ({
   useShortcutLabelMock: vi.fn()
 }))
 
-vi.mock('@/store', () => ({ useAppStore: useAppStoreMock }))
+vi.mock('@/store', async (importOriginal) => {
+  const actual = await importOriginal<typeof VoiceStoreModule>()
+  return {
+    useAppStore: Object.assign(useAppStoreMock, {
+      getState: actual.useAppStore.getState,
+      subscribe: actual.useAppStore.subscribe
+    })
+  }
+})
 
 vi.mock('@/hooks/useShortcutLabel', () => ({
   useShortcutLabel: useShortcutLabelMock
@@ -73,12 +85,15 @@ async function renderVoicePane(args: {
   updateSettings: (updates: Partial<GlobalSettings>) => void
   requestMicrophonePermission?: () => Promise<DeveloperPermissionRequestResult>
   recordFeatureInteraction?: (id: string) => void
+  catalog?: SpeechModelManifest[]
 }): Promise<{
   button: HTMLButtonElement
   root: Root
   container: HTMLDivElement
   refreshModelStates: ReturnType<typeof vi.fn>
 }> {
+  const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+  actual.useAppStore.setState({ settings: makeSettings(args.voiceEnabled) })
   const refreshModelStates = vi.fn()
   useAppStoreMock.mockImplementation((selector: (state: Record<string, unknown>) => unknown) =>
     selector({
@@ -91,6 +106,7 @@ async function renderVoicePane(args: {
   useShortcutLabelMock.mockReturnValue('Ctrl+Shift+Y')
   installWindowApi(args.requestMicrophonePermission ?? vi.fn(async () => deniedMicrophoneResult))
 
+  vi.mocked(window.api.speech.getCatalog).mockResolvedValue(args.catalog ?? EMPTY_SPEECH_CATALOG)
   const container = document.createElement('div')
   document.body.appendChild(container)
   const root = createRoot(container)
@@ -118,14 +134,180 @@ async function clickSwitch(button: HTMLButtonElement): Promise<void> {
 }
 
 describe('VoicePane', () => {
-  afterEach(() => {
+  let previousSettings: GlobalSettings | null
+
+  it('changes only the actual password draft through the typed receiver while the dialog is open', async () => {
+    const { root } = await renderVoicePane({
+      voiceEnabled: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: vi.fn()
+    })
+    expect(requestVoiceKeyDraft('fixture-private-key')).toBe(false)
+    await act(async () => {
+      requestVoiceKeyDialog(true)
+    })
+    await act(async () => {
+      expect(requestVoiceKeyDraft('fixture-private-key')).toBe(true)
+    })
+    expect(
+      document.querySelector<HTMLInputElement>('[data-voice-key-dialog] input[type="password"]')
+        ?.value
+    ).toBe('fixture-private-key')
+    expect(window.api.speech.saveOpenAiApiKey).not.toHaveBeenCalled()
+    await act(async () => {
+      expect(requestVoiceKeyDraft('')).toBe(true)
+    })
+    expect(
+      document.querySelector<HTMLInputElement>('[data-voice-key-dialog] input[type="password"]')
+        ?.value
+    ).toBe('')
+    await act(async () => {
+      requestVoiceKeyDialog(false)
+    })
+    expect(requestVoiceKeyDraft('fixture-private-key')).toBe(false)
+    act(() => root.unmount())
+  })
+
+  afterEach(async () => {
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    actual.useAppStore.setState({ settings: previousSettings })
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
   })
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    previousSettings = actual.useAppStore.getState().settings
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     useAppStoreMock.mockReset()
     useShortcutLabelMock.mockReset()
+  })
+
+  it('runs the typed toggle through permission pending and feature discovery before enabling', async () => {
+    let grant: ((value: DeveloperPermissionRequestResult) => void) | undefined
+    const updates = vi.fn()
+    const seen = vi.fn()
+    const { root, container, refreshModelStates } = await renderVoicePane({
+      voiceEnabled: false,
+      markFeatureTipsSeen: seen,
+      updateSettings: updates,
+      requestMicrophonePermission: () =>
+        new Promise((resolve) => {
+          grant = resolve
+        })
+    })
+    let id = ''
+    await act(async () => {
+      id = startVoicePaneRequest('toggle').operationId
+    })
+    expect(seen).toHaveBeenCalledWith(['voice-dictation'])
+    expect(
+      container.querySelector('[data-voice-pane-pending]')?.getAttribute('data-voice-pane-pending')
+    ).toBe('true')
+    expect(updates).not.toHaveBeenCalled()
+    expect(readVoicePaneRequest(id).paneState).toBe('pending')
+    if (!grant) {
+      throw new Error('Missing permission fixture')
+    }
+    await act(async () =>
+      grant?.({ id: 'microphone', status: 'granted', openedSystemSettings: false })
+    )
+    expect(readVoicePaneRequest(id).paneState).toBe('succeeded')
+    expect(updates).toHaveBeenCalledWith(
+      expect.objectContaining({ voice: expect.objectContaining({ enabled: true }) })
+    )
+    expect(
+      container.querySelector('[data-voice-pane-pending]')?.getAttribute('data-voice-pane-pending')
+    ).toBe('false')
+    const before = refreshModelStates.mock.calls.length
+    await act(async () => {
+      id = startVoicePaneRequest('refresh-models').operationId
+    })
+    expect(readVoicePaneRequest(id).paneState).toBe('succeeded')
+    expect(refreshModelStates.mock.calls.length).toBeGreaterThan(before)
+    act(() => root.unmount())
+  })
+
+  it('refreshes actual dictation-store model states through the typed pane owner', async () => {
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    const previous = actual.useAppStore.getState().modelStates
+    const { root, refreshModelStates } = await renderVoicePane({
+      voiceEnabled: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: vi.fn()
+    })
+    Object.assign(window.api.speech, {
+      getModelStates: vi.fn(async () => [{ id: 'fixture-ready', status: 'ready' }])
+    })
+    refreshModelStates.mockImplementation(actual.useAppStore.getState().refreshModelStates)
+    let id = ''
+    await act(async () => {
+      id = startVoicePaneRequest('refresh-models').operationId
+    })
+    expect(readVoicePaneRequest(id).paneState).toBe('succeeded')
+    expect(actual.useAppStore.getState().modelStates).toEqual([
+      { id: 'fixture-ready', status: 'ready' }
+    ])
+    actual.useAppStore.setState({ modelStates: previous })
+    act(() => root.unmount())
+  })
+
+  it('saves the typed private draft with its pending cloud model then closes and clears the dialog', async () => {
+    const cloud: SpeechModelManifest = {
+      id: 'fixture-cloud',
+      label: 'Cloud',
+      description: '',
+      provider: 'openai',
+      language: 'en',
+      type: 'openai',
+      streaming: false,
+      sampleRate: 16000
+    }
+    const updates = vi.fn()
+    const { root, refreshModelStates } = await renderVoicePane({
+      voiceEnabled: true,
+      markFeatureTipsSeen: vi.fn(),
+      updateSettings: updates,
+      catalog: [cloud]
+    })
+    await act(async () => requestVoiceKeyDialog(true, cloud.id))
+    await act(async () => {
+      expect(requestVoiceKeyDraft('fixture-owner-private')).toBe(true)
+    })
+    vi.mocked(window.api.speech.getOpenAiApiKeyStatus).mockResolvedValue({
+      configured: true,
+      protection: 'sealed'
+    })
+    let id = ''
+    const before = refreshModelStates.mock.calls.length
+    await act(async () => {
+      id = startVoicePaneRequest('save-key').operationId
+    })
+    expect(readVoicePaneRequest(id).paneState).toBe('succeeded')
+    expect(updates).toHaveBeenCalledWith(
+      expect.objectContaining({
+        voice: expect.objectContaining({ openAiApiKeyConfigured: true, sttModel: cloud.id })
+      })
+    )
+    expect(document.querySelector('[data-voice-key-dialog]')).toBeNull()
+    expect(refreshModelStates.mock.calls.length).toBeGreaterThan(before)
+    await act(async () => requestVoiceKeyDialog(true))
+    expect(document.querySelector<HTMLInputElement>('[data-voice-key-dialog] input')?.value).toBe(
+      ''
+    )
+    vi.mocked(window.api.speech.getOpenAiApiKeyStatus).mockResolvedValue({
+      configured: false,
+      protection: 'sealed'
+    })
+    await act(async () => {
+      id = startVoicePaneRequest('clear-key').operationId
+    })
+    expect(readVoicePaneRequest(id).paneState).toBe('succeeded')
+    expect(document.querySelector('[data-voice-key-dialog]')).toBeNull()
+    expect(updates).toHaveBeenCalledWith(
+      expect.objectContaining({ voice: expect.objectContaining({ openAiApiKeyConfigured: false }) })
+    )
+    act(() => root.unmount())
   })
 
   it('fetches speech data once across re-renders when voice settings are absent', async () => {
@@ -178,7 +360,7 @@ describe('VoicePane', () => {
     })
 
     await clickSwitch(button)
-    root.unmount()
+    act(() => root.unmount())
 
     expect(calls).toEqual(['seen:voice-dictation', 'settings:false'])
     expect(updateSettings).toHaveBeenCalledWith(
@@ -205,7 +387,7 @@ describe('VoicePane', () => {
     })
 
     await clickSwitch(button)
-    root.unmount()
+    act(() => root.unmount())
 
     expect(calls).toEqual(['seen:voice-dictation', 'permission-request'])
     expect(updateSettings).not.toHaveBeenCalled()
@@ -249,21 +431,26 @@ describe('VoicePane', () => {
     })
 
     await clickSwitch(button)
-    root.unmount()
+    act(() => root.unmount())
 
     expect(recordFeatureInteraction).not.toHaveBeenCalled()
   })
 
   it('merges an in-flight voice write onto the newest settings, not the render-time snapshot', async () => {
     const updateSettings = vi.fn()
+    let configured = true
     let resolveClear: () => void = () => {}
     const clearing = new Promise<{ configured: boolean }>((resolve) => {
-      resolveClear = () => resolve({ configured: false })
+      resolveClear = () => {
+        configured = false
+        resolve({ configured: false })
+      }
     })
+    const refreshModelStates = vi.fn()
     useAppStoreMock.mockImplementation((selector: (state: Record<string, unknown>) => unknown) =>
       selector({
         modelStates: [],
-        refreshModelStates: vi.fn(),
+        refreshModelStates,
         markFeatureTipsSeen: vi.fn(),
         recordFeatureInteraction: vi.fn()
       })
@@ -271,7 +458,7 @@ describe('VoicePane', () => {
     useShortcutLabelMock.mockReturnValue('Ctrl+Shift+Y')
     installWindowApi(vi.fn(async () => deniedMicrophoneResult))
     window.api.speech.getOpenAiApiKeyStatus = vi.fn(async () => ({
-      configured: true,
+      configured,
       protection: 'sealed' as const
     }))
     window.api.speech.clearOpenAiApiKey = vi.fn(() => clearing)
@@ -287,6 +474,8 @@ describe('VoicePane', () => {
         }
       }) as GlobalSettings
 
+    const actual = await vi.importActual<typeof VoiceStoreModule>('@/store')
+    actual.useAppStore.setState({ settings: settingsWithKey(true) })
     const container = document.createElement('div')
     document.body.appendChild(container)
     const root = createRoot(container)
@@ -306,6 +495,7 @@ describe('VoicePane', () => {
 
     // The user turns dictation off while the clear-key IPC is still in flight.
     await act(async () => {
+      actual.useAppStore.setState({ settings: settingsWithKey(false) })
       root.render(<VoicePane settings={settingsWithKey(false)} updateSettings={updateSettings} />)
     })
 
@@ -313,7 +503,7 @@ describe('VoicePane', () => {
       resolveClear()
       await clearing
     })
-    root.unmount()
+    act(() => root.unmount())
 
     expect(updateSettings).toHaveBeenCalledTimes(1)
     expect(updateSettings).toHaveBeenCalledWith({

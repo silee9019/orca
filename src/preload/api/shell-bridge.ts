@@ -1,3 +1,4 @@
+import { requireExternalUrlOpenAck } from './shell-external-url-open-ack'
 import { ipcRenderer } from 'electron'
 import type {
   ShellOpenExternalEditorRequest,
@@ -17,6 +18,10 @@ export const shellApi = {
   ): Promise<ShellOpenExternalEditorResult> =>
     ipcRenderer.invoke('shell:openInExternalEditor', request),
 
+  openVerifiedUrl: (url: string): Promise<{ opened: true }> =>
+    requireExternalUrlOpenAck(() =>
+      ipcRenderer.invoke('shell:openUrl', url, { requireOpen: true })
+    ),
   openUrl: (url: string): Promise<void> => ipcRenderer.invoke('shell:openUrl', url),
 
   openFilePath: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:openFilePath', path),

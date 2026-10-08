@@ -1,3 +1,6 @@
+import { getAllDrivers } from '@/lib/pane-manager/mobile-driver-state'
+import { getMobileFitOverridePtyIds } from '@/lib/pane-manager/mobile-fit-overrides'
+import { restoreTerminalFitToDesktop, restoreTerminalFitsToDesktop } from './terminal-fit-restore'
 // @vitest-environment happy-dom
 //
 // Issue #21762: in a terminal pane running a TUI that enables mouse tracking
@@ -25,8 +28,10 @@ vi.mock('@/lib/primary-selection', () => ({
   readPrimarySelectionText: vi.fn().mockResolvedValue('')
 }))
 
-vi.mock('@/lib/pane-manager/mobile-fit-overrides', () => ({ getMobileFitOverridePtyIds: () => [] }))
-vi.mock('@/lib/pane-manager/mobile-driver-state', () => ({ getAllDrivers: () => new Map() }))
+vi.mock('@/lib/pane-manager/mobile-fit-overrides', () => ({
+  getMobileFitOverridePtyIds: vi.fn(() => [])
+}))
+vi.mock('@/lib/pane-manager/mobile-driver-state', () => ({ getAllDrivers: vi.fn(() => new Map()) }))
 vi.mock('@/lib/pane-manager/pane-manager-registry', () => ({
   refitAndRefreshAllTerminalPanes: vi.fn()
 }))
@@ -250,5 +255,58 @@ describe('issue 21762: middle-click native-paste suppression in mouse-tracking T
         userAgent.mockRestore()
       }
     })
+  })
+})
+
+describe('mobile fit restore callback results', () => {
+  it('rejects a stale pane PTY and preserves the existing restore/refit/focus owner', async () => {
+    vi.useFakeTimers()
+    try {
+      const pane = buildTrackedPane('none')
+      const controller = buildController(pane)
+      let ptyId = 'replacement-pty'
+      Object.defineProperty(controller.paneTransportsRef.current, 'get', {
+        value: () => ({ getPtyId: () => ptyId })
+      })
+      const { result } = renderHook(() => useTerminalPaneMobileActions(controller))
+      vi.mocked(restoreTerminalFitToDesktop).mockResolvedValue(true)
+      expect(await result.current.restorePaneTerminalFit(pane, 'pty-a')).toBe(false)
+      expect(restoreTerminalFitToDesktop).not.toHaveBeenCalled()
+      ptyId = 'pty-a'
+      expect(await result.current.restorePaneTerminalFit(pane, 'pty-a')).toBe(true)
+      expect(restoreTerminalFitToDesktop).toHaveBeenCalledExactlyOnceWith('pty-a', undefined)
+      expect(pane.terminal.focus).toHaveBeenCalledOnce()
+      vi.mocked(restoreTerminalFitToDesktop).mockResolvedValue(false)
+      expect(await result.current.restorePaneTerminalFit(pane, 'pty-a')).toBe(false)
+      expect(pane.terminal.focus).toHaveBeenCalledOnce()
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+  it('keeps the existing union of fit overrides and every mobile driver for restore all', async () => {
+    vi.useFakeTimers()
+    try {
+      const pane = buildTrackedPane('none')
+      const { result } = renderHook(() => useTerminalPaneMobileActions(buildController(pane)))
+      vi.mocked(getMobileFitOverridePtyIds).mockReturnValue(['paired-pty', 'shared-pty'])
+      vi.mocked(getAllDrivers).mockReturnValue(
+        new Map([
+          ['shared-pty', { kind: 'mobile', clientId: 'phone' }],
+          ['ssh-pty', { kind: 'mobile', clientId: 'other-phone' }],
+          ['idle-pty', { kind: 'idle' }]
+        ])
+      )
+      vi.mocked(restoreTerminalFitsToDesktop).mockResolvedValue(true)
+      expect(await result.current.restoreAllTerminalFits(pane)).toBe(true)
+      expect(restoreTerminalFitsToDesktop).toHaveBeenCalledExactlyOnceWith(
+        ['paired-pty', 'shared-pty', 'ssh-pty'],
+        undefined
+      )
+      expect(pane.terminal.focus).toHaveBeenCalledOnce()
+    } finally {
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 })

@@ -22,8 +22,8 @@ export function createOrchestrationRpcHarness() {
 
   const coordinatorPaneKey = COORDINATOR_PANE_KEY
 
-  function setup(withBoundRun = true): OrchestrationRpcState {
-    db = new OrchestrationDb(':memory:')
+  function setup(withBoundRun = true, dbPath = ':memory:'): OrchestrationRpcState {
+    db = new OrchestrationDb(dbPath)
     dbOpen = true
     runtime = new OrcaRuntimeService()
     runtime.setOrchestrationDb(db)

@@ -1,3 +1,4 @@
+import { useAppSurfaceControl } from '../../hooks/ipc-events/app-surface-ipc-bridge'
 import { useEffect, useState } from 'react'
 import { Check, Monitor, Moon, Settings2, Sun } from 'lucide-react'
 import { toast } from 'sonner'
@@ -185,6 +186,23 @@ export function ThemeStep({ theme, onThemeChange, settings, updateSettings }: Th
       }
     }
   }
+
+  useAppSurfaceControl('theme-step', async (input) => {
+    if (input.kind !== 'theme-step') {
+      return
+    }
+    if (input.action === 'status') {
+      return { discovery: discovery.status, importing }
+    }
+    if (!navigator.userAgent.includes('Mac')) {
+      throw new Error('Ghostty import is supported on macOS only')
+    }
+    if (!settings || importing || discovery.status !== 'found') {
+      throw new Error('No discovered Ghostty import is ready')
+    }
+    await importGhostty(discovery.preview)
+    return { state: 'requested' }
+  })
 
   const themes: {
     id: GlobalSettings['theme']

@@ -1,3 +1,4 @@
+import { usePluginSettingsViewerController } from '@/runtime/plugin-settings-viewer-controller'
 import { useEffect, useRef, useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { PluginHostInstallSource, PluginHostListEntry } from '../../../../preload/api-types'
@@ -42,8 +43,11 @@ export function PluginsSettingsSection({
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const mountedRef = useRef(false)
   const listRequestRef = useRef(0)
+  const acceptedListGenerationRef = useRef(0)
+  const renderedListGeneration = acceptedListGenerationRef.current
 
   const applyPluginList = (nextPlugins: PluginHostListEntry[]): void => {
+    acceptedListGenerationRef.current = listRequestRef.current
     const installedPluginKeys = new Set(nextPlugins.map((plugin) => plugin.pluginKey))
     setPlugins(nextPlugins)
     setError(null)
@@ -151,10 +155,6 @@ export function PluginsSettingsSection({
 
   const sectionPresentation = getPluginsSectionPresentation()
 
-  if (!mounted) {
-    return <SettingsSection id="plugins" {...sectionPresentation} />
-  }
-
   const selectedConsentPlugin =
     plugins.find((plugin) => plugin.pluginKey === consentPluginId) ?? null
   const consentPlugin = selectedConsentPlugin?.consentFingerprint ? selectedConsentPlugin : null
@@ -221,7 +221,7 @@ export function PluginsSettingsSection({
     }
   }
 
-  const toggleEnabled = async (plugin: PluginHostListEntry): Promise<void> => {
+  const toggleEnabled = async (plugin: PluginHostListEntry): Promise<boolean> => {
     const enabled =
       plugin.status === 'running' ||
       plugin.status === 'restarting' ||
@@ -235,10 +235,12 @@ export function PluginsSettingsSection({
         enabled: nextEnabled
       })
       applyCompletedMutation(nextPlugins)
+      return true
     } catch (cause) {
       if (mountedRef.current) {
         setPluginListError(cause)
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setBusyPluginKeys((current) => {
@@ -250,7 +252,7 @@ export function PluginsSettingsSection({
     }
   }
 
-  const remove = async (pluginKey: string): Promise<void> => {
+  const remove = async (pluginKey: string): Promise<boolean> => {
     setBusyPluginKeys((current) => new Set(current).add(pluginKey))
     try {
       const nextPlugins = await window.api.plugins.remove({ pluginKey })
@@ -258,10 +260,12 @@ export function PluginsSettingsSection({
       if (mountedRef.current) {
         setRemovePluginId(null)
       }
+      return true
     } catch (cause) {
       if (mountedRef.current) {
         setPluginListError(cause)
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setBusyPluginKeys((current) => {
@@ -273,8 +277,8 @@ export function PluginsSettingsSection({
     }
   }
 
-  const refresh = async (): Promise<void> => {
-    await loadPluginList(window.api.plugins.refresh())
+  const refresh = async (): Promise<PluginHostListEntry[] | null> => {
+    return loadPluginList(window.api.plugins.refresh())
   }
 
   const updateDevPaths = async (paths: string[]): Promise<void> => {
@@ -297,6 +301,36 @@ export function PluginsSettingsSection({
         setDevPathsBusy(false)
       }
     }
+  }
+
+  usePluginSettingsViewerController({
+    mounted,
+    featureEnabled: settings.pluginSystemEnabled,
+    settingsBusy: featureBusy || devPathsBusy,
+    loading,
+    error,
+    plugins,
+    busyPluginKeys,
+    installOpen,
+    consentPluginId,
+    removePluginId,
+    rollbackPluginId: marketplaceLifecycle.rollbackPlugin?.pluginKey ?? null,
+    openLogs: pluginLogs.openLogs,
+    logsByPlugin: pluginLogs.logsByPlugin,
+    refresh,
+    toggleEnabled,
+    toggleLogs: pluginLogs.toggleLogs,
+    openInstall: () => setInstallOpen(true),
+    review: setConsentPluginId,
+    remove: setRemovePluginId,
+    rollback: marketplaceLifecycle.requestRollback,
+    confirmRemove: remove,
+    confirmRollback: marketplaceLifecycle.confirmRollback,
+    cancelRemove: () => setRemovePluginId(null),
+    cancelRollback: marketplaceLifecycle.cancelRollback
+  })
+  if (!mounted) {
+    return <SettingsSection id="plugins" {...sectionPresentation} />
   }
 
   const featureEnabled = settings.pluginSystemEnabled
@@ -329,11 +363,28 @@ export function PluginsSettingsSection({
         devPaths={settings.devPluginPaths}
         devPathsBusy={devPathsBusy}
         onToggleFeature={() => void toggleFeature()}
-        onRefresh={refresh}
+        onRefresh={async () => {
+          await refresh()
+        }}
         onReview={setConsentPluginId}
         onToggleEnabled={(entry) => void toggleEnabled(entry)}
         onToggleLogs={pluginLogs.toggleLogs}
         onMarketplaceInstalled={marketplaceLifecycle.reloadAfterMutation}
+        readMarketplaceParent={() => ({
+          generation: renderedListGeneration,
+          currentGeneration: listRequestRef.current,
+          ready: mountedRef.current && mounted && settings.pluginSystemEnabled && !loading,
+          errorPresent: error !== null,
+          installedCount: plugins.length,
+          installed: plugins,
+          dialogBusy:
+            installOpen ||
+            removePlugin !== null ||
+            marketplaceLifecycle.rollbackPlugin !== null ||
+            consentPlugin !== null,
+          consentPluginKey: consentPlugin?.pluginKey ?? null,
+          consentFingerprint: consentPlugin?.consentFingerprint ?? null
+        })}
         onRollbackRequest={marketplaceLifecycle.requestRollback}
         onRemoveRequest={setRemovePluginId}
         onUpdateDevPaths={updateDevPaths}

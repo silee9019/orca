@@ -215,20 +215,20 @@ describe('orca skills CLI', () => {
     expect(String(logSpy.mock.calls[0]?.[0])).toContain(
       'Usage: orca skills get <topic> [--full | --reference <name>] [--json]'
     )
-    expect(String(logSpy.mock.calls[1]?.[0])).toContain(
-      'Commands:\n  installed          List installed skill selectors'
+    const groupHelp = String(logSpy.mock.calls[1]?.[0])
+    expect(groupHelp).toContain('Commands:\n')
+    expect(groupHelp).toMatch(/^ {2}installed +List installed skill selectors$/m)
+    expect(groupHelp).toMatch(/^ {2}get +Print a version-matched skill guide as Markdown$/m)
+    expect(groupHelp).toMatch(
+      /^ {2}install +Install bundled Orca skills via the community skills CLI$/m
     )
-    expect(String(logSpy.mock.calls[1]?.[0])).toContain(
-      'get                Print a version-matched skill guide'
+    expect(groupHelp).toMatch(
+      /^ {2}update +Update already-installed Orca skills via the community skills CLI$/m
     )
-    expect(String(logSpy.mock.calls[1]?.[0])).toContain(
-      'install            Install bundled Orca skills'
-    )
-    expect(String(logSpy.mock.calls[1]?.[0])).toContain(
-      'update             Update already-installed Orca skills'
-    )
-    expect(String(logSpy.mock.calls[2]?.[0])).toContain('Skills:\n  skills installed')
-    expect(String(logSpy.mock.calls[2]?.[0])).toContain('skills update')
+    const rootHelp = String(logSpy.mock.calls[2]?.[0])
+    expect(rootHelp).toContain('Skills:\n')
+    expect(rootHelp).toMatch(/^ {2}skills installed +/m)
+    expect(rootHelp).toContain('skills update')
     expect(runtimeClientConstructorMock).not.toHaveBeenCalled()
   })
 

@@ -1,3 +1,5 @@
+import { attachVmPaneRequest } from '@/runtime/vm-pane-request'
+import { EPHEMERAL_VM_SETUP_PROMPT } from '../../../../shared/ephemeral-vm-setup-prompt'
 import { ArrowRight, Check, Copy, Loader2, RefreshCw, Server } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -26,8 +28,6 @@ type RecipeCatalogEntry = Awaited<
 
 // Why: the pane leans on the skill, so the nudge is one line — the skill carries
 // provider choice, prerequisites, the snapshot build, agent auth, and validation.
-const AGENT_PROMPT =
-  'Use the orca-per-workspace-env skill to set up a per-workspace environment for this repo.'
 
 export function EphemeralVmsPane(): React.JSX.Element {
   const openModal = useAppStore((state) => state.openModal)
@@ -72,7 +72,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
     sourceKinds: GLOBAL_AGENT_SKILL_SOURCE_KINDS
   })
 
-  const refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (): Promise<boolean> => {
     const generation = ++refreshGenerationRef.current
     if (mountedRef.current) {
       setIsLoading(true)
@@ -81,7 +81,9 @@ export function EphemeralVmsPane(): React.JSX.Element {
       const nextCatalog = await window.api.ephemeralVm.listRecipeCatalog()
       if (mountedRef.current && generation === refreshGenerationRef.current) {
         setCatalog(nextCatalog)
+        return true
       }
+      return false
     } catch (error) {
       if (mountedRef.current && generation === refreshGenerationRef.current) {
         toast.error(
@@ -93,6 +95,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
               )
         )
       }
+      return false
     } finally {
       if (mountedRef.current && generation === refreshGenerationRef.current) {
         setIsLoading(false)
@@ -123,12 +126,15 @@ export function EphemeralVmsPane(): React.JSX.Element {
     })
   }
 
-  const copyPrompt = async (): Promise<void> => {
+  const copyPrompt = useCallback(async (): Promise<boolean> => {
     try {
-      await window.api.ui.writeClipboardText(AGENT_PROMPT)
+      await window.api.ui.writeClipboardText(EPHEMERAL_VM_SETUP_PROMPT)
+      if ((await window.api.ui.readClipboardText()) !== EPHEMERAL_VM_SETUP_PROMPT) {
+        throw new Error('vm_prompt_clipboard_mismatch')
+      }
       useAppStore.getState().recordFeatureInteraction('ephemeral-vm-setup')
       if (!mountedRef.current) {
-        return
+        return false
       }
       setPromptCopied(true)
       if (promptResetTimerRef.current !== null) {
@@ -138,6 +144,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
         promptResetTimerRef.current = null
         setPromptCopied(false)
       }, 1500)
+      return true
     } catch {
       toast.error(
         translate(
@@ -145,13 +152,25 @@ export function EphemeralVmsPane(): React.JSX.Element {
           'Could not copy the prompt.'
         )
       )
+      return false
     }
-  }
+  }, [mountedRef])
+
+  useEffect(
+    () => attachVmPaneRequest((action) => (action === 'refresh' ? refresh() : copyPrompt())),
+    [refresh, copyPrompt]
+  )
 
   const recipes = catalog.flatMap((entry) => entry.recipes.map((recipe) => ({ entry, recipe })))
 
   return (
-    <div className="space-y-6" data-settings-section="ephemeral-vms">
+    <div
+      className="space-y-6"
+      data-settings-section="ephemeral-vms"
+      data-vm-catalog-loading={isLoading}
+      data-vm-recipe-count={recipes.length}
+      data-vm-prompt-copied={promptCopied}
+    >
       <AgentSkillSetupPanel
         title={translate(
           'auto.components.settings.EphemeralVmsPane.cloudVmSkillTitle',
@@ -221,7 +240,7 @@ export function EphemeralVmsPane(): React.JSX.Element {
           </div>
           <div className="flex items-center gap-2 rounded-md border border-border/60 bg-background/50 px-3 py-2">
             <code className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
-              {AGENT_PROMPT}
+              {EPHEMERAL_VM_SETUP_PROMPT}
             </code>
             <Button
               type="button"

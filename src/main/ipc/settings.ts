@@ -1,11 +1,10 @@
+import { registerSettingsImportPreviewHandlers } from '../settings-import-previews'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import type { PersistedState } from '../../shared/persisted-state-types'
 import type { AgentAwakeService } from '../agent-awake-service'
 import { listSystemFontFamilies } from '../system-fonts'
-import { previewGhosttyImport } from '../ghostty/index'
-import { previewWarpThemeImport } from '../warp-themes'
 import { applyPRBotAuthorOverride } from '../../shared/pr-bot-author-overrides'
 import { resolveEnvironment } from '../../shared/runtime-environment-store'
 import { applyDesktopSettingsUpdate } from './desktop-settings-update'
@@ -87,14 +86,7 @@ export function registerSettingsHandlers(
     return listSystemFontFamilies()
   })
 
-  ipcMain.handle('settings:previewGhosttyImport', () => {
-    return previewGhosttyImport(store)
-  })
-
-  ipcMain.handle('settings:previewWarpThemeImport', (event, args?: unknown) => {
-    const source = args === undefined ? { kind: 'auto' } : args
-    return previewWarpThemeImport(store, source, event.sender)
-  })
+  registerSettingsImportPreviewHandlers(store)
 
   ipcMain.handle('cache:getGitHub', () => {
     return store.getGitHubCache()

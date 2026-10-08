@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import type { Socket } from 'node:net'
 import { StringDecoder } from 'node:string_decoder'
 import { encodeNdjson } from './ndjson'
@@ -14,11 +15,14 @@ export type DaemonHelloRequest = {
   clientId: string
 }
 
-export function sendDaemonHello(
-  request: DaemonHelloRequest
-): Promise<DaemonEndpointIdentity | null> {
+export type DaemonHelloResult = {
+  identity: DaemonEndpointIdentity | null
+  capabilities: readonly string[]
+}
+
+export function sendDaemonHello(request: DaemonHelloRequest): Promise<DaemonHelloResult> {
   const { socket, token, role, timeoutMs, protocolVersion, clientId } = request
-  return new Promise((resolve, reject) => {
+  return new Promise<DaemonHelloResult>((resolve, reject) => {
     const hello: HelloMessage = {
       type: 'hello',
       version: protocolVersion,
@@ -39,7 +43,11 @@ export function sendDaemonHello(
       socket.removeListener('error', onError)
       socket.removeListener('close', onClose)
     }
-    const finish = (error?: Error, identity: DaemonEndpointIdentity | null = null): void => {
+    const finish = (
+      error?: Error,
+      identity: DaemonEndpointIdentity | null = null,
+      capabilities: readonly string[] = []
+    ): void => {
       if (settled) {
         return
       }
@@ -49,7 +57,7 @@ export function sendDaemonHello(
         reject(error)
         return
       }
-      resolve(identity)
+      resolve({ identity, capabilities })
     }
     // Why: daemon socket chunks can split emoji/box-drawing UTF-8 bytes.
     // Decoding each Buffer independently would permanently inject U+FFFD.
@@ -73,7 +81,15 @@ export function sendDaemonHello(
             finish(new DaemonProtocolError('Invalid daemon identity'))
             return
           }
-          finish(undefined, identity)
+          finish(
+            undefined,
+            identity,
+            Array.isArray(response.capabilities)
+              ? response.capabilities
+                  .slice(0, 32)
+                  .filter((value) => typeof value === 'string' && value.length <= 128)
+              : []
+          )
         } else {
           finish(
             new DaemonProtocolError(addNodePtyRecoveryHint(response.error ?? 'Hello rejected'))
@@ -151,4 +167,16 @@ export function sameDaemonIdentity(
       left.startedAtMs === right.startedAtMs &&
       left.launchNonce === right.launchNonce)
   )
+}
+
+// A missing token must not preempt the connect that proves whether the endpoint is gone.
+export function readDaemonToken(tokenPath: string): string {
+  try {
+    return readFileSync(tokenPath, 'utf8').trim()
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return ''
+    }
+    throw error
+  }
 }

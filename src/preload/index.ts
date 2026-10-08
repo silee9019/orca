@@ -1,3 +1,6 @@
+import { registerNotificationSoundCliBridge } from './api/notification-sound-cli-bridge'
+import { accountViewerApi } from './api/account-viewer-bridge'
+import { installAppLifecycleControl } from './app-lifecycle-control'
 import { contextBridge, ipcRenderer } from 'electron'
 import type { PreloadApi } from './api-types'
 import {
@@ -87,8 +90,10 @@ import { mobileApi } from './api/mobile-bridge'
 import { agentStatusApi } from './api/agent-status-bridge'
 import { speechApi } from './api/speech-bridge'
 
+installAppLifecycleControl()
 installNativeFileDropHandlers()
 installBrowserFindListener()
+registerNotificationSoundCliBridge()
 
 // Custom APIs for renderer. Each domain bridge owns its IPC contract.
 const telemetryTrackApi: PreloadApi['telemetryTrack'] = (name, props) =>
@@ -143,6 +148,7 @@ const api = {
   codexConfigSync: codexConfigSyncApi,
   preflight: preflightApi,
   notifications: notificationsApi,
+  accountViewer: accountViewerApi,
   onboarding: onboardingApi,
   dashboard: dashboardApi,
   terminalPreview: terminalPreviewApi,

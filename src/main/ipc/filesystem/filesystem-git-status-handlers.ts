@@ -1,3 +1,4 @@
+import { registerDesktopGitStatusForRpc } from '../../desktop-git-status-requests'
 import { ipcMain } from 'electron'
 import type {
   GitConflictOperation,
@@ -39,6 +40,7 @@ import type { FilesystemHandlerContext } from './filesystem-handler-context'
 
 export function registerFilesystemGitStatusHandlers(context: FilesystemHandlerContext): void {
   const { store, gitStatusCancellations } = context
+  registerDesktopGitStatusForRpc(store)
   ipcMain.handle(
     'git:status',
     async (

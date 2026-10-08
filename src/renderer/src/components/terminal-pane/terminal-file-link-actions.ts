@@ -96,7 +96,9 @@ export function handleTerminalFileLink(
               'auto.components.terminal.pane.TerminalLinkActionPopover.downloadOpenWithDefaultApp',
               'Download & open with default app'
             ),
-            run: () => downloadAndOpenRemoteTerminalFile(fileContext, mappedPath)
+            run: async () => {
+              await downloadAndOpenRemoteTerminalFile(fileContext, mappedPath)
+            }
           }
   // Why omit, not disable: the popover has no disabled rows. The OS file manager can only show a
   // file on this machine, and the main process refuses every reveal while a remote runtime is focused.

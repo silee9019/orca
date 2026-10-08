@@ -9,7 +9,8 @@ const AUTOMATION_TARGET_FLAGS = [
   'project-host-setup',
   'source-context',
   'workspace-mode',
-  'base-branch'
+  'base-branch',
+  'setup-decision'
 ]
 const AUTOMATION_SCHEDULE_FLAGS = ['trigger', 'schedule', 'time', 'day', 'timezone']
 const AUTOMATION_PRECHECK_FLAGS = ['precheck', 'precheck-timeout']
@@ -53,6 +54,7 @@ export const AUTOMATION_COMMAND_SPECS: CommandSpec[] = [
       ...AUTOMATION_STATE_FLAGS
     ],
     notes: [
+      '--setup-decision accepts inherit, run, or skip for workspace setup scripts.',
       'Trigger accepts hourly, daily, weekdays, weekly, a 5-field cron expression, or an RRULE string.',
       'When --repo is omitted, the CLI uses the enclosing Orca worktree when one can be resolved from cwd.',
       'Use --project with --host, or --project-host-setup, to run on a specific project host setup.',
@@ -109,8 +111,12 @@ export const AUTOMATION_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['automations', 'runs'],
     summary: 'List automation run history',
-    usage: 'orca automations runs [--id <automation-id>] [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'id'],
+    usage:
+      'orca automations runs [--id <automation-id>] [--limit <count>] [--cursor <cursor>] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'id', 'limit', 'cursor'],
+    notes: [
+      'Cursor pagination requires a runtime supporting automation.runsPage; older hosts return an unsupported-method error.'
+    ],
     examples: ['orca automations runs', 'orca automations runs --id 2f9e... --json']
   }
 ]

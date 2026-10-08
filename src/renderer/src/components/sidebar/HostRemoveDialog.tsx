@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import { useSshHostRemovalViewerController } from '@/hooks/useSshConfirmationViewerController'
+import React, { useMemo, useRef, useState } from 'react'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,7 @@ type HostRemoveDialogProps = {
   hostId: ExecutionHostId
   label: string
   target: NonNullable<HostRemovalTarget>
+  verifyRemovedTarget?: (targetId: string) => Promise<boolean>
 }
 
 export function HostRemoveDialog({
@@ -36,9 +38,11 @@ export function HostRemoveDialog({
   onOpenChange,
   hostId,
   label,
-  target
+  target,
+  verifyRemovedTarget
 }: HostRemoveDialogProps): React.JSX.Element {
   const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false)
   // Why: removing the host only (keeping workspaces) is the safe, reversible
   // default. Deleting the remote workspaces is destructive, so it lives behind
   // an Advanced disclosure and must be opted into explicitly.
@@ -95,17 +99,35 @@ export function HostRemoveDialog({
     onOpenChange(false)
   }
 
-  const runSshRemoval = async (): Promise<void> => {
-    if (target.kind !== 'ssh') {
-      return
+  const runSshRemoval = async (
+    expectedDisposition?: 'keep' | 'delete-remote' | 'forget-local'
+  ): Promise<boolean> => {
+    if (target.kind !== 'ssh' || busyRef.current) {
+      return false
     }
+    const current = useAppStore.getState()
+    const resolution = resolveSshHostRemoval({
+      targetId: target.targetId,
+      repos: current.repos,
+      worktrees: getAllWorktreesFromState(current),
+      sshConnectionStates: current.sshConnectionStates
+    })
+    const disposition = deleteWorkspaces
+      ? resolution.isConnected
+        ? 'delete-remote'
+        : 'forget-local'
+      : 'keep'
+    if (expectedDisposition && expectedDisposition !== disposition) {
+      return false
+    }
+    busyRef.current = true
     setBusy(true)
     try {
-      if (deleteWorkspaces && sshResolution) {
+      if (deleteWorkspaces) {
         // Connected → real remote removal; offline/ghost → local forget.
         const { failedIds } = await clearSshHostWorkspaces(
-          sshResolution,
-          isConnected ? 'delete-remote' : 'forget-local'
+          resolution,
+          disposition === 'keep' ? 'forget-local' : disposition
         )
         // Why: don't remove the SSH target (and report success) while some of its
         // workspaces failed to clear — that would strand ghost rows behind a
@@ -122,10 +144,13 @@ export function HostRemoveDialog({
               { count: failedIds.length }
             )
           )
-          return
+          return false
         }
       }
       await removeSshTarget(target.targetId)
+      if (verifyRemovedTarget && !(await verifyRemovedTarget(target.targetId))) {
+        return false
+      }
       if (mountedRef.current) {
         onOpenChange(false)
       }
@@ -134,6 +159,7 @@ export function HostRemoveDialog({
           value0: label
         })
       )
+      return true
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -143,12 +169,42 @@ export function HostRemoveDialog({
               'Failed to remove host'
             )
       )
+      return false
     } finally {
+      busyRef.current = false
       if (mountedRef.current) {
         setBusy(false)
       }
     }
   }
+
+  useSshHostRemovalViewerController(
+    {
+      targetId: target.kind === 'ssh' ? target.targetId : '',
+      read: () => ({
+        advancedOpen,
+        deleteWorkspaces,
+        workspaceCount,
+        isConnected,
+        busy: busyRef.current
+      }),
+      configure: (advanced, remove) => {
+        if (busyRef.current) {
+          throw new Error('ssh_action_in_progress')
+        }
+        setAdvancedOpen(advanced)
+        setDeleteWorkspaces(remove)
+      },
+      confirm: runSshRemoval,
+      cancel: () => {
+        if (busyRef.current) {
+          throw new Error('ssh_action_in_progress')
+        }
+        onOpenChange(false)
+      }
+    },
+    open && target.kind === 'ssh'
+  )
 
   const workspaceCountLabel =
     workspaceCount === 1

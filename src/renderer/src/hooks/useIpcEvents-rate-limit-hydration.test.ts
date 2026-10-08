@@ -134,6 +134,8 @@ describe('useIpcEvents rate-limit hydration', () => {
     })
 
     vi.stubGlobal('window', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
       setTimeout: vi.fn(() => 1),
       clearTimeout: vi.fn(),
@@ -185,7 +187,8 @@ describe('useIpcEvents rate-limit hydration', () => {
       }
     })
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
 

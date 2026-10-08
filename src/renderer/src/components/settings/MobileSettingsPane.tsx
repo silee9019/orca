@@ -1,3 +1,5 @@
+import { useMobileNavigationViewer } from '@/runtime/mobile-navigation-viewer'
+import { getInstallCopy } from '../mobile/mobile-platform-copy'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsSwitchRow } from './SettingsFormControls'
 import { MobilePane } from './MobilePane'
@@ -11,14 +13,30 @@ import { useAppStore } from '@/store'
 import { MobileRelayBetaNotice } from './MobileRelayBetaNotice'
 export { getMobileSettingsPaneSearchEntries }
 
-const ORCA_IOS_APP_STORE_URL = 'https://apps.apple.com/app/orca-ide/id6766130217'
-const ORCA_ANDROID_APK_URL =
-  'https://github.com/stablyai/orca/releases/download/mobile-android-v0.0.52/app-release.apk'
+const ORCA_IOS_APP_STORE_URL = getInstallCopy('ios', 'stable').url
+const ORCA_ANDROID_APK_URL = getInstallCopy('android', 'stable').url
 
 export function MobileSettingsPane(): React.JSX.Element {
   const showMobileButton = useAppStore((s) => s.settings?.showMobileButton !== false)
   const updateSettings = useAppStore((s) => s.updateSettings)
 
+  useMobileNavigationViewer({
+    surface: 'settings',
+    read: () => ({ showButton: showMobileButton, badgeVisible: false }),
+    visibility: async (shown) => {
+      await updateSettings({ showMobileButton: shown })
+      return true
+    },
+    openInstall: async (platform) => {
+      await window.api.shell.openUrl(
+        platform === 'ios' ? ORCA_IOS_APP_STORE_URL : ORCA_ANDROID_APK_URL
+      )
+      return true
+    },
+    persisted: async (kind, shown) =>
+      kind === 'visibility' &&
+      ((await window.api.settings.get()).showMobileButton !== false) === shown
+  })
   return (
     <div className="space-y-4">
       <SearchableSetting

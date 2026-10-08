@@ -15,27 +15,29 @@ export function useAiVaultSessionDeleteAction({
 }: {
   refresh: (options: { force: boolean }) => Promise<void>
   onDeleted?: (session: AiVaultSession) => void
-}): (session: AiVaultSession) => Promise<void> {
+}): (session: AiVaultSession, confirmedSessionId?: string) => Promise<void> {
   const confirm = useConfirmationDialog()
 
   return useCallback(
-    async (session: AiVaultSession) => {
-      const confirmed = await confirm({
-        title: translate(
-          'auto.components.right.sidebar.AiVaultSessionDeleteDialog.title',
-          'Delete this session?'
-        ),
-        description: translate(
-          'auto.components.right.sidebar.AiVaultSessionDeleteDialog.description',
-          '"{{value0}}" will be deleted. Once deleted, it will no longer be resumable from {{value1}}\'s own command line either.',
-          { value0: session.title, value1: agentLabel(session.agent) }
-        ),
-        confirmLabel: translate(
-          'auto.components.right.sidebar.AiVaultSessionDeleteDialog.confirm',
-          'Delete'
-        ),
-        confirmVariant: 'destructive'
-      })
+    async (session: AiVaultSession, confirmedSessionId?: string) => {
+      const confirmed =
+        confirmedSessionId === session.sessionId ||
+        (await confirm({
+          title: translate(
+            'auto.components.right.sidebar.AiVaultSessionDeleteDialog.title',
+            'Delete this session?'
+          ),
+          description: translate(
+            'auto.components.right.sidebar.AiVaultSessionDeleteDialog.description',
+            '"{{value0}}" will be deleted. Once deleted, it will no longer be resumable from {{value1}}\'s own command line either.',
+            { value0: session.title, value1: agentLabel(session.agent) }
+          ),
+          confirmLabel: translate(
+            'auto.components.right.sidebar.AiVaultSessionDeleteDialog.confirm',
+            'Delete'
+          ),
+          confirmVariant: 'destructive'
+        }))
       if (!confirmed) {
         return
       }
@@ -57,7 +59,10 @@ export function useAiVaultSessionDeleteAction({
         )
         // Main already invalidated its caches; this is only for immediate UX.
         void refresh({ force: true })
-      } catch {
+      } catch (error) {
+        if (confirmedSessionId !== undefined) {
+          throw error
+        }
         // A rejected IPC invoke (transport/serialization) lands here too.
         toast.error(
           translate(

@@ -1,3 +1,5 @@
+import { useMobileRelayDiagnosticsCopy } from './use-mobile-relay-diagnostics-copy'
+import { useMobilePaneViewerController } from './use-mobile-pane-viewer-controller'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '../../store'
@@ -151,6 +153,7 @@ export function MobilePane(): React.JSX.Element {
           setNetworkInterfaces(result.interfaces)
           selectAddressAfterRefresh(result.interfaces)
         }
+        return mountedRef.current
       } catch {
         if (opts.notifyOnError && mountedRef.current) {
           toast.error(
@@ -160,6 +163,7 @@ export function MobilePane(): React.JSX.Element {
             )
           )
         }
+        return false
       } finally {
         if (mountedRef.current) {
           setRefreshingNetworkInterfaces(false)
@@ -298,40 +302,12 @@ export function MobilePane(): React.JSX.Element {
     ]
   )
 
-  const copyRelayDiagnostics = useCallback(async (): Promise<void> => {
-    if (relayMintFailure == null) {
-      return
-    }
-    try {
-      await window.api.ui.writeClipboardText(
-        JSON.stringify(
-          {
-            kind: 'mobile_pairing_relay_failure',
-            preferredConnectionMode: connectionMode,
-            failure: relayMintFailure,
-            selectedAddress: selectedAddress ?? null,
-            at: new Date().toISOString()
-          },
-          null,
-          2
-        )
-      )
-      if (mountedRef.current) {
-        toast.success(
-          translate('auto.components.settings.MobilePane.diagnosticsCopied', 'Diagnostics copied')
-        )
-      }
-    } catch {
-      if (mountedRef.current) {
-        toast.error(
-          translate(
-            'auto.components.settings.MobilePane.diagnosticsCopyFailed',
-            'Failed to copy diagnostics'
-          )
-        )
-      }
-    }
-  }, [connectionMode, mountedRef, relayMintFailure, selectedAddress])
+  const copyRelayDiagnostics = useMobileRelayDiagnosticsCopy({
+    connectionMode,
+    mountedRef,
+    relayMintFailure,
+    selectedAddress
+  })
 
   // Why: another window can persist a different path; the shared hook syncs
   // connectionMode here without routing through changeConnectionMode. Treat
@@ -361,6 +337,42 @@ export function MobilePane(): React.JSX.Element {
     deviceCountAtQr,
     currentDeviceCount: devices.length,
     loadDevices
+  })
+
+  useMobilePaneViewerController({
+    state: {
+      connectionMode,
+      selectedAddressSet: selectedAddress !== undefined,
+      customCount: customAddresses.length,
+      networkCount: networkInterfaces.length,
+      refreshing: refreshingNetworkInterfaces,
+      loading,
+      pairingAvailable: pairingUrl !== null,
+      relayFailed: relayMintFailure !== null,
+      qrEnlarged,
+      autoRestoreFitMs,
+      deviceCount: devices.length
+    },
+    pairingUrl,
+    canGenerate: canMintMobilePairingOffer({ connectionMode, signedIn }),
+    selectedAddress,
+    customAddresses,
+    addresses: networkInterfaces.map((entry) => entry.address),
+    deviceIds: devices.map((entry) => entry.deviceId),
+    mode: changeConnectionMode,
+    select: handleSelectedAddressChange,
+    customAdd: handleCustomAddressSelect,
+    customRemove: handleCustomAddressRemove,
+    generate: (rotate) => generateQR({ rotate }),
+    refresh: () => loadNetworkInterfaces({ notifyOnError: true }),
+    enlarge: (open) => {
+      if (!open || qrDataUrl !== null) {
+        setQrEnlarged(open)
+      }
+    },
+    autoRestore: (ms) => updateSettings({ mobileAutoRestoreFitMs: ms }),
+    revoke: revokeDevice,
+    copyDiagnostics: copyRelayDiagnostics
   })
 
   return (

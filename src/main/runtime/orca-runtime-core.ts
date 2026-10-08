@@ -325,12 +325,13 @@ export type PtyLayoutState = PtyLayoutTarget & {
 // `resize-failed` is transient and the caller may retry.
 export type ApplyLayoutResult =
   | { ok: true; state: PtyLayoutState }
-  | { ok: false; reason: 'pty-exited' | 'resize-failed' }
+  | { ok: false; reason: 'pty-exited' | 'resize-failed' | 'owner-changed' }
 
 export type LayoutQueueEntry = {
   running: Promise<ApplyLayoutResult> | null
   pending: {
     target: PtyLayoutTarget
+    ownerMatches?: () => boolean
     waiters: ((r: ApplyLayoutResult) => void)[]
   }[]
 }

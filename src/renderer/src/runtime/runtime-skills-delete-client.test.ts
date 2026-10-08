@@ -72,6 +72,35 @@ describe('runtimeTargetSupportsSkillDelete', () => {
 })
 
 describe('delete routing', () => {
+  it.each(['local', 'environment'] as const)(
+    'aborts a %s delete while capability is being checked',
+    async (kind) => {
+      let finish: (() => void) | undefined
+      const capability = new Promise<void>((resolve) => {
+        finish = resolve
+      })
+      if (kind === 'local') {
+        localDeleteSupported.mockImplementationOnce(async () => {
+          await capability
+          return true
+        })
+      } else {
+        assertRuntimeEnvironmentCapability.mockReturnValueOnce(capability)
+      }
+      const abort = new AbortController()
+      const target =
+        kind === 'local'
+          ? { kind: 'local' as const }
+          : { kind: 'environment' as const, environmentId: 'env-1' }
+      const pending = deleteSkillsOnRuntimeTarget(target, REQUEST, abort.signal)
+      abort.abort()
+      finish?.()
+      await expect(pending).rejects.toThrow('skill_delete_cancelled')
+      expect(localDelete).not.toHaveBeenCalled()
+      expect(callRuntimeRpc).not.toHaveBeenCalled()
+    }
+  )
+
   it('issues no RPC against a host that lacks the capability', async () => {
     assertRuntimeEnvironmentCapability.mockRejectedValue(
       new Error(SKILL_DELETE_UPDATE_REQUIRED_MESSAGE)

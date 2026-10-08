@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -57,12 +57,26 @@ export function ConfirmationDialogProvider({
   }, [activeRequest, setContextualToursBlockingSurfaceVisible])
 
   const confirm = useCallback<ConfirmationDialogContextValue>((options) => {
+    if (options.signal?.aborted) {
+      return Promise.resolve(false)
+    }
     return new Promise((resolve) => {
       const request: ConfirmationDialogRequest = {
         id: nextIdRef.current,
         options,
-        resolve
+        resolve: (confirmed) => {
+          options.signal?.removeEventListener('abort', onAbort)
+          resolve(confirmed)
+        }
       }
+      const onAbort = (): void => {
+        request.resolve(false)
+        if (activeRequestRef.current?.id === request.id) {
+          setDontAskAgain(false)
+        }
+        setQueue((current) => current.filter((queued) => queued.id !== request.id))
+      }
+      options.signal?.addEventListener('abort', onAbort, { once: true })
       nextIdRef.current += 1
       setQueue((currentQueue) => [...currentQueue, request])
     })
@@ -90,6 +104,14 @@ export function ConfirmationDialogProvider({
     },
     [dontAskAgain]
   )
+
+  const settleRef = useRef(settleActiveRequest)
+  useLayoutEffect(() => {
+    settleRef.current = settleActiveRequest
+  })
+  useLayoutEffect(() => {
+    return activeRequest?.options.onViewerControl?.((confirmed) => settleRef.current(confirmed))
+  }, [activeRequest])
 
   return (
     <ConfirmationDialogContext.Provider value={confirm}>

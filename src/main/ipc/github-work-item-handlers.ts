@@ -20,9 +20,11 @@ import {
   getGitHubRepoConnectionId,
   type GitHubRepoScopedArgs
 } from './github-repo-routing'
-import { broadcastGitHubWorkItemMutation } from './github-work-item-mutation-events'
+import { notifyGitHubWorkItemMutation } from '../github-work-item-notification'
+import { setDesktopWorkItemNotificationStore } from '../runtime/rpc/methods/workspace-work-item-notify'
 
 export function registerGitHubWorkItemHandlers(store: Store): void {
+  setDesktopWorkItemNotificationStore(store)
   ipcMain.handle(
     'gh:issue',
     (
@@ -164,25 +166,7 @@ export function registerGitHubWorkItemHandlers(store: Store): void {
   ipcMain.handle(
     'gh:notifyWorkItemMutated',
     (event, args: { repoPath: string; repoId?: string; type: 'issue' | 'pr'; number: number }) => {
-      const repo = args.repoId
-        ? store.getRepos().find((candidate) => candidate.id === args.repoId)
-        : assertRegisteredGitHubRepo(args, store)
-      if (!repo) {
-        return false
-      }
-      if (
-        (args.type !== 'issue' && args.type !== 'pr') ||
-        typeof args.number !== 'number' ||
-        !Number.isInteger(args.number) ||
-        args.number < 1
-      ) {
-        return false
-      }
-      broadcastGitHubWorkItemMutation(
-        { repoPath: repo.path, repoId: repo.id, type: args.type, number: args.number },
-        event.sender.id
-      )
-      return true
+      return notifyGitHubWorkItemMutation(store, args, event.sender.id)
     }
   )
 

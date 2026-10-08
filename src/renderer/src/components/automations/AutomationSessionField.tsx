@@ -1,3 +1,4 @@
+import { setAutomationSessionDraft } from './automation-editor-field-draft'
 import { Info } from 'lucide-react'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -55,11 +56,7 @@ export function AutomationSessionField({
           if (!value) {
             return
           }
-          onDraftChange((current) => ({
-            ...current,
-            reuseSession: value === 'reuse',
-            workspaceMode: value === 'reuse' ? 'existing' : current.workspaceMode
-          }))
+          onDraftChange((current) => setAutomationSessionDraft(current, value))
         }}
         size="sm"
         className={toggleGroupClassName}

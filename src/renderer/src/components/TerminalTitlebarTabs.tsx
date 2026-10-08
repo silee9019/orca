@@ -1,3 +1,4 @@
+import { useBrowserTitlebarPairedActivationCommands } from './use-browser-titlebar-paired-activation-commands'
 import { createPortal } from 'react-dom'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import { useAppStore } from '../store'
@@ -15,10 +16,49 @@ function LiveTerminalTabBar(
   return <TabBar {...props} tabs={tabs} />
 }
 
+export type TerminalTitlebarController = Pick<
+  TerminalController,
+  | 'activeBrowserTabId'
+  | 'activeFileId'
+  | 'activeTabId'
+  | 'activeTabType'
+  | 'effectiveActiveLayout'
+  | 'expandedPaneByTabId'
+  | 'handleActivateBrowserTab'
+  | 'handleActivateTab'
+  | 'handleCloseAllFiles'
+  | 'handleCloseBrowserTab'
+  | 'handleCloseFile'
+  | 'handleCloseOthers'
+  | 'handleCloseTab'
+  | 'handleCloseTabsToLeft'
+  | 'handleCloseTabsToRight'
+  | 'handleDuplicateBrowserTab'
+  | 'handleNewBrowserTab'
+  | 'handleNewFile'
+  | 'handleNewSimulatorTab'
+  | 'handleNewTab'
+  | 'handleOpenEntry'
+  | 'handleTogglePaneExpand'
+  | 'makePreviewFilePermanent'
+  | 'mobileEmulatorEnabled'
+  | 'pinFile'
+  | 'renderedActiveWorktreeId'
+  | 'setActiveFile'
+  | 'setActiveTab'
+  | 'setActiveTabType'
+  | 'setTabColor'
+  | 'setTabCustomTitle'
+  | 'tabBarOrder'
+  | 'titlebarTabsTarget'
+  | 'worktreeBrowserTabs'
+  | 'worktreeClientHostedBrowserRows'
+  | 'worktreeFiles'
+>
 export function TerminalTitlebarTabs({
   controller
 }: {
-  controller: TerminalController
+  controller: TerminalTitlebarController
 }): React.JSX.Element | null {
   const {
     activeBrowserTabId,
@@ -58,6 +98,11 @@ export function TerminalTitlebarTabs({
     worktreeClientHostedBrowserRows,
     worktreeFiles
   } = controller
+  useBrowserTitlebarPairedActivationCommands({
+    worktreeId: renderedActiveWorktreeId,
+    visible: Boolean(renderedActiveWorktreeId && !effectiveActiveLayout && titlebarTabsTarget),
+    activate: handleActivateBrowserTab
+  })
   if (!renderedActiveWorktreeId || effectiveActiveLayout || !titlebarTabsTarget) {
     return null
   }

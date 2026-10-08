@@ -54,7 +54,11 @@ function WindowLabel({
   showLabel?: boolean
 }): React.JSX.Element {
   return (
-    <span className="tabular-nums">
+    <span
+      className="tabular-nums"
+      data-usage-percentage-display={display}
+      data-usage-percentage-value={getDisplayedUsagePercentage(w.usedPercent, display)}
+    >
       {formatUsagePercentageLabel(w.usedPercent, display)}
       {showLabel ? ` ${label}` : ''}
     </span>
@@ -202,7 +206,11 @@ function VerboseProviderUsage({
         {visibleBuckets.map((bucket, index) => (
           <React.Fragment key={bucket.name}>
             {index > 0 ? <span className="text-muted-foreground">·</span> : null}
-            <span className="tabular-nums">
+            <span
+              className="tabular-nums"
+              data-usage-percentage-display={display}
+              data-usage-percentage-value={getDisplayedUsagePercentage(bucket.usedPercent, display)}
+            >
               {bucket.name} {formatUsagePercentageLabel(bucket.usedPercent, display)}
             </span>
           </React.Fragment>

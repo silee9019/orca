@@ -1,28 +1,14 @@
+import { registerDesktopNotebookKernelForRpc } from '../desktop-notebook-kernel-requests'
+import { registerNotebookEnvironmentHandlers } from '../notebook/environment-handlers'
 import { randomUUID } from 'node:crypto'
 import { realpath } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { ipcMain, type WebContents } from 'electron'
 import type { Store } from '../persistence'
-import {
-  resolveDesktopAuthorizedPath,
-  resolveUserNamedRegularFile
-} from './local-file-access-resolution'
+import { resolveUserNamedRegularFile } from './local-file-access-resolution'
 import { createSenderScopedRequestCancellations } from './sender-scoped-request-cancellation'
 import { startNotebookKernel, type NotebookKernel } from '../notebook/notebook-kernel'
-import {
-  createNotebookVenv,
-  describePython,
-  installIpykernel,
-  listPythonEnvironments
-} from '../notebook/python-environments'
-import { notebookVenvParent } from '../../shared/notebook-venv-location'
-import type {
-  CreateVenvResult,
-  KernelFrameEvent,
-  KernelStartResult,
-  PythonEnvironment,
-  PythonEnvironments
-} from '../../shared/notebook-kernel-types'
+import type { KernelFrameEvent, KernelStartResult } from '../../shared/notebook-kernel-types'
 
 /** Each renderer document's kernels, by notebook file. */
 const kernelsByOwner = new Map<WebContents, Map<string, NotebookKernel>>()
@@ -64,24 +50,8 @@ function kernelsOf(owner: WebContents): Map<string, NotebookKernel> {
 // Why the notebook path is user-named: it is an open tab, and it only picks the kernel's cwd and
 // the venv folder. Inside a project it resolves to the real file, so the cwd is its real folder.
 export function registerNotebookHandlers(store: Store): void {
-  ipcMain.handle(
-    'notebook:listPythonEnvironments',
-    async (
-      _event,
-      args: { filePath: string; rootPath: string | null; runWorkspaceInterpreters: boolean }
-    ): Promise<PythonEnvironments> => {
-      await resolveUserNamedRegularFile(args.filePath, store)
-      // Why the unresolved path: rootPath is in the same (possibly symlinked) form, e.g. /tmp.
-      return listPythonEnvironments(args.filePath, args.rootPath, {
-        runWorkspaceInterpreters: args.runWorkspaceInterpreters === true
-      })
-    }
-  )
-
-  ipcMain.handle(
-    'notebook:describePython',
-    (_event, args: { path: string }): Promise<PythonEnvironment | null> => describePython(args.path)
-  )
+  registerNotebookEnvironmentHandlers(store)
+  registerDesktopNotebookKernelForRpc(store)
 
   ipcMain.handle(
     'notebook:startKernel',
@@ -136,26 +106,6 @@ export function registerNotebookHandlers(store: Store): void {
         }
         startCancellations.finish(event, requestToken, controller)
       }
-    }
-  )
-
-  ipcMain.handle(
-    'notebook:installIpykernel',
-    (_event, args: { python: string }): Promise<{ ok: boolean; detail: string }> =>
-      installIpykernel(args.python)
-  )
-
-  ipcMain.handle(
-    'notebook:createVenv',
-    async (
-      _event,
-      args: { filePath: string; rootPath: string | null; python: string }
-    ): Promise<CreateVenvResult> => {
-      await resolveUserNamedRegularFile(args.filePath, store)
-      if (args.rootPath) {
-        await resolveDesktopAuthorizedPath(args.rootPath, store)
-      }
-      return createNotebookVenv(args.python, notebookVenvParent(args.filePath, args.rootPath))
     }
   )
 

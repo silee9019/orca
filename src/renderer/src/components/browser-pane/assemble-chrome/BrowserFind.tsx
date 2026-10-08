@@ -3,9 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
+import { useBrowserFindCommands, type BrowserFindCommandOwner } from './use-browser-find-commands'
 import { getFindRequestQuery } from '@/lib/find-query-bounds'
 
 type BrowserFindProps = {
+  commandOwner?: BrowserFindCommandOwner
+  browserPageId?: string
+  onOpen?: () => void
   isOpen: boolean
   onClose: () => void
   webviewRef: React.RefObject<Electron.WebviewTag | null>
@@ -14,6 +18,9 @@ type BrowserFindProps = {
 }
 
 export default function BrowserFind({
+  browserPageId,
+  commandOwner,
+  onOpen,
   isOpen,
   onClose,
   webviewRef,
@@ -28,16 +35,18 @@ export default function BrowserFind({
   const requestQuery = getFindRequestQuery(query)
 
   const safeFindInPage = useCallback(
-    (text: string, opts?: Electron.FindInPageOptions): void => {
+    (text: string, opts?: Electron.FindInPageOptions): boolean => {
       const webview = webviewRef.current
       if (!webview || !text) {
-        return
+        return false
       }
       try {
         webview.findInPage(text, opts)
+        return true
       } catch {
         // Why: the webview can be mid-teardown during tab close or navigation
         // races. Best-effort is better than crashing.
+        return false
       }
     },
     [webviewRef]
@@ -60,17 +69,25 @@ export default function BrowserFind({
   const findNext = useCallback(() => {
     if (requestQuery) {
       const findNext = activeFindQueryRef.current !== requestQuery
-      safeFindInPage(requestQuery, { forward: true, findNext })
-      activeFindQueryRef.current = requestQuery
+      const applied = safeFindInPage(requestQuery, { forward: true, findNext })
+      if (applied) {
+        activeFindQueryRef.current = requestQuery
+      }
+      return applied
     }
+    return false
   }, [requestQuery, safeFindInPage])
 
   const findPrevious = useCallback(() => {
     if (requestQuery) {
       const findNext = activeFindQueryRef.current !== requestQuery
-      safeFindInPage(requestQuery, { forward: false, findNext })
-      activeFindQueryRef.current = requestQuery
+      const applied = safeFindInPage(requestQuery, { forward: false, findNext })
+      if (applied) {
+        activeFindQueryRef.current = requestQuery
+      }
+      return applied
     }
+    return false
   }, [requestQuery, safeFindInPage])
 
   useEffect(() => {
@@ -158,6 +175,21 @@ export default function BrowserFind({
     },
     [onClose, findNext, findPrevious]
   )
+
+  useBrowserFindCommands({
+    page: browserPageId,
+    commandOwner,
+    state: { open: isOpen, query, activeMatch, totalMatches },
+    open: onOpen,
+    close: onClose,
+    setQuery: (value) => {
+      setQuery(value)
+      setActiveMatch(0)
+      setTotalMatches(0)
+    },
+    next: findNext,
+    previous: findPrevious
+  })
 
   if (!isOpen) {
     return null

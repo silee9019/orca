@@ -1,64 +1,41 @@
 import React from 'react'
 import { AutomationDeleteDialog, ExternalAutomationDeleteDialog } from './AutomationDeleteDialogs'
+import type { AutomationsPageController } from './use-automations-page-controller'
 
 type Props = {
-  deleteTarget: React.ComponentProps<typeof AutomationDeleteDialog>['deleteTarget']
-  dontAskDeleteAgain: boolean
-  deleteConfirmButtonRef: React.ComponentProps<typeof AutomationDeleteDialog>['confirmButtonRef']
-  setDeleteTarget: (target: null) => void
-  setDontAskDeleteAgain: (value: boolean) => void
-  confirmDeleteAutomation: () => void
-  externalDeleteTarget: React.ComponentProps<
-    typeof ExternalAutomationDeleteDialog
-  >['externalDeleteTarget']
-  externalDeleteConfirmButtonRef: React.ComponentProps<
-    typeof ExternalAutomationDeleteDialog
-  >['confirmButtonRef']
-  setExternalDeleteTarget: (target: null) => void
-  confirmDeleteExternalAutomation: () => void
+  controller: Pick<
+    AutomationsPageController,
+    'local' | 'managementActions' | 'externalActions' | 'deleteDialogActions'
+  >
 }
 
-export function AutomationsPageDeleteDialogs({
-  deleteTarget,
-  dontAskDeleteAgain,
-  deleteConfirmButtonRef,
-  setDeleteTarget,
-  setDontAskDeleteAgain,
-  confirmDeleteAutomation,
-  externalDeleteTarget,
-  externalDeleteConfirmButtonRef,
-  setExternalDeleteTarget,
-  confirmDeleteExternalAutomation
-}: Props): React.JSX.Element {
+export function AutomationsPageDeleteDialogs({ controller }: Props): React.JSX.Element {
+  const { local, managementActions, externalActions, deleteDialogActions } = controller
   return (
     <>
       <AutomationDeleteDialog
-        deleteTarget={deleteTarget}
-        dontAskDeleteAgain={dontAskDeleteAgain}
-        confirmButtonRef={deleteConfirmButtonRef}
+        deleteTarget={local.deleteTarget?.automation ?? null}
+        dontAskDeleteAgain={local.dontAskDeleteAgain}
+        confirmButtonRef={local.deleteConfirmButtonRef}
         onOpenChange={(open) => {
           if (!open) {
-            setDeleteTarget(null)
-            setDontAskDeleteAgain(false)
+            deleteDialogActions.cancelLocal()
           }
         }}
-        onDontAskAgainToggle={() => setDontAskDeleteAgain(!dontAskDeleteAgain)}
-        onCancel={() => {
-          setDeleteTarget(null)
-          setDontAskDeleteAgain(false)
-        }}
-        onConfirm={confirmDeleteAutomation}
+        onDontAskAgainToggle={deleteDialogActions.togglePreference}
+        onCancel={deleteDialogActions.cancelLocal}
+        onConfirm={() => void managementActions.confirmDeleteAutomation()}
       />
       <ExternalAutomationDeleteDialog
-        externalDeleteTarget={externalDeleteTarget}
-        confirmButtonRef={externalDeleteConfirmButtonRef}
+        externalDeleteTarget={local.externalDeleteTarget}
+        confirmButtonRef={local.externalDeleteConfirmButtonRef}
         onOpenChange={(open) => {
           if (!open) {
-            setExternalDeleteTarget(null)
+            deleteDialogActions.cancelExternal()
           }
         }}
-        onCancel={() => setExternalDeleteTarget(null)}
-        onConfirm={confirmDeleteExternalAutomation}
+        onCancel={deleteDialogActions.cancelExternal}
+        onConfirm={() => void externalActions.confirmDeleteExternalAutomation()}
       />
     </>
   )

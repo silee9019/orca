@@ -24,6 +24,8 @@ export function buildWindowApi(args: {
   ui?: Record<string, unknown>
 }): Record<string, unknown> {
   return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
     api: {
       repos: { onChanged: () => () => {} },
       automations: { onChanged: () => () => {} },

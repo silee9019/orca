@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useBrowserEgressCommands, type BrowserEgressOwner } from './use-browser-egress-commands'
 import { Globe, Monitor, Server } from 'lucide-react'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
@@ -29,17 +30,34 @@ function EgressIndicatorButton({
   egress,
   description,
   detail,
-  settingsSectionId
+  settingsSectionId,
+  commandOwner,
+  route
 }: {
   icon: React.ReactNode
   egress: 'ssh' | 'local' | 'remote'
   description: string
   detail: string
   settingsSectionId: string
+  commandOwner?: BrowserEgressOwner
+  route: Parameters<typeof useBrowserEgressCommands>[0]['route']
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
+  const openRoutingSettings = () => {
+    setOpen(false)
+    openSettingsTarget({ pane: 'browser', repoId: null, sectionId: settingsSectionId })
+    openSettingsPage()
+  }
+  useBrowserEgressCommands({
+    identity: commandOwner,
+    route,
+    open,
+    settingsSectionId,
+    setOpen,
+    openSettings: openRoutingSettings
+  })
   return (
     <Popover modal={false} open={open} onOpenChange={setOpen}>
       {/* Why: suppress the hover tooltip while the popover is open — both anchor below the icon and would overlap. */}
@@ -78,15 +96,7 @@ function EgressIndicatorButton({
           size="xs"
           className="mt-1.5 h-auto px-0"
           data-testid="ssh-egress-indicator-settings"
-          onClick={() => {
-            setOpen(false)
-            openSettingsTarget({
-              pane: 'browser',
-              repoId: null,
-              sectionId: settingsSectionId
-            })
-            openSettingsPage()
-          }}
+          onClick={openRoutingSettings}
         >
           {translate('browser.sshEgress.settingsLink', 'Routing settings')}
         </Button>
@@ -97,9 +107,11 @@ function EgressIndicatorButton({
 
 /** Local browser pages in an SSH workspace: routed through the host, or opted out. */
 export function SshEgressIndicator({
-  worktreeId
+  worktreeId,
+  commandOwner
 }: {
   worktreeId: string
+  commandOwner?: BrowserEgressOwner
 }): React.JSX.Element | null {
   const executionHostId = useAppStore((s) => getExecutionHostIdForWorktree(s, worktreeId))
   const sshTargetLabels = useAppStore((s) => s.sshTargetLabels)
@@ -141,6 +153,12 @@ export function SshEgressIndicator({
               'Pages load from this machine and its network.'
             )
       }
+      commandOwner={commandOwner}
+      route={{
+        kind: 'ssh',
+        executionHostId: toSshExecutionHostId(targetId),
+        egress: routed ? 'ssh' : 'local'
+      }}
       settingsSectionId={BROWSER_SSH_WORKSPACE_ROUTING_SETTINGS_TARGET_ID}
     />
   )
@@ -149,10 +167,12 @@ export function SshEgressIndicator({
 /** Remote-runtime browser pages: client-hosted (renders here) or streamed from the host. */
 export function RemoteRuntimeEgressIndicator({
   runtimeEnvironmentId,
-  presentation
+  presentation,
+  commandOwner
 }: {
   runtimeEnvironmentId: string
   presentation: 'client-hosted' | 'streamed'
+  commandOwner?: BrowserEgressOwner
 }): React.JSX.Element {
   const settings = useAppStore((s) => s.settings)
   const environmentName = useAppStore(
@@ -192,6 +212,8 @@ export function RemoteRuntimeEgressIndicator({
               'The page runs on the remote host and streams to this device.'
             )
       }
+      commandOwner={commandOwner}
+      route={{ kind: clientHosted ? 'client' : 'streamed', environmentId: runtimeEnvironmentId }}
       settingsSectionId={BROWSER_CLIENT_HOSTED_REMOTE_SETTINGS_TARGET_ID}
     />
   )

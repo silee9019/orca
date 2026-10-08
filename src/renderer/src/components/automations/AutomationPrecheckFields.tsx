@@ -1,4 +1,8 @@
 import {
+  setAutomationPrecheckCommandDraft,
+  setAutomationPrecheckTimeoutDraft
+} from './automation-editor-field-draft'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -43,7 +47,9 @@ export function AutomationPrecheckFields({
               value={draft.precheckTimeoutSeconds}
               disabled={disabled}
               onValueChange={(precheckTimeoutSeconds) =>
-                onDraftChange((current) => ({ ...current, precheckTimeoutSeconds }))
+                onDraftChange((current) =>
+                  setAutomationPrecheckTimeoutDraft(current, precheckTimeoutSeconds)
+                )
               }
             >
               <SelectTrigger
@@ -101,10 +107,7 @@ export function AutomationPrecheckFields({
           "gh pr list --json number -q '.[0].number'"
         )}
         onChange={(event) =>
-          onDraftChange((current) => ({
-            ...current,
-            precheckCommand: event.target.value
-          }))
+          onDraftChange((current) => setAutomationPrecheckCommandDraft(current, event.target.value))
         }
         className="min-h-[56px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 font-mono text-xs shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
       />

@@ -163,6 +163,7 @@ export type KillRequest = {
   payload: {
     sessionId: string
     immediate?: boolean
+    expectedIncarnationId?: string
   }
 }
 

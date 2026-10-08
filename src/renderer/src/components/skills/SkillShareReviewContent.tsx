@@ -109,7 +109,7 @@ export function SkillSharePreparationReview({
 }): React.JSX.Element {
   return (
     <div className="space-y-4">
-      <SkillSharePackageSummary preview={preview} />
+      <SkillSharePackageSummary key={preview.preparationId} preview={preview} />
       <SkillShareAccessSummary hasCloudAccount={hasCloudAccount} />
       <SkillShareReleaseNotesField
         value={releaseNotes}

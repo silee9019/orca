@@ -44,7 +44,7 @@ export function useAutomationsPageRefresh({
   const reloadExternalManagers = scopedExternal.reload
 
   const refresh = useCallback(
-    async (options?: { awaitExternalManagers?: boolean }): Promise<void> => {
+    async (options?: { awaitExternalManagers?: boolean }): Promise<boolean> => {
       setIsLoading(true)
       const pendingNavigation = useAppStore.getState().pendingAutomationRunNavigation
       // Until a navigation names a host, the desktop is the only authority the
@@ -58,10 +58,12 @@ export function useAutomationsPageRefresh({
           : { kind: 'desktop' }
       )
       const managersSettled = reloadExternalManagers().catch(() => undefined)
+      let refreshed = false
       try {
         const nextAutomations = await listAutomationsForTarget(target)
         setAutomations(nextAutomations)
         setAutomationHostTargetKey(getAutomationHostTargetKey(target))
+        refreshed = true
         setFailedAuthorityKeys((current) => {
           if (!current.has(authorityKey)) {
             return current
@@ -78,6 +80,7 @@ export function useAutomationsPageRefresh({
       if (options?.awaitExternalManagers) {
         await managersSettled
       }
+      return refreshed
     },
     [
       reloadExternalManagers,

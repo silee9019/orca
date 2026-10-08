@@ -1,3 +1,4 @@
+import type * as AutomationListPanelModule from './AutomationsListPanel'
 /* oxlint-disable anti-slop/no-module-mocking -- Vitest support module for the 10 AutomationsPage specs, not shipped code, and it falls outside
    the *.test / *.spec / tests glob set. Inlining these 13 stubs would duplicate them into all 10 specs and push the largest
    past the max-lines ratchet. */
@@ -26,11 +27,8 @@ import {
 } from '../../../../shared/protocol-version'
 import type { AppState } from '@/store'
 import type { AutomationHostCatalogEntry } from './automation-host-catalog-types'
-import type { AutomationHostCatalogView } from './use-automation-host-catalog'
 import type { AutomationCreateDestinationControl } from './use-automation-create-destination'
 import type { ExternalAutomationListEntry } from './external-automation-list-entries'
-import type { AutomationListRow } from './automation-list-row-identity'
-import type { AutomationListViewItem } from './automation-list-view'
 import { resetAutomationCapabilityProbes } from './automation-scoped-list-client'
 import {
   addRuntimeProject as addRuntimeProjectFixture,
@@ -42,41 +40,7 @@ import {
 export const RUNTIME_REPO_ID = RUNTIME_REPO_ID_FIXTURE
 export const RUNTIME_WORKSPACE_ID = RUNTIME_WORKSPACE_ID_FIXTURE
 
-export type ListPanelProps = {
-  sortedListItems: readonly AutomationListViewItem[]
-  selectedExternal: ExternalAutomationListEntry | null
-  openEditExternalDialog: (
-    manager: ExternalAutomationListEntry['manager'],
-    job: ExternalAutomationListEntry['job'],
-    scope: ExternalAutomationListEntry['scope']
-  ) => void
-  externalActionKey: string | null
-  requestExternalAction: (
-    manager: ExternalAutomationListEntry['manager'],
-    job: ExternalAutomationListEntry['job'],
-    action: 'run' | 'pause' | 'resume' | 'delete',
-    scope: ExternalAutomationListEntry['scope']
-  ) => void
-  hasListItems: boolean
-  hasFilteredListItems: boolean
-  selectedRowKey: string | null
-  selectedExternalKey: string | null
-  hostCatalog: AutomationHostCatalogView
-  searchCounts: { hostRowCount: number; visibleRowCount: number; searchActive: boolean }
-  externalManagersUncheckedNotice: string | null
-  isActionEnabled: (row: AutomationListRow, action: string) => boolean
-  onSelectHost: (filter: unknown) => void
-  selectAutomationRow: (rowKey: string | null) => void
-  selectExternalKey: (entryKey: string | null) => void
-  onOpenDetail: () => void
-  onRefresh: () => void
-  runNow: (row: AutomationListRow) => void
-  openEditDialog: (row: AutomationListRow) => void
-  toggleAutomation: (row: AutomationListRow) => void
-  requestDeleteAutomation: (row: AutomationListRow) => void
-  openCreateDialog: () => void
-  canCreateAutomation: boolean
-}
+export type ListPanelProps = AutomationListPanelModule.AutomationsListPanelProps
 
 export type DetailPaneProps = {
   selected: Automation | null
@@ -118,6 +82,7 @@ type AutomationsPageMocks = {
   state: Record<string, unknown>
   repoMap: Map<string, unknown>
   worktreeMap: Map<string, unknown>
+  renderRealList?: boolean
   listPanel: ListPanelProps | null
   detailPane: DetailPaneProps | null
   editorDialog: EditorDialogProps | null
@@ -204,46 +169,52 @@ vi.mock('@/lib/worktree-activation', () => ({
   activateAndRevealWorktree: vi.fn()
 }))
 
-vi.mock('./AutomationsListPanel', () => ({
-  AutomationsListPanel: (props: ListPanelProps) => {
-    const selectAutomationRow = (rowKey: string | null): void => {
-      props.selectAutomationRow(rowKey)
-      props.onOpenDetail()
+vi.mock('./AutomationsListPanel', async (importOriginal) => {
+  const actual = await importOriginal<typeof AutomationListPanelModule>()
+  return {
+    AutomationsListPanel: (props: AutomationListPanelModule.AutomationsListPanelProps) => {
+      if (mocks.renderRealList) {
+        return <actual.AutomationsListPanel {...props} />
+      }
+      const selectAutomationRow = (rowKey: string | null): void => {
+        props.selectAutomationRow(rowKey)
+        props.onOpenDetail()
+      }
+      mocks.listPanel = { ...props, selectAutomationRow }
+      return (
+        <div data-testid="list-panel">
+          <button aria-label="Refresh automations" onClick={props.onRefresh} />
+          {props.sortedListItems.map((item) =>
+            item.kind === 'local' ? (
+              <button
+                type="button"
+                data-testid="automation-row"
+                key={item.id}
+                onClick={() => selectAutomationRow(item.id)}
+              >
+                {item.row.automation.name}
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid="external-row"
+                key={item.id}
+                onClick={() => {
+                  props.selectAutomationRow(null)
+                  props.selectExternalKey(item.id)
+                  props.onOpenDetail()
+                }}
+              >
+                {item.entry.job.name}
+              </button>
+            )
+          )}
+          {props.hasListItems ? null : <div data-testid="empty-state" />}
+        </div>
+      )
     }
-    mocks.listPanel = { ...props, selectAutomationRow }
-    return (
-      <div data-testid="list-panel">
-        <button aria-label="Refresh automations" onClick={props.onRefresh} />
-        {props.sortedListItems.map((item) =>
-          item.kind === 'local' ? (
-            <button
-              type="button"
-              data-testid="automation-row"
-              key={item.id}
-              onClick={() => selectAutomationRow(item.id)}
-            >
-              {item.row.automation.name}
-            </button>
-          ) : (
-            <button
-              type="button"
-              data-testid="external-row"
-              key={item.id}
-              onClick={() => {
-                props.selectAutomationRow(null)
-                props.selectExternalKey(item.id)
-                props.onOpenDetail()
-              }}
-            >
-              {item.entry.job.name}
-            </button>
-          )
-        )}
-        {props.hasListItems ? null : <div data-testid="empty-state" />}
-      </div>
-    )
   }
-}))
+})
 
 vi.mock('./AutomationsDetailPane', () => ({
   AutomationsDetailPane: (props: DetailPaneProps) => {
@@ -427,6 +398,7 @@ export function installAutomationsPageHarness(): void {
     // A prior test's wholesale mockImplementation must not leak forward.
     mocks.callRuntimeRpc.mockReset()
     mocks.callRuntimeRpc.mockImplementation(answerAutomationRpc)
+    mocks.renderRealList = false
     mocks.listPanel = null
     mocks.detailPane = null
     mocks.editorDialog = null

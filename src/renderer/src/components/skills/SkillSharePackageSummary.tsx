@@ -1,4 +1,6 @@
 import { AlertTriangle } from 'lucide-react'
+import { useState } from 'react'
+import { useSkillShareReviewViewerController } from '@/runtime/skill-share-review-viewer-controller'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
@@ -7,6 +9,7 @@ import { fileCountLabel, skillCountLabel } from './skill-display-labels'
 import { byteLabel, sensitiveShareFiles, summarizeShareRisk } from './skill-share-preview-summary'
 import { SkillDescriptionDisclosure } from './SkillDescriptionDisclosure'
 import { SkillDisclosureTrigger } from './SkillDisclosureTrigger'
+import { isLongSkillDescription } from './skill-description-length'
 
 function SensitiveFileList({ preview }: { preview: SkillSharePreview }): React.JSX.Element {
   return (
@@ -53,6 +56,21 @@ export function SkillSharePackageSummary({
   const skillCount = preview.skillCount ?? preview.skills?.length ?? 1
   const bundle = skillCount > 1
   const risk = summarizeShareRisk(preview)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const [filesOpen, setFilesOpen] = useState(false)
+  const [skillsOpen, setSkillsOpen] = useState(true)
+  useSkillShareReviewViewerController({
+    preparationId: preview.preparationId,
+    descriptionAvailable: !bundle && isLongSkillDescription(preview.description),
+    filesAvailable: risk.risky,
+    skillsAvailable: bundle && (preview.skills?.length ?? 0) > 0,
+    descriptionExpanded,
+    filesOpen,
+    skillsOpen,
+    setDescriptionExpanded,
+    setFilesOpen,
+    setSkillsOpen
+  })
   return (
     <section className="space-y-2">
       <div className="min-w-0">
@@ -61,7 +79,13 @@ export function SkillSharePackageSummary({
         <h3 className="truncate text-sm font-semibold">
           {bundle ? skillCountLabel(skillCount) : preview.name}
         </h3>
-        {bundle ? null : <SkillDescriptionDisclosure description={preview.description} />}
+        {bundle ? null : (
+          <SkillDescriptionDisclosure
+            description={preview.description}
+            expanded={descriptionExpanded}
+            onExpandedChange={setDescriptionExpanded}
+          />
+        )}
         <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
           <span>{fileCountLabel(preview.fileCount)}</span>
           <span aria-hidden>·</span>
@@ -75,7 +99,7 @@ export function SkillSharePackageSummary({
       </div>
 
       {risk.risky ? (
-        <Collapsible>
+        <Collapsible open={filesOpen} onOpenChange={setFilesOpen}>
           <SkillDisclosureTrigger
             label={translate(
               'auto.components.skills.share.reviewFiles',
@@ -89,7 +113,7 @@ export function SkillSharePackageSummary({
       ) : null}
 
       {bundle && (preview.skills?.length ?? 0) > 0 ? (
-        <Collapsible defaultOpen>
+        <Collapsible open={skillsOpen} onOpenChange={setSkillsOpen}>
           <SkillDisclosureTrigger
             label={translate('auto.components.skills.share.reviewSkills', 'Review included skills')}
           />

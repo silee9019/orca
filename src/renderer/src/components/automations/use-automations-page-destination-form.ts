@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
-import {
-  getRepoExecutionHostId,
-  getWorktreeExecutionHostId,
-  parseExecutionHostId,
-  toRuntimeExecutionHostId
-} from '../../../../shared/execution-host'
+import { toRuntimeExecutionHostId } from '../../../../shared/execution-host'
+import { getAutomationEditorWorktrees } from './automation-editor-worktrees'
 import { translate } from '@/i18n/i18n'
 import { getAutomationCreateRepos } from './automation-create-projects'
 import {
@@ -181,20 +177,7 @@ export function useAutomationsPageDestinationForm({
   const dialogWorktrees = useMemo(() => {
     const candidates = worktreesByRepo[draft.projectId] ?? []
     const project = dialogRepos.find((repo) => repo.id === draft.projectId)
-    if (!project) {
-      return candidates
-    }
-    const hostId = getRepoExecutionHostId(project)
-    const parsedHost = parseExecutionHostId(hostId)
-    return candidates.filter((worktree) => {
-      if (getWorktreeExecutionHostId(worktree, project) === hostId) {
-        return true
-      }
-      return (
-        parsedHost?.kind === 'runtime' &&
-        worktree.runtimeOwnerEnvironmentId === parsedHost.environmentId
-      )
-    })
+    return getAutomationEditorWorktrees(project, candidates)
   }, [dialogRepos, draft.projectId, worktreesByRepo])
   const destinationForProject = useCallback(
     (projectId: string, hostStableKey?: string | null): AutomationCreateDestination | null => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { mountMobileSettingsPairingClipboard } from '@/runtime/mobile-settings-connections-viewer-controller'
 import { Check, CircleAlert, Copy, Maximize2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '../ui/button'
@@ -65,14 +66,16 @@ export function MobilePairingQrSection({
     }
   }, [pairingUrl])
 
-  async function copyPairingCode() {
-    if (!pairingUrl) {
-      return
+  const copyingRef = useRef(false)
+  async function copyPairingCode(): Promise<boolean> {
+    if (!pairingUrl || copyingRef.current) {
+      return false
     }
+    copyingRef.current = true
     try {
       await window.api.ui.writeClipboardText(pairingUrl)
       if (!pairingCodeButtonMountedRef.current) {
-        return
+        return false
       }
       clearCodeCopiedResetTimer()
       onCodeCopiedChange(true)
@@ -80,12 +83,28 @@ export function MobilePairingQrSection({
         codeCopiedResetTimerRef.current = null
         onCodeCopiedChange(false)
       }, 2000)
+      return true
     } catch {
       toast.error(
         translate('auto.components.settings.MobilePane.711231348f', 'Failed to copy pairing code')
       )
+      return false
+    } finally {
+      copyingRef.current = false
     }
   }
+  const clipboardRef = useRef({ pairingUrl, copyPairingCode })
+  useEffect(() => {
+    clipboardRef.current = { pairingUrl, copyPairingCode }
+  })
+  useEffect(
+    () =>
+      mountMobileSettingsPairingClipboard({
+        pairingIdentity: () => clipboardRef.current.pairingUrl,
+        copy: () => clipboardRef.current.copyPairingCode()
+      }),
+    []
+  )
 
   if (!qrDataUrl && !pairingUrl) {
     return null

@@ -47,7 +47,14 @@ afterEach(() => {
 
 async function renderRing(usage = USAGE): Promise<HTMLButtonElement> {
   const { NativeChatContextUsageRing } = await import('./NativeChatContextUsageRing')
-  await act(async () => root.render(<NativeChatContextUsageRing usage={usage} />))
+  await act(async () =>
+    root.render(
+      <NativeChatContextUsageRing
+        target={{ kind: 'session', id: 'fixture-session' }}
+        usage={usage}
+      />
+    )
+  )
   const trigger = document.querySelector<HTMLButtonElement>(
     'button[data-native-chat-context-usage]'
   )
@@ -311,4 +318,27 @@ describe('NativeChatContextUsageRing', () => {
     expect(rows).toEqual(['Tools10%', 'Tools5%'])
     expect(consoleError.mock.calls.flat().join(' ')).not.toContain('same key')
   })
+})
+
+it('opens only the exact registered session context card and acknowledges committed state', async () => {
+  await renderRing()
+  const { setNativeContextViewerOpen } =
+    await import('../../runtime/native-context-viewer-controller')
+  await expect(
+    setNativeContextViewerOpen({ kind: 'session', id: 'another-session' }, true)
+  ).rejects.toThrow('native_context_viewer_unavailable')
+  let request: ReturnType<typeof setNativeContextViewerOpen> | undefined
+  act(() => {
+    request = setNativeContextViewerOpen({ kind: 'session', id: 'fixture-session' }, true)
+  })
+  await expect(request).resolves.toEqual({
+    target: { kind: 'session', id: 'fixture-session' },
+    open: true
+  })
+  expect(card()).not.toBeNull()
+  act(() => {
+    request = setNativeContextViewerOpen({ kind: 'session', id: 'fixture-session' }, false)
+  })
+  await expect(request).resolves.toMatchObject({ open: false })
+  expect(card()).toBeNull()
 })

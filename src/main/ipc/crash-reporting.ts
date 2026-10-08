@@ -1,3 +1,8 @@
+import { dismissCrashReport } from '../crash-reporting/crash-report-dismissal'
+import {
+  setCrashReportStoreForRpc,
+  setCrashReportOperationsForRpc
+} from '../runtime/rpc/methods/workspace-crash-reports'
 import { clipboard, ipcMain } from 'electron'
 import {
   type CrashReportCopyDiagnosticsArgs,
@@ -44,6 +49,7 @@ export function _getCrashReportingStateSizesForTests(): {
 }
 
 export function registerCrashReportingHandlers(store: CrashReportStore): void {
+  setCrashReportStoreForRpc(store)
   ipcMain.removeHandler('crashReports:getLatestPending')
   ipcMain.handle('crashReports:getLatestPending', () => getLatestPendingReport(store))
 
@@ -51,16 +57,9 @@ export function registerCrashReportingHandlers(store: CrashReportStore): void {
   ipcMain.handle('crashReports:getLatestReport', () => getLatestSendableReport(store))
 
   ipcMain.removeHandler('crashReports:dismiss')
-  ipcMain.handle('crashReports:dismiss', async (_event, args: { reportId: string }) => {
-    if (inFlightSubmissions.has(args.reportId)) {
-      return store.getById(args.reportId)
-    }
-    if (submittedReportIds.has(args.reportId)) {
-      const report = await store.getById(args.reportId)
-      return report ? { ...report, status: 'sent' as const } : null
-    }
-    return store.dismiss(args.reportId)
-  })
+  ipcMain.handle('crashReports:dismiss', (_event, args: { reportId: string }) =>
+    dismissCrashReport(store, args.reportId)
+  )
 
   ipcMain.removeAllListeners('crashReports:recordBreadcrumb')
   ipcMain.on(
@@ -74,28 +73,31 @@ export function registerCrashReportingHandlers(store: CrashReportStore): void {
     }
   )
 
+  const copyLatestDiagnostics = async (args?: CrashReportCopyDiagnosticsArgs) => {
+    const report = await getRequestedCrashReport(store, args)
+    const baseText = report
+      ? formatCrashReportText(report, args?.notes)
+      : buildUncapturedCrashReportText(args?.notes)
+    try {
+      clipboard.writeText(
+        assertClipboardTextWriteWithinLimit(
+          formatCrashReportCopyText(baseText, args?.submissionFailure)
+        )
+      )
+    } catch (error) {
+      if (isClipboardTextWriteTooLargeError(error)) {
+        return { ok: false as const, error: 'Crash diagnostics are too large to copy safely.' }
+      }
+      throw error
+    }
+    return { ok: true as const }
+  }
+  const submit = (args: CrashReportSubmitArgs) => submitCrashReport(store, args)
+  setCrashReportOperationsForRpc({ copyLatestDiagnostics, submit })
   ipcMain.removeHandler('crashReports:copyLatestDiagnostics')
   ipcMain.handle(
     'crashReports:copyLatestDiagnostics',
-    async (_event, args?: CrashReportCopyDiagnosticsArgs) => {
-      const report = await getRequestedCrashReport(store, args)
-      const baseText = report
-        ? formatCrashReportText(report, args?.notes)
-        : buildUncapturedCrashReportText(args?.notes)
-      try {
-        clipboard.writeText(
-          assertClipboardTextWriteWithinLimit(
-            formatCrashReportCopyText(baseText, args?.submissionFailure)
-          )
-        )
-      } catch (error) {
-        if (isClipboardTextWriteTooLargeError(error)) {
-          return { ok: false as const, error: 'Crash diagnostics are too large to copy safely.' }
-        }
-        throw error
-      }
-      return { ok: true as const }
-    }
+    (_event, args?: CrashReportCopyDiagnosticsArgs) => copyLatestDiagnostics(args)
   )
 
   ipcMain.removeHandler('crashReports:recordRendererError')
@@ -109,7 +111,5 @@ export function registerCrashReportingHandlers(store: CrashReportStore): void {
   })
 
   ipcMain.removeHandler('crashReports:submit')
-  ipcMain.handle('crashReports:submit', async (_event, args: CrashReportSubmitArgs) =>
-    submitCrashReport(store, args)
-  )
+  ipcMain.handle('crashReports:submit', (_event, args: CrashReportSubmitArgs) => submit(args))
 }

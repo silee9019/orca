@@ -1,5 +1,7 @@
 import { ipcMain, type WebContents } from 'electron'
-import { watch, type FSWatcher } from 'node:fs'
+import type { FSWatcher } from 'node:fs'
+import { watchLocalLogFile } from '../local-log-file-watcher'
+import { registerDesktopLogTailForRpc } from '../desktop-log-tail-requests'
 import type {
   LocalLogTailChangedPayload,
   LocalLogTailReadArgs,
@@ -126,13 +128,12 @@ async function startWatch(
       const payload: LocalLogTailChangedPayload = { subscriptionId, eventType }
       sender.send('fs:localLogTailChanged', payload)
     }
-    const watcher = watch(filePath, (eventType) => sendChange(eventType))
-    const subscription: TailWatch = { owner, watcher }
-    watcher.on('error', () => {
+    const watcher = watchLocalLogFile(filePath, sendChange, () => {
       // Rotation needs one final drain before releasing this exact watcher.
       sendChange('rename')
       closeWatch(key, subscription)
     })
+    const subscription: TailWatch = { owner, watcher }
     tailWatches.set(key, subscription)
     owner.watchKeys.add(key)
   } finally {
@@ -144,6 +145,7 @@ async function startWatch(
 }
 
 export function registerLocalLogTailHandlers(store: Store): void {
+  registerDesktopLogTailForRpc(store)
   ipcMain.handle(
     'fs:readLocalLogTail',
     async (_event, args: LocalLogTailReadArgs): Promise<LocalLogTailReadResult> => {

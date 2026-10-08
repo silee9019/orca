@@ -1,3 +1,6 @@
+import { useOrchestrationCommandDialogViewer } from '../../runtime/orchestration-command-dialog-viewer'
+import { useCallback } from 'react'
+import { useAgentSkillSetupViewer } from '../../runtime/agent-skill-setup-viewer'
 import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -14,11 +17,13 @@ import { translate } from '@/i18n/i18n'
 export function OrchestrationSkillPromptDialog(props: {
   command: string
   open: boolean
+  canOpen?: boolean
   onOpenChange: (open: boolean) => void
 }): React.JSX.Element {
-  const { command, open, onOpenChange } = props
+  const { command, open, onOpenChange, canOpen = true } = props
+  useOrchestrationCommandDialogViewer({ command, open, onOpenChange, canOpen })
 
-  const copyCommand = async (): Promise<void> => {
+  const copyCommand = useCallback(async (): Promise<boolean> => {
     try {
       await window.api.ui.writeClipboardText(command)
       toast.success(
@@ -27,6 +32,7 @@ export function OrchestrationSkillPromptDialog(props: {
           'Copied install command.'
         )
       )
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -36,8 +42,16 @@ export function OrchestrationSkillPromptDialog(props: {
               'Failed to copy install command.'
             )
       )
+      return false
     }
-  }
+  }, [command])
+  useAgentSkillSetupViewer({
+    panelKey: 'settings-orchestration-command-prompt',
+    title: 'Orchestration skill install command',
+    ownerKey: command,
+    source: copyCommand,
+    copy: open ? { target: command, run: copyCommand } : undefined
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

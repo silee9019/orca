@@ -1,8 +1,9 @@
 import type { MigrationUnsupportedPtyEntry } from '../../shared/agent-status-types'
 
-type MigrationUnsupportedPtyEvent =
-  | { type: 'set'; entry: MigrationUnsupportedPtyEntry }
-  | { type: 'clear'; ptyId: string }
+import {
+  publishMigrationUnsupportedPtyChange,
+  type MigrationUnsupportedPtyEvent
+} from './migration-unsupported-pty-observers'
 
 const entriesByPtyId = new Map<string, MigrationUnsupportedPtyEntry>()
 let listener: ((event: MigrationUnsupportedPtyEvent) => void) | null = null
@@ -26,6 +27,7 @@ export function setMigrationUnsupportedPtyPersistenceListener(
 
 export function setMigrationUnsupportedPty(entry: MigrationUnsupportedPtyEntry): void {
   entriesByPtyId.set(entry.ptyId, entry)
+  publishMigrationUnsupportedPtyChange({ type: 'set', entry })
   listener?.({ type: 'set', entry })
   persistenceListener?.(getMigrationUnsupportedPtySnapshot())
 }
@@ -34,6 +36,7 @@ export function clearMigrationUnsupportedPty(ptyId: string): void {
   if (!entriesByPtyId.delete(ptyId)) {
     return
   }
+  publishMigrationUnsupportedPtyChange({ type: 'clear', ptyId })
   listener?.({ type: 'clear', ptyId })
   persistenceListener?.(getMigrationUnsupportedPtySnapshot())
 }
@@ -53,6 +56,7 @@ export function clearMigrationUnsupportedPtysForPaneKey(paneKey: string): void {
   // every entry while still emitting individual renderer clear events.
   for (const ptyId of ptyIdsToClear) {
     entriesByPtyId.delete(ptyId)
+    publishMigrationUnsupportedPtyChange({ type: 'clear', ptyId })
     listener?.({ type: 'clear', ptyId })
   }
   persistenceListener?.(getMigrationUnsupportedPtySnapshot())
@@ -71,6 +75,7 @@ export function clearMigrationUnsupportedPtysByTabPrefix(tabId: string): void {
   }
   for (const ptyId of ptyIdsToClear) {
     entriesByPtyId.delete(ptyId)
+    publishMigrationUnsupportedPtyChange({ type: 'clear', ptyId })
     listener?.({ type: 'clear', ptyId })
   }
   persistenceListener?.(getMigrationUnsupportedPtySnapshot())

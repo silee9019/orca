@@ -22,7 +22,10 @@ export function RightSidebarPanelContent({
   rightSidebarOpen
 }: RightSidebarPanelContentProps): React.JSX.Element {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      data-rendered-sidebar-panel={effectiveTab}
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+    >
       <Suspense fallback={null}>
         {effectiveTab === 'explorer' && <FileExplorer />}
         {effectiveTab === 'source-control' && <SourceControl />}

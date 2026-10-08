@@ -44,8 +44,13 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     groupBy: 'repo',
     // Why: group keys are mode-specific, so clear collapsed state on mode switch — stale keys are meaningless and accumulate.
     setGroupBy: (g) => {
-      window.api.ui.set({ groupBy: g, collapsedGroups: [] }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        groupBy: g,
+        collapsedGroups: []
+      })
+      void saving.catch(console.error)
       set({ groupBy: g, collapsedGroups: new Set<string>() })
+      return saving
     },
 
     sortBy: 'recent',
@@ -182,14 +187,12 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
         worktreeCardProperties: updates.ui.worktreeCardProperties,
         _worktreeCardModeDefaulted: true
       }))
-      void Promise.all([
-        window.api.settings.set(updates.settings).then((nextSettings) => {
-          if (nextSettings) {
-            set({ settings: nextSettings })
-          }
-        }),
-        window.api.ui.set(updates.ui)
-      ]).catch(console.error)
+      const saving = Promise.all([
+        window.api.settings.set(updates.settings),
+        (window.api.ui.setWithAck ?? window.api.ui.set)(updates.ui)
+      ]).then(() => {})
+      void saving.catch(console.error)
+      return saving
     },
     setWorktreeCardProperties: (properties) => {
       const normalized = normalizeWorktreeCardProperties(properties)
@@ -201,8 +204,12 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     agentActivityDisplayMode: DEFAULT_AGENT_ACTIVITY_DISPLAY_MODE,
     setAgentActivityDisplayMode: (mode) => {
       const normalized = normalizeAgentActivityDisplayMode(mode)
-      window.api.ui.set({ agentActivityDisplayMode: normalized }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        agentActivityDisplayMode: normalized
+      }).then(() => {})
+      void saving.catch(console.error)
       set({ agentActivityDisplayMode: normalized })
+      return saving
     },
 
     workspaceStatuses: cloneDefaultWorkspaceStatuses(),
@@ -233,37 +240,37 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
     },
 
     statusBarItems: [...DEFAULT_STATUS_BAR_ITEMS],
-    toggleStatusBarItem: (item) =>
-      set((s) => {
-        const current = s.statusBarItems || DEFAULT_STATUS_BAR_ITEMS
-        const updated = current.includes(item)
-          ? current.filter((i) => i !== item)
-          : [...current, item]
-        window.api.ui.set({ statusBarItems: updated }).catch(console.error)
-        return { statusBarItems: updated }
-      }),
+    toggleStatusBarItem: (item) => {
+      const current = get().statusBarItems || DEFAULT_STATUS_BAR_ITEMS
+      const updated = current.includes(item)
+        ? current.filter((i) => i !== item)
+        : [...current, item]
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ statusBarItems: updated })
+      void saving.catch(console.error)
+      set({ statusBarItems: updated })
+      return saving
+    },
 
     agentDashboardDrawerOpen: false,
     setAgentDashboardDrawerOpen: (open) => set({ agentDashboardDrawerOpen: open }),
     statusBarVisible: true,
     setStatusBarVisible: (v) => {
-      window.api.ui.set({ statusBarVisible: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ statusBarVisible: v })
+      void saving.catch(console.error)
       set({ statusBarVisible: v })
+      return saving
     },
     usagePercentageDisplay: DEFAULT_USAGE_PERCENTAGE_DISPLAY,
     setUsagePercentageDisplay: (display) => {
       const normalized = normalizeUsagePercentageDisplay(display)
-      // Why: changing the control is the discovery path, so permanently dismiss the one-time change notice.
-      window.api.ui
-        .set({
-          usagePercentageDisplay: normalized,
-          usagePercentageDisplayChangeNoticeDismissed: true
-        })
-        .catch(console.error)
-      set({
+      const updates = {
         usagePercentageDisplay: normalized,
         usagePercentageDisplayChangeNoticeDismissed: true
-      })
+      }
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)(updates)
+      void saving.catch(console.error)
+      set(updates)
+      return saving
     },
     statusBarUsageMode: DEFAULT_STATUS_BAR_USAGE_MODE,
     setStatusBarUsageMode: (mode) => {

@@ -1,3 +1,8 @@
+import {
+  automationSaveOutcome,
+  type AutomationSaveOutcome,
+  type AutomationSaveProgress
+} from './automation-save-outcome'
 import { toast } from 'sonner'
 import type {
   Automation,
@@ -24,12 +29,11 @@ import {
   saveExistingAutomation
 } from './automation-orca-save-operations'
 import type { AutomationSaveContext } from './automation-save-context'
-
-/** Saves an Orca automation, including destination validation and host moves. */
 export async function saveOrcaAutomation(
   context: AutomationSaveContext,
-  time: { hour: number; minute: number; now: number }
-): Promise<void> {
+  time: { hour: number; minute: number; now: number },
+  progress: AutomationSaveProgress
+): Promise<AutomationSaveOutcome> {
   const { store, local, setup, destination, destinationForm, pageRefresh } = context
   const { repos, projectHostSetups } = store
   const {
@@ -59,12 +63,11 @@ export async function saveOrcaAutomation(
   } = destination
   const { dialogRepos, editHostResolution, automationDialogTarget } = destinationForm
 
-  // Re-check the destination at the start of the transaction. This keeps all
-  // side effects (hook probes and trust prompts) behind the destination fence.
+  // Fence hook probes and trust prompts behind the current destination.
   const createCheck = editingAutomationId === null ? createDestination.check(draft.projectId) : null
   if (createCheck && !createCheck.ok) {
     setEditorNotice(createCheck.notice)
-    return
+    return { status: 'blocked', reason: 'destination-unavailable' }
   }
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -132,7 +135,7 @@ export async function saveOrcaAutomation(
         'Choose an available workspace before saving.'
       )
     )
-    return
+    return { status: 'blocked', reason: 'run-context-unavailable' }
   }
 
   let currentAutomation = editingAutomationId
@@ -149,7 +152,7 @@ export async function saveOrcaAutomation(
     )
     if (!reread.ok && reread.notice.severity === 'owner') {
       setEditorNotice(reread.notice)
-      return
+      return { status: 'blocked', reason: 'owner-unavailable' }
     }
     currentAutomation = (reread.ok ? reread.value : null) ?? currentAutomation
   }
@@ -203,7 +206,7 @@ export async function saveOrcaAutomation(
   })
   if (!destinationResult.ok) {
     setEditorNotice(destinationResult.notice)
-    return
+    return { status: 'blocked', reason: 'edit-destination-unavailable' }
   }
   const { editDestination, moveTarget } = destinationResult
 
@@ -250,9 +253,15 @@ export async function saveOrcaAutomation(
   if (!saved.ok) {
     setEditorNotice(saved.notice)
     setEditorNoticeHost(moveTarget?.entry ?? null)
-    return
+    return automationSaveOutcome(progress)
   }
   const automation = saved.value
+  progress.write = {
+    provider: 'orca',
+    operation: moveTarget ? 'move' : editingAutomationId !== null ? 'update' : 'create',
+    automationId: automation.id,
+    originalRemoved: moveTarget ? originalRemoved : null
+  }
   if (editingAutomationId !== null) {
     invalidateRowHost(editingRowKey, 'definition')
   } else {
@@ -263,18 +272,19 @@ export async function saveOrcaAutomation(
     return [...next, automation].sort((left, right) => left.name.localeCompare(right.name))
   })
   setDraft((current) => ({ ...current, name: '', prompt: '' }))
-  await pageRefresh.refresh()
+  progress.pageRead = (await pageRefresh.refresh()) ? 'completed' : 'failed'
   if (editingAutomationId !== null && editingRowKey && !moveTarget) {
     setSelectedAutomationRunPageId(null)
     setSelectedRowKey(editingRowKey)
   }
   selectAutomationId(automation.id)
   setCreateOpen(false)
+  progress.closeRequested = true
   if (editingAutomationId === null) {
     useAppStore.getState().recordFeatureInteraction('automation-created')
   }
   if (moveTarget && !originalRemoved) {
-    return
+    return automationSaveOutcome(progress)
   }
   toast.success(
     moveTarget
@@ -286,4 +296,5 @@ export async function saveOrcaAutomation(
         ? translate('auto.components.automations.AutomationsPage.244727e655', 'Automation updated.')
         : translate('auto.components.automations.AutomationsPage.2a20596d6b', 'Automation saved.')
   )
+  return automationSaveOutcome(progress)
 }

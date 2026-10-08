@@ -26,6 +26,7 @@ export function ActivityTitlebarControls(): React.JSX.Element {
               type="button"
               variant="ghost"
               size="icon-xs"
+              data-activity-page-close
               onClick={closeActivityPage}
               aria-label={translate(
                 'auto.components.activity.ActivityTitlebarControls.dc708f3eff',

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSkillInstallAgentViewerController } from '../../runtime/skill-install-agent-viewer-controller'
 import { Bot, Check, ChevronsUpDown, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,9 +68,11 @@ export function SkillInstallAgentPicker({
   selected,
   detectedAgents,
   busy,
-  onChange
+  onChange,
+  viewerTarget
 }: {
   id?: string
+  viewerTarget?: string
   scope: 'global' | 'workspace'
   selected: ReadonlySet<SkillInstallProviderId>
   detectedAgents: readonly string[] | null
@@ -107,6 +110,21 @@ export function SkillInstallAgentPicker({
     }
     onChange(next)
   }
+
+  const setProvider = (provider: SkillInstallProviderId, checked: boolean): void => {
+    onChange(toggledSkillProviderSelection(selected, provider, checked))
+  }
+  useSkillInstallAgentViewerController({
+    target: viewerTarget,
+    open,
+    busy,
+    selected,
+    selectable: selectable.map((choice) => choice.provider.id),
+    setOpen,
+    setProvider,
+    selectAll,
+    clearSelectable
+  })
 
   const summaryText =
     chosen.length === 0
@@ -238,9 +256,7 @@ export function SkillInstallAgentPicker({
                     ? translate('auto.components.skills.install.agentNotInstalled', 'Not installed')
                     : null
                 }
-                onCheckedChange={(checked) =>
-                  onChange(toggledSkillProviderSelection(selected, provider.id, checked))
-                }
+                onCheckedChange={(checked) => setProvider(provider.id, checked)}
               />
             ))}
           </ul>

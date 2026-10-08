@@ -7,6 +7,12 @@ import {
   deleteLocalSpeechModel,
   getSpeechModelDeletionErrorCode
 } from '../speech/speech-model-deletion'
+import {
+  clearOpenAiSpeechApiKey,
+  getOpenAiSpeechApiKeyProtection,
+  hasOpenAiSpeechApiKey,
+  saveOpenAiSpeechApiKey
+} from '../speech/openai-api-key-store'
 import type { RuntimeStore } from './runtime-store-contract'
 
 export class RuntimeMobileSpeechCatalog {
@@ -49,6 +55,55 @@ export class RuntimeMobileSpeechCatalog {
         console.error('[runtime] mobile speech model download failed', { modelId, err })
       )
     return { started: true }
+  }
+
+  cancelDownload(modelId: string): { cancelled: true } {
+    const manifest = getCatalogModel(modelId)
+    if (!manifest || !isLocalSpeechModel(manifest)) {
+      throw new Error('voice_model_not_downloadable')
+    }
+    getSpeechModelManager(this.requireStore()).cancelDownload(modelId)
+    return { cancelled: true }
+  }
+
+  keyStatus(): {
+    configured: boolean
+    protection: ReturnType<typeof getOpenAiSpeechApiKeyProtection>
+  } {
+    this.requireStore()
+    return { configured: hasOpenAiSpeechApiKey(), protection: getOpenAiSpeechApiKeyProtection() }
+  }
+
+  saveKey(apiKey: string): ReturnType<RuntimeMobileSpeechCatalog['keyStatus']> {
+    const store = this.requireWritableStore()
+    saveOpenAiSpeechApiKey(apiKey)
+    const status = this.keyStatus()
+    store.updateSettings?.(
+      {
+        voice: {
+          ...(store.getSettings().voice ?? getDefaultVoiceSettings()),
+          openAiApiKeyConfigured: status.configured
+        }
+      },
+      { notifyListeners: true }
+    )
+    return status
+  }
+
+  clearKey(): ReturnType<RuntimeMobileSpeechCatalog['keyStatus']> {
+    const store = this.requireWritableStore()
+    clearOpenAiSpeechApiKey()
+    const status = this.keyStatus()
+    store.updateSettings?.(
+      {
+        voice: {
+          ...(store.getSettings().voice ?? getDefaultVoiceSettings()),
+          openAiApiKeyConfigured: status.configured
+        }
+      },
+      { notifyListeners: true }
+    )
+    return status
   }
 
   async delete(modelId: string): Promise<RuntimeSpeechSetupState> {

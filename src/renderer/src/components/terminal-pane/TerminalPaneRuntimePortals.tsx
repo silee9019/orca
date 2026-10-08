@@ -174,7 +174,15 @@ export function TerminalPaneRecoveryPortals({
 export function TerminalPaneMobileDriverPortals({
   controller
 }: {
-  controller: TerminalPaneController
+  controller: Pick<
+    TerminalPaneController,
+    | 'chatLeafId'
+    | 'effectiveChatViewMode'
+    | 'managedPanes'
+    | 'paneTransportsRef'
+    | 'restoreAllTerminalFits'
+    | 'restorePaneTerminalFit'
+  >
 }): React.JSX.Element {
   const {
     chatLeafId,
@@ -205,6 +213,7 @@ export function TerminalPaneMobileDriverPortals({
         return createPortal(
           <MobileDriverOverlay
             key={`mobile-driver-${pane.id}-${ptyId}`}
+            ptyId={ptyId}
             driver={driver}
             hasFitOverride={hasFitOverride}
             rootClassName="mobile-driver-banner"

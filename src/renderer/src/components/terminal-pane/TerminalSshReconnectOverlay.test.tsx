@@ -8,6 +8,7 @@ import userEvent from '@testing-library/user-event'
 import { TerminalSshReconnectOverlay } from './TerminalSshReconnectOverlay'
 import { useAppStore } from '@/store'
 import { resetSshConnectInFlightForTests } from '@/ssh/ssh-connect-in-flight'
+import { makeWorktree } from '@/store/slices/worktrees-slice-test-fixtures'
 import type { SshConnectionState } from '../../../../shared/ssh-types'
 
 const toastMocks = vi.hoisted(() => ({
@@ -65,6 +66,29 @@ describe('TerminalSshReconnectOverlay', () => {
     deleteFlowMocks.runWorktreeDelete.mockReset()
     environmentSshMocks.connectRuntimeEnvironmentSshTarget.mockReset()
     environmentSshMocks.resyncRuntimeEnvironmentSshTargets.mockReset()
+    useAppStore.getState().setRuntimeEnvironmentStatus('env-1', {
+      status: {
+        runtimeId: 'runtime-a',
+        rendererGraphEpoch: 1,
+        graphStatus: 'ready',
+        authoritativeWindowId: 7,
+        liveTabCount: 0,
+        liveLeafCount: 0
+      },
+      checkedAt: Date.now()
+    })
+    useAppStore.getState().setEnvironmentSshTargetsMetadata('env-1', [
+      { id: 'ssh-remote-1', label: 'Remote 1' },
+      { id: 'ssh-remote-dead', label: 'Remote dead' }
+    ])
+    for (const targetId of ['ssh-remote-1', 'ssh-remote-dead']) {
+      useAppStore.getState().setEnvironmentSshConnectionState('env-1', targetId, {
+        targetId,
+        status: 'disconnected',
+        error: null,
+        reconnectAttempt: 0
+      })
+    }
   })
 
   afterEach(() => {
@@ -231,6 +255,24 @@ describe('TerminalSshReconnectOverlay', () => {
   })
 
   it('offers to remove the workspace (not Connect) when the SSH target was removed', async () => {
+    useAppStore.setState({
+      sshTargetsHydrated: true,
+      repos: [
+        {
+          id: 'repo',
+          path: '/work',
+          displayName: 'Repo',
+          addedAt: 0,
+          badgeColor: '',
+          connectionId: 'ssh-dead',
+          executionHostId: 'ssh:ssh-dead'
+        }
+      ],
+      worktreesByRepo: {
+        repo: [makeWorktree({ id: 'repo::/work/wt', repoId: 'repo', hostId: 'ssh:ssh-dead' })]
+      }
+    })
+
     const connect = vi.fn().mockResolvedValue(undefined)
     installSshConnect(connect)
     const user = userEvent.setup()

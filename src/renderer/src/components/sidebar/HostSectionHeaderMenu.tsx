@@ -1,4 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import { useSshWorkspaceOverlayViewerController } from '@/hooks/useSshConfirmationViewerController'
+import { canConnectSshStatus } from '@/ssh/ssh-connection-recoverability'
+import { beginSshConnect, endSshConnect, isSshConnectInFlight } from '@/ssh/ssh-connect-in-flight'
+import React, { useCallback, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Ellipsis,
@@ -75,6 +78,7 @@ export function HostSectionHeaderMenu({ row }: { row: HostHeaderRow }): React.JS
   const [renameOpen, setRenameOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
   const mountedRef = useMountedRef()
+  const busyRef = useRef(false)
   const sshStatus = useAppStore((s) => {
     const parsed = parseExecutionHostId(row.hostId)
     if (parsed?.kind !== 'ssh') {
@@ -96,14 +100,45 @@ export function HostSectionHeaderMenu({ row }: { row: HostHeaderRow }): React.JS
   }, [row])
 
   const runSshAction = useCallback(
-    async (action: 'connect' | 'disconnect') => {
+    async (action: 'connect' | 'disconnect'): Promise<boolean> => {
       const parsed = parseExecutionHostId(row.hostId)
-      if (parsed?.kind !== 'ssh') {
-        return
+      const state = useAppStore.getState()
+      if (
+        parsed?.kind !== 'ssh' ||
+        row.kind !== 'ssh' ||
+        !mountedRef.current ||
+        busyRef.current ||
+        !state.sshTargetsHydrated ||
+        !state.sshTargetLabels.has(parsed.targetId)
+      ) {
+        return false
+      }
+      const status = state.sshConnectionStates.get(parsed.targetId)?.status ?? 'disconnected'
+      if (
+        action === 'connect'
+          ? !canConnectSshStatus(status) || isSshConnectInFlight(parsed.targetId)
+          : status !== 'connected'
+      ) {
+        return false
+      }
+      busyRef.current = true
+      if (action === 'connect') {
+        beginSshConnect(parsed.targetId)
       }
       setBusy(true)
       try {
-        await window.api.ssh[action]({ targetId: parsed.targetId })
+        if (action === 'connect') {
+          const result = await window.api.ssh.connect({ targetId: parsed.targetId })
+          return result?.targetId === parsed.targetId && result.status === 'connected'
+        }
+        await window.api.ssh.disconnect({ targetId: parsed.targetId })
+        const result = await window.api.ssh.getState({ targetId: parsed.targetId })
+        return result
+          ? result.targetId === parsed.targetId && result.status === 'disconnected'
+          : useAppStore.getState().sshTargetsHydrated &&
+              useAppStore.getState().sshTargetLabels.has(parsed.targetId) &&
+              useAppStore.getState().sshConnectionStates.get(parsed.targetId)?.status ===
+                'disconnected'
       } catch (err) {
         toast.error(
           err instanceof Error
@@ -118,13 +153,49 @@ export function HostSectionHeaderMenu({ row }: { row: HostHeaderRow }): React.JS
                   'Disconnect failed'
                 )
         )
+        return false
       } finally {
+        busyRef.current = false
+        if (action === 'connect') {
+          endSshConnect(parsed.targetId)
+        }
         if (mountedRef.current) {
           setBusy(false)
         }
       }
     },
-    [mountedRef, row.hostId]
+    [mountedRef, row.hostId, row.kind]
+  )
+
+  useSshWorkspaceOverlayViewerController(
+    {
+      read: () => {
+        const parsed = parseExecutionHostId(row.hostId)
+        const targetId = parsed?.kind === 'ssh' ? parsed.targetId : ''
+        const state = useAppStore.getState()
+        const configured = state.sshTargetsHydrated && state.sshTargetLabels.has(targetId)
+        const status = state.sshConnectionStates.get(targetId)?.status ?? 'disconnected'
+        return {
+          surface: 'host-menu',
+          workspaceId: null,
+          targetId,
+          expectedHostId: row.hostId,
+          removed: !configured,
+          canConnect:
+            configured &&
+            !busyRef.current &&
+            !isSshConnectInFlight(targetId) &&
+            canConnectSshStatus(status) &&
+            canConnectSshStatus(sshStatus ?? 'disconnected'),
+          canDisconnect:
+            configured && !busyRef.current && status === 'connected' && sshStatus === 'connected',
+          connected: status === 'connected' && sshStatus === 'connected'
+        }
+      },
+      connect: () => runSshAction('connect'),
+      disconnect: () => runSshAction('disconnect')
+    },
+    row.kind === 'ssh' && parseExecutionHostId(row.hostId)?.kind === 'ssh'
   )
 
   const handleCheckConnection = useCallback(async () => {

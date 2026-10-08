@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import type { EmulatorSdkActions } from '@/runtime/emulator-settings-viewer'
 import { CheckCircle2, CircleAlert, FolderOpen, X } from 'lucide-react'
 import type React from 'react'
 import { toast } from 'sonner'
@@ -12,9 +14,15 @@ type EmulatorAvailability = {
 }
 
 type MobileEmulatorAvailabilityDetailsProps = {
+  registerSdkActions?: (actions: EmulatorSdkActions) => () => void
   availability: EmulatorAvailability | null
   configuredPath?: string | null
-  onSetAndroidSdkPath: (path: string | null) => void | Promise<void>
+  getSdkRevision?: () => number
+  getSdkPath?: () => string | null
+  onSetAndroidSdkPath: (
+    path: string | null,
+    expectedRevision?: number
+  ) => void | boolean | Promise<void | boolean>
 }
 
 const ANDROID_STUDIO_URL = 'https://developer.android.com/studio'
@@ -57,50 +65,115 @@ function ToolchainStatusRow({
 const sdkPathActionClassName = 'h-6 px-2 text-muted-foreground hover:text-foreground'
 
 export function MobileEmulatorAvailabilityDetails({
+  registerSdkActions,
   availability,
   configuredPath,
-  onSetAndroidSdkPath
+  onSetAndroidSdkPath,
+  getSdkRevision,
+  getSdkPath
 }: MobileEmulatorAvailabilityDetailsProps): React.JSX.Element | null {
-  if (!availability) {
-    return null
-  }
-  const android = availability.android ?? { sdkFound: false, sdkPath: undefined, message: '' }
-  const iosOk = Boolean(availability.simctl?.ok && availability.serveSim?.ok)
-  const showIos = availability.platform === 'darwin'
-
-  const handleLocate = async (): Promise<void> => {
+  const pickedPath = useRef<string | null | undefined>(undefined)
+  const busy = useRef(false)
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  const android = availability?.android ?? { sdkFound: false, sdkPath: undefined, message: '' }
+  const iosOk = Boolean(availability?.simctl?.ok && availability?.serveSim?.ok)
+  const showIos = availability?.platform === 'darwin'
+  const handleLocate = async (expiresAt?: number): Promise<boolean> => {
+    if (busy.current || !availability || !mounted.current) {
+      return false
+    }
+    busy.current = true
+    const revision = getSdkRevision?.()
+    const originalPath = getSdkPath?.()
     try {
       const picked = await window.api.shell.pickDirectory({
         defaultPath: android.sdkPath ?? configuredPath ?? undefined
       })
-      if (picked) {
-        await onSetAndroidSdkPath(picked)
+      if (
+        !picked ||
+        !mounted.current ||
+        (getSdkPath !== undefined && originalPath !== getSdkPath()) ||
+        (expiresAt !== undefined && Date.now() >= expiresAt)
+      ) {
+        return false
       }
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.MobileEmulatorSdkStatus.63fe73a1ea',
-              'Could not update Android SDK folder.'
-            )
-      )
+      pickedPath.current = picked
+      return (await onSetAndroidSdkPath(picked, revision)) === true
+    } catch {
+      if (mounted.current) {
+        toast.error(
+          translate(
+            'auto.components.settings.MobileEmulatorSdkStatus.63fe73a1ea',
+            'Could not update Android SDK folder.'
+          )
+        )
+      }
+      return false
+    } finally {
+      busy.current = false
     }
   }
-
-  const handleClear = async (): Promise<void> => {
-    try {
-      await onSetAndroidSdkPath(null)
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.MobileEmulatorSdkStatus.63fe73a1ea',
-              'Could not update Android SDK folder.'
-            )
-      )
+  const handleClear = async (): Promise<boolean> => {
+    if (busy.current || !configuredPath || !availability || !mounted.current) {
+      return false
     }
+    busy.current = true
+    try {
+      return (await onSetAndroidSdkPath(null)) === true
+    } catch {
+      if (mounted.current) {
+        toast.error(
+          translate(
+            'auto.components.settings.MobileEmulatorSdkStatus.63fe73a1ea',
+            'Could not update Android SDK folder.'
+          )
+        )
+      }
+      return false
+    } finally {
+      busy.current = false
+    }
+  }
+  const openStudio = async (): Promise<boolean> => {
+    if (busy.current || !availability || android.sdkFound || !mounted.current) {
+      return false
+    }
+    busy.current = true
+    try {
+      await window.api.shell.openUrl(ANDROID_STUDIO_URL)
+      return true
+    } catch {
+      return false
+    } finally {
+      busy.current = false
+    }
+  }
+  const committed = useRef({ handleLocate, handleClear, openStudio, configuredPath })
+  useEffect(() => {
+    committed.current = { handleLocate, handleClear, openStudio, configuredPath }
+  })
+  const hasAvailability = availability !== null
+  useEffect(() => {
+    if (!hasAvailability) {
+      return
+    }
+    return registerSdkActions?.({
+      matches: () =>
+        pickedPath.current !== undefined &&
+        (committed.current.configuredPath ?? null) === pickedPath.current,
+      locate: (expiresAt) => committed.current.handleLocate(expiresAt),
+      clear: () => committed.current.handleClear(),
+      studio: () => committed.current.openStudio()
+    })
+  }, [registerSdkActions, hasAvailability])
+  if (!availability) {
+    return null
   }
 
   return (
@@ -137,12 +210,7 @@ export function MobileEmulatorAvailabilityDetails({
           actions={
             <>
               {!android.sdkFound ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void window.api.shell.openUrl(ANDROID_STUDIO_URL)}
-                >
+                <Button type="button" size="sm" variant="outline" onClick={() => void openStudio()}>
                   {translate(
                     'auto.components.settings.MobileEmulatorSdkStatus.b94ff260e6',
                     'Download Android Studio'

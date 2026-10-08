@@ -17,6 +17,11 @@ export async function copyArtifactLink(
   }
 }
 
-export function openArtifactInBrowser(shareUrl: string): void {
-  void window.api.shell.openUrl(shareUrl)
+export async function openArtifactInBrowser(shareUrl: string): Promise<boolean> {
+  try {
+    await window.api.shell.openUrl(shareUrl)
+    return true
+  } catch {
+    return false
+  }
 }

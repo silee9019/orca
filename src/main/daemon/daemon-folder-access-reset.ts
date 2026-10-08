@@ -92,8 +92,10 @@ function emitResetOutcome(cwdClass: DaemonPtyCwdClass, access: FreshDaemonAccess
 }
 
 export async function resetFolderAccessForDaemon(
-  identity: DaemonEndpointIdentity | null
+  identity: DaemonEndpointIdentity | null,
+  options?: { assertOwner: () => void }
 ): Promise<DaemonFolderAccessResetResult> {
+  options?.assertOwner()
   if (process.platform !== 'darwin') {
     return { outcome: 'unsupported' }
   }
@@ -105,15 +107,19 @@ export async function resetFolderAccessForDaemon(
   if (bundleId === null) {
     return { outcome: 'unsupported' }
   }
+  options?.assertOwner()
   if (!(await resetMacosTccPermission(TCC_SERVICE_BY_CWD_CLASS[target.cwdClass], bundleId)).ok) {
     return { outcome: 'reset_failed' }
   }
+  options?.assertOwner()
   const prompted = await promptByReadingFolder(target.canonicalPath)
   // Why no probe once the deadline passes: the sheet is still up, and a probe under it would read
   // as denied — a verdict about the unanswered prompt, not about the permission.
+  options?.assertOwner()
   if (prompted) {
     await refreshDaemonFolderAccessProbe(identity, { force: true })
   }
+  options?.assertOwner()
   const mismatch = getDaemonFolderAccessMismatch(identity)
   // One access for the event and the dialog: with the prompt unanswered the stored verdict predates
   // the reset, so reporting it as the reset's would claim a denial nothing has re-read.

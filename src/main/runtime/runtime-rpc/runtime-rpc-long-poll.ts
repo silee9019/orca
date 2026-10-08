@@ -20,6 +20,17 @@ export type RuntimeLongPollClass = 'ask' | 'browser-host' | 'wait'
 
 // Why: single classifier for long-poll requests (handlers that block on an external event), shared by counter/abort/keepalive. See §3.1.
 export function classifyRuntimeLongPoll(request: RpcRequest): RuntimeLongPollClass | null {
+  if (
+    request.method === 'accounts.observeCodexLogin' ||
+    request.method === 'rateLimits.subscribe' ||
+    request.method === 'macosTccPrompts.observeThreshold'
+  ) {
+    return 'wait'
+  }
+  // History discovery must release its waiter when the client disconnects.
+  if (request.method === 'aiVault.listSessions') {
+    return 'wait'
+  }
   // Worker start waits for readiness and then verifies the submitted prompt;
   // the complete operation can run for 90–110s. Keep every local transport
   // (Unix sockets and Windows named pipes) alive for that long poll.
@@ -39,6 +50,16 @@ export function classifyRuntimeLongPoll(request: RpcRequest): RuntimeLongPollCla
   }
   if (request.method === 'browser.clientHost.attach') {
     return 'browser-host'
+  }
+  if (
+    request.method === 'terminal.spawnPrivate' ||
+    request.method === 'terminal.dataListenerCount' ||
+    request.method === 'terminal.claimHostViewport' ||
+    request.method === 'terminal.writeInput' ||
+    request.method === 'terminal.writeInputAccepted' ||
+    request.method === 'terminal.previewInput'
+  ) {
+    return 'wait'
   }
   if (request.method === 'terminal.wait') {
     return 'wait'
@@ -64,6 +85,9 @@ export function classifyRuntimeLongPoll(request: RpcRequest): RuntimeLongPollCla
   if (request.method === 'orchestration.check') {
     const params = request.params as { wait?: unknown } | undefined
     return params?.wait === true ? 'wait' : null
+  }
+  if (request.method === 'terminal.waitDriver' || request.method === 'terminal.waitFit') {
+    return 'wait'
   }
   return null
 }

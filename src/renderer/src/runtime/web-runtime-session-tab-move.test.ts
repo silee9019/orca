@@ -234,6 +234,90 @@ describe('moveWebRuntimeSessionTab', () => {
     })
   })
 
+  it.each([undefined, null, {}, { moved: false }, { moved: 'true' }])(
+    'refuses unverifiable move receipts when acknowledgment is required: %j',
+    async (result) => {
+      const runtimeCall = vi.fn().mockResolvedValue({ id: 'move', ok: true, result })
+      vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
+      await expect(
+        moveWebRuntimeSessionTab({
+          worktreeId: WORKTREE_ID,
+          tabId: 'web-terminal-host-tab-1%3A%3Aleaf-1',
+          targetGroupId: 'group-right',
+          kind: 'split',
+          splitDirection: 'right',
+          requireAcknowledgedMove: true
+        })
+      ).resolves.toBe(false)
+    }
+  )
+
+  it('refuses a strict browser move without an authoritative host tab mapping', async () => {
+    mocks.resolveHostSessionTabIdForWebSessionTab.mockReturnValue(null)
+    const runtimeCall = vi.fn().mockResolvedValue({ id: 'move', ok: true, result: { moved: true } })
+    vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
+    await expect(
+      moveWebRuntimeSessionTab({
+        worktreeId: WORKTREE_ID,
+        tabId: 'local-browser',
+        targetGroupId: 'group-right',
+        kind: 'split',
+        splitDirection: 'right',
+        requireAcknowledgedMove: true
+      })
+    ).resolves.toBe(false)
+    expect(runtimeCall).not.toHaveBeenCalled()
+  })
+
+  it('uses the authoritative mapped browser tab id for a strict split', async () => {
+    mocks.resolveHostSessionTabIdForWebSessionTab.mockReturnValue('host-browser')
+    const runtimeCall = vi.fn().mockResolvedValue({ id: 'move', ok: true, result: { moved: true } })
+    vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
+    await expect(
+      moveWebRuntimeSessionTab({
+        worktreeId: WORKTREE_ID,
+        tabId: 'local-browser',
+        targetGroupId: 'group-right',
+        kind: 'split',
+        splitDirection: 'right',
+        requireAcknowledgedMove: true
+      })
+    ).resolves.toBe(true)
+    expect(runtimeCall).toHaveBeenCalledWith(
+      expect.objectContaining({ params: expect.objectContaining({ tabId: 'host-browser' }) })
+    )
+  })
+
+  it('preserves the legacy non-strict return value for old-peer void results', async () => {
+    const runtimeCall = vi.fn().mockResolvedValue({ id: 'move', ok: true })
+    vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
+    await expect(
+      moveWebRuntimeSessionTab({
+        worktreeId: WORKTREE_ID,
+        tabId: 'web-terminal-host-tab-1%3A%3Aleaf-1',
+        targetGroupId: 'group-right',
+        kind: 'split',
+        splitDirection: 'right'
+      })
+    ).resolves.toBe(true)
+  })
+
+  it('accepts explicit move acknowledgment without publishing command-only options', async () => {
+    const runtimeCall = vi.fn().mockResolvedValue({ id: 'move', ok: true, result: { moved: true } })
+    vi.stubGlobal('window', { api: { runtimeEnvironments: { call: runtimeCall } } })
+    await expect(
+      moveWebRuntimeSessionTab({
+        worktreeId: WORKTREE_ID,
+        tabId: 'web-terminal-host-tab-1%3A%3Aleaf-1',
+        targetGroupId: 'group-right',
+        kind: 'split',
+        splitDirection: 'right',
+        requireAcknowledgedMove: true
+      })
+    ).resolves.toBe(true)
+    expect(runtimeCall.mock.calls[0]?.[0].params).not.toHaveProperty('requireAcknowledgedMove')
+  })
+
   it('does not mirror a reorder when the dragged tab is local-only', async () => {
     mocks.resolveHostSessionTabIdForWebSessionTab.mockImplementation(
       (_state, args: { tabId: string }) =>

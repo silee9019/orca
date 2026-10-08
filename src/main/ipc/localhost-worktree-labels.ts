@@ -1,3 +1,4 @@
+import { setDesktopLocalhostLabelForRpc } from '../runtime/rpc/methods/workspace-localhost-label'
 import { ipcMain } from 'electron'
 import { URL } from 'node:url'
 import {
@@ -14,17 +15,16 @@ import {
 } from '../ports/workspace-port-ownership'
 
 export function registerLocalhostWorktreeLabelHandlers(store: Store): void {
-  ipcMain.handle(
-    'localhostWorktreeLabels:register',
-    async (_event, rawArgs: unknown): Promise<LocalhostWorktreeLabelResult> => {
-      const route = parseRegisterArgs(rawArgs)
-      // Why: the proxy will forward to any host it's given, so we restrict the
-      // target to loopback or a host:port that matches a live workspace port —
-      // otherwise this IPC is an open proxy / SSRF vector.
-      await assertAllowedTarget(store, route.targetUrl)
-      return localhostWorktreeLabelProxy.registerRoute(route)
-    }
+  const register = async (rawArgs: unknown): Promise<LocalhostWorktreeLabelResult> => {
+    const route = parseRegisterArgs(rawArgs)
+    // The loopback proxy must not become an arbitrary network relay.
+    await assertAllowedTarget(store, route.targetUrl)
+    return localhostWorktreeLabelProxy.registerRoute(route)
+  }
+  ipcMain.handle('localhostWorktreeLabels:register', (_event, rawArgs: unknown) =>
+    register(rawArgs)
   )
+  setDesktopLocalhostLabelForRpc(register)
 }
 
 async function assertAllowedTarget(store: Store, targetUrl: string): Promise<void> {

@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 import { clearCompletedActivity, isClearableActivityThread } from './activity-clear-completed'
-import { createActivityThreadActions } from './activity-thread-actions'
+import {
+  createActivityThreadActions,
+  type ActivityThreadSelectionOutcome
+} from './activity-thread-actions'
 import type { AgentPaneThread } from './activity-thread-types'
 
 type ActivityThreadActionBindings = {
@@ -8,8 +11,8 @@ type ActivityThreadActionBindings = {
   markThreadUnread: (thread: AgentPaneThread) => void
   markThreadsRead: (threads: readonly AgentPaneThread[]) => void
   markThreadsUnread: (threads: readonly AgentPaneThread[]) => void
-  selectThread: (thread: AgentPaneThread) => void
-  jumpToWorkspace: (thread: AgentPaneThread) => void
+  selectThread: (thread: AgentPaneThread) => ActivityThreadSelectionOutcome
+  jumpToWorkspace: (thread: AgentPaneThread) => boolean
   markAllThreadsRead: () => void
   hasUnreadThreads: boolean
   hasCompletedThreads: boolean
@@ -41,7 +44,7 @@ export function useActivityThreadActionBindings({
   // thread array identity changes (every status ping) would re-render every mounted row.
   const visibleThreadsRef = useRef(visibleThreads)
   const markAllReadThreadsRef = useRef(markAllReadThreads)
-  useEffect(() => {
+  useLayoutEffect(() => {
     visibleThreadsRef.current = visibleThreads
     markAllReadThreadsRef.current = markAllReadThreads
   }, [visibleThreads, markAllReadThreads])

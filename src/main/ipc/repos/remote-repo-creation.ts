@@ -19,7 +19,8 @@ export async function createRemoteRepo(
     parentPath: string
     name: string
     kind: 'git' | 'folder'
-  }
+  },
+  fromPicker = true
 ): Promise<{ repo: Repo } | { error: string }> {
   const name = args.name?.trim() ?? ''
   const parentPath = await resolveRemoteHomePath(args.connectionId, args.parentPath?.trim() ?? '')
@@ -58,7 +59,9 @@ export async function createRemoteRepo(
     )
   })
   if (existing) {
-    emitRepoAdded('folder_picker', true)
+    if (fromPicker) {
+      emitRepoAdded('folder_picker', true)
+    }
     return { repo: existing }
   }
 
@@ -134,7 +137,9 @@ export async function createRemoteRepo(
     )
   })
   if (raceWinner) {
-    emitRepoAdded('folder_picker', true)
+    if (fromPicker) {
+      emitRepoAdded('folder_picker', true)
+    }
     return { repo: raceWinner }
   }
 
@@ -147,6 +152,8 @@ export async function createRemoteRepo(
   if ('error' in result) {
     return result
   }
-  emitRepoAdded('folder_picker', result.alreadyExisted)
+  if (fromPicker) {
+    emitRepoAdded('folder_picker', result.alreadyExisted)
+  }
   return { repo: result.repo }
 }

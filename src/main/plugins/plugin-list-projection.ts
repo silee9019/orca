@@ -1,14 +1,10 @@
-import {
-  PLUGIN_CAPABILITY_DESCRIPTIONS,
-  type PluginCapabilityKind
-} from '../../shared/plugins/plugin-capabilities'
+import { PLUGIN_CAPABILITY_DESCRIPTIONS } from '../../shared/plugins/plugin-capabilities'
 import { needsReconsent } from '../../shared/plugins/plugin-consent-state'
 import { pluginPanelTabKey } from '../../shared/plugins/plugin-manifest'
 import type { PluginLockfile } from '../../shared/plugins/plugin-install-lockfile'
 import { isInvalidDiscoveredPlugin } from './plugin-discovery'
 import type { PluginService } from './plugin-service'
 import { listPluginVmRecipeCommands } from '../../shared/plugins/plugin-vm-recipe-artifact'
-import type { PluginCommandAliasActionId } from '../../shared/plugins/plugin-command-actions'
 import {
   isOfficialMarketplaceGitSource,
   isOfficialOrganizationGitSource,
@@ -25,62 +21,8 @@ const PLUGIN_LIST_PROJECTION_CONCURRENCY = 4
  * supervised backoff; `errored` = crashed past the budget or failed to activate.
  */
 
-export type PluginListPanelEntry = {
-  id: string
-  title: string
-  icon?: string
-  tabKey: `plugin:${string}`
-}
-
-export type PluginListStatus =
-  | 'running'
-  | 'restarting'
-  | 'idle'
-  | 'pending'
-  | 'disabled'
-  | 'errored'
-  | 'invalid'
-
-export type PluginListEntry = {
-  pluginKey: string
-  /** Opaque identity of the exact capabilities and worker tier shown for review. */
-  consentFingerprint: string | null
-  name: string
-  version: string
-  publisher: string
-  description?: string
-  status: PluginListStatus
-  needsReconsent: boolean
-  error?: string
-  isDev: boolean
-  official: boolean
-  bundled: boolean
-  capabilities: { kind: PluginCapabilityKind; description: string }[]
-  panels: PluginListPanelEntry[]
-  commands: {
-    id: string
-    title: string
-    context: 'global' | 'worktree'
-    handler: { type: 'built-in'; action: PluginCommandAliasActionId } | { type: 'worker' }
-    keybindings: { key: string; when: 'global' | 'worktree' }[]
-  }[]
-  hasWorker: boolean
-  vmRecipes: {
-    id: string
-    name: string
-    description?: string
-    commands: { phase: 'create' | 'suspend' | 'resume' | 'destroy'; command: string }[]
-  }[]
-  restarts: number
-  blockedByKillList?: { reason: string; advisoryUrl?: string }
-  source?: {
-    kind: 'local-path' | 'git' | 'marketplace' | 'bundled'
-    reference: string
-    resolvedCommit: string | null
-    contentHash: string
-    marketplace?: { reference: string; resolvedCommit: string }
-  }
-}
+export type { PluginListEntry } from '../../shared/plugins/plugin-list-contract'
+import type { PluginListEntry, PluginListStatus } from '../../shared/plugins/plugin-list-contract'
 
 export async function buildPluginList(
   service: PluginService,
@@ -154,6 +96,7 @@ export async function buildPluginList(
           isOfficialOrganizationGitSource(lockEntry.source.plugin.url))
       return {
         pluginKey: plugin.pluginKey,
+        commandInputVersion: 1,
         consentFingerprint: plugin.consentFingerprint,
         name: plugin.manifest.name,
         version: plugin.manifest.version,
@@ -182,7 +125,9 @@ export async function buildPluginList(
           title: command.title,
           context: command.context,
           handler: command.handler,
-          keybindings: command.keybindings
+          keybindings: command.keybindings,
+          input: plugin.manifest.contributes.commands.find((entry) => entry.id === command.id)
+            ?.input
         })),
         hasWorker: Boolean(plugin.manifest.main),
         vmRecipes: service.contentPacks.vmRecipes.preview(plugin.pluginKey).map(({ recipe }) => ({

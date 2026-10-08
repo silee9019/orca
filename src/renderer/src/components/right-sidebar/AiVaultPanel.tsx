@@ -1,6 +1,10 @@
+import {
+  copyAiVaultSessionId,
+  copyAiVaultSessionPath,
+  useAiVaultCliControl
+} from './use-ai-vault-cli-control'
 import { useCallback, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import {
   useActiveRepo,
@@ -34,7 +38,6 @@ import {
 import { openAiVaultSessionLogInOrca } from './ai-vault-session-log-open'
 import { useAiVaultOriginalPaneActions } from './ai-vault-original-pane-actions'
 import type { AiVaultSession } from '../../../../shared/ai-vault-types'
-import { translate } from '@/i18n/i18n'
 import { AiVaultPanelHeader } from './AiVaultPanelHeader'
 import {
   aiVaultResultCountLabel,
@@ -78,10 +81,10 @@ export default function AiVaultPanel(): React.JSX.Element {
   )
   const settings = useAppStore((s) => s.settings)
   const runtimeEnvironments = useAppStore((s) => s.runtimeEnvironments)
-  const agentCmdOverrides = settings?.agentCmdOverrides
   const paneActions = useAiVaultOriginalPaneActions()
   const [query, setQuery] = useState('')
   // Why: scope depends on current workspace/project availability, so only stable view options persist.
+  const viewOptions = usePersistedAiVaultViewOptions()
   const {
     agents,
     sort,
@@ -97,7 +100,7 @@ export default function AiVaultPanel(): React.JSX.Element {
     setAgentEnabled,
     setAllAgentsEnabled,
     resetViewOptions
-  } = usePersistedAiVaultViewOptions()
+  } = viewOptions
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set())
   const runtimeHostOptions = useMemo(
     () => buildRuntimeAiVaultHostScopeOptions(runtimeEnvironments),
@@ -139,12 +142,11 @@ export default function AiVaultPanel(): React.JSX.Element {
       }),
     [activeRepo, activeWorktree, allWorktrees, projectHostSetupProjection, repos]
   )
-  const activeProjectKey = projectScopeContext.activeProjectKey
+  const { activeProjectKey, projectLabelByKey } = projectScopeContext
   const { scope, handleScopeChange } = useAiVaultPanelScope({
     activeProjectKey,
     activeWorktreePath
   })
-  const projectLabelByKey = projectScopeContext.projectLabelByKey
   // Sent to the scanner so scoped views surface sessions older than the global cap.
   const scopePaths = useMemo(
     () =>
@@ -203,7 +205,7 @@ export default function AiVaultPanel(): React.JSX.Element {
     activeWorktree: activeWorktree ?? null,
     activeWorktreeId: effectiveActiveWorktreeId,
     targetState: resumeTargetState,
-    agentCmdOverrides
+    agentCmdOverrides: settings?.agentCmdOverrides
   })
   const viewAdjustmentCount = countAiVaultViewAdjustments({
     agents,
@@ -223,15 +225,6 @@ export default function AiVaultPanel(): React.JSX.Element {
     projectLabelByKey,
     hideEmptySessions
   })
-
-  const copyText = useCallback(async (text: string, label: string): Promise<void> => {
-    await window.api.ui.writeClipboardText(text)
-    toast.success(
-      translate('auto.components.right.sidebar.AiVaultPanel.valueCopied', '{{value0}} copied', {
-        value0: label
-      })
-    )
-  }, [])
 
   const getSessionResumeState = useCallback(
     (session: AiVaultSession) =>
@@ -260,10 +253,6 @@ export default function AiVaultPanel(): React.JSX.Element {
     [allWorktrees, effectiveActiveWorktreeId, getSessionWorktreeInfo, repos, resumeTargetState]
   )
 
-  // Resuming into a chat asks a different question from resuming into a terminal: not "can this
-  // workspace host a PTY" but "will the provider still find this conversation from the workspace we
-  // would run it in". The workspace it targets is the session's own when that is open, because
-  // Claude looks its transcript up under a directory derived from the launch cwd.
   const getSessionResumeInChat = useCallback(
     (session: AiVaultSession): AiVaultResumeInChatEligibility =>
       resolveAiVaultSessionResumeInChatForWorkspace({
@@ -294,6 +283,23 @@ export default function AiVaultPanel(): React.JSX.Element {
   }, [])
 
   const requestDelete = useAiVaultSessionDeleteAction({ refresh, onDeleted: search.onDeleted })
+  useAiVaultCliControl({
+    options: viewOptions,
+    sessions,
+    scope,
+    setScope: handleScopeChange,
+    host: executionHostScope,
+    hosts: hostScopeOptions,
+    setHost: onExecutionHostScopeChange,
+    setQuery,
+    refresh,
+    search,
+    launch: launchActions,
+    panes: paneActions,
+    requestDelete,
+    resumeState: getSessionResumeState,
+    resumeInChat: getSessionResumeInChat
+  })
 
   return (
     <div className="@container/ai-vault flex h-full min-h-0 flex-col bg-sidebar">
@@ -379,18 +385,8 @@ export default function AiVaultPanel(): React.JSX.Element {
             onCopyResume={(session, worktreeId) =>
               void launchActions.copyResumeCommand(session, worktreeId)
             }
-            onCopyId={(session) =>
-              void copyText(
-                session.sessionId,
-                translate('auto.components.right.sidebar.AiVaultPanel.sessionId', 'Session ID')
-              )
-            }
-            onCopyPath={(session) =>
-              void copyText(
-                session.filePath,
-                translate('auto.components.right.sidebar.AiVaultPanel.logPath', 'Log path')
-              )
-            }
+            onCopyId={copyAiVaultSessionId}
+            onCopyPath={copyAiVaultSessionPath}
             onOpenLog={(session) => void openAiVaultSessionLogInOrca(session)}
             onRevealLog={(session) => void window.api.shell.openPath(session.filePath)}
             onOpenCwd={(session) => {

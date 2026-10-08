@@ -1,3 +1,20 @@
+import { requestProjectFilterFromRenderer } from './project-filter-request-relay'
+import { requestBrowserViewerFromRenderer } from './browser-viewer-request-relay'
+import { requestVoiceViewerFromRenderer } from './voice-viewer-request-relay'
+import { requestSearchSettingsViewerFromRenderer } from './search-settings-viewer-request-relay'
+import { registerConnectionsViewerManagement } from '../ipc/connections-viewer-management'
+import { requestConnectionsViewerFromRenderer } from './connections-viewer-request-relay'
+import { requestCrashReportFromRenderer } from './crash-report-request-relay'
+import { requestSetupGuideFromRenderer } from './setup-guide-request-relay'
+import { requestFeatureTourFromRenderer } from './feature-tour-request-relay'
+import { requestActivityViewerFromRenderer } from './activity-viewer-request-relay'
+import { requestSettingsViewerFromRenderer } from './settings-viewer-request-relay'
+import { requestSidebarViewerFromRenderer } from './sidebar-viewer-request-relay'
+import { requestCardViewerFromRenderer } from './card-viewer-request-relay'
+import { requestStatusBarViewerFromRenderer } from './status-bar-viewer-request-relay'
+import { requestWorkspaceListViewerFromRenderer } from './workspace-list-viewer-request-relay'
+import { requestWorkspaceFilterFromRenderer } from './workspace-filter-request-relay'
+import { requestPtyDataListenerCount } from './pty-data-listener-count-request'
 import { randomUUID } from 'node:crypto'
 
 import { ipcMain } from 'electron'
@@ -25,6 +42,10 @@ export function registerRuntimeWindowLifecycle(
   mainWindow: BrowserWindow,
   runtime: OrcaRuntimeService
 ): void {
+  const unregisterConnectionsViewer = registerConnectionsViewerManagement(
+    mainWindow.id,
+    (command) => requestConnectionsViewerFromRenderer(mainWindow, command)
+  )
   const notifierToken = ++runtimeNotifierTokenCounter
   activeRuntimeNotifierToken = notifierToken
   runtime.attachWindow(mainWindow.id)
@@ -36,6 +57,22 @@ export function registerRuntimeWindowLifecycle(
   })
   const send = rendererNotifications.send
   runtime.setNotifier({
+    projectFilter: (command) => requestProjectFilterFromRenderer(mainWindow, command),
+    browserViewer: (command) => requestBrowserViewerFromRenderer(mainWindow, command),
+    voiceViewer: (command) => requestVoiceViewerFromRenderer(mainWindow, command),
+    searchSettingsViewer: (command) => requestSearchSettingsViewerFromRenderer(mainWindow, command),
+    crashReportViewer: (command) => requestCrashReportFromRenderer(mainWindow, command),
+    setupGuideViewer: (command) => requestSetupGuideFromRenderer(mainWindow, command),
+    featureTourViewer: (command) => requestFeatureTourFromRenderer(mainWindow, command),
+    settingsViewer: (command) => requestSettingsViewerFromRenderer(mainWindow, command),
+    sidebarViewer: (command) => requestSidebarViewerFromRenderer(mainWindow, command),
+    cardViewer: (command) => requestCardViewerFromRenderer(mainWindow, command),
+    statusBarViewer: (command) => requestStatusBarViewerFromRenderer(mainWindow, command),
+    activityViewer: (command) => requestActivityViewerFromRenderer(mainWindow, command),
+    workspaceListViewer: (command) => requestWorkspaceListViewerFromRenderer(mainWindow, command),
+    workspaceFilter: (command) => requestWorkspaceFilterFromRenderer(mainWindow, command),
+    readPtyDataListenerCount: (rendererId, timeoutMs, signal) =>
+      requestPtyDataListenerCount(mainWindow, ipcMain, rendererId, timeoutMs, signal),
     worktreesChanged: (repoId, renamed) => {
       // Why: clear scan caches before the renderer handles this event, so it can't read stale TTL entries after a mutation.
       runWorktreeChangeInvalidators(repoId)
@@ -44,6 +81,7 @@ export function registerRuntimeWindowLifecycle(
     worktreeBaseStatus: (event) => send('worktree:baseStatus', event),
     worktreeRemoteBranchConflict: (event) => send('worktree:remoteBranchConflict', event),
     reposChanged: () => send('repos:changed'),
+    sparsePresetsChanged: (repoId) => send('sparsePresets:changed', { repoId }),
     automationsChanged: (payload) => send('automations:changed', payload),
     activateWorktree: (
       repoId,
@@ -234,6 +272,7 @@ export function registerRuntimeWindowLifecycle(
     rendererNotifications.onRendererProcessGone()
   })
   mainWindow.on('closed', () => {
+    unregisterConnectionsViewer()
     rendererNotifications.close()
     runtime.markGraphUnavailable(mainWindow.id)
     if (activeRuntimeNotifierToken === notifierToken) {

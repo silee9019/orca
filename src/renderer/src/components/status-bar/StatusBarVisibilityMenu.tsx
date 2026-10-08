@@ -1,3 +1,5 @@
+import { useStatusBarConnectionsViewerController } from '@/hooks/useStatusBarConnectionsViewerController'
+import { useAppStore } from '@/store'
 import { Activity, Plug, Server } from 'lucide-react'
 import React from 'react'
 import {
@@ -26,6 +28,28 @@ export function StatusBarVisibilityMenu({
     statusBarItems,
     toggleStatusBarItem
   } = controller
+
+  const setSshVisible = (value: boolean): boolean => {
+    const current = useAppStore.getState().statusBarItems.includes('ssh')
+    if (current !== value) {
+      recordFeatureInteraction('ssh')
+      toggleStatusBarItem('ssh')
+    }
+    return true
+  }
+  useStatusBarConnectionsViewerController({
+    surface: 'visibility',
+    read: () => ({ sshVisible: statusBarItems.includes('ssh') }),
+    setVisible: setSshVisible,
+    persisted: async (value) => {
+      try {
+        const state = await window.api.ui.get()
+        return state.statusBarItems?.includes('ssh') === value
+      } catch {
+        return false
+      }
+    }
+  })
 
   return (
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
@@ -157,9 +181,8 @@ export function StatusBarVisibilityMenu({
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={statusBarItems.includes('ssh')}
-          onCheckedChange={() => {
-            recordFeatureInteraction('ssh')
-            toggleStatusBarItem('ssh')
+          onCheckedChange={(value) => {
+            setSshVisible(value === true)
           }}
         >
           <Server className="size-3.5" />

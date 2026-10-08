@@ -1,25 +1,22 @@
+import { emitRepoAdded } from './repo-added-telemetry'
+import { registerDesktopRepoAddHandlers } from '../../repo-desktop-add-handlers'
 import type { BrowserWindow } from 'electron'
 import { ipcMain } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { access, mkdir, readdir, rm } from 'node:fs/promises'
-import { homedir } from 'node:os'
 import { isAbsolute, join } from 'node:path'
 import type { Store } from '../../persistence'
 import type { Repo } from '../../../shared/repo-types'
-import { DEFAULT_REPO_BADGE_COLOR, getDefaultWorkspaceDir } from '../../../shared/constants'
-import { normalizeRuntimePathForComparison } from '../../../shared/cross-platform-path'
+import { DEFAULT_REPO_BADGE_COLOR } from '../../../shared/constants'
 import { LOCAL_EXECUTION_HOST_ID } from '../../../shared/execution-host'
-import { getEffectiveHostSetting } from '../../../shared/host-setting-overrides'
+import { getDefaultProjectParent } from '../../project-default-parent'
 import { probeGitAvailability } from '../../git/git-availability'
 import { gitExecFileAsync } from '../../git/runner'
 import { detectRepoIconAndUpstream } from '../../repo-icon-autodetect'
 import { prepareLocalWorktreeRootForRepo } from '../../worktree-root-preparation'
 import { invalidateAuthorizedRootsCache } from '../registered-worktree-roots-cache'
-import { emitRepoAdded } from './repo-added-telemetry'
 import { notifyReposChanged } from './repos-changed-notification'
-import { addLocalRepoFromPath } from './local-repo-registration'
-import { addRemoteRepoFromPath } from './remote-repo-registration'
-import { createRemoteRepo } from './remote-repo-creation'
+import { registerDesktopRepoCreateRemoteHandlers } from '../../repo-desktop-create-remote-handlers'
 
 const GIT_AVAILABILITY_TIMEOUT_MS = 1500
 
@@ -31,98 +28,15 @@ export async function probeLocalGitAvailability(): Promise<boolean> {
   })
 }
 
-/**
- * Where the "Create new project" Location field starts. Settings -> Workspace
- * Directory owns this once the user has actually set it, including a per-host
- * override for the local host, which is the only scope this handler answers for.
- *
- * Why the untouched default does not count: `workspaceDir` is never blank -- new
- * installs seed it with `~/orca/workspaces`. Treating that seeded value as a choice
- * would silently relocate every existing user's projects into the worktree root,
- * where each project would then host its own worktrees inside its working tree.
- */
-function getDefaultCreateProjectParent(store: Store): string {
-  const home = homedir()
-  const settings = store.getSettings()
-  const configured = getEffectiveHostSetting(
-    settings,
-    LOCAL_EXECUTION_HOST_ID,
-    'defaultWorktreeLocation',
-    settings.workspaceDir ?? ''
-  ).trim()
-  const isUntouchedDefault =
-    normalizeRuntimePathForComparison(configured) ===
-    normalizeRuntimePathForComparison(getDefaultWorkspaceDir(home))
-  if (configured && !isUntouchedDefault) {
-    return configured
-  }
-  return join(home, 'orca', 'projects')
-}
-
 export function registerRepoCreationHandlers(mainWindow: BrowserWindow, store: Store): void {
   ipcMain.handle('repos:isGitAvailable', () => probeLocalGitAvailability())
-  ipcMain.handle('repos:getDefaultCreateProjectParent', () => getDefaultCreateProjectParent(store))
-
-  ipcMain.handle(
-    'repos:add',
-    async (
-      _event,
-      args: { path: string; kind?: 'git' | 'folder'; displayName?: string }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await addLocalRepoFromPath(store, args.path, args.kind, args.displayName)
-      if ('error' in result) {
-        return result
-      }
-      if (result.alreadyExisted) {
-        await prepareLocalWorktreeRootForRepo(store, result.repo)
-      }
-      invalidateAuthorizedRootsCache()
-      notifyReposChanged(mainWindow)
-      emitRepoAdded('folder_picker', result.alreadyExisted, result.repo.kind === 'git')
-      return { repo: result.repo }
-    }
+  ipcMain.handle('repos:getDefaultCreateProjectParent', () =>
+    getDefaultProjectParent(store.getSettings())
   )
 
-  ipcMain.handle(
-    'repos:addRemote',
-    async (
-      _event,
-      args: {
-        connectionId: string
-        remotePath: string
-        displayName?: string
-        kind?: 'git' | 'folder'
-      }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await addRemoteRepoFromPath(store, args)
-      if ('error' in result) {
-        return result
-      }
-      notifyReposChanged(mainWindow)
-      emitRepoAdded('folder_picker', result.alreadyExisted, result.repo.kind === 'git')
-      return { repo: result.repo }
-    }
-  )
+  registerDesktopRepoAddHandlers(mainWindow, store)
 
-  ipcMain.handle(
-    'repos:createRemote',
-    async (
-      _event,
-      args: {
-        connectionId: string
-        parentPath: string
-        name: string
-        kind: 'git' | 'folder'
-      }
-    ): Promise<{ repo: Repo } | { error: string }> => {
-      const result = await createRemoteRepo(store, args)
-      if ('error' in result) {
-        return result
-      }
-      notifyReposChanged(mainWindow)
-      return result
-    }
-  )
+  registerDesktopRepoCreateRemoteHandlers(mainWindow, store)
 
   // Create a repo/folder from scratch (orca#763); git repos need an empty initial commit so HEAD has a branch ref for worktrees.
   ipcMain.handle(

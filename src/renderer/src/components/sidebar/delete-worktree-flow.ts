@@ -7,10 +7,18 @@ import {
   showWorkspaceListChangedToast
 } from './stale-workspace-list-toast'
 import { getWorkspaceDeleteLineage } from './workspace-delete-lineage'
+import {
+  selectRuntimeAwareSshStatus,
+  selectRuntimeAwareSshTargetRemoved
+} from '@/store/slices/runtime-environment-ssh-selectors'
+import {
+  getRepoExecutionHostId,
+  parseExecutionHostId,
+  isRuntimeOwnedSshTargetId
+} from '../../../../shared/execution-host'
 import { resolveSshWorkspaceForget } from './ssh-workspace-forget-resolution'
 import { isPairedWebClientWindow } from '@/lib/desktop-window-chrome'
 import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
-import { getRepoExecutionHostId } from '../../../../shared/execution-host'
 import {
   resolveWorktreeBatchDeleteTargets,
   toWorktreeDeleteIdentities,
@@ -77,18 +85,40 @@ export function runWorktreeDelete(worktreeId: string, options: WorktreeDeleteOpt
     : matchingRepos.length === 1
       ? matchingRepos[0]
       : null
-  const sshResolution = isPairedWebClientWindow()
+  let sshResolution = isPairedWebClientWindow()
     ? { kind: 'not-ssh' as const }
     : resolveSshWorkspaceForget({
         repo,
         sshConnectionStates: state.sshConnectionStates,
         sshTargetLabels: state.sshTargetLabels
       })
+  const host = parseExecutionHostId(target.hostId)
+  if (
+    !isPairedWebClientWindow() &&
+    host?.kind === 'runtime' &&
+    repo?.connectionId &&
+    !isRuntimeOwnedSshTargetId(repo.connectionId)
+  ) {
+    const targetId = repo.connectionId
+    if (selectRuntimeAwareSshTargetRemoved(state, host.environmentId, targetId)) {
+      sshResolution = { kind: 'ghost', targetId }
+    } else {
+      const status = selectRuntimeAwareSshStatus(state, host.environmentId, targetId)
+      if (status === null) {
+        return
+      }
+      sshResolution =
+        status === 'connected'
+          ? { kind: 'connected', targetId }
+          : { kind: 'disconnected', targetId, status }
+    }
+  }
   if (sshResolution.kind === 'ghost' || sshResolution.kind === 'disconnected') {
     // Why no lineage-children warning: forget-local is metadata-only per-worktree, so it can't fail on a still-registered child.
     state.openModal('forget-ssh-workspace', {
       worktreeId,
       displayName: target.displayName,
+      expectedHostId: target.hostId ?? (repo ? getRepoExecutionHostId(repo) : undefined),
       resolution: sshResolution
     })
     return

@@ -46,6 +46,7 @@ export type RpcRequest = {
   id: string
   authToken: string
   method: string
+  localStream?: 1
   params?: unknown
   orchestrationContractVersion?: number
   orchestrationRequestId?: string

@@ -1,3 +1,32 @@
+import type { ProjectFilterOperation } from '../../shared/rpc-contract/project-filter-params'
+import type { ProjectFilterResult } from '../../shared/project-filter'
+import type { BrowserViewerCommand } from '../../shared/rpc-contract/browser-viewer-params'
+import type { BrowserViewerResult } from '../../shared/browser-viewer-command'
+import type { VoiceViewerOperation, VoiceViewerResult } from '../../shared/voice-viewer'
+import type {
+  SearchSettingsViewerCommand,
+  SearchSettingsViewerResult
+} from '../../shared/search-settings-viewer'
+import type { CrashReportCommand } from '../../shared/rpc-contract/crash-report-params'
+import type { CrashReportResult } from '../../shared/crash-report-command'
+import type { SetupGuideCommand } from '../../shared/rpc-contract/setup-guide-params'
+import type { SetupGuideResult } from '../../shared/setup-guide-command'
+import type { FeatureTourCommand } from '../../shared/rpc-contract/feature-tour-params'
+import type { FeatureTourResult } from '../../shared/feature-tour-command'
+import type { SettingsViewerCommand } from '../../shared/rpc-contract/settings-viewer-params'
+import type { SidebarViewerCommand } from '../../shared/rpc-contract/sidebar-viewer-params'
+import type { CardViewerCommand } from '../../shared/rpc-contract/card-viewer-params'
+import type { StatusBarViewerCommand } from '../../shared/rpc-contract/status-bar-viewer-params'
+import type { ActivityViewerCommand } from '../../shared/rpc-contract/activity-viewer-params'
+import type { ActivityViewerResult } from '../../shared/activity-viewer-command'
+import type { WorkspaceListViewerCommand } from '../../shared/rpc-contract/workspace-list-viewer-params'
+import type { SettingsViewerResult } from '../../shared/settings-viewer-command'
+import type { SidebarViewerResult } from '../../shared/sidebar-viewer-command'
+import type { CardViewerResult } from '../../shared/card-viewer-command'
+import type { StatusBarViewerResult } from '../../shared/status-bar-viewer-command'
+import type { WorkspaceListViewerResult } from '../../shared/workspace-list-viewer-command'
+import type { WorkspaceFilterCommand } from '../../shared/rpc-contract/workspace-filter-params'
+import type { WorkspaceFilterResult } from '../../shared/workspace-filter-command'
 import type { SleepingAgentLaunchConfig } from '../../shared/agent-session-resume'
 import type { TerminalPaneSplitSource } from '../../shared/feature-education-telemetry'
 import type { TerminalRevealIdentity } from '../../shared/terminal-reveal-identity'
@@ -22,6 +51,25 @@ import type {
 type DriverState = RuntimeTerminalDriverState
 
 export type RuntimeNotifier = {
+  projectFilter?(command: ProjectFilterOperation): Promise<ProjectFilterResult>
+  browserViewer?(command: BrowserViewerCommand): Promise<BrowserViewerResult>
+  voiceViewer?(command: VoiceViewerOperation): Promise<VoiceViewerResult>
+  searchSettingsViewer?(command: SearchSettingsViewerCommand): Promise<SearchSettingsViewerResult>
+  crashReportViewer?(command: CrashReportCommand): Promise<CrashReportResult>
+  setupGuideViewer?(command: SetupGuideCommand): Promise<SetupGuideResult>
+  featureTourViewer?(command: FeatureTourCommand): Promise<FeatureTourResult>
+  settingsViewer?(command: SettingsViewerCommand): Promise<SettingsViewerResult>
+  sidebarViewer?(command: SidebarViewerCommand): Promise<SidebarViewerResult>
+  cardViewer?(command: CardViewerCommand): Promise<CardViewerResult>
+  statusBarViewer?(command: StatusBarViewerCommand): Promise<StatusBarViewerResult>
+  activityViewer?(command: ActivityViewerCommand): Promise<ActivityViewerResult>
+  workspaceListViewer?(command: WorkspaceListViewerCommand): Promise<WorkspaceListViewerResult>
+  workspaceFilter?(command: WorkspaceFilterCommand): Promise<WorkspaceFilterResult>
+  readPtyDataListenerCount?(
+    rendererId: number,
+    timeoutMs: number,
+    signal?: AbortSignal
+  ): Promise<number>
   automationsChanged?(payload: {
     selector?: { kind: 'self' } | { kind: 'ssh'; targetId: string } | { kind: 'orphan' }
     reason?: 'definition' | 'run' | 'usage'
@@ -30,6 +78,7 @@ export type RuntimeNotifier = {
   worktreeBaseStatus?(event: WorktreeBaseStatusEvent): void
   worktreeRemoteBranchConflict?(event: WorktreeRemoteBranchConflictEvent): void
   reposChanged(): void
+  sparsePresetsChanged?(repoId: string): void
   activateWorktree(
     repoId: string,
     worktreeId: string,

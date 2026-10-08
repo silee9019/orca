@@ -1,14 +1,17 @@
+import { openExternalUrlWithAck } from './shell-external-url-open'
+import { registerRepoIconPickerHandlers } from '../repo-icon-picker-handlers'
+import { copyDesktopDocumentFile } from '../shell-document-copy'
+import { setDesktopShellActionsForRpc } from '../runtime/rpc/methods/workspace-shell-actions'
 import { validatePathExistenceBatch } from '../../shared/path-existence-batch'
 import { ipcMain, shell, dialog } from 'electron'
-import { constants, copyFile, readFile, stat } from 'node:fs/promises'
-import { basename, extname, isAbsolute, normalize, posix, win32 } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { constants, copyFile, stat } from 'node:fs/promises'
+import { isAbsolute, normalize, posix, win32 } from 'node:path'
+import { parseDesktopFileUri } from '../shell-file-uri'
 import type {
   ShellOpenExternalEditorRequest,
   ShellOpenExternalEditorResult,
   ShellOpenLocalPathResult
 } from '../../shared/shell-open-types'
-import { MAX_REPO_ICON_UPLOAD_BYTES } from '../../shared/repo-icon'
 import type { Store } from '../persistence'
 import {
   EXTERNAL_EDITOR_CLI_COMMAND,
@@ -20,11 +23,7 @@ import { resolveVsCodeSshAuthority } from '../ssh/vscode-ssh-authority'
 
 export { EXTERNAL_EDITOR_CLI_COMMAND }
 
-const REPO_ICON_IMAGE_MIME_TYPES: Record<string, string> = {
-  '.png': 'image/png'
-}
-
-async function pathExists(pathValue: string): Promise<boolean> {
+export async function pathExists(pathValue: string): Promise<boolean> {
   try {
     await stat(pathValue)
     return true
@@ -50,7 +49,7 @@ function hasActiveRuntime(store: Store): boolean {
   return Boolean(store.getSettings().activeRuntimeEnvironmentId?.trim())
 }
 
-async function openInFileManager(
+export async function openInFileManager(
   store: Store,
   pathValue: string
 ): Promise<ShellOpenLocalPathResult> {
@@ -137,6 +136,12 @@ async function openWithSystemDefault(pathValue: string): Promise<boolean> {
 }
 
 export function registerShellHandlers(store: Store): void {
+  setDesktopShellActionsForRpc({
+    reveal: (path) => openInFileManager(store, path),
+    openFile: (path) => openWithSystemDefault(path),
+    copyDocumentFile: (params) => copyDesktopDocumentFile(store, params, copyLocalFile),
+    openEditor: (request) => openInExternalEditor(store, request)
+  })
   ipcMain.handle('shell:openPath', async (_event, path: string): Promise<void> => {
     // Why: keep the legacy fire-and-forget renderer contract while reusing the
     // same absolute/existing path validation as the explicit file-manager API.
@@ -154,46 +159,19 @@ export function registerShellHandlers(store: Store): void {
       openInExternalEditor(store, request)
   )
 
-  ipcMain.handle('shell:openUrl', (_event, rawUrl: string) => {
-    let parsed: URL
-    try {
-      parsed = new URL(rawUrl)
-    } catch {
-      return
-    }
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      return
-    }
-
-    return shell.openExternal(parsed.toString())
-  })
+  ipcMain.handle('shell:openUrl', (_event, rawUrl: string, options?: { requireOpen?: boolean }) =>
+    openExternalUrlWithAck(rawUrl, options?.requireOpen === true, async (url) => {
+      await openShellUrl(url)
+    })
+  )
 
   ipcMain.handle('shell:openFilePath', async (_event, filePath: string): Promise<boolean> => {
     return openWithSystemDefault(filePath)
   })
 
   ipcMain.handle('shell:openFileUri', async (_event, rawUri: string) => {
-    let parsed: URL
-    try {
-      parsed = new URL(rawUri)
-    } catch {
-      return
-    }
-
-    if (parsed.protocol !== 'file:') {
-      return
-    }
-
-    // Only local files are supported. Remote hosts are intentionally rejected.
-    if (parsed.hostname && parsed.hostname !== 'localhost') {
-      return
-    }
-
-    let filePath: string
-    try {
-      filePath = fileURLToPath(parsed)
-    } catch {
+    const filePath = parseDesktopFileUri(rawUri)
+    if (filePath === null) {
       return
     }
 
@@ -257,36 +235,7 @@ export function registerShellHandlers(store: Store): void {
     return result.filePaths[0]
   })
 
-  ipcMain.handle(
-    'shell:pickRepoIconImage',
-    async (): Promise<{ dataUrl: string; fileName: string } | null> => {
-      const result = await dialog.showOpenDialog({
-        properties: ['openFile'],
-        filters: [{ name: 'Repo icon images', extensions: ['png'] }]
-      })
-      if (result.canceled || result.filePaths.length === 0) {
-        return null
-      }
-
-      const filePath = result.filePaths[0]
-      const extension = extname(filePath).toLowerCase()
-      const mimeType = REPO_ICON_IMAGE_MIME_TYPES[extension]
-      if (!mimeType) {
-        throw new Error('Repo icons must be PNG files.')
-      }
-
-      const stats = await stat(filePath)
-      if (stats.size > MAX_REPO_ICON_UPLOAD_BYTES) {
-        throw new Error('Repo icon image must be 256KB or smaller.')
-      }
-
-      const buffer = await readFile(filePath)
-      return {
-        dataUrl: `data:${mimeType};base64,${buffer.toString('base64')}`,
-        fileName: basename(filePath)
-      }
-    }
-  )
+  registerRepoIconPickerHandlers()
 
   ipcMain.handle('shell:pickAudio', async (): Promise<string | null> => {
     const result = await dialog.showOpenDialog({
@@ -302,19 +251,34 @@ export function registerShellHandlers(store: Store): void {
   // Why: copying a picked image next to the markdown file lets us insert a
   // relative path (e.g. `![](image.png)`) instead of embedding base64,
   // keeping markdown files small and portable.
-  ipcMain.handle(
-    'shell:copyFile',
-    async (_event, args: { srcPath: string; destPath: string }): Promise<void> => {
-      const src = normalize(args.srcPath)
-      const dest = normalize(args.destPath)
-      if (!isAbsolute(src) || !isAbsolute(dest)) {
-        throw new Error('Both source and destination must be absolute paths')
-      }
-      // Why: COPYFILE_EXCL prevents silently overwriting an existing file.
-      // The renderer-side deconfliction loop already picks a unique name, so
-      // the dest should never exist — if it does, something is wrong and we
-      // should fail loudly rather than clobber data.
-      await copyFile(src, dest, constants.COPYFILE_EXCL)
+  async function copyLocalFile(args: { srcPath: string; destPath: string }): Promise<void> {
+    const src = normalize(args.srcPath)
+    const dest = normalize(args.destPath)
+    if (!isAbsolute(src) || !isAbsolute(dest)) {
+      throw new Error('Both source and destination must be absolute paths')
     }
+    // Why: COPYFILE_EXCL prevents silently overwriting an existing file.
+    // The renderer-side deconfliction loop already picks a unique name, so
+    // the dest should never exist — if it does, something is wrong and we
+    // should fail loudly rather than clobber data.
+    await copyFile(src, dest, constants.COPYFILE_EXCL)
+  }
+  ipcMain.handle('shell:copyFile', (_event, args: { srcPath: string; destPath: string }) =>
+    copyLocalFile(args)
   )
+}
+
+export function openShellUrl(rawUrl: string): Promise<void> | undefined {
+  let parsed: URL
+  try {
+    parsed = new URL(rawUrl)
+  } catch {
+    return
+  }
+
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return
+  }
+
+  return shell.openExternal(parsed.toString())
 }

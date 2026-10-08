@@ -1,31 +1,21 @@
 import { ipcMain } from 'electron'
-import { appStarSourceSchema } from '../../shared/gh-star-source'
 import { githubHostFromIdentityKey } from '../../shared/github/repository-identity-key'
 import { diagnoseGhAuth } from '../github/auth-diagnose'
-import { checkOrcaStarred, getAuthenticatedViewer, starOrca } from '../github/client'
+import { checkOrcaStarred, getAuthenticatedViewer } from '../github/client'
+import { starOrcaFromSource } from '../github/source-star-operation'
 import {
   listGhAccountBindingInventory,
   validateGhAccountBinding
 } from '../github/gh-account-binding-inventory'
 import { getRateLimit } from '../github/rate-limit'
 import type { Store } from '../persistence'
-import { getCohortAtEmit } from '../telemetry/cohort-classifier'
-import { track } from '../telemetry/client'
 import { assertRegisteredGitHubRepo, getGitHubLocalGitOptionArgs } from './github-repo-routing'
 
 export function registerGitHubAccountHandlers(store: Store): void {
   ipcMain.handle('gh:viewer', () => getAuthenticatedViewer())
   ipcMain.handle('gh:checkOrcaStarred', () => checkOrcaStarred())
   ipcMain.handle('gh:starOrca', async (_event, source: unknown) => {
-    const sourceParse = appStarSourceSchema.safeParse(source)
-    const starred = await starOrca()
-    if (starred && sourceParse.success) {
-      track('app_starred_orca', {
-        source: sourceParse.data,
-        ...getCohortAtEmit()
-      })
-    }
-    return starred
+    return starOrcaFromSource(source)
   })
 
   ipcMain.handle('gh:rateLimit', (_event, args?: { force?: boolean }) =>

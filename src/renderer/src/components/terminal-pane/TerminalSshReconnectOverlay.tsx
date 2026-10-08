@@ -1,4 +1,14 @@
 import { useCallback } from 'react'
+import { useSshWorkspaceOverlayViewerController } from '@/hooks/useSshConfirmationViewerController'
+import { findFolderWorkspaceOwner } from '@/lib/folder-workspace-runtime-owner'
+import { parseWorkspaceKey } from '../../../../shared/workspace-scope'
+import { getWorktreeOnHostFromState } from '@/store/selectors'
+import { findRepoForHost } from '@/store/slices/repo-host-identity'
+import { resolveSshWorkspaceForget } from '../sidebar/ssh-workspace-forget-resolution'
+import {
+  selectRuntimeAwareSshStatus,
+  selectRuntimeAwareSshTargetRemoved
+} from '@/store/slices/runtime-environment-ssh-selectors'
 import { Loader2, Server, ServerOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -95,31 +105,46 @@ export function TerminalSshReconnectOverlay({
     ? toRuntimeExecutionHostId(sshOwnerEnvironmentId)
     : toSshExecutionHostId(targetId)
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = useCallback(async (): Promise<boolean> => {
     if (isSshConnectInFlight(targetId) || isConnectingSshStatus(status)) {
-      return
+      return false
+    }
+    if (
+      targetRemoved ||
+      selectRuntimeAwareSshTargetRemoved(useAppStore.getState(), sshOwnerEnvironmentId, targetId)
+    ) {
+      return false
+    }
+    const currentStatus = selectRuntimeAwareSshStatus(
+      useAppStore.getState(),
+      sshOwnerEnvironmentId,
+      targetId
+    )
+    if (currentStatus === null || !canConnectSshStatus(currentStatus)) {
+      return false
     }
     try {
       if (sshOwnerEnvironmentId) {
         // Bucket state is written inside the helper, mirroring the local path.
-        await trackSshConnect(
+        const connected = await trackSshConnect(
           targetId,
           connectRuntimeEnvironmentSshTarget(sshOwnerEnvironmentId, targetId)
         )
-      } else {
-        // Why: track the connect request, not this bounded wait — the backend is still
-        // dialing after the UI timeout fires, so releasing here would let the next click
-        // raise a second credential prompt.
-        const connectState = await withUiConnectTimeout(
-          trackSshConnect(targetId, window.api.ssh.connect({ targetId })),
-          SSH_RECONNECT_UI_TIMEOUT_MS
-        )
-        if (connectState) {
-          // Why: ssh.connect can resolve before the global state-change IPC lands;
-          // the waiting deferred PTY reattach path keys off this renderer store.
-          setSshConnectionState(targetId, connectState)
-        }
+        return connected?.targetId === targetId && connected.status === 'connected'
       }
+      // Why: track the connect request, not this bounded wait — the backend is still
+      // dialing after the UI timeout fires, so releasing here would let the next click
+      // raise a second credential prompt.
+      const connectState = await withUiConnectTimeout(
+        trackSshConnect(targetId, window.api.ssh.connect({ targetId })),
+        SSH_RECONNECT_UI_TIMEOUT_MS
+      )
+      if (connectState) {
+        // Why: ssh.connect can resolve before the global state-change IPC lands;
+        // the waiting deferred PTY reattach path keys off this renderer store.
+        setSshConnectionState(targetId, connectState)
+      }
+      return connectState?.targetId === targetId && connectState.status === 'connected'
     } catch (err) {
       toast.error(
         err instanceof Error
@@ -145,7 +170,108 @@ export function TerminalSshReconnectOverlay({
         })().catch(() => {})
       }
     }
-  }, [setSshConnectionState, sshOwnerEnvironmentId, status, targetId])
+    return false
+  }, [setSshConnectionState, sshOwnerEnvironmentId, status, targetId, targetRemoved])
+
+  const requestWorkspaceRemoval = useCallback((): boolean => {
+    const state = useAppStore.getState()
+    if (
+      !targetRemoved ||
+      !worktreeId ||
+      !selectRuntimeAwareSshTargetRemoved(state, sshOwnerEnvironmentId, targetId)
+    ) {
+      return false
+    }
+    const scope = parseWorkspaceKey(worktreeId)
+    if (scope?.type === 'folder') {
+      const folder = findFolderWorkspaceOwner(state, scope.folderWorkspaceId, executionHostId)
+      if (folder?.connectionId !== targetId) {
+        return false
+      }
+      const row = state.folderWorkspaces.find((entry) => entry === folder)
+      if (!row) {
+        return false
+      }
+      state.openModal('forget-ssh-workspace', {
+        worktreeId,
+        displayName: row.name,
+        folderWorkspaceId: row.id,
+        expectedHostId: executionHostId,
+        resolution: { kind: 'ghost', targetId }
+      })
+      return true
+    }
+    const target = getWorktreeOnHostFromState(state, worktreeId, executionHostId)
+    if (!target) {
+      return false
+    }
+    const repo = findRepoForHost(state.repos, target.repoId, {
+      hostId: executionHostId,
+      settings: state.settings
+    })
+    if (repo?.connectionId !== targetId) {
+      return false
+    }
+    const resolution = resolveSshWorkspaceForget({
+      repo,
+      sshConnectionStates: state.sshConnectionStates,
+      sshTargetLabels: state.sshTargetLabels
+    })
+    if (
+      !sshOwnerEnvironmentId &&
+      (resolution.kind !== 'ghost' || resolution.targetId !== targetId)
+    ) {
+      return false
+    }
+    runWorktreeDelete(worktreeId, { expectedHostId: executionHostId })
+    return true
+  }, [targetRemoved, worktreeId, sshOwnerEnvironmentId, targetId, executionHostId])
+  useSshWorkspaceOverlayViewerController({
+    read: () => {
+      const state = useAppStore.getState()
+      const canonical = selectRuntimeAwareSshStatus(state, sshOwnerEnvironmentId, targetId)
+      return {
+        workspaceId: worktreeId ?? null,
+        targetId,
+        expectedHostId: executionHostId,
+        removed:
+          targetRemoved &&
+          selectRuntimeAwareSshTargetRemoved(state, sshOwnerEnvironmentId, targetId),
+        canConnect:
+          !targetRemoved &&
+          canonical !== null &&
+          canConnectSshStatus(canonical) &&
+          canConnectSshStatus(status) &&
+          !isSshConnectInFlight(targetId),
+        connected: canonical === 'connected'
+      }
+    },
+    connect: handleConnect,
+    request: requestWorkspaceRemoval,
+    readRequestedConfirmation: () => {
+      const state = useAppStore.getState()
+      const target = worktreeId
+        ? getWorktreeOnHostFromState(state, worktreeId, executionHostId)
+        : null
+      if (
+        !target?.isMainWorktree ||
+        state.activeModal !== 'confirm-remove-folder' ||
+        state.modalData.repoId !== target.repoId ||
+        state.modalData.hostId !== executionHostId
+      ) {
+        return null
+      }
+      return {
+        workspaceId: worktreeId ?? null,
+        targetId,
+        expectedHostId: executionHostId,
+        confirmationKind: 'project',
+        dialogOpen: true,
+        canReconnect: false,
+        busy: false
+      }
+    }
+  })
 
   // Why: z-40 clears pane-local chrome (focus rim z-30); bg-card is fully opaque so terminal text cannot paint through.
   return (
@@ -206,7 +332,9 @@ export function TerminalSshReconnectOverlay({
             variant="outline"
             onClick={
               worktreeId
-                ? () => runWorktreeDelete(worktreeId, { expectedHostId: executionHostId })
+                ? () => {
+                    requestWorkspaceRemoval()
+                  }
                 : undefined
             }
             disabled={!worktreeId}

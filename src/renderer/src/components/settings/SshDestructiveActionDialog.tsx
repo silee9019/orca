@@ -19,7 +19,7 @@ type SshDestructiveActionDialogProps = {
   busyLabel?: string
   isBusy?: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: () => void | Promise<void>
+  onConfirm: () => void | Promise<unknown>
 }
 
 export function SshDestructiveActionDialog({

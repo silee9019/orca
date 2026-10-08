@@ -40,3 +40,12 @@ export function consumeBrowserPageDeferredNavigation(pageId: string): string | n
 export function clearBrowserPageDeferredNavigation(pageId: string): void {
   deferredNavigationsByPageId.delete(pageId)
 }
+
+export function readBrowserPageDeferredNavigation(
+  pageId: string
+): { url: string; expiresAt: number } | null {
+  const now = Date.now()
+  purgeExpiredDeferredNavigations(now)
+  const entry = deferredNavigationsByPageId.get(pageId)
+  return entry ? { url: entry.url, expiresAt: entry.at + DEFERRED_NAVIGATION_TTL_MS } : null
+}

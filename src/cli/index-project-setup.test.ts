@@ -648,6 +648,9 @@ describe('orca cli worktree awareness', () => {
   it('updates project host setup metadata through the project-first runtime API', async () => {
     queueFixtures(
       callMock,
+      okFixture('req_project_setup_list', {
+        setups: [{ id: 'setup-gpu', hostId: 'runtime:gpu' }]
+      }),
       okFixture('req_project_setup_update', {
         result: {
           project: {
@@ -700,7 +703,7 @@ describe('orca cli worktree awareness', () => {
       setupId: 'setup-gpu',
       updates: {
         displayName: 'GPU VM',
-        path: path.resolve('/tmp/repo', '/srv/orca'),
+        path: '/srv/orca',
         worktreeBasePath: '../worktrees',
         gitUsername: undefined,
         kind: undefined,
@@ -806,7 +809,10 @@ describe('orca cli worktree awareness', () => {
     )
     vi.spyOn(console, 'log').mockImplementation(() => {})
 
-    await main(['project', 'setup-delete', '--setup', 'setup-gpu', '--json'], '/tmp/repo')
+    await main(
+      ['project', 'setup-delete', '--setup', 'setup-gpu', '--confirm', 'setup-gpu', '--json'],
+      '/tmp/repo'
+    )
 
     expect(callMock).toHaveBeenCalledWith('projectHostSetup.delete', {
       setupId: 'setup-gpu'

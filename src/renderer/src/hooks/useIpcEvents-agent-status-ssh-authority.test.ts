@@ -86,7 +86,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
     await Promise.resolve()
     expect(listener).toBeTypeOf('function')
@@ -113,7 +114,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
         }
       })
       stubDirectSshModules({ storeState: harness.storeState, coordinator: harness.coordinator })
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
 
       harness.emitPartialState()
@@ -148,7 +150,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
         }
       })
       stubDirectSshModules({ storeState: harness.storeState, coordinator: harness.coordinator })
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
 
       harness.emitPartialState()
@@ -260,7 +263,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
         })
       )
 
-      const { useIpcEvents } = await import('./useIpcEvents')
+      const { installAppLifetimeIpcEvents: useIpcEvents } =
+        await import('./ipc-events/app-lifetime-ipc-bridge')
       useIpcEvents()
       sshStateListener?.({ targetId: 'target-a', state: nextState })
       await Promise.resolve()
@@ -494,7 +498,8 @@ describe('useIpcEvents agent status snapshot integration', () => {
       })
     )
 
-    const { useIpcEvents } = await import('./useIpcEvents')
+    const { installAppLifetimeIpcEvents: useIpcEvents } =
+      await import('./ipc-events/app-lifetime-ipc-bridge')
     useIpcEvents()
 
     await vi.waitFor(() => {

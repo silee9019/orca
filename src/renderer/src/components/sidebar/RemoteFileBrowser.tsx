@@ -1,3 +1,5 @@
+import { focusRemoteFileBrowserInput } from './remote-file-browser-input-focus'
+import { useRemoteFilePickerCommands } from './use-remote-file-picker-commands'
 import { ImeInput } from '@/lib/ime-text-field'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -32,6 +34,9 @@ export function RemoteFileBrowser({
   onSelect,
   onCancel
 }: RemoteFileBrowserProps): React.JSX.Element {
+  const targetScope = targetId ? `ssh:${targetId}` : `runtime:${runtimeEnvironmentId}`
+  const [listingScope, setListingScope] = useState('')
+  const listingScopeRef = useRef('')
   const [resolvedPath, setResolvedPath] = useState('')
   const [entries, setEntries] = useState<DirEntry[]>([])
   const [pathFlavor, setPathFlavor] = useState<FilesystemPathFlavor>('posix')
@@ -58,6 +63,7 @@ export function RemoteFileBrowser({
     preview,
     handleInputChange,
     handleInputPaste,
+    handlePastedText,
     discardPreview,
     resetPreviewForNavigation,
     cancelPreviewWork
@@ -98,11 +104,17 @@ export function RemoteFileBrowser({
       const gen = ++genRef.current
       setLoading(true)
       setError(null)
+      if (listingScopeRef.current !== targetScope) {
+        setResolvedPath('')
+        setEntries([])
+      }
       try {
         const result = await fetchListing(dirPath)
         if (gen !== genRef.current) {
           return
         }
+        listingScopeRef.current = targetScope
+        setListingScope(targetScope)
         setResolvedPath(result.resolvedPath)
         setEntries(result.entries)
         setPathFlavor(result.pathFlavor)
@@ -114,6 +126,8 @@ export function RemoteFileBrowser({
         if (gen !== genRef.current) {
           return
         }
+        listingScopeRef.current = targetScope
+        setListingScope(targetScope)
         setError(err instanceof Error ? err.message : String(err))
         setEntries([])
       } finally {
@@ -122,7 +136,7 @@ export function RemoteFileBrowser({
         }
       }
     },
-    [fetchListing, homePathRef]
+    [fetchListing, homePathRef, targetScope]
   )
 
   // Central nav clears filter/preview/hint and bumps previewGenRef so a stale in-flight preview won't clobber committed state.
@@ -131,14 +145,17 @@ export function RemoteFileBrowser({
       setFilter('')
       resetPreviewForNavigation()
       clearFileHint()
-      loadDir(dirPath)
+      return loadDir(dirPath)
     },
     [loadDir, clearFileHint, resetPreviewForNavigation]
   )
 
   useEffect(() => {
+    setFilter('')
+    resetPreviewForNavigation()
+    clearFileHint()
     loadDir(initialPath)
-  }, [loadDir, initialPath])
+  }, [loadDir, initialPath, resetPreviewForNavigation, clearFileHint])
 
   const navigateInto = useCallback(
     (name: string) => {
@@ -206,7 +223,9 @@ export function RemoteFileBrowser({
         clearTimeout(clickTimerRef.current)
         clickTimerRef.current = null
       }
-      onSelect(joinPath(listParentPath, entry.name, pathFlavor))
+      const selectedPath = joinPath(listParentPath, entry.name, pathFlavor)
+      onSelect(selectedPath)
+      return selectedPath
     },
     [listParentPath, onSelect, preview?.loading, pathFlavor]
   )
@@ -231,7 +250,42 @@ export function RemoteFileBrowser({
   const showPreviewLoading = isPreviewActive && preview!.loading
 
   // Disable Select during a non-empty path preview so the committed dir isn't silently selected under a different-looking list.
-  const selectDisabled = loading || (isPreviewActive && filter !== '')
+  const selectDisabled =
+    loading ||
+    listingScope !== targetScope ||
+    !resolvedPath ||
+    !!error ||
+    (isPreviewActive && filter !== '')
+
+  useRemoteFilePickerCommands({
+    target: targetId
+      ? { kind: 'ssh', id: targetId }
+      : { kind: 'runtime', id: runtimeEnvironmentId ?? '' },
+    resolvedPath,
+    loading: loading || listingScope !== targetScope,
+    error,
+    filter,
+    preview: isPreviewActive,
+    selectDisabled,
+    entries: preview ? filterEntries(preview.entries, preview.filter) : filteredEntries,
+    previewPath: preview?.resolvedPath,
+    previewLoading: preview?.loading ?? false,
+    fileHint,
+    inputFocused:
+      inputRef.current !== null &&
+      inputRef.current.ownerDocument.activeElement === inputRef.current,
+    rowClickPending: () => clickTimerRef.current !== null,
+    input: handleInputChange,
+    paste: handlePastedText,
+    key: handleFilterKeyDown,
+    rowClick: handleRowClick,
+    rowSelect: handleRowDoubleClick,
+    focusInput: () => focusRemoteFileBrowserInput(inputRef),
+    navigate,
+    navigateUp,
+    select: handleSelect,
+    cancel: onCancel
+  })
 
   return (
     <div ref={setBrowserRootRef} className="flex flex-col gap-2 min-w-0 w-full">

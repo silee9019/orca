@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEmulatorConnectionsViewerController } from '@/hooks/useEmulatorConnectionsViewerController'
+import { useRef, useState } from 'react'
+import { useMountedRef } from '@/hooks/useMountedRef'
+import { useEmulatorGuideSkillViewer } from '@/runtime/emulator-connections-viewer-controller'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '../ui/button'
@@ -21,6 +24,48 @@ export function MobileEmulatorAgentSetupGuide({
   const recordFeatureInteraction = useAppStore((s) => s.recordFeatureInteraction)
   const [expanded, setExpanded] = useState(false)
 
+  const mounted = useMountedRef()
+  const rechecking = useRef(false)
+  const [completion, setCompletion] = useState<object | null>(null)
+  const recheck = async (): Promise<object | null> => {
+    if (
+      !expanded ||
+      setup.setupComplete ||
+      rechecking.current ||
+      setup.setupRechecking ||
+      setup.cliSkillLoading ||
+      !mounted.current
+    ) {
+      return null
+    }
+    rechecking.current = true
+    try {
+      await recordFeatureInteraction('mobile-emulator-agent-setup')
+      if (!mounted.current) {
+        return null
+      }
+      await setup.recheckSetup()
+      if (!mounted.current) {
+        return null
+      }
+      const completed = {}
+      setCompletion(completed)
+      return completed
+    } finally {
+      rechecking.current = false
+    }
+  }
+  useEmulatorGuideSkillViewer({
+    worktreeId,
+    refresh: recheck,
+    read: () => ({
+      completion,
+      ready: setup.cliSkillInstalled,
+      loading: setup.cliSkillLoading || setup.setupRechecking,
+      error: setup.cliSkillError !== null
+    })
+  })
+
   const dismiss = (): void => {
     dismissMobileEmulatorAgentSetup()
   }
@@ -30,6 +75,15 @@ export function MobileEmulatorAgentSetupGuide({
     openSettingsTarget({ pane: 'mobile-emulator', repoId: null })
     openSettingsPage()
   }
+
+  useEmulatorConnectionsViewerController({
+    surface: 'guide',
+    worktreeId,
+    expanded,
+    expand: setExpanded,
+    dismiss,
+    settings: openSettings
+  })
 
   return (
     <div
@@ -119,7 +173,11 @@ export function MobileEmulatorAgentSetupGuide({
 
       {expanded && !setup.setupComplete ? (
         <div className="scrollbar-sleek max-h-[min(36vh,16rem)] overflow-y-auto border-t border-border/60 px-3 pb-2">
-          <MobileEmulatorAgentSetupGuideSteps setup={setup} worktreeId={worktreeId} />
+          <MobileEmulatorAgentSetupGuideSteps
+            setup={setup}
+            worktreeId={worktreeId}
+            recheck={recheck}
+          />
           <div className="pb-1 pt-1">
             <button
               type="button"

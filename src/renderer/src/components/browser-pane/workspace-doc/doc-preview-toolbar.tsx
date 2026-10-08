@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
 import {
   BrowserChromeToolbar,
   type BrowserChromeElementTools
@@ -16,6 +17,10 @@ import { DocPreviewOverflowMenu } from './doc-preview-overflow-menu'
  */
 export function DocPreviewToolbar({
   identity,
+  submitAddressRef,
+  reloadMenuOpen,
+  setReloadMenuOpen,
+  isActive = true,
   previewId,
   worktreeId,
   history,
@@ -28,9 +33,14 @@ export function DocPreviewToolbar({
   onOpenExternally,
   elementTools,
   markupActive,
+  markupCommandOwner,
   onToggleMarkup,
   markupDisabled
 }: {
+  submitAddressRef?: RefObject<(() => boolean) | null>
+  reloadMenuOpen: boolean
+  setReloadMenuOpen: Dispatch<SetStateAction<boolean>>
+  isActive?: boolean
   identity: DocPreviewDocumentIdentity
   /** The browser page this preview is open in — what an address commit converts. */
   previewId: string
@@ -46,10 +56,10 @@ export function DocPreviewToolbar({
   onOpenExternally: () => void
   elementTools: BrowserChromeElementTools
   markupActive: boolean
+  markupCommandOwner?: BrowserMarkupEditorOwner
   onToggleMarkup: () => void
   markupDisabled: boolean
 }): React.JSX.Element {
-  const [reloadMenuOpen, setReloadMenuOpen] = useState(false)
   const reloadLabel = translate(
     'auto.components.editor.HtmlDocPreview.reloadPreviewControl',
     'Reload preview'
@@ -68,7 +78,13 @@ export function DocPreviewToolbar({
         navigate: () => {}
       }}
       addressSlot={
-        <DocPreviewAddressEdit identity={identity} previewId={previewId} worktreeId={worktreeId} />
+        <DocPreviewAddressEdit
+          submitAddressRef={submitAddressRef}
+          isActive={isActive}
+          identity={identity}
+          previewId={previewId}
+          worktreeId={worktreeId}
+        />
       }
       reloadControl={
         <BrowserReloadControl
@@ -89,6 +105,7 @@ export function DocPreviewToolbar({
       importControl={null}
       elementTools={elementTools}
       markup={{
+        commandOwner: markupCommandOwner,
         active: markupActive,
         disabled: markupDisabled,
         onToggle: onToggleMarkup,

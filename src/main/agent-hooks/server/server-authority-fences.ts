@@ -1,3 +1,4 @@
+import { matchesPaneRetirement } from '../pane-retirement-match'
 import { clearPaneCacheState } from '../../../shared/agent-hook-listener/listener-state'
 import { parsePaneKey } from '../../../shared/stable-pane-id'
 import { AgentHookServerAuthorityAliases } from './server-authority-aliases'
@@ -104,6 +105,23 @@ export abstract class AgentHookServerAuthorityFences extends AgentHookServerAuth
       this.boundPaneKeyAliases()
       this.notifyPaneKeyAliasPersistenceListener()
     }
+  }
+
+  restorePaneAuthorityIfRetirementMatches(paneKey: string, retirementId: string): boolean {
+    const ownerPaneKey = this.resolvePaneKeyAlias(paneKey)
+    const fence =
+      this.retiredPaneFencesByKey.get(paneKey) ?? this.retiredPaneFencesByKey.get(ownerPaneKey)
+    if (
+      !matchesPaneRetirement(
+        fence,
+        retirementId,
+        (key) => this.retiredPaneFencesByKey.get(key),
+        (key) => this.isClosedAgentStatusTabForPaneKey(key)
+      )
+    ) {
+      return false
+    }
+    return this.restorePaneAuthority(paneKey)
   }
 
   restorePaneAuthority(paneKey: string): boolean {

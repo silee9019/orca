@@ -1,3 +1,4 @@
+import { parsePluginCommandInput } from '../../shared/plugins/plugin-command-input'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
@@ -117,7 +118,7 @@ export function createPluginWorkerRuntime(
       }
     }
     await activate(orca)
-    send({ type: 'ready', commands: [...commandHandlers.keys()] })
+    send({ type: 'ready', commands: [...commandHandlers.keys()], commandInputVersion: 1 })
   }
 
   return {
@@ -146,7 +147,10 @@ export function createPluginWorkerRuntime(
               return
             }
             try {
-              const value = await handler(message.args)
+              const args = message.input
+                ? parsePluginCommandInput(message.input, message.args)
+                : message.args
+              const value = await handler(args)
               send({ type: 'commandResult', callId: message.callId, ok: true, value })
             } catch (error) {
               send({

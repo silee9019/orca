@@ -54,6 +54,27 @@ let pendingClaim: { claimId: number; ownerToken: number } | null = null
 let deferredWatchStartTimer: ReturnType<typeof setTimeout> | null = null
 let deferredWatchStartGeneration = 0
 
+const thresholdListeners = new Set<(payload: TccPromptNoticePayload) => void>()
+
+export function observeTccPromptThreshold(
+  listener: (payload: TccPromptNoticePayload) => void
+): () => void {
+  thresholdListeners.add(listener)
+  return () => {
+    thresholdListeners.delete(listener)
+  }
+}
+
+function publishTccThreshold(payload: TccPromptNoticePayload): void {
+  for (const listener of thresholdListeners) {
+    try {
+      listener(payload)
+    } catch {
+      /* A disconnected observer cannot interrupt the existing notice. */
+    }
+  }
+}
+
 function tallyPath(): string {
   return join(getCanonicalUserDataPath(), 'macos-tcc-prompt-tally.json')
 }
@@ -112,7 +133,24 @@ function recordPrompt(): TccPromptNoticePayload | null {
   if (tally.promptCount < TCC_PROMPT_NOTICE_THRESHOLD) {
     return null
   }
-  return { promptCount: tally.promptCount }
+  const payload = { promptCount: tally.promptCount }
+  publishTccThreshold(payload)
+  return payload
+}
+
+export function getTccPromptNoticeStatus(): {
+  promptCount: number
+  pending: boolean
+  dismissed: boolean
+  acknowledged: boolean
+} {
+  return {
+    promptCount: tally.promptCount,
+    pending:
+      !tally.dismissed && !tally.notified && tally.promptCount >= TCC_PROMPT_NOTICE_THRESHOLD,
+    dismissed: tally.dismissed,
+    acknowledged: tally.acknowledgedAfterClose
+  }
 }
 
 export function consumePendingTccPromptNotice(ownerToken: number): TccPromptNoticeClaim | null {
@@ -130,26 +168,37 @@ export function consumePendingTccPromptNotice(ownerToken: number): TccPromptNoti
 }
 
 export function acknowledgePendingTccPromptNotice(ownerToken: number, claimId: number): void {
+  acknowledgePendingTccPromptClaim(ownerToken, claimId)
+}
+
+export function acknowledgePendingTccPromptClaim(ownerToken: number, claimId: number): boolean {
   if (
     pendingClaim?.ownerToken !== ownerToken ||
     pendingClaim.claimId !== claimId ||
     tally.dismissed ||
     tally.notified
   ) {
-    return
+    return false
   }
   pendingClaim = null
   tally = { ...tally, notified: true, acknowledgedAfterClose: true }
   saveTally()
+  return true
 }
 
 export function releasePendingTccPromptNotice(ownerToken: number, claimId?: number): void {
+  releasePendingTccPromptClaim(ownerToken, claimId)
+}
+
+export function releasePendingTccPromptClaim(ownerToken: number, claimId?: number): boolean {
   if (
     pendingClaim?.ownerToken === ownerToken &&
     (claimId === undefined || pendingClaim.claimId === claimId)
   ) {
     pendingClaim = null
+    return true
   }
+  return false
 }
 
 /** Permanently stops the notice for this user; the watcher shuts down with it. */
@@ -237,6 +286,7 @@ export function initTccPromptNotice(
     return
   }
   if (tally.promptCount >= TCC_PROMPT_NOTICE_THRESHOLD) {
+    publishTccThreshold({ promptCount: tally.promptCount })
     sendTccPromptNotice(mainWindow, {
       promptCount: tally.promptCount
     })
@@ -276,6 +326,7 @@ export function resetTccPromptNoticeForTests(): void {
   tally = { ...EMPTY_TALLY }
   watch = null
   mainWindowRef = null
+  thresholdListeners.clear()
   nextClaimId = 0
   pendingClaim = null
 }

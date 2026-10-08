@@ -91,10 +91,10 @@ export class OrcaRuntimeWithTerminalDrivers extends OrcaRuntimeWithFitOverrideLi
     isMobileDriven: (ptyId) => this.getDriver(ptyId).kind === 'mobile',
     getTerminalSize: (ptyId) => this.getTerminalSize(ptyId) ?? null,
     resolveHostTarget: (ptyId) => this.resolveDesktopRestoreTarget(ptyId),
-    applyLayout: async (ptyId, target) => {
+    applyLayout: async (ptyId, target, ownerMatches) => {
       this.freshSubscribeGuard.add(ptyId)
       try {
-        return await this.enqueueLayout(ptyId, target)
+        return await this.enqueueLayout(ptyId, target, ownerMatches)
       } finally {
         this.freshSubscribeGuard.delete(ptyId)
       }

@@ -1,3 +1,4 @@
+import { useMountedProviderRemovalDialogControls } from '../../runtime/use-mounted-account-dialog-controls'
 import type { SecretAtRestProtection } from '../../../../shared/secret-at-rest-protection'
 import { useEffect, useRef, useState } from 'react'
 import type {
@@ -375,6 +376,7 @@ export function AccountsPane({
     saveMiniMaxCookie,
     clearMiniMaxCookie
   }
+  useMountedProviderRemovalDialogControls(model)
   const visibleSections = [
     !searchQuery || /opencode|devin|account/i.test(searchQuery) ? (
       <div key={settings.activeRuntimeEnvironmentId ?? 'local'} className="space-y-8">

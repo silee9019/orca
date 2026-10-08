@@ -1,0 +1,106 @@
+// @vitest-environment happy-dom
+import { browserImportHintCookieOwnerFixture } from './browser-import-hint-cookie-owner.fixture'
+import { cookieFixture } from './browser-settings-cookie.fixture'
+import type { browserImportHintOwnerSocketFixture } from './browser-import-hint-owner-socket.fixture'
+import { browserSessionRegistry } from '../../src/main/browser/browser-session-registry'
+import { useAppStore } from '../../src/renderer/src/store'
+import { act } from 'react'
+import { toast } from 'sonner'
+import { afterEach, expect, it, vi } from 'vitest'
+
+let fixture: Awaited<ReturnType<typeof browserImportHintOwnerSocketFixture>> | undefined
+afterEach(async () => {
+  await fixture?.close()
+  fixture = undefined
+})
+it('imports an explicit cookie file through the mounted hint owner and reads its actual profile jar', async () => {
+  const { owner, file } = await browserImportHintCookieOwnerFixture()
+  fixture = owner
+  const success = vi.spyOn(toast, 'success')
+  await owner.invoke('open')
+  await owner.invoke('import-file', ['--file', file, '--confirm-profile', 'default'])
+  const profile = browserSessionRegistry.getProfile('default')
+  expect(profile?.source?.browserFamily).toBe('manual')
+  if (!profile) {
+    throw new Error('fixture profile missing')
+  }
+  expect(cookieFixture.jars.get(profile.partition)).toBe('private-fixture-cookie-value')
+  expect(useAppStore.getState().browserSessionImportState?.status).toBe('success')
+  expect(owner.store.getUI().featureInteractions['cookie-import']?.interactionCount).toBe(1)
+  expect(owner.output.mock.calls.flat().join(' ')).not.toContain('private-fixture-cookie-value')
+  expect(success).toHaveBeenCalledTimes(1)
+  expect(document.querySelector('[data-import-hint-content]')).toBeNull()
+})
+
+it('rejects absent or mismatched confirmation before any provider effect', async () => {
+  const { owner, file } = await browserImportHintCookieOwnerFixture()
+  fixture = owner
+  await expect(owner.invoke('import-file', ['--file', file])).rejects.toThrow()
+  await expect(
+    owner.invoke('import-file', ['--file', file, '--confirm-profile', 'other'])
+  ).rejects.toThrow()
+  expect(cookieFixture.jars.size).toBe(0)
+  expect(useAppStore.getState().browserSessionImportState).toBeNull()
+})
+it('waits for the provider and rejects a changed target without publishing cookie contents', async () => {
+  const { owner, file } = await browserImportHintCookieOwnerFixture()
+  fixture = owner
+  let release = (): void => {}
+  cookieFixture.wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const pending = owner.invoke('import-file', ['--file', file, '--confirm-profile', 'default'])
+  const rejected = expect(pending).rejects.toThrow()
+  await vi.waitFor(() =>
+    expect(useAppStore.getState().browserSessionImportState?.status).toBe('importing')
+  )
+  expect(cookieFixture.jars.size).toBe(0)
+  expect(owner.output).not.toHaveBeenCalled()
+  await act(async () => {
+    useAppStore.setState({ activeWorktreeId: 'other' })
+  })
+  await rejected
+  await act(async () => {
+    release()
+  })
+  await vi.waitFor(() => expect(cookieFixture.jars.size).toBe(1))
+  expect(owner.output).not.toHaveBeenCalled()
+})
+it('rejects provider failure and omits private file paths and errors from stdout', async () => {
+  const { owner } = await browserImportHintCookieOwnerFixture()
+  fixture = owner
+  const success = vi.spyOn(toast, 'success')
+  await expect(
+    owner.invoke('import-file', [
+      '--file',
+      'private-missing-cookie-file',
+      '--confirm-profile',
+      'default'
+    ])
+  ).rejects.toThrow()
+  expect(cookieFixture.jars.size).toBe(0)
+  expect(success).not.toHaveBeenCalled()
+  expect(owner.output).not.toHaveBeenCalled()
+})
+it('does not acknowledge before the existing feature interaction writer settles', async () => {
+  const { owner, file } = await browserImportHintCookieOwnerFixture()
+  fixture = owner
+  let release = (): void => {}
+  const wait = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const persist = vi.fn(async (id: Parameters<typeof owner.store.recordFeatureInteraction>[0]) => {
+    await wait
+    return owner.store.recordFeatureInteraction(id)
+  })
+  Object.assign(window.api.ui, { recordFeatureInteraction: persist })
+  const pending = owner.invoke('import-file', ['--file', file, '--confirm-profile', 'default'])
+  await vi.waitFor(() => expect(persist).toHaveBeenCalledTimes(1))
+  expect(cookieFixture.jars.size).toBe(1)
+  expect(owner.output).not.toHaveBeenCalled()
+  await act(async () => {
+    release()
+  })
+  await pending
+  expect(owner.store.getUI().featureInteractions['cookie-import']?.interactionCount).toBe(1)
+})

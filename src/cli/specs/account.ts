@@ -26,7 +26,7 @@ export const ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['account', 'list'],
     summary: 'List managed agent accounts on this Orca host',
-    usage: 'orca account list [--agent opencode|devin] [--json]',
+    usage: 'orca account list [--agent claude|codex|opencode|devin] [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'agent'],
     notes: [
       'Lists the accounts on this machine. `--environment` / `--pairing-code` are rejected rather than ignored; run it on the host whose accounts you want to see.'
@@ -35,18 +35,20 @@ export const ACCOUNT_COMMAND_SPECS: CommandSpec[] = [
   },
   {
     path: ['account', 'select'],
-    summary: 'Select an OpenCode or Devin profile for new agent launches',
-    usage: 'orca account select --agent opencode|devin --account <id|system> [--json]',
+    summary: 'Select a managed agent account for new agent launches',
+    usage: 'orca account select --agent claude|codex|opencode|devin --account <id|system> [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'agent', 'account']
   },
   {
     path: ['account', 'rm'],
     aliases: [['account', 'remove']],
     destructive: true,
-    summary: 'Remove a managed OpenCode or Devin profile and its private data',
-    usage: 'orca account rm --agent opencode|devin --account <id> [--json]',
-    allowedFlags: [...GLOBAL_FLAGS, 'agent', 'account'],
+    summary: 'Remove a managed agent account and its private data',
+    usage:
+      'orca account rm --agent claude|codex|opencode|devin --account <id> [--confirm true] [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'agent', 'account', 'confirm'],
     notes: [
+      'Removing Claude or Codex accounts requires --confirm true.',
       'Deletes credentials and conversation data in the managed profile. Stop its running agents first. System credentials are never removed.'
     ]
   }

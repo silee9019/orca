@@ -28,6 +28,10 @@ export async function importPetBundle(
     return null
   }
   const picked = result.filePaths[0]
+  return importPetBundlePath(picked)
+}
+
+export async function importPetBundlePath(picked: string): Promise<CustomPet> {
   let bundleDir: string
   try {
     const pickedStat = await stat(picked)

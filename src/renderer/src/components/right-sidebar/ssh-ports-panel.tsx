@@ -1,4 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import {
+  portsConnectionId,
+  readPortsConnectionId,
+  findCurrentSshForward,
+  copySshForwardAddress,
+  removeSshForward
+} from './ssh-forwarded-port-actions'
+import { useSshPortsViewer, type SshPortsFormOwner } from '@/runtime/ssh-ports-viewer'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { ChevronRight, Plus, Unplug } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAppStore } from '@/store'
@@ -23,8 +31,24 @@ function normalizeHost(host: string | undefined): string {
   return host
 }
 
+function detectedForConnection(
+  targetId: string | null,
+  forwards: PortForwardEntry[],
+  ports: EnrichedDetectedPort[]
+) {
+  if (!targetId) {
+    return []
+  }
+  const forwarded = new Set(
+    forwards.map((entry) => `${normalizeHost(entry.remoteHost)}:${entry.remotePort}`)
+  )
+  return ports
+    .filter((port) => !forwarded.has(`${normalizeHost(port.host)}:${port.port}`))
+    .map((port) => ({ ...port, targetId }))
+    .sort((a, b) => a.port - b.port)
+}
+
 export function SshPortsPanel(): React.JSX.Element {
-  const settings = useAppStore((s) => s.settings)
   const portForwardsByConnection = useAppStore((s) => s.portForwardsByConnection)
   const detectedPortsByConnection = useAppStore((s) => s.detectedPortsByConnection)
   const sshConnectionStates = useAppStore((s) => s.sshConnectionStates)
@@ -33,7 +57,11 @@ export function SshPortsPanel(): React.JSX.Element {
   // reflects the active worktree, not some other SSH session.
   const activeWorktree = useActiveWorktree()
   const activeRepo = useRepoById(activeWorktree?.repoId ?? null)
-  const activeConnectionId = activeRepo?.connectionId ?? null
+  const activeConnectionId = portsConnectionId(
+    activeWorktree?.id,
+    activeWorktree?.hostId,
+    activeRepo?.connectionId
+  )
 
   const isDisconnected = activeConnectionId
     ? sshConnectionStates.get(activeConnectionId)?.status !== 'connected'
@@ -46,57 +74,119 @@ export function SshPortsPanel(): React.JSX.Element {
     return portForwardsByConnection[activeConnectionId] ?? []
   }, [portForwardsByConnection, activeConnectionId])
 
-  const forwardedKeys = useMemo(() => {
-    const set = new Set<string>()
-    for (const f of allForwards) {
-      set.add(`${normalizeHost(f.remoteHost)}:${f.remotePort}`)
-    }
-    return set
-  }, [allForwards])
-
-  const allDetected = useMemo(() => {
-    if (!activeConnectionId) {
-      return []
-    }
-    const ports = detectedPortsByConnection[activeConnectionId] ?? []
-    return ports
-      .filter((p) => !forwardedKeys.has(`${normalizeHost(p.host)}:${p.port}`))
-      .map((p) => ({ ...p, targetId: activeConnectionId }))
-      .sort((a, b) => a.port - b.port)
-  }, [detectedPortsByConnection, activeConnectionId, forwardedKeys])
+  const allDetected = useMemo(
+    () =>
+      detectedForConnection(
+        activeConnectionId,
+        allForwards,
+        activeConnectionId ? (detectedPortsByConnection[activeConnectionId] ?? []) : []
+      ),
+    [allForwards, detectedPortsByConnection, activeConnectionId]
+  )
 
   const [forwardedCollapsed, setForwardedCollapsed] = useState(false)
   const [detectedCollapsed, setDetectedCollapsed] = useState(false)
-  const [dialogState, setDialogState] = useState<PortForwardDialogState>({ mode: 'closed' })
-
-  const handleForwardDetected = useCallback((port: EnrichedDetectedPort & { targetId: string }) => {
-    setDialogState({
-      mode: 'add',
-      defaults: {
-        remotePort: port.port,
-        remoteHost: normalizeHost(port.host),
-        label: port.processName,
-        targetId: port.targetId
+  const [dialogState, publishDialogState] = useState<PortForwardDialogState>({ mode: 'closed' })
+  const formOwner = useRef<SshPortsFormOwner | null>(null)
+  const registerForm = useCallback((owner: SshPortsFormOwner) => {
+    formOwner.current = owner
+    return () => {
+      if (formOwner.current === owner) {
+        formOwner.current = null
       }
-    })
+    }
+  }, [])
+  const currentDialog = useRef(dialogState)
+  const setDialogState = useCallback((state: PortForwardDialogState) => {
+    currentDialog.current = state
+    publishDialogState(state)
   }, [])
 
-  const handleEdit = useCallback((entry: PortForwardEntry) => {
-    setDialogState({ mode: 'edit', entry })
-  }, [])
+  const handleForwardDetected = useCallback(
+    (port: EnrichedDetectedPort & { targetId: string }) => {
+      const current = useAppStore.getState()
+      if (
+        readPortsConnectionId() !== port.targetId ||
+        current.sshConnectionStates.get(port.targetId)?.status !== 'connected'
+      ) {
+        return false
+      }
+      const canonical = detectedForConnection(
+        port.targetId,
+        current.portForwardsByConnection[port.targetId] ?? [],
+        current.detectedPortsByConnection[port.targetId] ?? []
+      ).find(
+        (value) =>
+          normalizeHost(value.host) === normalizeHost(port.host) && value.port === port.port
+      )
+      if (!canonical) {
+        return false
+      }
+      setDialogState({
+        mode: 'add',
+        defaults: {
+          remotePort: canonical.port,
+          remoteHost: normalizeHost(canonical.host),
+          label: canonical.processName,
+          targetId: port.targetId
+        }
+      })
+      return true
+    },
+    [setDialogState]
+  )
+
+  const handleEdit = useCallback(
+    (entry: PortForwardEntry) => {
+      const current = useAppStore.getState()
+      if (
+        readPortsConnectionId() !== entry.connectionId ||
+        current.sshConnectionStates.get(entry.connectionId)?.status !== 'connected'
+      ) {
+        return false
+      }
+      const canonical = current.portForwardsByConnection[entry.connectionId]?.find(
+        (value) => value.id === entry.id && value.connectionId === entry.connectionId
+      )
+      if (!canonical) {
+        return false
+      }
+      setDialogState({ mode: 'edit', entry: canonical })
+      return true
+    },
+    [setDialogState]
+  )
 
   const handleOpenForwardInBrowser = useCallback(
-    (entry: PortForwardEntry, event?: React.MouseEvent<HTMLButtonElement>) => {
-      const url = browserUrlForPortForwardEntry(entry)
+    async (
+      entry: PortForwardEntry,
+      event?: React.MouseEvent<HTMLButtonElement>,
+      destination: 'configured' | 'system' | 'orca' = 'configured'
+    ): Promise<boolean> => {
+      const canonical = findCurrentSshForward(entry.id, entry.connectionId)
       if (
-        !resolvePortOpenInOrcaBrowser({
-          settings,
-          event,
-          isMac: navigator.userAgent.includes('Mac')
-        })
+        readPortsConnectionId() !== entry.connectionId ||
+        !canonical ||
+        useAppStore.getState().activeWorktreeId !== activeWorktree?.id
       ) {
-        void window.api.shell.openUrl(url)
-        return
+        return false
+      }
+      const url = browserUrlForPortForwardEntry(canonical)
+      const inOrca =
+        destination === 'orca' ||
+        (destination === 'configured' &&
+          resolvePortOpenInOrcaBrowser({
+            settings: useAppStore.getState().settings,
+            event,
+            isMac: navigator.userAgent.includes('Mac')
+          }))
+      if (!inOrca) {
+        try {
+          await window.api.shell.openUrl(url)
+          return true
+        } catch {
+          return false
+        }
       }
       if (!activeWorktree?.id) {
         toast.error(
@@ -105,22 +195,97 @@ export function SshPortsPanel(): React.JSX.Element {
             'No workspace selected for the browser.'
           )
         )
-        return
+        return false
       }
-      void openWorkspaceBrowserTab({
-        workspaceId: activeWorktree.id,
-        url,
-        intent: { kind: 'url' }
-      }).catch((error) => {
+      try {
+        await openWorkspaceBrowserTab({
+          workspaceId: activeWorktree.id,
+          url,
+          intent: { kind: 'url' }
+        })
+        return true
+      } catch (error) {
         toast.error(error instanceof Error ? error.message : String(error))
-      })
+        return false
+      }
     },
-    [activeWorktree?.id, settings]
+    [activeWorktree?.id]
   )
 
-  const handleDialogClose = useCallback(() => {
-    setDialogState({ mode: 'closed' })
-  }, [])
+  const handleDialogClose = useCallback(
+    (expected?: PortForwardDialogState) => {
+      if (expected && currentDialog.current !== expected) {
+        return false
+      }
+      setDialogState({ mode: 'closed' })
+      return true
+    },
+    [setDialogState]
+  )
+
+  useSshPortsViewer({
+    form: () => formOwner.current,
+    read: () => ({
+      connectionId: activeConnectionId,
+      disconnected: isDisconnected,
+      forwardCount: allForwards.length,
+      detectedCount: allDetected.length,
+      dialog: dialogState.mode,
+      dialogTargetId:
+        dialogState.mode === 'edit'
+          ? dialogState.entry.connectionId
+          : dialogState.mode === 'add'
+            ? (dialogState.defaults.targetId ?? null)
+            : null,
+      editingForwardId: dialogState.mode === 'edit' ? dialogState.entry.id : null
+    }),
+    edit: (id) => {
+      const entry = activeConnectionId
+        ? useAppStore
+            .getState()
+            .portForwardsByConnection[activeConnectionId]?.find(
+              (value) => value.id === id && value.connectionId === activeConnectionId
+            )
+        : null
+      if (!entry) {
+        return false
+      }
+      return handleEdit(entry)
+    },
+    detected: (host, port) => {
+      if (!activeConnectionId) {
+        return false
+      }
+      return handleForwardDetected({ host, port, targetId: activeConnectionId })
+    },
+    matchesDetected: (host, port) =>
+      dialogState.mode === 'add' &&
+      normalizeHost(dialogState.defaults.remoteHost) === normalizeHost(host) &&
+      dialogState.defaults.remotePort === port,
+    current: () =>
+      readPortsConnectionId() === activeConnectionId &&
+      Boolean(
+        activeConnectionId &&
+        useAppStore.getState().sshConnectionStates.get(activeConnectionId)?.status === 'connected'
+      ),
+    copy: async (id) => {
+      const entry = activeConnectionId ? findCurrentSshForward(id, activeConnectionId) : undefined
+      return entry ? copySshForwardAddress(entry) : false
+    },
+    remove: async (id) => {
+      const entry = activeConnectionId ? findCurrentSshForward(id, activeConnectionId) : undefined
+      return entry ? removeSshForward(entry) : false
+    },
+    openBrowser: async (id, destination) => {
+      const entry = activeConnectionId ? findCurrentSshForward(id, activeConnectionId) : undefined
+      return entry ? handleOpenForwardInBrowser(entry, undefined, destination) : false
+    },
+    removed: (id, targetId) =>
+      !(useAppStore.getState().portForwardsByConnection[targetId] ?? []).some(
+        (entry) => entry.id === id && entry.connectionId === targetId
+      ),
+    cancel: handleDialogClose
+  })
 
   if (isDisconnected) {
     return (
@@ -246,6 +411,7 @@ export function SshPortsPanel(): React.JSX.Element {
       )}
 
       <SshPortForwardDialog
+        registerForm={registerForm}
         state={dialogState}
         activeConnectionId={activeConnectionId}
         onClose={handleDialogClose}

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useId, useState } from 'react'
+import { LinearAccessViewer } from '@/runtime/linear-access-viewer'
 import { ArrowRightCircle, BookOpen, Link2, ListTodo, MessageSquarePlus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LinearApiKeyDialog } from '@/components/linear-api-key-dialog'
@@ -45,25 +46,35 @@ export function LinearAgentSkillPane(): React.JSX.Element {
   const [linearKeyDialogOpen, setLinearKeyDialogOpen] = useState(false)
   const skillSetup = useLinearAgentSkillSetup()
 
-  const openTaskSources = (): void => {
+  const openTaskSources = useCallback((): void => {
     openSettingsPage()
     openSettingsTarget({ pane: 'tasks', repoId: null })
-  }
+  }, [openSettingsPage, openSettingsTarget])
 
-  const openIntegrationSettings = (): void => {
+  const openIntegrationSettings = useCallback((): void => {
     openSettingsPage()
     openSettingsTarget({
       pane: 'integrations',
       repoId: null,
       sectionId: LINEAR_INTEGRATION_SECTION_ID
     })
-  }
+  }, [openSettingsPage, openSettingsTarget])
+
+  const manageLinearAccess = useCallback((): void => {
+    if (linearConnected) {
+      openIntegrationSettings()
+    } else {
+      setLinearKeyDialogOpen(true)
+    }
+  }, [linearConnected, openIntegrationSettings])
+  const closeAccessDialog = useCallback((): void => setLinearKeyDialogOpen(false), [])
+  const paneKey = useId()
+  const ownerKey = getProviderRuntimeContextKey(settings)
 
   const visibleInTasks = normalizeVisibleTaskProviders(settings?.visibleTaskProviders).includes(
     'linear'
   )
-  const connectionChecking =
-    linearStatusContextKey !== getProviderRuntimeContextKey(settings) || !linearStatusChecked
+  const connectionChecking = linearStatusContextKey !== ownerKey || !linearStatusChecked
 
   const skillPanel = (
     <AgentSkillSetupPanel
@@ -103,6 +114,16 @@ export function LinearAgentSkillPane(): React.JSX.Element {
       keywords={getLinearAgentSkillPaneSearchEntries()[0].keywords}
       className="space-y-6 py-2"
     >
+      <LinearAccessViewer
+        paneKey={paneKey}
+        ownerKey={ownerKey}
+        connected={linearConnected}
+        keyDialogOpen={linearKeyDialogOpen}
+        openTaskSources={openTaskSources}
+        manageAccess={manageLinearAccess}
+        openIntegrations={openIntegrationSettings}
+        closeAccessDialog={closeAccessDialog}
+      />
       <LinearAgentSkillGuide
         readiness={{
           connected: linearConnected,
@@ -113,9 +134,7 @@ export function LinearAgentSkillPane(): React.JSX.Element {
           visible: visibleInTasks
         }}
         onOpenTaskSources={openTaskSources}
-        onManageLinearAccess={
-          linearConnected ? openIntegrationSettings : () => setLinearKeyDialogOpen(true)
-        }
+        onManageLinearAccess={manageLinearAccess}
         skillPanel={skillPanel}
       />
 

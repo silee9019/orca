@@ -1,3 +1,4 @@
+import { runOwnedAiVaultListScan } from '../../../ai-vault/owned-list-cancellation'
 import {
   AiVaultSearchRequestSchema,
   AiVaultSearchStatusRequestSchema,
@@ -66,35 +67,53 @@ export const AI_VAULT_METHODS = [
   defineMethod({
     name: 'aiVault.listSessions',
     params: AiVaultListSessionsParams,
-    handler: async (params, { runtime, clientKind, clientCapabilities }) => {
-      await ensureStructuredAgentSessionHostUnlessRefused(() =>
-        runtime.ensureStructuredAgentSessionHost()
-      )
-      let result
-      try {
-        result = await runtime.listAiVaultSessions({
-          limit: params.unlimited ? undefined : params.limit,
-          unlimited: params.unlimited,
-          force: params.force,
-          scopePaths: params.scopePaths,
-          includeAntigravityIdeSessions: params.includeAntigravityIdeSessions
-        })
-      } catch (error) {
-        if (error instanceof Error) {
-          error.message = describeAiVaultScanError(error.message)
-          throw error
-        }
-        throw new Error(describeAiVaultScanError(String(error)))
+    handler: async (
+      params,
+      {
+        runtime,
+        clientKind,
+        clientCapabilities,
+        signal: callerSignal,
+        authenticatedCallerFingerprint
       }
-      // Why: web clients consume this response directly (no parent-side retag),
-      // so sessions must come back stamped as the runtime host they addressed.
-      const stamped = params.executionHostId
-        ? restampAiVaultListResult(result, params.executionHostId)
-        : result
-      return projectStructuredAiVaultSessions(
-        stamped,
-        clientKind === undefined ||
-          (clientCapabilities?.includes(STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY) ?? false)
+    ) => {
+      return runOwnedAiVaultListScan(
+        { runtime, signal: callerSignal, authenticatedCallerFingerprint },
+        params.requestToken,
+        async (signal) => {
+          await ensureStructuredAgentSessionHostUnlessRefused(() =>
+            runtime.ensureStructuredAgentSessionHost()
+          )
+          let result
+          try {
+            result = await runtime.listAiVaultSessions(
+              {
+                limit: params.unlimited ? undefined : params.limit,
+                unlimited: params.unlimited,
+                force: params.force,
+                scopePaths: params.scopePaths,
+                includeAntigravityIdeSessions: params.includeAntigravityIdeSessions
+              },
+              signal
+            )
+          } catch (error) {
+            if (error instanceof Error) {
+              error.message = describeAiVaultScanError(error.message)
+              throw error
+            }
+            throw new Error(describeAiVaultScanError(String(error)))
+          }
+          // Why: web clients consume this response directly (no parent-side retag),
+          // so sessions must come back stamped as the runtime host they addressed.
+          const stamped = params.executionHostId
+            ? restampAiVaultListResult(result, params.executionHostId)
+            : result
+          return projectStructuredAiVaultSessions(
+            stamped,
+            clientKind === undefined ||
+              (clientCapabilities?.includes(STRUCTURED_AGENT_SESSION_RUNTIME_CAPABILITY) ?? false)
+          )
+        }
       )
     }
   }),

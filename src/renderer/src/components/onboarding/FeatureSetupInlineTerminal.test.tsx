@@ -1,29 +1,40 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '@testing-library/react'
+import { INSTALLED_AGENT_SKILLS_CHANGED_EVENT } from '@/hooks/installed-agent-skills-change-event'
 import { FeatureSetupInlineTerminal } from './FeatureSetupInlineTerminal'
 
-const mocks = vi.hoisted(() => ({
-  runtime: {
-    agentRuntime: { runtime: 'wsl' as const, wslDistro: 'Ubuntu', label: 'WSL Ubuntu' },
-    installDisabledReason: null as string | null,
+type TerminalProps = {
+  command: string
+  forceHostRuntime?: boolean
+  prepareCommandForShell?: (command: string, shellOverride?: string) => string
+  shellOverride?: string
+  onTerminalExit?: () => void
+}
+const mocks = vi.hoisted(() => {
+  const runtime: {
+    agentRuntime: { runtime: 'wsl'; wslDistro: string; label: string }
+    installDisabledReason: string | null
+    terminalShellOverride: string
+  } = {
+    agentRuntime: { runtime: 'wsl', wslDistro: 'Ubuntu', label: 'WSL Ubuntu' },
+    installDisabledReason: null,
     terminalShellOverride: 'powershell.exe'
-  },
-  buildCommand: vi.fn(
-    (command: string, runtime?: { runtime: 'host' | 'wsl' }) =>
-      `${runtime?.runtime ?? 'host'}:${command}`
-  ),
-  buildSetupCommand: vi.fn(
-    (command: string, shellOverride: string | undefined, runtime?: { runtime: 'host' | 'wsl' }) =>
-      `${runtime?.runtime ?? 'host'}-${shellOverride ?? 'default'}:${command}`
-  ),
-  terminalProps: null as {
-    command: string
-    forceHostRuntime?: boolean
-    prepareCommandForShell?: (command: string, shellOverride?: string) => string
-    shellOverride?: string
-  } | null
-}))
+  }
+  const terminal: { props: TerminalProps | null } = { props: null }
+  return {
+    runtime,
+    terminal,
+    buildCommand: vi.fn(
+      (command: string, runtime?: { runtime: 'host' | 'wsl' }) =>
+        `${runtime?.runtime ?? 'host'}:${command}`
+    ),
+    buildSetupCommand: vi.fn(
+      (command: string, shellOverride: string | undefined, runtime?: { runtime: 'host' | 'wsl' }) =>
+        `${runtime?.runtime ?? 'host'}-${shellOverride ?? 'default'}:${command}`
+    )
+  }
+})
 
 vi.mock('@/hooks/useActiveProjectSkillRuntime', () => ({
   useActiveProjectSkillRuntime: () => mocks.runtime
@@ -40,8 +51,9 @@ vi.mock('./OnboardingInlineCommandTerminal', () => ({
     forceHostRuntime?: boolean
     prepareCommandForShell?: (command: string, shellOverride?: string) => string
     shellOverride?: string
+    onTerminalExit?: () => void
   }) => {
-    mocks.terminalProps = props
+    mocks.terminal.props = props
     return null
   }
 }))
@@ -56,7 +68,7 @@ const SELECTION = {
 describe('FeatureSetupInlineTerminal', () => {
   beforeEach(() => {
     mocks.runtime.installDisabledReason = null
-    mocks.terminalProps = null
+    mocks.terminal.props = null
     mocks.buildCommand.mockClear()
     mocks.buildSetupCommand.mockClear()
   })
@@ -71,13 +83,13 @@ describe('FeatureSetupInlineTerminal', () => {
       wslDistro: 'Ubuntu',
       label: 'WSL Ubuntu'
     })
-    expect(mocks.terminalProps).toMatchObject({
+    expect(mocks.terminal.props).toMatchObject({
       command: 'wsl:npx skills add orchestration',
       forceHostRuntime: false,
       shellOverride: 'powershell.exe'
     })
     expect(
-      mocks.terminalProps?.prepareCommandForShell?.('wsl:npx skills add orchestration', 'wsl.exe')
+      mocks.terminal.props?.prepareCommandForShell?.('wsl:npx skills add orchestration', 'wsl.exe')
     ).toBe('wsl-wsl.exe:wsl:npx skills add orchestration')
   })
 
@@ -89,13 +101,13 @@ describe('FeatureSetupInlineTerminal', () => {
     )
 
     expect(mocks.buildCommand).toHaveBeenCalledWith('npx skills add orchestration', undefined)
-    expect(mocks.terminalProps).toMatchObject({
+    expect(mocks.terminal.props).toMatchObject({
       command: 'host:npx skills add orchestration',
       forceHostRuntime: true,
       shellOverride: 'powershell.exe'
     })
     expect(
-      mocks.terminalProps?.prepareCommandForShell?.('host:npx skills add orchestration', 'wsl.exe')
+      mocks.terminal.props?.prepareCommandForShell?.('host:npx skills add orchestration', 'wsl.exe')
     ).toBe('host-wsl.exe:host:npx skills add orchestration')
   })
 
@@ -116,12 +128,26 @@ describe('FeatureSetupInlineTerminal', () => {
       runtime: 'host',
       label: 'Windows'
     })
-    expect(mocks.terminalProps).toMatchObject({
+    expect(mocks.terminal.props).toMatchObject({
       command: 'host:npx skills add orchestration',
       shellOverride: 'cmd.exe'
     })
     expect(
-      mocks.terminalProps?.prepareCommandForShell?.('host:npx skills add orchestration', 'cmd.exe')
+      mocks.terminal.props?.prepareCommandForShell?.('host:npx skills add orchestration', 'cmd.exe')
     ).toBe('host-cmd.exe:host:npx skills add orchestration')
   })
+})
+
+it('invalidates installed skill discovery after the actual inline terminal exit callback', () => {
+  const changed = vi.fn()
+  window.addEventListener(INSTALLED_AGENT_SKILLS_CHANGED_EVENT, changed)
+  try {
+    render(<FeatureSetupInlineTerminal command="reviewed install command" selection={SELECTION} />)
+    expect(changed).not.toHaveBeenCalled()
+    expect(mocks.terminal.props?.onTerminalExit).toBeTypeOf('function')
+    mocks.terminal.props?.onTerminalExit?.()
+    expect(changed).toHaveBeenCalledOnce()
+  } finally {
+    window.removeEventListener(INSTALLED_AGENT_SKILLS_CHANGED_EVENT, changed)
+  }
 })

@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useSshWorkspaceRemovalViewerController } from '@/hooks/useSshConfirmationViewerController'
+import { folderWorkspaceKey } from '../../../../shared/workspace-scope'
+import { findFolderWorkspaceOwner } from '@/lib/folder-workspace-runtime-owner'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2, Server, ServerOff } from 'lucide-react'
 import {
@@ -14,7 +17,13 @@ import { useMountedRef } from '@/hooks/useMountedRef'
 import { useAppStore } from '@/store'
 import { translate } from '@/i18n/i18n'
 import { runWorktreeDeleteWithToast } from './delete-worktree-flow'
-import { toSshExecutionHostId } from '../../../../shared/execution-host'
+import { connectRuntimeEnvironmentSshTarget } from '@/runtime/runtime-environment-ssh-state'
+import { selectRuntimeAwareSshTargetLabel } from '@/store/slices/runtime-environment-ssh-selectors'
+import {
+  parseExecutionHostId,
+  type ExecutionHostId,
+  toSshExecutionHostId
+} from '../../../../shared/execution-host'
 import type { WorktreeRemovalTarget } from '../../../../shared/worktree/removal'
 import type { SshWorkspaceForgetResolution } from './ssh-workspace-forget-resolution'
 
@@ -22,6 +31,8 @@ type ForgetSshWorkspaceModalData = {
   worktreeId: string
   displayName: string
   resolution: SshWorkspaceForgetResolution
+  expectedHostId?: ExecutionHostId
+  folderWorkspaceId?: string
 }
 
 function isForgetModalData(data: unknown): data is ForgetSshWorkspaceModalData {
@@ -29,12 +40,20 @@ function isForgetModalData(data: unknown): data is ForgetSshWorkspaceModalData {
     return false
   }
   const candidate = data as Partial<ForgetSshWorkspaceModalData>
-  return typeof candidate.worktreeId === 'string' && candidate.resolution != null
+  return (
+    typeof candidate.worktreeId === 'string' &&
+    candidate.resolution != null &&
+    (candidate.folderWorkspaceId === undefined ||
+      (typeof candidate.folderWorkspaceId === 'string' &&
+        candidate.worktreeId === folderWorkspaceKey(candidate.folderWorkspaceId))) &&
+    (candidate.expectedHostId === undefined ||
+      parseExecutionHostId(candidate.expectedHostId) !== null)
+  )
 }
 
 export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
   const modalData = useAppStore((s) => s.modalData)
-  const closeModal = useAppStore((s) => s.closeModal)
+  const storeCloseModal = useAppStore((s) => s.closeModal)
   const hostLabel = useAppStore((s) => {
     const resolution = isForgetModalData(s.modalData) ? s.modalData.resolution : null
     const targetId = resolution && resolution.kind !== 'not-ssh' ? resolution.targetId : undefined
@@ -43,10 +62,50 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
     }
     // Prefer the live label, then the removed target's last known label (ghost
     // host), then the raw id as a last resort.
-    return s.sshTargetLabels.get(targetId) ?? s.removedSshTargetLabels.get(targetId) ?? targetId
+    const data = isForgetModalData(s.modalData) ? s.modalData : null
+    const host = parseExecutionHostId(data?.expectedHostId)
+    return selectRuntimeAwareSshTargetLabel(
+      s,
+      host?.kind === 'runtime' ? host.environmentId : null,
+      targetId
+    )
   })
   const [busy, setBusy] = useState<null | 'reconnect' | 'forget'>(null)
   const mountedRef = useMountedRef()
+  const busyRef = useRef<ForgetSshWorkspaceModalData | null>(null)
+  function closeModal(allowBusy = false): boolean {
+    if (
+      !mountedRef.current ||
+      useAppStore.getState().modalData !== modalData ||
+      (!allowBusy && busyRef.current !== null)
+    ) {
+      return false
+    }
+    storeCloseModal()
+    return useAppStore.getState().modalData !== modalData
+  }
+  useSshWorkspaceRemovalViewerController({
+    read: () => {
+      const current = useAppStore.getState().modalData
+      const data = isForgetModalData(current) ? current : null
+      return {
+        workspaceId: data?.worktreeId ?? null,
+        confirmationKind: data?.folderWorkspaceId ? 'folder' : 'workspace',
+        expectedHostId:
+          data?.expectedHostId ??
+          (data && data.resolution.kind !== 'not-ssh'
+            ? toSshExecutionHostId(data.resolution.targetId)
+            : null),
+        targetId: data && data.resolution.kind !== 'not-ssh' ? data.resolution.targetId : null,
+        dialogOpen: data !== null,
+        canReconnect: data?.resolution.kind === 'disconnected',
+        busy: busyRef.current !== null
+      }
+    },
+    forget: handleForget,
+    reconnectDelete: handleReconnectAndDelete,
+    cancel: () => closeModal()
+  })
 
   if (!isForgetModalData(modalData)) {
     return null
@@ -58,28 +117,40 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
   const removalTarget: WorktreeRemovalTarget = {
     id: worktreeId,
     executionHostId:
-      resolution.kind === 'not-ssh' ? null : toSshExecutionHostId(resolution.targetId)
+      modalData.expectedHostId ??
+      (resolution.kind === 'not-ssh' ? null : toSshExecutionHostId(resolution.targetId))
   }
 
-  const done = (): void => {
-    if (mountedRef.current) {
-      setBusy(null)
-      closeModal()
+  async function handleReconnectAndDelete(): Promise<boolean> {
+    if (
+      !isForgetModalData(modalData) ||
+      resolution.kind !== 'disconnected' ||
+      busyRef.current ||
+      useAppStore.getState().modalData !== modalData
+    ) {
+      return false
     }
-  }
-
-  // Reconnect the SSH target, then run the normal remote worktree removal.
-  const handleReconnectAndDelete = async (): Promise<void> => {
-    if (resolution.kind !== 'disconnected') {
-      return
-    }
+    busyRef.current = modalData
     setBusy('reconnect')
     try {
-      await window.api.ssh.connect({ targetId: resolution.targetId })
-    } catch (err) {
-      if (mountedRef.current) {
-        setBusy(null)
+      const host = parseExecutionHostId(removalTarget.executionHostId)
+      if (host?.kind === 'runtime') {
+        const connected = await connectRuntimeEnvironmentSshTarget(
+          host.environmentId,
+          resolution.targetId
+        )
+        if (connected?.targetId !== resolution.targetId || connected.status !== 'connected') {
+          return false
+        }
+      } else {
+        await window.api.ssh.connect({ targetId: resolution.targetId })
       }
+      if (useAppStore.getState().modalData !== modalData || !closeModal(true)) {
+        return false
+      }
+      const deleted = await runWorktreeDeleteWithToast(removalTarget, displayName)
+      return deleted && !isForgetModalData(useAppStore.getState().modalData)
+    } catch (err) {
       toast.error(
         err instanceof Error
           ? err.message
@@ -88,33 +159,54 @@ export function ForgetSshWorkspaceDialog(): React.JSX.Element | null {
               'Reconnection failed'
             )
       )
-      return
-    }
-    // Close before the delete toast fires so the two don't overlap.
-    closeModal()
-    void runWorktreeDeleteWithToast(removalTarget, displayName)
-    if (mountedRef.current) {
-      setBusy(null)
+      return false
+    } finally {
+      busyRef.current = null
+      if (mountedRef.current) {
+        setBusy(null)
+      }
     }
   }
 
-  // Remove Orca's records only — never touches remote files, worktrees, or branches.
-  const handleForget = async (): Promise<void> => {
+  async function handleForget(): Promise<boolean> {
+    if (
+      !isForgetModalData(modalData) ||
+      busyRef.current ||
+      useAppStore.getState().modalData !== modalData
+    ) {
+      return false
+    }
+    busyRef.current = modalData
     setBusy('forget')
     try {
+      if (modalData.folderWorkspaceId) {
+        const host = modalData.expectedHostId
+        const state = useAppStore.getState()
+        if (!host || !findFolderWorkspaceOwner(state, modalData.folderWorkspaceId, host)) {
+          return false
+        }
+        const deleted = await state.deleteFolderWorkspace(modalData.folderWorkspaceId, {
+          executionHostId: host
+        })
+        return (
+          deleted &&
+          !findFolderWorkspaceOwner(useAppStore.getState(), modalData.folderWorkspaceId, host) &&
+          closeModal(true)
+        )
+      }
       const result = await useAppStore
         .getState()
         .removeWorktree(removalTarget, false, { mode: 'forget-local' })
       if (!result.ok) {
         toast.error(result.error)
-        if (mountedRef.current) {
-          setBusy(null)
-        }
-        return
+        return false
       }
-      done()
+      return closeModal(true)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : String(err))
+      return false
+    } finally {
+      busyRef.current = null
       if (mountedRef.current) {
         setBusy(null)
       }

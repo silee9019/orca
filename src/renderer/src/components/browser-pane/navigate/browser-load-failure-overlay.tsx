@@ -1,3 +1,4 @@
+import { useBrowserFailureCommands, type BrowserFailureOwner } from './use-browser-failure-commands'
 import { useEffect, useRef, useState } from 'react'
 import { Copy, ExternalLink, Globe, Loader2, RefreshCw, ShieldAlert } from 'lucide-react'
 
@@ -20,14 +21,15 @@ import {
 import { BROWSER_GUEST_RECOVERY_ERROR_CODE } from '../host-guest/browser-page-guest-recovery'
 
 type BrowserLoadFailureOverlayProps = {
+  commandOwner?: BrowserFailureOwner
   loadError: BrowserLoadError
   externalUrl?: string | null
   currentUrl: string
   httpsRecoveryUrl: string | null
   onRetry: () => void
   onTryHttps: (url: string) => void
-  onCopy: (url: string) => void
-  onOpenExternal?: (url: string) => void
+  onCopy: (url: string) => void | Promise<void>
+  onOpenExternal?: (url: string, verified?: boolean) => void | Promise<void>
   certificateFailure?: BrowserCertificateFailure | null
   expectedBrowserPageId?: string | null
   onProceedCertificate?: (challengeId: string) => Promise<BrowserCertificateProceedResult>
@@ -57,7 +59,7 @@ function getLoadErrorMetadata(loadError: BrowserLoadError): LoadFailureMeta {
   }
 }
 
-function getMatchingCertificateFailure(args: {
+export function getMatchingCertificateFailure(args: {
   loadError: BrowserLoadError
   certificateFailure?: BrowserCertificateFailure | null
   expectedBrowserPageId?: string | null
@@ -118,6 +120,7 @@ function formatCertificateProceedFailure(
 }
 
 export function BrowserLoadFailureOverlay({
+  commandOwner,
   loadError,
   externalUrl,
   currentUrl,
@@ -136,6 +139,7 @@ export function BrowserLoadFailureOverlay({
     challengeId: string
     timer: ReturnType<typeof setTimeout>
   } | null>(null)
+  const submittingChallengeRef = useRef<string | null>(null)
   const [proceedAttempt, setProceedAttempt] = useState<CertificateProceedAttempt | null>(null)
   const matchingCertificateFailure = getMatchingCertificateFailure({
     loadError,
@@ -170,11 +174,17 @@ export function BrowserLoadFailureOverlay({
     }
   }, [matchingCertificateFailure?.challengeId])
 
-  const proceedCertificate = (): void => {
-    if (!matchingCertificateFailure || !onProceedCertificate || actionsDisabled) {
-      return
+  const submitCertificate = (): Promise<BrowserCertificateProceedResult> => {
+    if (
+      !matchingCertificateFailure ||
+      !onProceedCertificate ||
+      actionsDisabled ||
+      submittingChallengeRef.current === matchingCertificateFailure.challengeId
+    ) {
+      return Promise.reject(new Error('browser_failure_certificate_unavailable'))
     }
     const challengeId = matchingCertificateFailure.challengeId
+    submittingChallengeRef.current = challengeId
     setProceedAttempt({ challengeId, state: 'submitting', showConnecting: false })
     connectingTimerRef.current = {
       challengeId,
@@ -186,7 +196,7 @@ export function BrowserLoadFailureOverlay({
         )
       }, 200)
     }
-    void onProceedCertificate(challengeId)
+    return onProceedCertificate(challengeId)
       .then((result) => {
         if (connectingTimerRef.current?.challengeId === challengeId) {
           clearTimeout(connectingTimerRef.current.timer)
@@ -204,8 +214,9 @@ export function BrowserLoadFailureOverlay({
               : current
           )
         }
+        return result
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (connectingTimerRef.current?.challengeId === challengeId) {
           clearTimeout(connectingTimerRef.current.timer)
           connectingTimerRef.current = null
@@ -220,8 +231,30 @@ export function BrowserLoadFailureOverlay({
               }
             : current
         )
+        throw error
+      })
+      .finally(() => {
+        if (submittingChallengeRef.current === challengeId) {
+          submittingChallengeRef.current = null
+        }
       })
   }
+  const proceedCertificate = (): void => {
+    void submitCertificate().catch(() => {})
+  }
+  useBrowserFailureCommands({
+    identity: commandOwner,
+    url: currentUrl,
+    error: loadError,
+    challenge: matchingCertificateFailure?.challengeId ?? null,
+    disabled: actionsDisabled,
+    copy: () => onCopy(currentUrl),
+    retry: onRetry,
+    httpsUrl: guestRecoveryError ? null : httpsRecoveryUrl,
+    tryHttps: onTryHttps,
+    external: externalUrl && onOpenExternal ? () => onOpenExternal(externalUrl, true) : undefined,
+    proceed: submitCertificate
+  })
   const retryButton = (
     <Button
       size="sm"

@@ -9,7 +9,12 @@ import { browserWorkspaceHasRemoteOwner } from '@/runtime/remote-browser-tab-own
 import { getActiveWorktreeRuntimeEnvironmentId } from './terminal-workspace-model'
 import type { TerminalBulkCloseController } from './use-terminal-bulk-close-actions'
 
-export function useTerminalActivationActions(controller: TerminalBulkCloseController) {
+export function useTerminalActivationActions(
+  controller: Pick<
+    TerminalBulkCloseController,
+    'activeWorktreeId' | 'setActiveBrowserTab' | 'setActiveTab' | 'setActiveTabType'
+  >
+) {
   const { activeWorktreeId, setActiveBrowserTab, setActiveTab, setActiveTabType } = controller
   const handleActivateTab = useCallback(
     (tabId: string) => {
@@ -40,7 +45,12 @@ export function useTerminalActivationActions(controller: TerminalBulkCloseContro
   )
 
   const handleActivateBrowserTab = useCallback(
-    (tabId: string) => {
+    (
+      tabId: string,
+      onSubmitted?: (pending: Promise<boolean>) => void,
+      expectedHostTabId?: string,
+      assertCurrentActivation?: () => void
+    ) => {
       const state = useAppStore.getState()
       const runtimeEnvironmentId = getActiveWorktreeRuntimeEnvironmentId(activeWorktreeId)
       if (
@@ -48,11 +58,15 @@ export function useTerminalActivationActions(controller: TerminalBulkCloseContro
         isWebRuntimeSessionActive(runtimeEnvironmentId) &&
         browserWorkspaceHasRemoteOwner(state, tabId, runtimeEnvironmentId)
       ) {
-        void activateWebRuntimeSessionTab({
+        const pending = activateWebRuntimeSessionTab({
           worktreeId: activeWorktreeId,
           tabId,
-          environmentId: runtimeEnvironmentId
+          environmentId: runtimeEnvironmentId,
+          ...(onSubmitted
+            ? { requireAcknowledgedActivation: true, expectedHostTabId, assertCurrentActivation }
+            : {})
         })
+        onSubmitted?.(pending)
       }
       setActiveBrowserTab(tabId)
       setActiveTabType('browser', activeWorktreeId)

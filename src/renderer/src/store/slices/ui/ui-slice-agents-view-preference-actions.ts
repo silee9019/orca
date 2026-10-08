@@ -12,52 +12,80 @@ export function createAgentsViewPreferenceActions(set: UISliceSet): Partial<UISl
     setAgentsVisibleHostIds: (ids) => {
       const agentsVisibleHostIds = normalizeVisibleExecutionHostIds(ids)
       set({ agentsVisibleHostIds })
-      window.api.ui.set({ agentsVisibleHostIds }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsVisibleHostIds })
+      void saving.catch(console.error)
+      return saving
     },
     agentsFilterRepoIds: [],
     setAgentsFilterRepoIds: (ids) => {
       set({ agentsFilterRepoIds: ids })
-      window.api.ui.set({ agentsFilterRepoIds: [...ids] }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        agentsFilterRepoIds: [...ids]
+      })
+      void saving.catch(console.error)
+      return saving
     },
     agentsHideWorkspacesFromOtherDevices: false,
     setAgentsHideWorkspacesFromOtherDevices: (v) => {
       set({ agentsHideWorkspacesFromOtherDevices: v })
-      window.api.ui.set({ agentsHideWorkspacesFromOtherDevices: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        agentsHideWorkspacesFromOtherDevices: v
+      })
+      void saving.catch(console.error)
+      return saving
     },
     agentsHideAutomationGeneratedWorkspaces: false,
     setAgentsHideAutomationGeneratedWorkspaces: (v) => {
       set({ agentsHideAutomationGeneratedWorkspaces: v })
-      window.api.ui.set({ agentsHideAutomationGeneratedWorkspaces: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        agentsHideAutomationGeneratedWorkspaces: v
+      })
+      void saving.catch(console.error)
+      return saving
     },
     agentsHideCliCreatedWorkspaces: false,
     setAgentsHideCliCreatedWorkspaces: (v) => {
       set({ agentsHideCliCreatedWorkspaces: v })
-      window.api.ui.set({ agentsHideCliCreatedWorkspaces: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({
+        agentsHideCliCreatedWorkspaces: v
+      })
+      void saving.catch(console.error)
+      return saving
     },
     agentsShowChildAgents: false,
     setAgentsShowChildAgents: (v) => {
       set({ agentsShowChildAgents: v })
-      window.api.ui.set({ agentsShowChildAgents: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsShowChildAgents: v })
+      void saving.catch(console.error)
+      return saving
     },
     agentsCompactMode: true,
     setAgentsCompactMode: (v) => {
       set({ agentsCompactMode: v })
-      window.api.ui.set({ agentsCompactMode: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsCompactMode: v })
+      void saving.catch(console.error)
+      return saving
     },
     agentsShowSearch: true,
     setAgentsShowSearch: (v) => {
       set({ agentsShowSearch: v })
-      window.api.ui.set({ agentsShowSearch: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsShowSearch: v })
+      void saving.catch(console.error)
+      return saving
     },
     agentsReadFilter: DEFAULT_AGENTS_READ_FILTER,
     setAgentsReadFilter: (v) => {
       set({ agentsReadFilter: v })
-      window.api.ui.set({ agentsReadFilter: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsReadFilter: v })
+      void saving.catch(console.error)
+      return saving
     },
     agentsGroupBy: DEFAULT_AGENTS_GROUP_BY,
     setAgentsGroupBy: (v) => {
       set({ agentsGroupBy: v })
-      window.api.ui.set({ agentsGroupBy: v }).catch(console.error)
+      const saving = (window.api.ui.setWithAck ?? window.api.ui.set)({ agentsGroupBy: v })
+      void saving.catch(console.error)
+      return saving
     }
   }
 }

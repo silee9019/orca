@@ -1,3 +1,4 @@
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
 import { useRef, useState } from 'react'
 import {
   Crosshair,
@@ -32,6 +33,7 @@ import {
 export type { BrowserChromeElementTools } from './browser-chrome-element-tool-buttons'
 
 export type BrowserChromeMarkupTool = {
+  commandOwner?: BrowserMarkupEditorOwner
   active: boolean
   disabled: boolean
   onToggle: () => void
@@ -232,6 +234,7 @@ export function BrowserChromeToolbar({
 
       {folded.has('draw') ? null : (
         <MarkupDrawButton
+          commandOwner={markup.commandOwner}
           onClick={markup.onToggle}
           disabled={markup.disabled}
           active={markup.active}

@@ -1,3 +1,4 @@
+import { copySshForwardAddress, removeSshForward } from './ssh-forwarded-port-actions'
 import React, { useCallback, useState } from 'react'
 import { Copy, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -25,19 +26,15 @@ export function SshForwardedPortRow({
 
   const handleRemove = useCallback(async () => {
     setRemoving(true)
-    try {
-      await window.api.ssh.removePortForward({ id: entry.id })
-    } catch {
-      // broadcast will update state
-    }
+    await removeSshForward(entry)
     if (mountedRef.current) {
       setRemoving(false)
     }
-  }, [entry.id, mountedRef])
+  }, [entry, mountedRef])
 
   const handleCopy = useCallback(() => {
-    void window.api.ui.writeClipboardText(forwardedAddress)
-  }, [forwardedAddress])
+    void copySshForwardAddress(entry)
+  }, [entry])
 
   const handleOpenBrowser = useCallback(
     (event?: React.MouseEvent<HTMLButtonElement>) => {

@@ -1,5 +1,13 @@
+import {
+  useBrowserMarkupCommands,
+  type BrowserMarkupAdmission
+} from './use-browser-markup-commands'
 import { useCallback, type MutableRefObject } from 'react'
-import { deliverMarkupToClipboard } from './markup-clipboard-delivery'
+import type { BrowserMarkupEditorOwner } from '@/runtime/browser-markup-editor-request'
+import {
+  deliverMarkupToClipboard,
+  deliverMarkupToClipboardVerified
+} from './markup-clipboard-delivery'
 import {
   useMarkupMode,
   type MarkupCaptureContext,
@@ -7,9 +15,11 @@ import {
 } from './useMarkupMode'
 
 export function useBrowserPageMarkupCapture(
-  webviewRef: MutableRefObject<Electron.WebviewTag | null>
+  webviewRef: MutableRefObject<Electron.WebviewTag | null>,
+  owner?: BrowserMarkupEditorOwner,
+  admission?: BrowserMarkupAdmission
 ): MarkupModeController {
-  return useMarkupMode({
+  const mode = useMarkupMode({
     getCaptureContext: useCallback((): MarkupCaptureContext | null => {
       const webview = webviewRef.current
       if (!webview) {
@@ -26,6 +36,20 @@ export function useBrowserPageMarkupCapture(
         outputScale: window.devicePixelRatio || 1
       }
     }, [webviewRef]),
-    onDeliver: deliverMarkupToClipboard
+    onDeliver: deliverMarkupToClipboard,
+    onDeliverVerified: deliverMarkupToClipboardVerified
   })
+  useBrowserMarkupCommands(
+    owner?.page ?? '',
+    owner?.active ?? false,
+    mode,
+    admission ?? (owner?.isCurrent ? { isCurrent: owner.isCurrent } : undefined)
+  )
+  return {
+    ...mode,
+    commandOwner:
+      owner && admission?.target
+        ? { ...owner, clientTarget: admission.target, isCurrent: admission.isCurrent }
+        : owner
+  }
 }

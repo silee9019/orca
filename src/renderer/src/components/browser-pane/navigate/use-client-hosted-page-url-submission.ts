@@ -1,3 +1,4 @@
+import type { WorkspaceDocAddressOutcome } from './workspace-doc-address-submission'
 import { useCallback } from 'react'
 import type { MutableRefObject, RefObject } from 'react'
 import { redactKagiSessionToken } from '../../../../../shared/browser-url'
@@ -21,7 +22,12 @@ export function useClientHostedPageUrlSubmission(params: {
   activeLoadFailureRef: MutableRefObject<BrowserLoadError | null>
   onUpdatePageState: (pageId: string, updates: Partial<BrowserTabPageState>) => void
   setAddressBarValue: (value: string) => void
-}): (value: string) => void {
+}): (
+  value: string,
+  onSubmitted?: (pending: Promise<void>) => void,
+  onWorkspaceDocOutcome?: (outcome: WorkspaceDocAddressOutcome) => void,
+  onDeferred?: (url: string) => void
+) => void {
   const {
     browserTabId,
     worktreeId,
@@ -31,11 +37,17 @@ export function useClientHostedPageUrlSubmission(params: {
     setAddressBarValue
   } = params
   return useCallback(
-    (value: string) => {
+    (
+      value: string,
+      onSubmitted?: (pending: Promise<void>) => void,
+      onWorkspaceDocOutcome?: (outcome: WorkspaceDocAddressOutcome) => void,
+      onDeferred?: (url: string) => void
+    ) => {
       const consumedAsWorkspaceDoc = routeWorkspaceDocAddressSubmission({
         worktreeId,
         pageId: browserTabId,
         value,
+        onOutcome: onWorkspaceDocOutcome,
         onLoadError: (loadError) => onUpdatePageState(browserTabId, { loadError })
       })
       if (consumedAsWorkspaceDoc) {
@@ -52,6 +64,7 @@ export function useClientHostedPageUrlSubmission(params: {
         // replay rather than dropping what the user just typed.
         deferBrowserPageNavigation(browserTabId, submission.url)
         setAddressBarValue(toDisplayUrl(redactKagiSessionToken(submission.url)))
+        onDeferred?.(submission.url)
         return
       }
       // Why: the store and the address bar must never hold a Kagi session token, and an optimistic
@@ -65,7 +78,9 @@ export function useClientHostedPageUrlSubmission(params: {
         title: getBrowserDisplayTitle(browserModelUrl, browserModelUrl)
       })
       // Why: loadURL rejects on any failed navigation; did-fail-load owns error reporting.
-      void webview.loadURL(submission.url).catch(() => {})
+      const pending = webview.loadURL(submission.url)
+      void pending.catch(() => {})
+      onSubmitted?.(pending)
     },
     [
       activeLoadFailureRef,

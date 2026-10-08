@@ -1,9 +1,16 @@
+import { useAutomationContentViewer } from '../../runtime/automation-content-viewer'
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { translate } from '@/i18n/i18n'
 
-export function AutomationPromptDisclosure({ prompt }: { prompt: string }): React.JSX.Element {
+export function AutomationPromptDisclosure({
+  prompt,
+  ownerKey = 'standalone'
+}: {
+  prompt: string
+  ownerKey?: string
+}): React.JSX.Element {
   const contentId = useId()
   const expandedRef = useRef(false)
   const toggleRef = useRef<HTMLButtonElement>(null)
@@ -45,6 +52,16 @@ export function AutomationPromptDisclosure({ prompt }: { prompt: string }): Reac
     expandedRef.current = nextExpanded
     setExpanded(nextExpanded)
   }
+
+  useAutomationContentViewer({
+    kind: 'prompt',
+    ownerKey,
+    content: prompt,
+    label: 'Prompt',
+    expanded,
+    canToggle: overflows || expanded,
+    onToggle: toggleExpanded
+  })
 
   return (
     <div className="rounded-md border border-border/50 bg-muted/20 shadow-sm">

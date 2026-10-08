@@ -1,5 +1,6 @@
 import { KeyRound } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { useBrowserWebAuthnDialogOwner } from './use-browser-webauthn-dialog-owner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -12,10 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { translate } from '@/i18n/i18n'
 import { useAppStore } from '@/store'
-import type {
-  BrowserWebAuthnAccount,
-  BrowserWebAuthnAccountRequest
-} from '../../../shared/browser-webauthn-account'
+import type { BrowserWebAuthnAccount } from '../../../shared/browser-webauthn-account'
 
 function accountLabels(
   account: BrowserWebAuthnAccount,
@@ -30,10 +28,25 @@ function accountLabels(
 }
 
 export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
-  const [requests, setRequests] = useState<BrowserWebAuthnAccountRequest[]>([])
-  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null)
-  const requestsRef = useRef(requests)
   const firstAccountRef = useRef<HTMLButtonElement | null>(null)
+  const firstAccountBinding = useRef<{ requestId: string; accountId: string } | null>(null)
+  const focusFirstAccount = useCallback((requestId?: string, accountId?: string): boolean => {
+    const button = firstAccountRef.current
+    const binding = firstAccountBinding.current
+    if (
+      !button ||
+      button.disabled ||
+      !binding ||
+      (requestId !== undefined && requestId !== binding.requestId) ||
+      (accountId !== undefined && accountId !== binding.accountId)
+    ) {
+      return false
+    }
+    button.focus()
+    return document.activeElement === button
+  }, [])
+  const { requests, respondingRequestId, respond } =
+    useBrowserWebAuthnDialogOwner(focusFirstAccount)
   const setContextualToursBlockingSurfaceVisible = useAppStore(
     (state) => state.setContextualToursBlockingSurfaceVisible
   )
@@ -42,37 +55,10 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
   const displayedRequest = activeRequest ?? lastRequestRef.current
 
   useEffect(() => {
-    requestsRef.current = requests
     if (activeRequest) {
       lastRequestRef.current = activeRequest
     }
   }, [activeRequest, requests])
-
-  const removeRequest = useCallback((requestId: string) => {
-    setRequests((current) => current.filter((request) => request.requestId !== requestId))
-    setRespondingRequestId((current) => (current === requestId ? null : current))
-  }, [])
-
-  useEffect(() => {
-    const stopRequests = window.api.browser.onWebAuthnAccountRequest((request) => {
-      setRequests((current) => [...current, request])
-    })
-    const stopClosures = window.api.browser.onWebAuthnAccountRequestClosed(({ requestId }) => {
-      removeRequest(requestId)
-    })
-    return () => {
-      stopRequests()
-      stopClosures()
-      for (const request of requestsRef.current) {
-        void window.api.browser
-          .respondWebAuthnAccount({
-            requestId: request.requestId,
-            credentialId: null
-          })
-          .catch(() => {})
-      }
-    }
-  }, [removeRequest])
 
   useEffect(() => {
     setContextualToursBlockingSurfaceVisible(activeRequest !== null)
@@ -83,30 +69,9 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
     if (!activeRequest) {
       return
     }
-    const focusTimer = setTimeout(() => firstAccountRef.current?.focus())
+    const focusTimer = setTimeout(() => focusFirstAccount())
     return () => clearTimeout(focusTimer)
-  }, [activeRequest])
-
-  const respond = useCallback(
-    (credentialId: string | null) => {
-      const request = requestsRef.current[0]
-      if (!request || respondingRequestId === request.requestId) {
-        return
-      }
-      setRespondingRequestId(request.requestId)
-      void window.api.browser
-        .respondWebAuthnAccount({ requestId: request.requestId, credentialId })
-        .then((accepted) => {
-          if (accepted) {
-            removeRequest(request.requestId)
-          } else {
-            setRespondingRequestId(null)
-          }
-        })
-        .catch(() => setRespondingRequestId(null))
-    },
-    [removeRequest, respondingRequestId]
-  )
+  }, [activeRequest, focusFirstAccount])
 
   return (
     <Dialog open={activeRequest !== null} onOpenChange={(open) => !open && respond(null)}>
@@ -115,7 +80,7 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
         className="sm:max-w-md"
         onOpenAutoFocus={(event) => {
           event.preventDefault()
-          firstAccountRef.current?.focus()
+          focusFirstAccount()
         }}
       >
         <DialogHeader>
@@ -136,7 +101,19 @@ export function BrowserWebAuthnAccountDialog(): React.JSX.Element {
             return (
               <Button
                 key={account.credentialId}
-                ref={index === 0 ? firstAccountRef : undefined}
+                ref={
+                  index === 0
+                    ? (button) => {
+                        firstAccountRef.current = button
+                        firstAccountBinding.current = button
+                          ? {
+                              requestId: displayedRequest.requestId,
+                              accountId: account.credentialId
+                            }
+                          : null
+                      }
+                    : undefined
+                }
                 autoFocus={index === 0}
                 type="button"
                 variant="outline"

@@ -16,6 +16,7 @@ export type ShellApi = {
   openInExternalEditor: (
     request: ShellOpenExternalEditorRequest
   ) => Promise<ShellOpenExternalEditorResult>
+  openVerifiedUrl?: (url: string) => Promise<{ opened: true }>
   openUrl: (url: string) => Promise<void>
   openFilePath: (path: string) => Promise<boolean>
   openFileUri: (uri: string) => Promise<void>

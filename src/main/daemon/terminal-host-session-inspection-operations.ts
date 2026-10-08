@@ -68,3 +68,7 @@ export function takeTerminalHostPendingOutput(
   }
   return session.takePendingOutput(includeSnapshot, opts)
 }
+
+export function getTerminalHostForegroundProcess(session: Session | undefined): string | null {
+  return session?.isAlive ? session.getForegroundProcess() : null
+}

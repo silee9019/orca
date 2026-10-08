@@ -33,11 +33,11 @@ import {
 import { DocPreviewToolbar } from './doc-preview-toolbar'
 import { useDocPreviewWebviewHistory } from './doc-preview-webview-history'
 import { useDocPreviewGuestTools } from './use-doc-preview-guest-tools'
+import { useDocPreviewGuestFocus } from './use-doc-preview-guest-focus'
+import { useBrowserDocumentCommands } from './use-browser-document-commands'
 
 type PreviewState = 'loading' | 'ready' | 'unavailable'
 
-/** Frames a preview keeps offering focus to a guest that is still attaching. */
-const GUEST_FOCUS_FRAMES = 10
 const MAX_ASSET_FAILURES = 50
 
 export function HtmlDocPreview({
@@ -69,6 +69,8 @@ export function HtmlDocPreview({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const webviewRef = useRef<Electron.WebviewTag | null>(null)
   const reloadRef = useRef<(() => void) | null>(null)
+  const submitAddressRef = useRef<(() => boolean) | null>(null)
+  const [reloadMenuOpen, setReloadMenuOpen] = useState(false)
   const [state, setState] = useState<PreviewState>('loading')
   const [failureReason, setFailureReason] = useState<DocPreviewFileFailureReason | null>(null)
   const [assetFailures, setAssetFailures] = useState<DocPreviewFileFailure[]>([])
@@ -81,7 +83,8 @@ export function HtmlDocPreview({
     offer: offerDirectoryAccess,
     reset: resetDirectoryAccess,
     dismiss: dismissDirectoryAccess,
-    allow: allowDirectoryAccess
+    allow: allowDirectoryAccess,
+    getPendingPaths
   } = useDocPreviewDirectoryAccess({ grantId, reloadRef })
 
   const history = useDocPreviewWebviewHistory(webviewRef)
@@ -133,7 +136,8 @@ export function HtmlDocPreview({
       grantId,
       webviewRef,
       containerRef,
-      toolsReady: state === 'ready' && !isUnavailable
+      toolsReady: state === 'ready' && !isUnavailable,
+      isActive
     })
   // Not `document`: shadowing the global inside a component is how a stray DOM call silently
   // starts reading a plain object.
@@ -286,58 +290,7 @@ export function HtmlDocPreview({
       .recordWorkspaceDocVisit({ kind: 'workspace-doc', worktreeId, filePath }, null)
   }, [filePath, worktreeId])
 
-  // Why the guest is handed focus: a preview has no address bar to make the usual handoff, so a
-  // surfaced document would otherwise look active while its keyboard and link input land elsewhere.
-  useEffect(() => {
-    if (!holdsGuestFocus || state !== 'ready') {
-      return
-    }
-    let frameId = 0
-    let attempts = 0
-    let claimedOnly = false
-    const focusGuest = (): void => {
-      const webview = webviewRef.current
-      attempts += 1
-      // Why a re-offer yields: it is a handoff for focus nothing else wanted, and the reader
-      // pressing a tab lands here first. Taking it back would fight them for the keyboard, which
-      // is what shut the tab strip while a preview was open.
-      if (
-        claimedOnly &&
-        document.activeElement !== document.body &&
-        document.activeElement !== webview
-      ) {
-        return
-      }
-      try {
-        webview?.focus()
-      } catch {
-        // Why swallowed: WebViewElement.focus() reads null internals once the guest is destroyed.
-        return
-      }
-      // Why retried: the guest takes focus only once it is attached and laid out, a frame or two
-      // after it reports ready.
-      if (document.activeElement !== webview && attempts < GUEST_FOCUS_FRAMES) {
-        frameId = window.requestAnimationFrame(focusGuest)
-      }
-    }
-    const offerFocus = (yieldToOtherClaims: boolean): void => {
-      window.cancelAnimationFrame(frameId)
-      attempts = 0
-      claimedOnly = yieldToOtherClaims
-      frameId = window.requestAnimationFrame(focusGuest)
-    }
-    // Why assertive: the reader just made this preview their surface, so the handoff is the point.
-    offerFocus(false)
-    // Why re-offered on the window's own focus: another app taking the front takes focus out of the
-    // guest, and coming back puts it on the embedder. Nothing hands it on, so the route out of the
-    // preview would stay shut until something remounted it.
-    const reofferFocus = (): void => offerFocus(true)
-    window.addEventListener('focus', reofferFocus)
-    return () => {
-      window.removeEventListener('focus', reofferFocus)
-      window.cancelAnimationFrame(frameId)
-    }
-  }, [holdsGuestFocus, previewId, remintCount, state])
+  useDocPreviewGuestFocus(webviewRef, holdsGuestFocus, previewId, remintCount, state)
 
   // Why: a grant is pinned to the owner ids resolved when it was minted, so after a pairing or
   // SSH reconnect the old one reads nothing and reloading the guest would just refetch the
@@ -355,6 +308,29 @@ export function HtmlDocPreview({
     reloadRef.current?.()
   }, [failureReason, handleHardReload, state])
 
+  useBrowserDocumentCommands({
+    previewId,
+    worktreeId,
+    isActive,
+    phase: isUnavailable ? 'unavailable' : state,
+    grantReady: grantId !== null,
+    requests: accessRequests,
+    busy: accessRequestBusy,
+    absolutePath: identity.absolutePath,
+    relativePath,
+    reload: handleReload,
+    hardReload: handleHardReload,
+    dismiss: dismissDirectoryAccess,
+    openSource: () => openDocPreviewSource(previewDocument),
+    openExternal: () => openDocPreviewExternally(previewDocument),
+    allow: allowDirectoryAccess,
+    getPendingPaths,
+    reloadRef,
+    submitAddressRef,
+    reloadMenuOpen,
+    setReloadMenuOpen
+  })
+
   // Nothing rendered on an unavailable preview, so a notice strip would be a footnote on a blank page.
   const notices = isUnavailable
     ? []
@@ -366,6 +342,10 @@ export function HtmlDocPreview({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-editor-surface">
       <DocPreviewToolbar
+        reloadMenuOpen={reloadMenuOpen}
+        setReloadMenuOpen={setReloadMenuOpen}
+        submitAddressRef={submitAddressRef}
+        isActive={isActive}
         identity={identity}
         previewId={previewId}
         worktreeId={worktreeId}
@@ -376,9 +356,10 @@ export function HtmlDocPreview({
         onCopyPath={() => void window.api.ui.writeClipboardText(identity.absolutePath)}
         onCopyRelativePath={() => void window.api.ui.writeClipboardText(relativePath)}
         onOpenSource={() => openDocPreviewSource(previewDocument)}
-        onOpenExternally={() => openDocPreviewExternally(previewDocument)}
+        onOpenExternally={() => void openDocPreviewExternally(previewDocument)}
         elementTools={elementTools}
         markupActive={markup.isActive}
+        markupCommandOwner={markup.commandOwner}
         onToggleMarkup={() => (markup.isActive ? markup.cancel() : void markup.start())}
         // Nothing has painted yet on a loading or failed preview, so there is nothing to draw on.
         markupDisabled={isUnavailable || state !== 'ready' || grab.state !== 'idle'}

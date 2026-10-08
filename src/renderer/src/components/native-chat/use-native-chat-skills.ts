@@ -30,10 +30,11 @@ export type NativeChatSkillDiscovery = {
   skills: DiscoveredSkill[]
   error: Error | null
   errorKind?: 'unavailable' | 'timeout' | 'host' | 'unknown'
+  generation: number
   retry: () => void
 }
 
-type StoredDiscoveryState = Omit<NativeChatSkillDiscovery, 'retry'> & {
+type StoredDiscoveryState = Omit<NativeChatSkillDiscovery, 'retry' | 'generation'> & {
   contextKey: string | null
 }
 
@@ -215,9 +216,10 @@ export function useNativeChatSkills(
       skills: visibleSkills,
       error: effectiveState.error,
       ...(effectiveState.errorKind ? { errorKind: effectiveState.errorKind } : {}),
+      generation: retryGeneration,
       retry
     }),
-    [effectiveState, retry, visibleSkills]
+    [effectiveState, retry, retryGeneration, visibleSkills]
   )
 }
 

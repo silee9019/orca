@@ -1,3 +1,4 @@
+import type { TerminalLaunchScopePin } from './terminal-spawn-launch-scope'
 import type { ParsedAgentStatusPayload } from '../../shared/agent-status-types'
 import type {
   AgentLaunchPreferences,
@@ -25,6 +26,8 @@ import type { RuntimeAgentRowSnapshot } from './runtime-worktree-agent-rows'
 import type { WorkerTerminalHostScope } from './orchestration/worker-terminal-process-liveness'
 
 export type TerminalCreateOptions = {
+  initialSize?: { cols: number; rows: number }
+  launchScopePin?: TerminalLaunchScopePin
   command?: string
   /**
    * Windows shell to spawn AS the PTY process, instead of the host default shell.

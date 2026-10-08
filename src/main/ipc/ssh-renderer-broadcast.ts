@@ -1,3 +1,7 @@
+import {
+  projectForwardObservation,
+  projectDetectedObservation
+} from '../../shared/ssh-port-observation'
 import type { BrowserWindow } from 'electron'
 import type { SshPortForwardManager } from '../ssh/ssh-port-forward'
 import type {
@@ -88,6 +92,11 @@ export function broadcastPortForwards(
   getMainWindow: () => BrowserWindow | null,
   targetId: string
 ): void {
+  if (!isRuntimeOwnedSshTargetId(targetId) && currentRuntime && portForwardManager) {
+    currentRuntime.notifySshPortObservation(
+      projectForwardObservation(targetId, portForwardManager.listForwards(targetId))
+    )
+  }
   const win = getMainWindow()
   if (!win || win.isDestroyed()) {
     return
@@ -104,6 +113,9 @@ export function broadcastDetectedPorts(
   ports: DetectedPort[],
   options?: Parameters<typeof enrichSshDetectedPorts>[3]
 ): void {
+  if (!isRuntimeOwnedSshTargetId(targetId)) {
+    currentRuntime?.notifySshPortObservation(projectDetectedObservation(targetId, ports))
+  }
   const win = getMainWindow()
   if (!win || win.isDestroyed()) {
     return

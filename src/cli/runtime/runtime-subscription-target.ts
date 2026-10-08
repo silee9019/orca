@@ -1,0 +1,130 @@
+import type { TerminalRendererDataSubscriptionParams } from '../../shared/rpc-contract/terminal-renderer-data-watch-params'
+import type { RendererResyncSubscriptionParams } from '../../shared/rpc-contract/renderer-delivery-resync-watch-params'
+import type { TerminalControlSubscriptionParams } from '../../shared/rpc-contract/terminal-control-watch-params'
+import type { TerminalSpawnSubscriptionParams } from '../../shared/rpc-contract/terminal-spawn-watch-params'
+import type { TerminalExitSubscriptionParams } from '../../shared/rpc-contract/terminal-exit-watch-params'
+import type { TerminalEffectsSubscriptionParams } from '../../shared/rpc-contract/terminal-effects-watch-params'
+import type { AgentWorkerRecoverySubscriptionParams } from '../../shared/rpc-contract/agent-worker-recovery-watch-params'
+import type { AgentMigrationSubscriptionParams } from '../../shared/rpc-contract/agent-migration-watch-params'
+import type { AgentStatusSubscriptionParams } from '../../shared/rpc-contract/agent-status-watch-params'
+import type { StructuredHeldSubscriptionParams } from '../../shared/rpc-contract/structured-held-watch-params'
+import type { RemoteWorkspaceSubscriptionParams } from '../../shared/rpc-contract/remote-workspace-watch-params'
+import type { NativeChatSubscriptionCallbacks } from './native-chat-subscription'
+import type { NativeChatSubscriptionParams } from '../../shared/rpc-contract/native-chat-watch'
+import type { TerminalPresentationSubscriptionParams } from '../../shared/rpc-contract/terminal-presentation-watch-params'
+import type { AgentAwakeSubscriptionParams } from '../../shared/rpc-contract/agent-awake-watch-params'
+export type StreamArgs<Params> = [
+  params: Params,
+  callbacks: NativeChatSubscriptionCallbacks,
+  signal: AbortSignal
+]
+export type SubscriptionParams =
+  | TerminalRendererDataSubscriptionParams
+  | RendererResyncSubscriptionParams
+  | TerminalControlSubscriptionParams
+  | TerminalSpawnSubscriptionParams
+  | TerminalExitSubscriptionParams
+  | TerminalEffectsSubscriptionParams
+  | AgentWorkerRecoverySubscriptionParams
+  | AgentMigrationSubscriptionParams
+  | AgentStatusSubscriptionParams
+  | StructuredHeldSubscriptionParams
+  | NativeChatSubscriptionParams
+  | TerminalPresentationSubscriptionParams
+  | AgentAwakeSubscriptionParams
+  | RemoteWorkspaceSubscriptionParams
+import type { RemoteRuntimeCompatGate } from './remote-runtime-compat-gate'
+import { markEnvironmentUsed } from './environments'
+import type { PairingOffer } from '../../shared/pairing'
+import type { RuntimeStatus } from '../../shared/runtime-types'
+import type { RuntimeRpcSuccess } from './types'
+
+export function createCliRuntimeSubscriptionOptions(
+  userDataPath: string,
+  pairing: PairingOffer | null,
+  timeoutMs: number,
+  remoteCompat: RemoteRuntimeCompatGate,
+  environmentSelector: string | null
+) {
+  return {
+    userDataPath,
+    pairing,
+    timeoutMs,
+    validateStatus: (response: RuntimeRpcSuccess<RuntimeStatus>) => {
+      remoteCompat.noteVerifiedStatus(response.result)
+      if (environmentSelector) {
+        markEnvironmentUsed(userDataPath, environmentSelector, {
+          runtimeId: response._meta.runtimeId
+        })
+      }
+    }
+  }
+}
+
+export function resolveRuntimeEventCapability(method: RuntimeEventMethod) {
+  return method === 'terminal.previewData.subscribe'
+    ? 'terminalPreviewDataStreaming'
+    : method === 'terminal.rendererReplay.subscribe'
+      ? 'terminalRendererReplayStreaming'
+      : method === 'terminal.rendererData.subscribe'
+        ? 'terminalRendererDataStreaming'
+        : method === 'renderer.deliveryResync.subscribe'
+          ? 'rendererDeliveryResyncStreaming'
+          : method === 'terminal.modelRestore.subscribe'
+            ? 'terminalModelRestoreStreaming'
+            : method === 'terminal.controlRequests.subscribe'
+              ? 'terminalControlStreaming'
+              : method === 'terminal.spawn.subscribe'
+                ? 'terminalSpawnStreaming'
+                : method === 'terminal.exit.subscribe'
+                  ? 'terminalExitStreaming'
+                  : method === 'terminal.effects.subscribe'
+                    ? 'terminalEffectsStreaming'
+                    : method === 'agentStatus.workerRecoverySubscribe'
+                      ? 'agentWorkerRecoveryStreaming'
+                      : method === 'agentStatus.migrationSubscribe'
+                        ? 'agentStatusMigrationStreaming'
+                        : method === 'agentStatus.subscribe'
+                          ? 'agentStatusStreaming'
+                          : method === 'structuredHeld.subscribe'
+                            ? 'structuredHeldStreaming'
+                            : method === 'nativeChat.subscribe'
+                              ? 'nativeChatStreaming'
+                              : method === 'agentAwake.subscribe'
+                                ? 'agentAwakeStreaming'
+                                : method === 'remoteWorkspace.subscribe'
+                                  ? 'remoteWorkspaceStreaming'
+                                  : 'terminalPresentationStreaming'
+}
+
+export type RuntimeEventMethod =
+  | 'terminal.previewData.subscribe'
+  | 'terminal.rendererReplay.subscribe'
+  | 'terminal.rendererData.subscribe'
+  | 'renderer.deliveryResync.subscribe'
+  | 'terminal.modelRestore.subscribe'
+  | 'terminal.controlRequests.subscribe'
+  | 'terminal.spawn.subscribe'
+  | 'terminal.exit.subscribe'
+  | 'terminal.effects.subscribe'
+  | 'agentStatus.workerRecoverySubscribe'
+  | 'agentStatus.migrationSubscribe'
+  | 'agentStatus.subscribe'
+  | 'structuredHeld.subscribe'
+  | 'nativeChat.subscribe'
+  | 'terminal.presentation.subscribe'
+  | 'agentAwake.subscribe'
+  | 'remoteWorkspace.subscribe'
+export async function subscribeCliRuntimeEvent(
+  options: ReturnType<typeof createCliRuntimeSubscriptionOptions>,
+  method: RuntimeEventMethod,
+  ...[params, callbacks, signal]: StreamArgs<SubscriptionParams>
+) {
+  const { subscribeCliRuntimeJson } = await import('./runtime-json-subscription.js')
+  return subscribeCliRuntimeJson(
+    options,
+    { method, params, localCapability: resolveRuntimeEventCapability(method) },
+    callbacks,
+    signal
+  )
+}

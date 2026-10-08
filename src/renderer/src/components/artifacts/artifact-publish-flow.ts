@@ -84,7 +84,7 @@ export async function publishArtifactFromSurface(
       return null
     }
   } catch (error) {
-    console.error('Failed to publish artifact:', error)
+    console.error('Failed to publish artifact')
     toast.error(
       translate(
         'auto.components.artifacts.artifact-publish-flow.54b1805328',

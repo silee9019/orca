@@ -1,3 +1,6 @@
+import { readSshHostRemovalViewerState } from '@/runtime/ssh-confirmation-viewer-controller'
+import { useSshConfirmationViewerController } from '@/hooks/useSshConfirmationViewerController'
+import type { SshTerminateSessionsResult } from '../../../../shared/ssh-types'
 import { useCallback, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SshConnectionState } from '../../../../shared/ssh-types'
@@ -19,16 +22,27 @@ type SshTargetDestructiveActionsRenderProps = {
   requestTerminateSessions: (target: PendingTargetAction) => void
 }
 
+type TargetActionResult = boolean | SshTerminateSessionsResult | void
+
 type SshTargetDestructiveActionsProps = {
+  targets?: readonly PendingTargetAction[]
+  requestRemoveTarget?: (
+    target: PendingTargetAction,
+    plain: (target: PendingTargetAction) => void
+  ) => void
+  workspaceRemoveTargetId?: string | null
   connectionStates: Map<string, SshConnectionState>
-  onRemove: (targetId: string) => Promise<void>
-  onResetRelay: (targetId: string) => Promise<void>
-  onTerminateSessions: (targetId: string) => Promise<void>
+  onRemove: (targetId: string) => Promise<TargetActionResult>
+  onResetRelay: (targetId: string) => Promise<TargetActionResult>
+  onTerminateSessions: (targetId: string) => Promise<TargetActionResult>
   children: (actions: SshTargetDestructiveActionsRenderProps) => ReactNode
 }
 
 export function SshTargetDestructiveActions({
   connectionStates,
+  targets,
+  requestRemoveTarget,
+  workspaceRemoveTargetId,
   onRemove,
   onResetRelay,
   onTerminateSessions,
@@ -77,19 +91,20 @@ export function SshTargetDestructiveActions({
   const runConfirmedTargetAction = async (
     pendingTarget: PendingTargetAction | null,
     action: SshTargetBusyAction,
-    operation: (targetId: string) => Promise<void>,
+    operation: (targetId: string) => Promise<TargetActionResult>,
     clearPendingTarget: () => void
-  ): Promise<void> => {
+  ): Promise<TargetActionResult> => {
     if (!pendingTarget || !beginTargetAction(pendingTarget.id, action)) {
-      return
+      return false
     }
 
     const targetId = pendingTarget.id
     try {
-      await operation(targetId)
+      const result = await operation(targetId)
       if (mountedRef.current) {
         clearPendingTarget()
       }
+      return result
     } finally {
       finishTargetAction(targetId)
     }
@@ -119,18 +134,20 @@ export function SshTargetDestructiveActions({
   }
   const dialogPendingReset = shouldClearReset ? null : pendingReset
 
-  const confirmResetRelay = async (): Promise<void> => {
+  const confirmResetRelay = async (): Promise<TargetActionResult> => {
     if (!pendingReset) {
-      return
+      return false
     }
 
     const latestStatus = connectionStatesRef.current.get(pendingReset.id)?.status ?? 'disconnected'
     if (isSshTargetConnecting(latestStatus)) {
       setPendingReset(null)
-      return
+      return false
     }
 
-    await runConfirmedTargetAction(pendingReset, 'reset', onResetRelay, () => setPendingReset(null))
+    return runConfirmedTargetAction(pendingReset, 'reset', onResetRelay, () =>
+      setPendingReset(null)
+    )
   }
 
   const actions: SshTargetDestructiveActionsRenderProps = {
@@ -153,6 +170,58 @@ export function SshTargetDestructiveActions({
     }
   }
 
+  useSshConfirmationViewerController({
+    read: () => ({
+      removeTargetId: pendingRemove?.id ?? workspaceRemoveTargetId ?? null,
+      workspaceRemoval: Boolean(workspaceRemoveTargetId),
+      workspaceDetails: readSshHostRemovalViewerState(workspaceRemoveTargetId),
+      resetTargetId: dialogPendingReset?.id ?? null,
+      terminateTargetId: pendingTerminate?.id ?? null,
+      busy: targetActionsInFlight.size > 0
+    }),
+    request: (kind, targetId) => {
+      const target = targets?.find((entry) => entry.id === targetId)
+      if (!target || targetActionsInFlightRef.current.has(targetId)) {
+        return false
+      }
+      if (kind === 'reset') {
+        const status = connectionStatesRef.current.get(targetId)?.status ?? 'disconnected'
+        if (isSshTargetConnecting(status)) {
+          return false
+        }
+        actions.requestResetRelay(target)
+      } else if (kind === 'remove') {
+        if (requestRemoveTarget) {
+          requestRemoveTarget(target, actions.requestRemove)
+        } else {
+          actions.requestRemove(target)
+        }
+      } else {
+        actions.requestTerminateSessions(target)
+      }
+      return true
+    },
+    confirm: (kind) =>
+      kind === 'remove'
+        ? runConfirmedTargetAction(pendingRemove, 'remove', onRemove, () => setPendingRemove(null))
+        : kind === 'reset'
+          ? confirmResetRelay()
+          : runConfirmedTargetAction(pendingTerminate, 'terminate', onTerminateSessions, () =>
+              setPendingTerminate(null)
+            ),
+    cancel: (kind) => {
+      if (targetActionsInFlightRef.current.size > 0) {
+        throw new Error('ssh_action_in_progress')
+      }
+      if (kind === 'remove') {
+        setPendingRemove(null)
+      } else if (kind === 'reset') {
+        setPendingReset(null)
+      } else {
+        setPendingTerminate(null)
+      }
+    }
+  })
   return (
     <>
       {children(actions)}

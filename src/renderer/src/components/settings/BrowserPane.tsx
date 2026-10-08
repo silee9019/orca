@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useBrowserCookieSectionScroll } from './use-browser-cookie-section-scroll'
 import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useAppStore } from '../../store'
+import { useBrowserSettingsRequest } from './use-browser-settings-request'
 import { matchesSettingsSearch } from './settings-search'
 import { getBrowserPaneSearchEntries } from './browser-search'
 import { getBrowserLinkRoutingDescription } from './browser-link-routing-copy'
@@ -38,14 +40,7 @@ export { getBrowserPaneCombinedSearchEntries }
 type BrowserPaneProps = {
   settings: GlobalSettings
   updateSettings: (updates: Partial<GlobalSettings>) => void
-  onOpenComputerUse?: () => void
-}
-
-function cancelBrowserSessionCookieScrollFrames(frameIds: MutableRefObject<number[]>): void {
-  for (const frameId of frameIds.current) {
-    cancelAnimationFrame(frameId)
-  }
-  frameIds.current = []
+  onOpenComputerUse?: () => void | Promise<boolean>
 }
 
 export function BrowserPane({
@@ -79,7 +74,12 @@ export function BrowserPane({
     createBrowserHomePageDraftState(persistedHomePageDraft)
   )
   const [newProfileDialogOpen, setNewProfileDialogOpen] = useState(false)
-  const sessionCookieScrollFrameIdsRef = useRef<number[]>([])
+  const {
+    setBrowserPaneRootNode,
+    scrollToSessionCookies,
+    requestSessionCookieScroll,
+    cookiesScrolled
+  } = useBrowserCookieSectionScroll()
   const resolvedHomePageDraftState = resolveBrowserHomePageDraftState(
     homePageDraftState,
     persistedHomePageDraft
@@ -92,13 +92,6 @@ export function BrowserPane({
   const setHomePageDraft = (value: string): void => {
     setHomePageDraftState((current) => ({ ...current, value }))
   }
-
-  const setBrowserPaneRootNode = useCallback((node: HTMLDivElement | null) => {
-    if (node !== null) {
-      return
-    }
-    cancelBrowserSessionCookieScrollFrames(sessionCookieScrollFrameIdsRef)
-  }, [])
 
   const selectedSearchEngine = browserDefaultSearchEngine ?? 'google'
 
@@ -178,39 +171,67 @@ export function BrowserPane({
     [setBrowserSessionHostId]
   )
 
-  const requestSessionCookieScrollFrame = (callback: FrameRequestCallback): void => {
-    let completed = false
-    let frameId: number | undefined
-    frameId = requestAnimationFrame((timestamp) => {
-      completed = true
-      if (frameId !== undefined) {
-        sessionCookieScrollFrameIdsRef.current = sessionCookieScrollFrameIdsRef.current.filter(
-          (pendingFrameId) => pendingFrameId !== frameId
-        )
-      }
-      callback(timestamp)
-    })
-    if (!completed) {
-      sessionCookieScrollFrameIdsRef.current.push(frameId)
-    }
-  }
-
-  const scrollToSessionCookies = (): void => {
-    cancelBrowserSessionCookieScrollFrames(sessionCookieScrollFrameIdsRef)
-    useAppStore.getState().setSettingsSearchQuery('')
-    requestSessionCookieScrollFrame(() => {
-      requestSessionCookieScrollFrame(() => {
-        const el = document.getElementById('browser-session-cookies')
-        if (!el) {
-          return
+  useBrowserSettingsRequest({
+    accepts: (command) =>
+      [
+        'status',
+        'homepage-draft',
+        'search-engine',
+        'zoom',
+        'profile-dialog-open',
+        'cookies-scroll',
+        'computer-use-open',
+        'host-select',
+        'profile-select'
+      ].includes(command.action),
+    apply: async (command, expiresAt) => {
+      if (command.action === 'homepage-draft') {
+        setHomePageDraft(command.value)
+      } else if (command.action === 'search-engine') {
+        setBrowserDefaultSearchEngine(command.engine === 'google' ? null : command.engine)
+      } else if (command.action === 'zoom') {
+        setBrowserDefaultZoomLevel(command.value)
+      } else if (command.action === 'profile-dialog-open') {
+        setNewProfileDialogOpen(true)
+      } else if (command.action === 'cookies-scroll') {
+        if (!(await requestSessionCookieScroll(expiresAt))) {
+          throw new Error('browser_cookie_section_scroll_unavailable')
         }
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
+      } else if (command.action === 'computer-use-open') {
+        if (!onOpenComputerUse) {
+          throw new Error('computer_use_navigation_unavailable')
+        }
+        if ((await onOpenComputerUse()) !== true) {
+          throw new Error('computer_use_navigation_not_acknowledged')
+        }
+      } else if (command.action === 'host-select') {
+        const host = browserSessionHostOptions.find((value) => value.id === command.hostId)
+        if (!host) {
+          throw new Error('browser_settings_host_unavailable')
+        }
+        await setBrowserSessionHostId(host.id)
+      } else if (command.action === 'profile-select') {
+        if (
+          command.profileId !== null &&
+          !nonDefaultProfiles.some((value) => value.id === command.profileId)
+        ) {
+          throw new Error('browser_settings_profile_unavailable')
+        }
+        setDefaultBrowserSessionProfileId(command.profileId)
+      }
+    },
+    read: () => ({
+      hostId: selectedBrowserSessionHostId,
+      defaultProfileId: defaultBrowserSessionProfileId,
+      homePageDraftPresent: homePageDraft.length > 0,
+      homePageDraftSaved: homePageDraft === persistedHomePageDraft,
+      dialogOpen: newProfileDialogOpen,
+      cookiesScrolled
     })
-  }
+  })
 
   return (
-    <div ref={setBrowserPaneRootNode} className="space-y-6">
+    <div ref={setBrowserPaneRootNode} data-browser-settings-pane className="space-y-6">
       {showBrowserUse ? (
         <BrowserUseSetup
           onConfigureMoreBrowsers={scrollToSessionCookies}
@@ -220,6 +241,8 @@ export function BrowserPane({
 
       {showHomePage ? (
         <BrowserHomePageSetting
+          hostId={selectedBrowserSessionHostId}
+          saved={homePageDraft === persistedHomePageDraft}
           value={homePageDraft}
           onChange={setHomePageDraft}
           onSave={(url) => {
@@ -314,7 +337,11 @@ export function BrowserPane({
         />
       ) : null}
 
-      <BrowserNewProfileDialog open={newProfileDialogOpen} onOpenChange={setNewProfileDialogOpen} />
+      <BrowserNewProfileDialog
+        hostId={selectedBrowserSessionHostId}
+        open={newProfileDialogOpen}
+        onOpenChange={setNewProfileDialogOpen}
+      />
     </div>
   )
 }

@@ -70,8 +70,7 @@ export class RuntimeProjectHostSetupController {
     if (!project) {
       throw new Error(`Project not found: ${projectId}`)
     }
-    this.deps.invalidateResolvedWorktrees()
-    this.deps.notifyReposChanged()
+    this.publishProjectChange()
     return project
   }
 
@@ -88,6 +87,7 @@ export class RuntimeProjectHostSetupController {
     if (!result) {
       throw new Error(`Project not found: ${args.projectId}`)
     }
+    this.publishProjectChange()
     return result
   }
 
@@ -138,6 +138,7 @@ export class RuntimeProjectHostSetupController {
       void prepareLocalWorktreeRootForRepo(store, result.repo)
       invalidateAuthorizedRootsCache()
     }
+    this.publishProjectChange(result.repo)
     return result
   }
 
@@ -150,7 +151,16 @@ export class RuntimeProjectHostSetupController {
     if (!result) {
       throw new Error(`Project host setup not found: ${args.setupId}`)
     }
+    this.publishProjectChange(result.repo)
     return result
+  }
+
+  private publishProjectChange(repo?: Repo): void {
+    this.deps.invalidateResolvedWorktrees()
+    if (repo) {
+      this.deps.invalidateWorktreeScan(repo.id)
+    }
+    this.deps.notifyReposChanged()
   }
 
   private completeSetup(
@@ -214,6 +224,7 @@ export class RuntimeProjectHostSetupController {
     if (!project) {
       throw new Error(`Project setup was created without a project record: ${setup.projectId}`)
     }
+    this.publishProjectChange(repo)
     return { project, setup, repo }
   }
 }

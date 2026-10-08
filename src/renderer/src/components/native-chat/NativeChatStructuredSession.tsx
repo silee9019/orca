@@ -250,6 +250,7 @@ export function NativeChatStructuredSession(
     <div
       ref={rootRef}
       data-native-chat-root="true"
+      data-native-chat-view-state={`${historyPhase}:${viewState.kind}`}
       data-native-chat-working={controller.isWorking ? 'true' : 'false'}
       tabIndex={-1}
       onPointerDownCapture={(event) => {

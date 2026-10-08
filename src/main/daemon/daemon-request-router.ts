@@ -12,7 +12,7 @@ import type { DaemonStreamDataBatcher } from './daemon-stream-data-batcher'
 import type { DaemonTerminalAdmission } from './daemon-terminal-admission'
 import type { TerminalHistorySeedTransferRegistry } from './terminal-history-seed-transfer-registry'
 import type { TerminalHost } from './terminal-host'
-import { SessionNotFoundError, type DaemonRequest } from './types'
+import { SessionNotFoundError, type DaemonRequest, type KillRequest } from './types'
 
 type DaemonRequestRouterOptions = {
   host: TerminalHost
@@ -95,7 +95,7 @@ export class DaemonRequestRouter {
           request.payload.background === true
         )
       case 'kill':
-        return this.kill(clientId, request.payload.sessionId, request.payload.immediate)
+        return this.kill(clientId, request.payload)
       case 'signal':
         this.options.host.signal(request.payload.sessionId, request.payload.signal)
         return {}
@@ -200,14 +200,17 @@ export class DaemonRequestRouter {
 
   private async kill(
     clientId: string,
-    sessionId: string,
-    immediate: boolean | undefined
+    payload: KillRequest['payload']
   ): Promise<Record<string, never>> {
+    const { sessionId, immediate, expectedIncarnationId } = payload
+    if (expectedIncarnationId !== undefined) {
+      this.options.host.assertSessionIncarnation(sessionId, expectedIncarnationId)
+    }
     const canceledPendingSpawn = this.options.preparations.cancel(sessionId)
     this.options.attachments.clearInput(sessionId)
     const attribution = { sessionId, immediate: immediate === true, clientId }
     try {
-      await this.options.host.kill(sessionId, { immediate })
+      await this.options.host.kill(sessionId, payload)
     } catch (error) {
       if (!(canceledPendingSpawn && error instanceof SessionNotFoundError)) {
         this.options.log.log('session-kill-failed', {

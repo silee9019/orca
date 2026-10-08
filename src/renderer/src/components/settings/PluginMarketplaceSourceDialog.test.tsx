@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { act } from 'react'
+import { act, createRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PluginMarketplaceHostSourceState } from '../../../../preload/api-types'
@@ -48,6 +48,65 @@ afterEach(() => {
 })
 
 describe('PluginMarketplaceSourceDialog', () => {
+  it('keeps the optional close guard busy across close and reopen until both operations settle', async () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const root = createRoot(container)
+    const closeRequestRef = createRef<(() => boolean) | null>()
+    const onOpenChange = vi.fn()
+    const onChanged = vi.fn().mockResolvedValue(undefined)
+    let completeFirst = (): void => {}
+    let completeSecond = (): void => {}
+    const first = new Promise<PluginMarketplaceHostSourceState[]>((resolve) => {
+      completeFirst = () => resolve([source])
+    })
+    const second = new Promise<PluginMarketplaceHostSourceState[]>((resolve) => {
+      completeSecond = () => resolve([source])
+    })
+    vi.mocked(window.api.plugins.refreshMarketplaces)
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second)
+    const render = async (open: boolean): Promise<void> => {
+      await act(async () => {
+        root.render(
+          <PluginMarketplaceSourceDialog
+            open={open}
+            sources={[source]}
+            onOpenChange={onOpenChange}
+            onChanged={onChanged}
+            closeRequestRef={closeRequestRef}
+          />
+        )
+      })
+    }
+    const refresh = async (): Promise<void> => {
+      await act(async () => {
+        document.querySelector<HTMLButtonElement>('[aria-label="Refresh Team plugins"]')?.click()
+      })
+    }
+    try {
+      await render(true)
+      await refresh()
+      await render(false)
+      await render(true)
+      await refresh()
+      expect(window.api.plugins.refreshMarketplaces).toHaveBeenCalledTimes(2)
+      await act(async () => completeFirst())
+      expect(closeRequestRef.current?.()).toBe(false)
+      expect(onOpenChange).not.toHaveBeenCalled()
+      await act(async () => completeSecond())
+      expect(closeRequestRef.current?.()).toBe(true)
+      expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false)
+    } finally {
+      await act(async () => {
+        completeFirst()
+        completeSecond()
+      })
+      act(() => root.unmount())
+    }
+    expect(closeRequestRef.current).toBeNull()
+  })
+
   it('adds private SSH marketplaces through the system-Git source contract', async () => {
     const container = document.createElement('div')
     document.body.appendChild(container)

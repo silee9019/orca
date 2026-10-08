@@ -11,12 +11,12 @@ export function AutomationsPageListPanel({
   onOpenDetail: () => void
 }): React.JSX.Element {
   const {
+    listNavigation,
     store,
     local,
     list,
     destination,
     sourceAvailability,
-    pageRefresh,
     runActions,
     editorActions,
     managementActions,
@@ -34,7 +34,6 @@ export function AutomationsPageListPanel({
     listSearchQuery,
     setListSearchQuery,
     listFilter,
-    setListFilter,
     relativeNow,
     externalActionKey,
     setActivePaneTab,
@@ -50,14 +49,10 @@ export function AutomationsPageListPanel({
     selectedExternal,
     searchCounts
   } = list
-  const onListFilterChange = (next: typeof listFilter): void => {
-    setListFilter(next)
-    if ((next.hostStableKeys?.length ?? 0) > 0 && hostCatalog.resolution.effective.kind !== 'all') {
-      hostCatalog.selectHost({ kind: 'all' })
-    }
-  }
+  const onListFilterChange = list.changeListFilter
   return (
     <AutomationsListPanel
+      viewerRef={listNavigation}
       hasListItems={hasListItems}
       hasFilteredListItems={hasFilteredListItems}
       listSearchQuery={listSearchQuery}
@@ -73,10 +68,7 @@ export function AutomationsPageListPanel({
       externalManagersUncheckedNotice={list.externalManagersUncheckedNotice}
       onSelectHost={hostCatalog.selectHost}
       onRecoverHost={(action, entry) => {
-        hostCatalog.recover(action, entry)
-        if (action === 'retry') {
-          void pageRefresh.refresh()
-        }
+        void controller.recoverListHost(action, entry)
       }}
       sortedListItems={list.sortedListItems}
       listSort={local.listSort}
@@ -111,10 +103,7 @@ export function AutomationsPageListPanel({
       openCreateDialog={editorActions.openCreateDialog}
       canCreateAutomation={destination.canCreateAutomation}
       onOpenDetail={onOpenDetail}
-      onRefresh={() => {
-        hostCatalog.refreshHosts()
-        void pageRefresh.refresh()
-      }}
+      onRefresh={() => void controller.refreshList()}
       isRefreshing={isLoading}
       onOpenRuns={() => {
         hostCatalog.selectHost({ kind: 'all' })

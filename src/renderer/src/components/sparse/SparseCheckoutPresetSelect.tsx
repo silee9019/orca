@@ -1,17 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSparsePresetSelect } from './use-sparse-preset-select'
+import React from 'react'
 import { ChevronsUpDown, LoaderCircle, RefreshCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SparsePresetChooser } from './SparsePresetChooser'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useAppStore } from '@/store'
-import { parseSparsePresetDirectories, validateSparsePresetName } from '@/lib/sparse-preset-draft'
-import { useMountedRef } from '@/hooks/useMountedRef'
 import type { SparsePreset } from '../../../../shared/worktree/create-types'
 import { translate } from '@/i18n/i18n'
-import type { SparsePresetDraft } from './SparseCheckoutPresetDraftForm'
 import { SparsePresetInlineEditor } from './SparsePresetInlineEditor'
 
-type SparseCheckoutPresetSelectProps = {
+export type SparseCheckoutPresetSelectProps = {
   repoId: string
   presets: SparsePreset[]
   selectedPresetId: string | null
@@ -28,187 +25,41 @@ export default function SparseCheckoutPresetSelect({
   disabled = false,
   onEditingChange
 }: SparseCheckoutPresetSelectProps): React.JSX.Element {
-  const repo = useAppStore((s) => s.repos.find((entry) => entry.id === repoId))
-  const fetchSparsePresets = useAppStore((s) => s.fetchSparsePresets)
-  const saveSparsePreset = useAppStore((s) => s.saveSparsePreset)
-  const presetsForRepo = useAppStore((s) => s.sparsePresetsByRepo[repoId])
-  const presetsLoadStatus = useAppStore((s) => s.sparsePresetsLoadStatusByRepo[repoId] ?? 'idle')
-  const presetsLoading = presetsLoadStatus === 'loading'
-  const presetsLoadError = useAppStore((s) => s.sparsePresetsErrorByRepo[repoId] ?? null)
-
-  const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState<SparsePresetDraft | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [operationError, setOperationError] = useState<string | null>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const nameInputRef = useRef<HTMLInputElement>(null)
-  const nameInputFocusFrameRef = useRef<number | null>(null)
-  const mountedRef = useMountedRef()
-
-  useEffect(() => () => onEditingChange?.(false), [onEditingChange])
-
-  const finishDraft = useCallback(() => {
-    setDraft(null)
-    onEditingChange?.(false)
-    triggerRef.current?.focus()
-  }, [onEditingChange])
-
-  const visiblePresets = presetsForRepo ?? presets
-  const presetsLoaded = presetsForRepo !== undefined
-  const isLoadingPresets = !disabled && presetsLoading
-  const hasPresetLoadError = !disabled && !presetsLoaded && !!presetsLoadError
-  const selectedPreset = useMemo(
-    () => visiblePresets.find((preset) => preset.id === selectedPresetId) ?? null,
-    [visiblePresets, selectedPresetId]
-  )
-  const parsedDirectories = draft ? parseSparsePresetDirectories(draft.directoriesText) : null
-  const trimmedName = draft?.name.trim() ?? ''
-  const nameError = draft
-    ? validateSparsePresetName(draft.name, visiblePresets, draft.presetId)
-    : null
-  const canSave =
-    draft !== null &&
-    !submitting &&
-    !disabled &&
-    presetsLoaded &&
-    !nameError &&
-    parsedDirectories !== null &&
-    !parsedDirectories.error
-
-  const cancelNameInputFocusFrame = useCallback((): void => {
-    if (nameInputFocusFrameRef.current === null) {
-      return
-    }
-    cancelAnimationFrame(nameInputFocusFrameRef.current)
-    nameInputFocusFrameRef.current = null
-  }, [])
-
-  const setNameInputNode = useCallback(
-    (node: HTMLInputElement | null): void => {
-      // Why: the queued draft focus is only valid while this input is mounted.
-      if (!node) {
-        cancelNameInputFocusFrame()
-      }
-      nameInputRef.current = node
-    },
-    [cancelNameInputFocusFrame]
-  )
-
-  const startDraft = useCallback(
-    (nextDraft: SparsePresetDraft): void => {
-      if (disabled || !presetsLoaded) {
-        return
-      }
-      setOpen(false)
-      setOperationError(null)
-      setDraft(nextDraft)
-      onEditingChange?.(true)
-      cancelNameInputFocusFrame()
-      nameInputFocusFrameRef.current = requestAnimationFrame(() => {
-        nameInputFocusFrameRef.current = null
-        nameInputRef.current?.focus()
-        nameInputRef.current?.select()
-        nameInputRef.current
-          ?.closest('[data-sparse-preset-editor]')
-          ?.scrollIntoView({ block: 'start' })
-      })
-    },
-    [cancelNameInputFocusFrame, disabled, onEditingChange, presetsLoaded]
-  )
-
-  const startNewPreset = useCallback((): void => {
-    startDraft({ mode: 'new', name: '', directoriesText: '' })
-  }, [startDraft])
-
-  const handleRetryLoadPresets = useCallback((): void => {
-    if (disabled || presetsLoading) {
-      return
-    }
-    setDraft(null)
-    void fetchSparsePresets(repoId)
-  }, [disabled, fetchSparsePresets, presetsLoading, repoId])
-
-  const startEditPreset = useCallback(
-    (preset: SparsePreset): void => {
-      startDraft({
-        mode: 'edit',
-        presetId: preset.id,
-        name: preset.name,
-        directoriesText: preset.directories.join('\n')
-      })
-    },
-    [startDraft]
-  )
-
-  const handleSaveDraft = useCallback(async (): Promise<void> => {
-    if (!draft || !canSave || !parsedDirectories) {
-      return
-    }
-    setSubmitting(true)
-    setOperationError(null)
-    try {
-      const saved = await saveSparsePreset({
-        repoId,
-        id: draft.presetId,
-        name: trimmedName,
-        directories: parsedDirectories.directories
-      })
-      if (saved && mountedRef.current) {
-        if (draft.mode === 'new' || selectedPresetId === saved.id) {
-          onSelectPreset(saved)
-        }
-        finishDraft()
-        setOpen(false)
-      } else if (mountedRef.current) {
-        setOperationError(
-          translate('sparsePreset.saveFailed', 'Could not save the preset. Try again.')
-        )
-      }
-    } catch {
-      if (mountedRef.current) {
-        setOperationError(
-          translate('sparsePreset.saveFailed', 'Could not save the preset. Try again.')
-        )
-      }
-    } finally {
-      if (mountedRef.current) {
-        setSubmitting(false)
-      }
-    }
-  }, [
-    canSave,
+  const {
+    ownerKey,
+    repo,
+    open,
     draft,
-    finishDraft,
-    mountedRef,
-    onSelectPreset,
+    submitting,
+    operationError,
+    triggerRef,
+    visiblePresets,
+    presetsLoaded,
+    isLoadingPresets,
+    hasPresetLoadError,
+    presetsLoadError,
+    selectedPreset,
     parsedDirectories,
+    nameError,
+    canSave,
+    setNameInputNode,
+    startNewPreset,
+    startEditPreset,
+    handleSaveDraft,
+    handleSelectOff,
+    handleSelectPreset,
+    handleRetryLoadPresets,
+    finishDraft,
+    setDraft,
+    handleOpenChange
+  } = useSparsePresetSelect({
     repoId,
-    saveSparsePreset,
+    presets,
     selectedPresetId,
-    trimmedName
-  ])
-
-  const handleSelectOff = useCallback((): void => {
-    if (disabled || !presetsLoaded) {
-      return
-    }
-    onSelectPreset(null)
-    setDraft(null)
-    setOpen(false)
-  }, [disabled, onSelectPreset, presetsLoaded])
-
-  const handleSelectPreset = useCallback(
-    (preset: SparsePreset): void => {
-      if (disabled || !presetsLoaded) {
-        return
-      }
-      onSelectPreset(preset)
-      setDraft(null)
-      setOpen(false)
-    },
-    [disabled, onSelectPreset, presetsLoaded]
-  )
-
+    onSelectPreset,
+    disabled,
+    onEditingChange
+  })
   const triggerLabel = isLoadingPresets
     ? translate('sparsePreset.loading', 'Loading presets...')
     : hasPresetLoadError
@@ -224,20 +75,7 @@ export default function SparseCheckoutPresetSelect({
 
   return (
     <>
-      <Popover
-        open={open}
-        onOpenChange={(nextOpen) => {
-          if (nextOpen && draft) {
-            return
-          }
-          if (nextOpen && presetsLoading) {
-            setOpen(false)
-            setDraft(null)
-            return
-          }
-          setOpen(nextOpen)
-        }}
-      >
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             ref={triggerRef}
@@ -300,6 +138,7 @@ export default function SparseCheckoutPresetSelect({
             </div>
           ) : (
             <SparsePresetChooser
+              viewerScope={{ repoId, ownerKey }}
               presets={visiblePresets}
               selectedPresetId={selectedPresetId}
               onSelect={handleSelectPreset}
@@ -312,6 +151,7 @@ export default function SparseCheckoutPresetSelect({
       </Popover>
       {draft ? (
         <SparsePresetInlineEditor
+          viewerScope={{ repoId, ownerKey }}
           draft={draft}
           parsedDirectories={parsedDirectories}
           nameError={nameError}

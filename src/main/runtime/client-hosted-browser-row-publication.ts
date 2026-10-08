@@ -74,6 +74,15 @@ export class ClientHostedBrowserRowPublisher {
    * that should take the row back is the very one the never-published suppression swallows.
    */
   deliverHydrationSnapshot(): ClientHostedBrowserRowsEvent[] {
+    const snapshot = this.readSnapshot()
+    this.publishedWorktreeIds.clear()
+    for (const event of snapshot) {
+      this.publishedWorktreeIds.add(event.worktreeId)
+    }
+    return snapshot
+  }
+
+  readSnapshot(): ClientHostedBrowserRowsEvent[] {
     const pagesByWorktreeId = new Map<string, RuntimeBrowserClientPage[]>()
     for (const page of this.host.listClientPages()) {
       const pages = pagesByWorktreeId.get(page.workspaceId)
@@ -82,13 +91,6 @@ export class ClientHostedBrowserRowPublisher {
       } else {
         pagesByWorktreeId.set(page.workspaceId, [page])
       }
-    }
-    // Replaced, not added to: the renderer clears before applying, so this set is its whole
-    // contents afterwards. Re-deriving it every hydration is also what heals a stale entry left
-    // by a window that went away between a publish and its retraction.
-    this.publishedWorktreeIds.clear()
-    for (const worktreeId of pagesByWorktreeId.keys()) {
-      this.publishedWorktreeIds.add(worktreeId)
     }
     return [...pagesByWorktreeId].map(([worktreeId, pages]) => ({
       worktreeId,

@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useAcknowledgedViewerToggle } from '@/runtime/use-acknowledged-viewer-toggle'
+import { registerFeatureWallUsageAccounts } from '@/runtime/usage-account-viewer-controller'
+import { useEffect, useState, useRef } from 'react'
 import type { JSX, ReactNode } from 'react'
 import { Loader2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -143,9 +145,9 @@ export function UsageAccountsCard(props: {
     provider: rateLimits.codex
   })
 
-  const handleClaudeSignIn = async (): Promise<void> => {
+  const handleClaudeSignIn = async (): Promise<boolean> => {
     if (claudeAction !== 'idle') {
-      return
+      return false
     }
     setClaudeAction('adding')
     try {
@@ -165,6 +167,7 @@ export function UsageAccountsCard(props: {
           )
         }
       }
+      return mountedRef.current
     } catch (error) {
       if (mountedRef.current) {
         toast.error(
@@ -177,6 +180,7 @@ export function UsageAccountsCard(props: {
           }
         )
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setClaudeAction('idle')
@@ -184,9 +188,9 @@ export function UsageAccountsCard(props: {
     }
   }
 
-  const handleCodexSignIn = async (): Promise<void> => {
+  const handleCodexSignIn = async (): Promise<boolean> => {
     if (codexAction !== 'idle') {
-      return
+      return false
     }
     setCodexAction('adding')
     try {
@@ -206,6 +210,7 @@ export function UsageAccountsCard(props: {
           )
         }
       }
+      return mountedRef.current
     } catch (error) {
       if (mountedRef.current) {
         toast.error(
@@ -218,12 +223,62 @@ export function UsageAccountsCard(props: {
           }
         )
       }
+      return false
     } finally {
       if (mountedRef.current) {
         setCodexAction('idle')
       }
     }
   }
+
+  const confirmClaudeIdle = useAcknowledgedViewerToggle(claudeAction !== 'idle', (busy) =>
+    setClaudeAction(busy ? 'adding' : 'idle')
+  )
+  const confirmCodexIdle = useAcknowledgedViewerToggle(codexAction !== 'idle', (busy) =>
+    setCodexAction(busy ? 'adding' : 'idle')
+  )
+  const viewerState = useRef({
+    handleClaudeSignIn,
+    handleCodexSignIn,
+    claudeAction,
+    codexAction,
+    claudeConnected: claudeConnection.connected,
+    codexConnected: codexConnection.connected
+  })
+  viewerState.current = {
+    handleClaudeSignIn,
+    handleCodexSignIn,
+    claudeAction,
+    codexAction,
+    claudeConnected: claudeConnection.connected,
+    codexConnected: codexConnection.connected
+  }
+  useEffect(() => {
+    const removeClaude = registerFeatureWallUsageAccounts('claude', {
+      signIn: async () => {
+        const success = await viewerState.current.handleClaudeSignIn()
+        await confirmClaudeIdle(false)
+        return success
+      },
+      busy: () => viewerState.current.claudeAction !== 'idle',
+      available: () => !viewerState.current.claudeConnected,
+      cancel: () => window.api.claudeAccounts.cancelPendingLogin()
+    })
+    const removeCodex = registerFeatureWallUsageAccounts('codex', {
+      signIn: async () => {
+        const success = await viewerState.current.handleCodexSignIn()
+        await confirmCodexIdle(false)
+        return success
+      },
+      busy: () => viewerState.current.codexAction !== 'idle',
+      available: () => !viewerState.current.codexConnected,
+      cancel: () => window.api.codexAccounts.cancelPendingLogin()
+    })
+    return () => {
+      removeClaude()
+      removeCodex()
+    }
+  }, [confirmClaudeIdle, confirmCodexIdle])
 
   return (
     <div className="flex flex-col gap-2.5">

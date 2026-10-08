@@ -1,6 +1,9 @@
+import { getRepoForExecutionHost } from '../../../repo-execution-host-selection'
+import { setDesktopVisibleWorktreeCatalogForRpc } from '../../../runtime/rpc/methods/workspace-visible-worktrees'
 import { ipcMain } from 'electron'
 import { isFolderRepo } from '../../../../shared/repo-kind'
 import {
+  parseExecutionHostId,
   getRepoExecutionHostId,
   getSshTargetIdForExecutionHost,
   type ExecutionHostId
@@ -72,10 +75,10 @@ async function mapWithConcurrency<T, R>(
   return results
 }
 
-export function registerWorktreeCatalogHandlers(context: WorktreeIpcContext): void {
+export function registerWorktreeCatalogHandlers(context: Pick<WorktreeIpcContext, 'store'>): void {
   const { store } = context
 
-  ipcMain.handle('worktrees:listAll', async () => {
+  const listAllVisible = async (): Promise<Worktree[]> => {
     const repos = store.getRepos()
     const legacyMetadata =
       typeof store.getAllWorktreeMetaForHost === 'function' ? undefined : store.getAllWorktreeMeta()
@@ -188,7 +191,8 @@ export function registerWorktreeCatalogHandlers(context: WorktreeIpcContext): vo
     })
 
     return results.flat()
-  })
+  }
+  ipcMain.handle('worktrees:listAll', listAllVisible)
 
   ipcMain.handle('worktrees:listRetiredNames', async (_event, args: { repoId: string }) => {
     const repo = store.getRepo(args.repoId)
@@ -198,14 +202,22 @@ export function registerWorktreeCatalogHandlers(context: WorktreeIpcContext): vo
     return getRetiredNameRegistryForRepo(store, repo, store.getRepos(), store.getSettings())
   })
 
-  ipcMain.handle('worktrees:list', async (_event, args: { repoId: string } | undefined) => {
+  const listVisible = async (
+    args: { repoId: string; executionHostId?: ExecutionHostId } | undefined
+  ): Promise<Worktree[]> => {
     // Renderer startup can race repo selection; malformed requests must fail closed, not crash the handler.
     const repoId = typeof args?.repoId === 'string' ? args.repoId : ''
     if (!repoId) {
       return []
     }
-    const repo = store.getRepo(repoId)
+    if (args?.executionHostId && parseExecutionHostId(args.executionHostId)?.kind === 'runtime') {
+      throw new Error('Select the owning runtime.')
+    }
+    const repo = getRepoForExecutionHost(store, repoId, args?.executionHostId)
     if (!repo) {
+      if (args?.executionHostId) {
+        throw new Error('selector_not_found')
+      }
       return []
     }
     const connectionId = getSshTargetIdForExecutionHost(getRepoExecutionHostId(repo))
@@ -281,6 +293,21 @@ export function registerWorktreeCatalogHandlers(context: WorktreeIpcContext): vo
       )
       // Why: see worktrees:listAll catch — seeding an empty-success result would poison the auth cache and block linked worktrees.
       return []
+    }
+  }
+  ipcMain.handle(
+    'worktrees:list',
+    (_event, args: { repoId: string; executionHostId?: ExecutionHostId } | undefined) =>
+      listVisible(args)
+  )
+  setDesktopVisibleWorktreeCatalogForRpc({
+    list: listVisible,
+    listAll: async () => {
+      const hosts = store.getRepos().map(getRepoExecutionHostId)
+      if (hosts.some((hostId) => parseExecutionHostId(hostId)?.kind === 'runtime')) {
+        throw new Error('Select the owning runtime.')
+      }
+      return listAllVisible()
     }
   })
 }

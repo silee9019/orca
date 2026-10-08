@@ -1,3 +1,4 @@
+import { useExternalAutomationRunBackViewer } from './use-external-automation-run-back-viewer'
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ type AutomationsDetailPaneProps = {
   selectedExternal: ExternalAutomationListEntry | null
   selectedExternalRunPage: SelectedExternalRunPage | null
   selectedRuns: AutomationRun[]
+  runHistoryOwnerKey?: string | null
   /** Set when the selected automation's history read failed; its runs are unknown. */
   selectedRunsNotice: AutomationActionNotice | null
   activePaneTab: AutomationPaneTab
@@ -89,6 +91,7 @@ export function AutomationsDetailPane({
   selectedExternal,
   selectedExternalRunPage,
   selectedRuns,
+  runHistoryOwnerKey,
   selectedRunsNotice,
   activePaneTab,
   relativeNow,
@@ -114,6 +117,11 @@ export function AutomationsDetailPane({
   onBackToList,
   recoverSelectedRuns
 }: AutomationsDetailPaneProps): React.JSX.Element {
+  useExternalAutomationRunBackViewer(
+    selectedExternal,
+    selectedExternalRunPage,
+    onClearExternalRunPage
+  )
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (shouldHandleAutomationDetailEscapeKey(event)) {
@@ -181,7 +189,15 @@ export function AutomationsDetailPane({
               statusVariant={getExternalRunStatusVariant(selectedExternalRunPage.run)}
               onBack={onClearExternalRunPage}
             >
-              <HermesCronOutputView content={getExternalRunContent(selectedExternalRunPage.run)} />
+              <HermesCronOutputView
+                content={getExternalRunContent(selectedExternalRunPage.run)}
+                ownerKey={JSON.stringify([
+                  selectedExternalRunPage.scope,
+                  selectedExternalRunPage.manager.id,
+                  selectedExternalRunPage.job.id,
+                  selectedExternalRunPage.run
+                ])}
+              />
             </AutomationRunPageFrame>
           ) : (
             <ExternalAutomationManagers
@@ -265,6 +281,7 @@ export function AutomationsDetailPane({
                 <AutomationRunHistory
                   runs={selectedRuns}
                   automationId={selected.id}
+                  ownerKey={runHistoryOwnerKey}
                   worktreeMap={worktreeMap}
                   notice={selectedRunsNotice}
                   onRecoverHistory={recoverSelectedRuns}

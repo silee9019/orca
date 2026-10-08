@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { startVoiceModelDelete, readVoiceModelDelete } from '@/runtime/voice-model-delete-request'
 import { act } from 'react'
 import type { ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -115,6 +116,36 @@ function renderSection(args: {
 }
 
 describe('VoiceSpeechModelSection', () => {
+  it('applies pending state through its typed receiver and clears it after the existing service settles', async () => {
+    let settle: (() => void) | undefined
+    const completion = new Promise<void>((resolve) => {
+      settle = resolve
+    })
+    const { container, root } = renderSection({ deleteModel: () => completion })
+    let operationId = ''
+    act(() => {
+      operationId = startVoiceModelDelete(localModel.id).operationId
+    })
+    expect(
+      container
+        .querySelector('[data-voice-pending-model-deletes]')
+        ?.getAttribute('data-voice-pending-model-deletes')
+    ).toBe(JSON.stringify([localModel.id]))
+    expect(readVoiceModelDelete(operationId).deleteState).toBe('pending')
+    expect(() => startVoiceModelDelete(localModel.id)).toThrow('pending')
+    await act(async () => {
+      settle?.()
+      await completion
+    })
+    expect(readVoiceModelDelete(operationId).deleteState).toBe('succeeded')
+    expect(
+      container
+        .querySelector('[data-voice-pending-model-deletes]')
+        ?.getAttribute('data-voice-pending-model-deletes')
+    ).toBe('[]')
+    act(() => root.unmount())
+  })
+
   beforeEach(() => {
     toastErrorMock.mockReset()
     menuDismissMock.mockReset()

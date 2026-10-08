@@ -20,6 +20,7 @@ export const CLI_BOOLEAN_FLAGS = new Set([
   'full',
   'help',
   'inject',
+  'input-stdin',
   'include-archived',
   'include-remote',
   'include-visual-layouts',

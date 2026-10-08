@@ -1,3 +1,4 @@
+import { setAppControlReloadPolicy } from './app-lifecycle-control'
 import { ipcMain, nativeTheme } from 'electron'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import type { Store } from '../persistence'
@@ -224,6 +225,11 @@ function registerAppReloadHandler(
   const handlerToken = ++appReloadHandlerTokenCounter
   activeAppReloadHandlerToken = handlerToken
   const mainWebContents = mainWindow.webContents
+  const reload = (): void => {
+    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: false })
+    mainWebContents.reload()
+  }
+  setAppControlReloadPolicy(mainWindow, reload)
   ipcMain.removeHandler('app:reload')
   ipcMain.handle('app:reload', (event) => {
     if (
@@ -233,8 +239,7 @@ function registerAppReloadHandler(
     ) {
       return
     }
-    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: false })
-    mainWebContents.reload()
+    reload()
   })
   mainWindow.on('closed', () => {
     if (activeAppReloadHandlerToken !== handlerToken) {

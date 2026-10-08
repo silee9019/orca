@@ -1,3 +1,4 @@
+import { useAutomationOwnerNoticeViewer } from '../../runtime/automation-owner-notice-viewer'
 import React from 'react'
 import { translate } from '@/i18n/i18n'
 import { AutomationOwnerConflictNotice } from './AutomationOwnerConflictNotice'
@@ -11,6 +12,7 @@ export function AutomationsPageTopBar({
   selectedAutomationName,
   runPageOrigin,
   ownerNotice,
+  ownerNoticeKey,
   recoverOwnerAction,
   dismissOwnerAction,
   showAutomationsList,
@@ -21,6 +23,7 @@ export function AutomationsPageTopBar({
   isDetailOpen: boolean
   selectedAutomationName?: string
   runPageOrigin: 'automation' | 'runs'
+  ownerNoticeKey: string
   ownerNotice: AutomationActionNotice | null
   recoverOwnerAction: (action: AutomationHostRecoveryAction) => void
   dismissOwnerAction: () => void
@@ -28,6 +31,12 @@ export function AutomationsPageTopBar({
   showRunsDashboard: () => void
   showAutomationDetails: () => void
 }): React.JSX.Element {
+  useAutomationOwnerNoticeViewer({
+    notice: ownerNotice,
+    ownerKey: ownerNoticeKey,
+    onRecover: recoverOwnerAction,
+    onDismiss: dismissOwnerAction
+  })
   return (
     <>
       <header

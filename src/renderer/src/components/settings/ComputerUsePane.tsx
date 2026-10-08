@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useComputerPermissionReset } from './use-computer-permission-reset'
+import { useComputerPermissionRefresh } from './use-computer-permission-refresh'
+import { useComputerPermissionsViewerOwner } from './use-computer-permissions-viewer-owner'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Accessibility, Camera, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import type {
@@ -64,6 +67,12 @@ export function ComputerUsePane(): React.JSX.Element {
   const [platform, setPlatform] = useState<NodeJS.Platform | null>(null)
   const [states, setStates] = useState<ComputerUsePermissionState[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingRef = useRef(true)
+  const pendingPermissionOperations = useRef(0)
+  const updateLoading = (value: boolean): void => {
+    loadingRef.current = value
+    setLoading(value)
+  }
   const [pendingId, setPendingId] = useState<ComputerUsePermissionId | null>(null)
   const [resetting, setResetting] = useState(false)
   // Why: reset changes OS permission state, so older status probes must not overwrite it.
@@ -139,42 +148,41 @@ export function ComputerUsePane(): React.JSX.Element {
     }
   }, [])
 
-  const refresh = useCallback(async (): Promise<void> => {
-    if (resettingRef.current) {
-      return
-    }
-
-    const operationId = ++permissionOperationSequence.current
-    setLoading(true)
-    try {
-      const result = await window.api.computerUsePermissions.getStatus()
-      if (operationId !== permissionOperationSequence.current) {
-        return
-      }
-      if (!mountedRef.current) {
-        return
-      }
-      setPlatform(result.platform)
-      setStates(result.permissions)
-      setHelperUnavailableReason(result.helperUnavailableReason)
-    } catch (error) {
-      if (operationId !== permissionOperationSequence.current || !mountedRef.current) {
-        return
-      }
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.ComputerUsePane.2168fa5ab0',
-              'Could not load Computer Use permissions'
-            )
-      )
-    } finally {
-      if (operationId === permissionOperationSequence.current && mountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [])
+  const refresh = useComputerPermissionRefresh({
+    mountedRef,
+    resettingRef,
+    permissionOperationSequence,
+    setLoading: updateLoading,
+    setPlatform,
+    setStates,
+    setHelperUnavailableReason,
+    read: () => ({ platform, states, helperUnavailableReason })
+  })
+  const resetAccess = useComputerPermissionReset({
+    mountedRef,
+    resettingRef,
+    permissionOperationSequence,
+    setResetting,
+    setLoading: updateLoading,
+    setPlatform,
+    setStates,
+    setHelperUnavailableReason,
+    read: () => ({ platform, states, helperUnavailableReason })
+  })
+  useComputerPermissionsViewerOwner({
+    platform,
+    states,
+    loading,
+    helperUnavailableReason,
+    isResetting: () => resettingRef.current,
+    canReset: () =>
+      !resetAccessDisabled &&
+      !resettingRef.current &&
+      !loadingRef.current &&
+      pendingPermissionOperations.current === 0,
+    refresh,
+    resetAccess
+  })
 
   useEffect(() => {
     void refresh()
@@ -193,6 +201,7 @@ export function ComputerUsePane(): React.JSX.Element {
   const openPermission = async (id: ComputerUsePermissionId): Promise<void> => {
     useAppStore.getState().recordFeatureInteraction('computer-use-setup')
     setPendingId(id)
+    pendingPermissionOperations.current += 1
     try {
       const result = await window.api.computerUsePermissions.openSetup({ id })
       if (!mountedRef.current) {
@@ -230,54 +239,9 @@ export function ComputerUsePane(): React.JSX.Element {
         )
       }
     } finally {
+      pendingPermissionOperations.current -= 1
       if (mountedRef.current) {
         setPendingId(null)
-      }
-    }
-  }
-
-  const resetAccess = async (): Promise<void> => {
-    if (resettingRef.current) {
-      return
-    }
-
-    resettingRef.current = true
-    const operationId = ++permissionOperationSequence.current
-    setResetting(true)
-    try {
-      const result = await window.api.computerUsePermissions.reset()
-      if (operationId !== permissionOperationSequence.current) {
-        return
-      }
-      if (!mountedRef.current) {
-        return
-      }
-      setPlatform(result.platform)
-      setStates(result.permissions)
-      setHelperUnavailableReason(result.helperUnavailableReason)
-      toast.message(
-        translate(
-          'auto.components.settings.ComputerUsePane.f189f448a3',
-          'Reset Computer Use access'
-        )
-      )
-    } catch (error) {
-      if (operationId !== permissionOperationSequence.current || !mountedRef.current) {
-        return
-      }
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : translate(
-              'auto.components.settings.ComputerUsePane.3383ea1aab',
-              'Could not reset Computer Use permissions'
-            )
-      )
-    } finally {
-      if (operationId === permissionOperationSequence.current && mountedRef.current) {
-        resettingRef.current = false
-        setResetting(false)
-        setLoading(false)
       }
     }
   }
@@ -285,7 +249,7 @@ export function ComputerUsePane(): React.JSX.Element {
   const isMac = platform === null || platform === 'darwin'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-computer-permission-settings-pane>
       {isMac ? (
         <>
           <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-border/60 bg-muted/25 px-4 py-3">
