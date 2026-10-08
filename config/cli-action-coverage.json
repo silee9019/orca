@@ -140239,7 +140239,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140252,7 +140252,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history list",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.aiVault.resolveSessionTitles",
@@ -140262,7 +140263,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140275,7 +140276,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history titles",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.aiVault.prepareSessionResume",
@@ -140285,7 +140287,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140298,7 +140300,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history resume-plan",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.aiVault.deleteSession",
@@ -140308,7 +140311,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140321,7 +140324,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history delete",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.aiVault.listSubagentSessions",
@@ -140331,7 +140335,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140344,7 +140348,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history subagents",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.nativeChat.readSession",
@@ -140354,7 +140359,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/native-chat-api.ts:native-chat-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140367,7 +140372,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent history read",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.agentStatus.getSnapshot",
@@ -140377,7 +140383,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140390,7 +140396,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent status list",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.agentStatus.dropPersisted",
@@ -140400,7 +140407,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140413,7 +140420,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent status dismiss",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.agentStatus.getMigrationUnsupportedSnapshot",
@@ -140423,7 +140431,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140436,7 +140444,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent status migration",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.clearBuffer",
@@ -140446,7 +140455,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140459,7 +140468,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal clear",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.inspectProcess",
@@ -140469,7 +140479,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다. 종료 관측 뒤 provider 조회 차단에는 exited-process-inspection 공유 patch가 필요합니다. provider inspectProcess가 없는 호환 경로의 foreground/child-process getter만 추가로 검증했으며 원본 두 API 전체의 동등성은 판정하지 않았습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140482,7 +140492,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal inspect-process",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다. 종료 관측 뒤 provider 조회 차단에는 exited-process-inspection 공유 patch가 필요합니다. provider inspectProcess가 없는 호환 경로의 foreground/child-process getter만 추가로 검증했으며 원본 두 API 전체의 동등성은 판정하지 않았습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다. 종료 관측 뒤 provider 조회 차단에는 exited-process-inspection 공유 patch가 필요합니다. provider inspectProcess가 없는 호환 경로의 foreground/child-process getter만 추가로 검증했으며 원본 두 API 전체의 동등성은 판정하지 않았습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.resetInputModes",
@@ -140492,7 +140503,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140505,7 +140516,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal reset-input",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.runtime.restoreTerminalFit",
@@ -140515,7 +140527,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/runtime-api.ts:runtime-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140528,7 +140540,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal restore-fit",
-      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다."
+      "limitations": "공유 등록 patch가 필요합니다. macOS 격리 fixture 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.management.listSessions",
@@ -140538,7 +140551,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-management-api.ts:pty-management-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140551,7 +140564,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal daemon list",
-      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다."
+      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.management.killOne",
@@ -140561,7 +140575,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-management-api.ts:pty-management-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140574,7 +140588,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal daemon stop",
-      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다."
+      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.management.killAll",
@@ -140584,7 +140599,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-management-api.ts:pty-management-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "Shared registrations are integrated. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140597,7 +140612,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal daemon stop-many",
-      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다."
+      "limitations": "공유 등록 patch가 필요합니다. 격리 macOS fixture와 fake subprocess 증거입니다. SSH relay는 별도 실행 경계입니다. live paired host/Linux/Windows/rendered viewer 및 최신 release crossing은 미실증입니다. stop-many는 명시적 confirmed snapshot만 종료합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.hooks.check",
@@ -140607,7 +140623,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-hook-api.ts:agent-hook-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140620,7 +140636,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent hooks workspace-check",
-      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다."
+      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.hooks.inspectSetupScriptImports",
@@ -140630,7 +140647,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-hook-api.ts:agent-hook-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140643,7 +140660,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent hooks setup-imports",
-      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다."
+      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.hooks.readIssueCommand",
@@ -140653,7 +140671,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-hook-api.ts:agent-hook-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140666,7 +140684,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent hooks issue-read",
-      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다."
+      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.hooks.writeIssueCommand",
@@ -140676,7 +140695,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-hook-api.ts:agent-hook-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140689,7 +140708,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent hooks issue-write",
-      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다."
+      "limitations": "공유 등록 patch와 agent-sessions-hooks-host-boundary.patch가 모두 필요합니다. macOS 격리 filesystem 및 fake SSH provider 증거이며 live SSH/paired host, Linux/Windows 및 rendered viewer 효과는 미실증입니다. 로컬 chmod fixture는 Windows/root에서 skip합니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-run-create",
@@ -140699,7 +140719,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140712,7 +140732,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration run-create",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-run-current",
@@ -140722,7 +140743,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140735,7 +140756,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration run-current",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-run-list",
@@ -140745,7 +140767,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140758,7 +140780,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration run-list",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-run-show",
@@ -140768,7 +140791,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140781,7 +140804,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration run-show",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-run-use",
@@ -140791,7 +140815,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140804,7 +140828,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration run-use",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-task-create",
@@ -140814,7 +140839,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140827,7 +140852,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration task-create",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-task-list",
@@ -140837,7 +140863,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140850,7 +140876,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration task-list",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-task-update",
@@ -140860,7 +140887,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140873,7 +140900,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration task-update",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-gate-create",
@@ -140883,7 +140911,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140896,7 +140924,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration gate-create",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-gate-list",
@@ -140906,7 +140935,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140919,7 +140948,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration gate-list",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-gate-resolve",
@@ -140929,7 +140959,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140942,7 +140972,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration gate-resolve",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-send",
@@ -140952,7 +140983,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140965,7 +140996,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration send",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-reply",
@@ -140975,7 +141007,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -140988,7 +141020,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration reply",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.orchestration-inbox",
@@ -140998,7 +141031,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141011,7 +141044,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "orchestration inbox",
-      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다."
+      "limitations": "macOS 격리 SQLite와 실제 RPC service의 CLI 저장/read-back 증거입니다. live SSH/paired host, Linux/Windows와 rendered viewer는 미실증입니다. 다른 orchestration 명령·private payload 입력 경계의 완료를 뜻하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.agent-hooks-on",
@@ -141021,7 +141055,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/agent-hooks.ts:AGENT_HOOK_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141035,7 +141069,8 @@
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent hooks on",
       "limitations": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
-      "commandUsage": "agent-hooks on"
+      "commandUsage": "agent-hooks on",
+      "evidencePaths": []
     },
     {
       "id": "command.agent-hooks-off",
@@ -141045,7 +141080,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/agent-hooks.ts:AGENT_HOOK_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141059,7 +141094,8 @@
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent hooks off",
       "limitations": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
-      "commandUsage": "agent-hooks off"
+      "commandUsage": "agent-hooks off",
+      "evidencePaths": []
     },
     {
       "id": "command.agent-hooks-status",
@@ -141069,7 +141105,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/agent-hooks.ts:AGENT_HOOK_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141083,7 +141119,8 @@
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent hooks status",
       "limitations": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
-      "commandUsage": "agent-hooks status"
+      "commandUsage": "agent-hooks status",
+      "evidencePaths": []
     },
     {
       "id": "command.agent-hooks-prepare-codex",
@@ -141093,7 +141130,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/agent-hooks.ts:AGENT_HOOK_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141107,7 +141144,8 @@
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "agent hooks prepare-codex",
       "limitations": "기존 구현을 재사용한 격리 profile/home fixture 증거입니다. 실제 사용자 홈·실제 agent binary·live SSH/paired host 및 Linux/Windows는 미실증입니다.",
-      "commandUsage": "agent-hooks prepare-codex"
+      "commandUsage": "agent-hooks prepare-codex",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-list",
@@ -141117,7 +141155,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141130,7 +141168,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal list",
-      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다."
+      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-show",
@@ -141140,7 +141179,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141153,7 +141192,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal show",
-      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다."
+      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-read",
@@ -141163,7 +141203,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141176,7 +141216,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal read",
-      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다."
+      "limitations": "공개 CLI→실제 RPC/host 서비스→가짜 PTY controller 입출력 증거입니다. 실제 PTY·agent binary·rendered screen·live SSH/paired peer·Linux/Windows 효과는 미실증입니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-send",
@@ -141186,7 +141227,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/terminal-send.ts:TERMINAL_SEND_COMMAND_SPEC",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 patch 적용 상태의 macOS 격리 JSONL 읽기·페이지·미존재/미지원 거부 증거입니다. live SSH/paired peer·Linux/Windows·rendered viewer 및 live subscription은 미실증입니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141199,7 +141240,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal send",
-      "limitations": "공유 등록 patch 적용 상태의 macOS 격리 JSONL 읽기·페이지·미존재/미지원 거부 증거입니다. live SSH/paired peer·Linux/Windows·rendered viewer 및 live subscription은 미실증입니다."
+      "limitations": "공유 등록 patch 적용 상태의 macOS 격리 JSONL 읽기·페이지·미존재/미지원 거부 증거입니다. live SSH/paired peer·Linux/Windows·rendered viewer 및 live subscription은 미실증입니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-create",
@@ -141209,7 +141251,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141222,7 +141264,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal create",
-      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다."
+      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-rename",
@@ -141232,7 +141275,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141245,7 +141288,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal rename",
-      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다."
+      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-split",
@@ -141255,7 +141299,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141268,7 +141312,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal split",
-      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다."
+      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-close",
@@ -141278,7 +141323,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/terminal-close.ts:TERMINAL_CLOSE_COMMAND_SPEC",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141291,7 +141336,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal close",
-      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다."
+      "limitations": "macOS 공개 CLI → 실제 RPC/runtime → 가짜 PTY/controller와 in-memory workspace session의 상태 변환 증거입니다. folder workspace 생성·이름 변경·분할·닫기를 확인했으며 실제 daemon·디스크 crash durability·renderer·live SSH/paired·Linux/Windows를 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.agentAwake.getStatus",
@@ -141301,7 +141347,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141314,7 +141360,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "agent awake status",
-      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다."
+      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-wait",
@@ -141324,7 +141371,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141337,7 +141384,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal wait",
-      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다."
+      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.terminal-stop",
@@ -141347,7 +141395,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141360,7 +141408,8 @@
       "rule": "command",
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "terminal stop",
-      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다."
+      "limitations": "공유 등록 v2, Awake host owner 및 folder teardown patch가 필요한 격리 fixture 증거입니다. 실제 OS 절전 방지·물리 PTY·live SSH·paired viewer 효과는 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.runtime.getTerminalFitOverrides",
@@ -141370,7 +141419,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/runtime-api.ts:runtime-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141383,7 +141432,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal fit-overrides",
-      "limitations": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다."
+      "limitations": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.runtime.getTerminalDrivers",
@@ -141393,7 +141443,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/runtime-api.ts:runtime-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141406,7 +141456,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal drivers",
-      "limitations": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다."
+      "limitations": "registration-v3 patch 필요. 실제 runtime mobile subscribe/reclaim 및 조회 중 무변경을 fake provider로 검증했습니다. live SSH, Linux/Windows, 실제 모바일 및 renderer 변경 이벤트 전달은 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.pty.getSideEffectSnapshot",
@@ -141416,7 +141467,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "registration-v4 patch 필요. 실제 runtime title snapshot의 null/현재 제목/attention 비재생/unverifiable 및 exited 거부를 fake provider에서 검증했습니다. live SSH·Linux/Windows·renderer/mobile 시각 효과는 증명하지 않습니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141429,7 +141480,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal side-effects",
-      "limitations": "registration-v4 patch 필요. 실제 runtime title snapshot의 null/현재 제목/attention 비재생/unverifiable 및 exited 거부를 fake provider에서 검증했습니다. live SSH·Linux/Windows·renderer/mobile 시각 효과는 증명하지 않습니다."
+      "limitations": "registration-v4 patch 필요. 실제 runtime title snapshot의 null/현재 제목/attention 비재생/unverifiable 및 exited 거부를 fake provider에서 검증했습니다. live SSH·Linux/Windows·renderer/mobile 시각 효과는 증명하지 않습니다.",
+      "evidencePaths": []
     },
     {
       "id": "api.session.listHostIds",
@@ -141439,7 +141491,7 @@
       "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
       "host": "execution host owns process and canonical agent status",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "gap": "registration-v5 및 workspace-session-host-owner patch 필요. frozen serialized import의 실제 Store를 사용해 Git repo가 없는 SSH/paired partition census, invalid ID 제거, 상태 불변 및 Store 부재 오류를 검증했습니다. 실제 SSH·paired 연결·Linux/Windows·renderer 복원 증거는 아닙니다.",
       "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
       "support": "implemented",
       "evidence": "partial",
@@ -141452,7 +141504,8 @@
       "rule": "api",
       "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
       "command": "terminal workspace-hosts",
-      "limitations": "registration-v5 및 workspace-session-host-owner patch 필요. frozen serialized import의 실제 Store를 사용해 Git repo가 없는 SSH/paired partition census, invalid ID 제거, 상태 불변 및 Store 부재 오류를 검증했습니다. 실제 SSH·paired 연결·Linux/Windows·renderer 복원 증거는 아닙니다."
+      "limitations": "registration-v5 및 workspace-session-host-owner patch 필요. frozen serialized import의 실제 Store를 사용해 Git repo가 없는 SSH/paired partition census, invalid ID 제거, 상태 불변 및 Store 부재 오류를 검증했습니다. 실제 SSH·paired 연결·Linux/Windows·renderer 복원 증거는 아닙니다.",
+      "evidencePaths": []
     },
     {
       "id": "command.browser-banner-cancel-grab",
@@ -143187,6 +143240,1285 @@
       "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
       "command": "browser tab-drag cancel",
       "commands": ["browser tab-drag cancel"]
+    },
+    {
+      "id": "api.pty.getSize",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.getSize에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v6 및 applied-size-owner patch 필요. 기존 IPC와 같은 provider 우선·명시 null 보존·legacy requested-size fallback을 검증했습니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.getSize",
+          "fingerprint": "5aba2984bbaa4c67650183ff4ee09a3ca3f01f75f6ea288b8b2af06c9c422a63"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal size",
+      "evidencePaths": [],
+      "limitations": "registration-v6 및 applied-size-owner patch 필요. 기존 IPC와 같은 provider 우선·명시 null 보존·legacy requested-size fallback을 검증했습니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.getCwd",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.getCwd에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v6 및 provider-cwd-owner patch 필요. 기존 provider의 fresh query, retained OSC cache 분리, 종료·실행 세대 변경 거부를 검증했습니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.getCwd",
+          "fingerprint": "3308cfb6ac75001049e8685e154128d275439381bfa0d4860b974e44696d7be9"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal cwd",
+      "evidencePaths": [],
+      "limitations": "registration-v6 및 provider-cwd-owner patch 필요. 기존 provider의 fresh query, retained OSC cache 분리, 종료·실행 세대 변경 거부를 검증했습니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다."
+    },
+    {
+      "id": "api.agentStatus.drop",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-status-api: agentStatus.drop에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "일반 행 삭제와 재개 정보 보존을 기존 시각 대조가 있는 dismiss로 검증했습니다. legacy numeric pane alias 전체 입력 호환은 추가 검증이 필요합니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:agentStatus.drop",
+          "fingerprint": "b20708bc105bca552b97f096b5e5d172014b284e7aaa757ecda92a46f0bd0db0"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent status dismiss",
+      "evidencePaths": [],
+      "limitations": "일반 행 삭제와 재개 정보 보존을 기존 시각 대조가 있는 dismiss로 검증했습니다. legacy numeric pane alias 전체 입력 호환은 추가 검증이 필요합니다. macOS 격리 fixture 증거이며 실제 SSH·paired host·Linux/Windows·renderer 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.getForegroundProcess",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.getForegroundProcess에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 named command를 재사용합니다. 자식 프로세스 조회는 request-file의 scanChildProcesses:true로 요청합니다. legacy getter와 modern inspection의 동일 PTY 전달, unverifiable 보존, 관측된 종료 뒤 provider 호출 거부를 macOS 격리 fake provider로 검증했습니다. 실제 SSH·paired·Linux/Windows 프로세스 조회와 모든 provider 오류 조합의 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.getForegroundProcess",
+          "fingerprint": "da1a6fb96691c8d6dfb591b53c03500103ff829e674b139c6fb4a28cb3d787a6"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal inspect-process",
+      "evidencePaths": [],
+      "limitations": "기존 named command를 재사용합니다. 자식 프로세스 조회는 request-file의 scanChildProcesses:true로 요청합니다. legacy getter와 modern inspection의 동일 PTY 전달, unverifiable 보존, 관측된 종료 뒤 provider 호출 거부를 macOS 격리 fake provider로 검증했습니다. 실제 SSH·paired·Linux/Windows 프로세스 조회와 모든 provider 오류 조합의 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.hasChildProcesses",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.hasChildProcesses에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 named command를 재사용합니다. 자식 프로세스 조회는 request-file의 scanChildProcesses:true로 요청합니다. legacy getter와 modern inspection의 동일 PTY 전달, unverifiable 보존, 관측된 종료 뒤 provider 호출 거부를 macOS 격리 fake provider로 검증했습니다. 실제 SSH·paired·Linux/Windows 프로세스 조회와 모든 provider 오류 조합의 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.hasChildProcesses",
+          "fingerprint": "d4cd1dc550a4c39becbd6e7f5c2f6e39b139cd8268c4b0144b0dda5bb1998468"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal inspect-process",
+      "evidencePaths": [],
+      "limitations": "기존 named command를 재사용합니다. 자식 프로세스 조회는 request-file의 scanChildProcesses:true로 요청합니다. legacy getter와 modern inspection의 동일 PTY 전달, unverifiable 보존, 관측된 종료 뒤 provider 호출 거부를 macOS 격리 fake provider로 검증했습니다. 실제 SSH·paired·Linux/Windows 프로세스 조회와 모든 provider 오류 조합의 증거는 아닙니다."
+    },
+    {
+      "id": "api.app.holdsStructuredAgentSessions",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "app-api: app.holdsStructuredAgentSessions에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/app-api.ts:app-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v7 patch 필요. 기존 desktop IPC와 같은 registry getter로 saved records 또는 pending legacy import를 읽습니다. 실제 host/store fixture의 false→true→false, record 불변, agent 미실행, old-host 단일 실패를 검증했습니다. macOS 격리 fixture이며 실제 SSH·paired·Linux/Windows·renderer 동기화 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:app.holdsStructuredAgentSessions",
+          "fingerprint": "0cad13fb53946ff51cb1e049714faac7501492fce76b7859a219f25ae1b31fe0"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent session held",
+      "evidencePaths": [],
+      "limitations": "registration-v7 patch 필요. 기존 desktop IPC와 같은 registry getter로 saved records 또는 pending legacy import를 읽습니다. 실제 host/store fixture의 false→true→false, record 불변, agent 미실행, old-host 단일 실패를 검증했습니다. macOS 격리 fixture이며 실제 SSH·paired·Linux/Windows·renderer 동기화 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.hasPty",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.hasPty에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v8 및 pty-presence-host-owner patch 필요. 기존 controller의 true/false/null 조회를 재사용하고 관측된 종료만 false로 반환합니다. 호스트 접촉 불명·provider 부재/예외 null, stale incarnation 거부, old-host 단일 실패를 검증했습니다. raw PTY ID 대신 runtime terminal handle로 대상을 지정합니다. macOS fake provider이며 실제 SSH·paired·Linux/Windows·renderer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.hasPty",
+          "fingerprint": "792d3fec72629e82b81ca1eeb4e2c5ac77b3bdb140669192efd26d6b5a386f15"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal presence",
+      "evidencePaths": [],
+      "limitations": "registration-v8 및 pty-presence-host-owner patch 필요. 기존 controller의 true/false/null 조회를 재사용하고 관측된 종료만 false로 반환합니다. 호스트 접촉 불명·provider 부재/예외 null, stale incarnation 거부, old-host 단일 실패를 검증했습니다. raw PTY ID 대신 runtime terminal handle로 대상을 지정합니다. macOS fake provider이며 실제 SSH·paired·Linux/Windows·renderer 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.signal",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.signal에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v9 및 pty-signal-host-owner patch 필요. stable runtime handle/process generation과 관측된 종료·optional expectedIncarnationId를 provider 호출 전에 확인합니다. 이름 형식 검증·provider 거부·callback 부재·old-host 단일 실패를 fake provider로 검증했습니다. accepted는 provider 호출 완료이며 실제 OS 적용·프로세스 종료 증거가 아닙니다. 기존 SSH signal wire에는 remote incarnation 필드가 없습니다. 실제 SSH·paired·Linux/Windows OS signal 증거는 없습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.signal",
+          "fingerprint": "c59ec861eb1c1add002852de2a0293d009c353dba33eb0307f5c1d5e21aa43c4"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal signal",
+      "evidencePaths": [],
+      "limitations": "registration-v9 및 pty-signal-host-owner patch 필요. stable runtime handle/process generation과 관측된 종료·optional expectedIncarnationId를 provider 호출 전에 확인합니다. 이름 형식 검증·provider 거부·callback 부재·old-host 단일 실패를 fake provider로 검증했습니다. accepted는 provider 호출 완료이며 실제 OS 적용·프로세스 종료 증거가 아닙니다. 기존 SSH signal wire에는 remote incarnation 필드가 없습니다. 실제 SSH·paired·Linux/Windows OS signal 증거는 없습니다."
+    },
+    {
+      "id": "api.pty.confirmForegroundProcess",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.confirmForegroundProcess에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "registration-v10 및 confirmed-foreground-host-owner patch 필요. 기존 RuntimePtyController confirmation callback만 사용하고 cached foreground 이름으로 대체하지 않습니다. callback 부재/null, stale incarnation, old-host 단일 실패, 조회 중 종료 후 canary 비노출을 macOS fake provider로 검증했습니다. 실제 OS foreground 재확인·SSH·paired·Linux/Windows 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.confirmForegroundProcess",
+          "fingerprint": "cdd7c1e7d92712959f1dfc82196d2d3724d9fc01dc295a89208cebf142ea1020"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal confirm-foreground",
+      "evidencePaths": [],
+      "limitations": "registration-v10 및 confirmed-foreground-host-owner patch 필요. 기존 RuntimePtyController confirmation callback만 사용하고 cached foreground 이름으로 대체하지 않습니다. callback 부재/null, stale incarnation, old-host 단일 실패, 조회 중 종료 후 canary 비노출을 macOS fake provider로 검증했습니다. 실제 OS foreground 재확인·SSH·paired·Linux/Windows 증거는 아닙니다."
+    },
+    {
+      "id": "api.app.getFloatingTerminalCwd",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "app-api: app.getFloatingTerminalCwd에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/app-api.ts:app-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A14+B~P patch 의존. Canonical trust resolver의 default/trusted/untrusted/missing 경로 및 app-owned directory 생성을 격리 fixture로 확인했습니다. 실제 사용자 profile과 OS picker는 사용하지 않았습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:app.getFloatingTerminalCwd",
+          "fingerprint": "616fb607067ad1a1c83f878c4b6ddb6a45e152b0e702fcf0eb37badc1af638a4"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal floating-cwd",
+      "evidencePaths": [],
+      "limitations": "공유 A14+B~P patch 의존. Canonical trust resolver의 default/trusted/untrusted/missing 경로 및 app-owned directory 생성을 격리 fixture로 확인했습니다. 실제 사용자 profile과 OS picker는 사용하지 않았습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "api.session.readTerminalScrollback",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: session.readTerminalScrollback에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A14+B~P patch 의존. 실제 Store snapshot의 UTF-8/512KiB replay 경계, missing null, 파일 불변을 확인했습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:session.readTerminalScrollback",
+          "fingerprint": "52d289d3851552992e4644b8ed6bb11e493c19f1c2af8bf9d6e1d738600254e4"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal saved-scrollback",
+      "evidencePaths": [],
+      "limitations": "공유 A14+B~P patch 의존. 실제 Store snapshot의 UTF-8/512KiB replay 경계, missing null, 파일 불변을 확인했습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "api.agentStatus.inferInterrupt",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-status-api: agentStatus.inferInterrupt에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A14+B~P patch 의존. 실제 hook status store의 baseline/intent/agent-type 규칙과 상태 변화를 확인했습니다. 키 전송이나 OS interrupt는 수행하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:agentStatus.inferInterrupt",
+          "fingerprint": "c0c0e74c365ae39b9d47bff3ba8c10d0b1e00c44b86f9661b68b0512127410fe"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent status infer-interrupt",
+      "evidencePaths": [],
+      "limitations": "공유 A14+B~P patch 의존. 실제 hook status store의 baseline/intent/agent-type 규칙과 상태 변화를 확인했습니다. 키 전송이나 OS interrupt는 수행하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "api.agentStatus.inferQuestionAnswered",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-status-api: agentStatus.inferQuestionAnswered에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A14+B~P patch 의존. 실제 hook status store의 질문 baseline과 permission-wait 보존을 확인했습니다. 프롬프트 응답 전송은 수행하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:agentStatus.inferQuestionAnswered",
+          "fingerprint": "b7b95dade57b546274d52400e2098a9fa5740e82b63a141bc7cd715b72d6f765"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent status infer-question-answered",
+      "evidencePaths": [],
+      "limitations": "공유 A14+B~P patch 의존. 실제 hook status store의 질문 baseline과 permission-wait 보존을 확인했습니다. 프롬프트 응답 전송은 수행하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "api.agentStatus.dropByTabPrefix",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-status-api: agentStatus.dropByTabPrefix에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A14+B~P patch 의존. 실제 hook store에서 exact-tab rows만 정리하며 observed timestamps/confirm으로 stale·incomplete·duplicate 요청을 거부합니다. UI tab/프로세스는 종료하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:agentStatus.dropByTabPrefix",
+          "fingerprint": "d9089300049f704e46b0e55a7aca5309434b9fcbead420a79d15d8d72dbfbc73"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent status retire-tab",
+      "evidencePaths": [],
+      "limitations": "공유 A14+B~P patch 의존. 실제 hook store에서 exact-tab rows만 정리하며 observed timestamps/confirm으로 stale·incomplete·duplicate 요청을 거부합니다. UI tab/프로세스는 종료하지 않습니다. macOS fixture이며 live SSH/paired·Linux/Windows·rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.getMainBufferSnapshot",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.getMainBufferSnapshot에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A15+B~Q공유 patch 필요. canonical IPC와 같은 provider-gap null, full snapshot, pending queue bound를 실제 headless/queue fixture 및 기존 IPC 회귀 검사로 확인했습니다. CLI는 종료한 대상 및 조회 중 incarnation 변경을 거부하므로 종료 후 cached snapshot 조회는 동등성 범위에 포함하지 않습니다. macOS fixture이며 actual SSH/paired, Linux/Windows/rendered viewer 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.getMainBufferSnapshot",
+          "fingerprint": "d4325d97661649fbd4e25970e44e5015bbfb0195360446910040bb938a19a72a"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal main-buffer",
+      "evidencePaths": [],
+      "limitations": "A15+B~Q공유 patch 필요. canonical IPC와 같은 provider-gap null, full snapshot, pending queue bound를 실제 headless/queue fixture 및 기존 IPC 회귀 검사로 확인했습니다. CLI는 종료한 대상 및 조회 중 incarnation 변경을 거부하므로 종료 후 cached snapshot 조회는 동등성 범위에 포함하지 않습니다. macOS fixture이며 actual SSH/paired, Linux/Windows/rendered viewer 증거는 아닙니다."
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-native-chat-NativeChatStructuredSession.NativeChatStructuredSession.control.cancelPrompt",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatStructuredSession: cancelPrompt에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:NativeChatStructuredSession",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "현재 prompt item/revision을 지정하며 stale 거부와 replay 시 cancelTurn 1회 호출을 확인했습니다. UI key 입력을 보내지 않습니다. macOS actual host/journal 및 fake adapter 증거입니다. rendered viewer·실제 provider/SSH/paired·Linux/Windows 증거는 아닙니다. 구형 UI의 capability 자동 fallback은 CLI에서 수행하지 않고 명시적 packed option ID 또는 미지원 오류를 사용합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:83f86a8a694b2f109ba4",
+          "fingerprint": "83f86a8a694b2f109ba40ba9be6016137712602e3ee890342c7856fb17e08f49"
+        },
+        {
+          "id": "control:src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:93a47ff4a85fc2df94cf",
+          "fingerprint": "93a47ff4a85fc2df94cf09753ac098db0eb4c04d3f9f95e563903ed418a1caa8"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "agent session cancel",
+      "evidencePaths": [],
+      "limitations": "현재 prompt item/revision을 지정하며 stale 거부와 replay 시 cancelTurn 1회 호출을 확인했습니다. UI key 입력을 보내지 않습니다. macOS actual host/journal 및 fake adapter 증거입니다. rendered viewer·실제 provider/SSH/paired·Linux/Windows 증거는 아닙니다. 구형 UI의 capability 자동 fallback은 CLI에서 수행하지 않고 명시적 packed option ID 또는 미지원 오류를 사용합니다."
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-native-chat-NativeChatStructuredSession.NativeChatStructuredSession.control.controller.respond",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatStructuredSession: controller.respond에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:NativeChatStructuredSession",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 approval 및 grouped structured/legacy-packed question 응답을 canonical host/journal에서 확인했습니다. 질문 답변은 성공 receipt에서 제거하고 journal에 보존합니다. macOS actual host/journal 및 fake adapter 증거입니다. rendered viewer·실제 provider/SSH/paired·Linux/Windows 증거는 아닙니다. 구형 UI의 capability 자동 fallback은 CLI에서 수행하지 않고 명시적 packed option ID 또는 미지원 오류를 사용합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:f865e983af1d590c168b",
+          "fingerprint": "f865e983af1d590c168b7cec6cc0a3fe484b4bf3adb4f5d8b7e5f99be521eba1"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "agent session respond-approval",
+      "evidencePaths": [],
+      "limitations": "기존 approval 및 grouped structured/legacy-packed question 응답을 canonical host/journal에서 확인했습니다. 질문 답변은 성공 receipt에서 제거하고 journal에 보존합니다. macOS actual host/journal 및 fake adapter 증거입니다. rendered viewer·실제 provider/SSH/paired·Linux/Windows 증거는 아닙니다. 구형 UI의 capability 자동 fallback은 CLI에서 수행하지 않고 명시적 packed option ID 또는 미지원 오류를 사용합니다.",
+      "commandUsage": "agent session respond-approval / respond-question"
+    },
+    {
+      "id": "api.pty.isCodexOnSharedServer",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.isCodexOnSharedServer에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. 기존 canonical local/non-WSL pane와 legacy shell protocol 규칙을 공유합니다. joined:false는 서버 부재 증명이 아닙니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.isCodexOnSharedServer",
+          "fingerprint": "5c21de6563859585748866c370a7f3cf2e91441e97a8dbb1ade7205a4e5cad2a"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent codex-server status",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. 기존 canonical local/non-WSL pane와 legacy shell protocol 규칙을 공유합니다. joined:false는 서버 부재 증명이 아닙니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.disableCodexSharedServerAutoStart",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.disableCodexSharedServerAutoStart에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. confirm과 주소/incarnation 확인 뒤 pane-home의 canonical binary resolver/command/readback을 사용합니다. fake child-process 경계에서 격리 config 파일 변경을 확인했습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.disableCodexSharedServerAutoStart",
+          "fingerprint": "51a0c819a8e74ac7f343d0792fbcc329a5a697822d711aae43ab52e23e4fb726"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent codex-server disable-auto-start",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. confirm과 주소/incarnation 확인 뒤 pane-home의 canonical binary resolver/command/readback을 사용합니다. fake child-process 경계에서 격리 config 파일 변경을 확인했습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.stopCodexSharedServer",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.stopCodexSharedServer에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. confirm 뒤 같은 home의 canonical stop/absence probe를 사용합니다. unknown probe는 성공으로 세지 않습니다. OS 프로세스 종료를 증명하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.stopCodexSharedServer",
+          "fingerprint": "0d60c061c0e6119bf4bb4062d1ee37cbb3602d8b18f9385dc36a818312eabc9e"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent codex-server stop",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. confirm 뒤 같은 home의 canonical stop/absence probe를 사용합니다. unknown probe는 성공으로 세지 않습니다. OS 프로세스 종료를 증명하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.preflight.detectRemoteWindowsTerminalCapabilities",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "preflight-api: preflight.detectRemoteWindowsTerminalCapabilities에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/preflight-api.ts:preflight-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. 기존 active multiplexer만 사용하고 연결 부재/disposed/old relay의 hostPlatform:null을 보존합니다. client-local probe와 새 연결을 하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:preflight.detectRemoteWindowsTerminalCapabilities",
+          "fingerprint": "94e6c9c7e84e13f29cfd879c35b02687f887dedea352c8f55aa0e41cf8aad955"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal remote-capabilities",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. 기존 active multiplexer만 사용하고 연결 부재/disposed/old relay의 hostPlatform:null을 보존합니다. client-local probe와 새 연결을 하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-native-chat-NativeChatStructuredSession.NativeChatStructuredSession.control.controller.threadGoal-.change",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "NativeChatStructuredSession: controller.threadGoal?.change에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:NativeChatStructuredSession",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. 기존 CLI set/status/clear 및 operation replay를 real host/journal로 확인했습니다. provider callback은 fixture이며 UI pending 상태·goal transition 렌더링·실제 Codex 목표 실행은 증명하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/native-chat/NativeChatStructuredSession.tsx:b8a30d98077fae538a48",
+          "fingerprint": "b8a30d98077fae538a4835d87b4586e8c5fe05eeb4f2ceddeb36eb4325e41676"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "agent session thread-goal",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. 기존 CLI set/status/clear 및 operation replay를 real host/journal로 확인했습니다. provider callback은 fixture이며 UI pending 상태·goal transition 렌더링·실제 Codex 목표 실행은 증명하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.aiVault.searchSessions",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ai-vault-api: aiVault.searchSessions에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/ai-vault-api.ts:ai-vault-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 A17+B~R 18개 patch 의존. 기존 public search CLI에서 real transcript index의 검색 결과, execution-host path filter, no-service 및 disabled 상태를 재검증했습니다. 모든 provider/검색 변형의 동등성을 주장하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:aiVault.searchSessions",
+          "fingerprint": "46ab0ead8f249a531d736e55d6f650e3241aa999bfe9d3b0e8613dd6ff40e4f3"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "search",
+      "evidencePaths": [],
+      "limitations": "공유 A17+B~R 18개 patch 의존. 기존 public search CLI에서 real transcript index의 검색 결과, execution-host path filter, no-service 및 disabled 상태를 재검증했습니다. 모든 provider/검색 변형의 동등성을 주장하지 않습니다. macOS 격리 fixture 증거이며 실제 사용자 profile, Codex binary/server, SSH/paired connection, Linux/Windows 및 rendered viewer 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.getRendererDeliveryDebugSnapshot",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.getRendererDeliveryDebugSnapshot에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A18+B~S 19개 공유 patch 의존. 실제 PtyIpcSession/wire bridge/queue의 canonical counter를 조회하며 pending text를 출력하지 않습니다. Availability 거부는 mock 경계 검증입니다. 실제 renderer/window/SSH delivery·Linux/Windows 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.getRendererDeliveryDebugSnapshot",
+          "fingerprint": "bf2c94f22084d8278669d63dae1969ce935599f5ca42e23621f22ce7649fcf9f"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal delivery-debug",
+      "evidencePaths": [],
+      "limitations": "A18+B~S 19개 공유 patch 의존. 실제 PtyIpcSession/wire bridge/queue의 canonical counter를 조회하며 pending text를 출력하지 않습니다. Availability 거부는 mock 경계 검증입니다. 실제 renderer/window/SSH delivery·Linux/Windows 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.pty.resetRendererDeliveryDebug",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.resetRendererDeliveryDebug에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A18+B~S 19개 공유 patch 의존. 명시 confirm 뒤 canonical reset callback을 사용하며 actual queue byte 보존과 current queue peak reseed를 확인했습니다. Availability 거부는 mock 경계 검증입니다. 실제 renderer/window/SSH delivery·Linux/Windows 실행 증거는 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.resetRendererDeliveryDebug",
+          "fingerprint": "930532669e546f4902f323e9dca40010be8df058a633eb779a0bf9efec351b54"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal reset-delivery-debug",
+      "evidencePaths": [],
+      "limitations": "A18+B~S 19개 공유 patch 의존. 명시 confirm 뒤 canonical reset callback을 사용하며 actual queue byte 보존과 current queue peak reseed를 확인했습니다. Availability 거부는 mock 경계 검증입니다. 실제 renderer/window/SSH delivery·Linux/Windows 실행 증거는 아닙니다."
+    },
+    {
+      "id": "api.session.get",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: session.get에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 patch A19/T가 필요합니다.macOS 격리 actual Store/SQLite 증거이며 실제 SSH/paired 연결, Linux/Windows, renderer 복원을 증명하지 않습니다. 상태 조회는 current Store이며 durability는 별도 flush barrier로 확인합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:session.get",
+          "fingerprint": "3e147424d6cec29fc16089798d90beef97e06ab50c7cb41587a8e3e010290578"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal session-state",
+      "evidencePaths": [],
+      "limitations": "공유 patch A19/T가 필요합니다.macOS 격리 actual Store/SQLite 증거이며 실제 SSH/paired 연결, Linux/Windows, renderer 복원을 증명하지 않습니다. 상태 조회는 current Store이며 durability는 별도 flush barrier로 확인합니다."
+    },
+    {
+      "id": "api.session.flush",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: session.flush에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 patch A19/T가 필요합니다.macOS 격리 actual Store/SQLite 증거이며 실제 SSH/paired 연결, Linux/Windows, renderer 복원을 증명하지 않습니다. 상태 조회는 current Store이며 durability는 별도 flush barrier로 확인합니다. SQLite durability만 증명하며 GitHub cache sidecar의 best-effort 저장은 보장하지 않습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:session.flush",
+          "fingerprint": "e58697b65051f11f4ebc688b07abf2a8f39f5eb2067bb89f86b67861d41a309c"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal flush-session",
+      "evidencePaths": [],
+      "limitations": "공유 patch A19/T가 필요합니다.macOS 격리 actual Store/SQLite 증거이며 실제 SSH/paired 연결, Linux/Windows, renderer 복원을 증명하지 않습니다. 상태 조회는 current Store이며 durability는 별도 flush barrier로 확인합니다. SQLite durability만 증명하며 GitHub cache sidecar의 best-effort 저장은 보장하지 않습니다."
+    },
+    {
+      "id": "api.hooks.createIssueCommandRunner",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-hook-api: hooks.createIssueCommandRunner에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-hook-api.ts:agent-hook-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "공유 patch A20/U가 필요합니다. macOS 격리 actual canonical runner/fs 증거이며 selector와 Git 경로 조회는 fixture입니다. 실제 실행·SSH/paired 연결·WSL·Windows는 미실증입니다. folder/SSH/nested paired는 명시 거부합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:hooks.createIssueCommandRunner",
+          "fingerprint": "0bb590476918e392114896bc45a9d7548f38c1c72527d66d838347490379f4a2"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent hooks issue-runner",
+      "evidencePaths": [],
+      "limitations": "공유 patch A20/U가 필요합니다. macOS 격리 actual canonical runner/fs 증거이며 selector와 Git 경로 조회는 fixture입니다. 실제 실행·SSH/paired 연결·WSL·Windows는 미실증입니다. folder/SSH/nested paired는 명시 거부합니다."
+    },
+    {
+      "id": "api.remoteWorkspace.get",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: remoteWorkspace.get에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:remoteWorkspace.get",
+          "fingerprint": "2bd9738c3bb53b30241a50694413215ce8f459f8b7faa3a3ef268f1d0bda5423"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent remote-workspace state",
+      "evidencePaths": [],
+      "limitations": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다."
+    },
+    {
+      "id": "api.remoteWorkspace.clientId",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: remoteWorkspace.clientId에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:remoteWorkspace.clientId",
+          "fingerprint": "3800ac82108cd9dbd1d8447855494739d100bc0033e6558f22f9aed6d8015c61"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent remote-workspace client-id",
+      "evidencePaths": [],
+      "limitations": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다."
+    },
+    {
+      "id": "api.remoteWorkspace.listEnabledConnectedTargets",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: remoteWorkspace.listEnabledConnectedTargets에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:remoteWorkspace.listEnabledConnectedTargets",
+          "fingerprint": "118cf68b4b9f24faeb21756b896db3207225ac90e48be0b1b68a8858f5bcb44c"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent remote-workspace targets",
+      "evidencePaths": [],
+      "limitations": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다."
+    },
+    {
+      "id": "api.remoteWorkspace.listConnectedClients",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: remoteWorkspace.listConnectedClients에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:remoteWorkspace.listConnectedClients",
+          "fingerprint": "47f1f650bb1e1b44513f3c15bcedcf673c24831047953afb5bbf5c24a748f1df"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent remote-workspace clients",
+      "evidencePaths": [],
+      "limitations": "A21 공유 등록 필요. macOS canonical snapshot observation cache/normalizer/presence helper와 fake SSH mux 증거이며 실제 SSH/paired 연결·Windows/Linux 미실증입니다. null snapshot 및 empty clients는 프로세스 부재 증거가 아니며 presence는 complete:false입니다."
+    },
+    {
+      "id": "api.agentStatus.reconcileEndedProcess",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "agent-status-api: agentStatus.reconcileEndedProcess에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/agent-status-api.ts:agent-status-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A22 공유 등록 및 M confirmed-foreground owner patch 필요. 실제 canonical hook store/cleanup과 fake terminal/provider foreground 증거입니다. fresh shell 확인은 background process 종료를 증명하지 않으며 실제 SSH/paired/OS process-table 및 renderer 효과 미실증입니다. Host 미상/nested paired/변경된 row 또는 incarnation은 거부합니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:agentStatus.reconcileEndedProcess",
+          "fingerprint": "f7148af64e7230b5a4c1c391c5f7544479725b49d938665a02833bff25dc14b4"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent status reconcile-ended",
+      "evidencePaths": [],
+      "limitations": "A22 공유 등록 및 M confirmed-foreground owner patch 필요. 실제 canonical hook store/cleanup과 fake terminal/provider foreground 증거입니다. fresh shell 확인은 background process 종료를 증명하지 않으며 실제 SSH/paired/OS process-table 및 renderer 효과 미실증입니다. Host 미상/nested paired/변경된 row 또는 incarnation은 거부합니다."
+    },
+    {
+      "id": "api.cache.getGitHub",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: cache.getGitHub에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A23 공유 등록과 V review-cache-host-owner patch가 필요합니다. 격리 실제 frozen Store의 canonical cache 조회 증거입니다. 저장된 PR/issue의 private 내용과 fetchedAt을 명시 출력하며 최신 provider 상태를 보증하지 않습니다. GitHub network 요청·갱신·GitLab 추정·다른 profile fallback이 없습니다. 실제 SSH/paired 및 Linux/Windows 미실증입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:cache.getGitHub",
+          "fingerprint": "cc2d5a96b2e02e90d331e15038fe6e2144cf7885420a4d4082589d9c7c87a7a8"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent workspace-cache github",
+      "evidencePaths": [],
+      "limitations": "A23 공유 등록과 V review-cache-host-owner patch가 필요합니다. 격리 실제 frozen Store의 canonical cache 조회 증거입니다. 저장된 PR/issue의 private 내용과 fetchedAt을 명시 출력하며 최신 provider 상태를 보증하지 않습니다. GitHub network 요청·갱신·GitLab 추정·다른 profile fallback이 없습니다. 실제 SSH/paired 및 Linux/Windows 미실증입니다."
+    },
+    {
+      "id": "command.orchestration-ask",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration ask에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration ask",
+          "fingerprint": "dc3fa66134d2c34eccb9aa9369acf32e163e8ae8e512e50cc8b827bb69a5309b"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration ask",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-check",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration check에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration check",
+          "fingerprint": "099f0c57caadc9a257a72fc0fc5c91ea7d336a52f26bc08005216d7a98bb18c5"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration check",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-dispatch",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration dispatch에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration dispatch",
+          "fingerprint": "c36318bade45b919b965067ad3544ed68d9cb91982e6ef8c64a3d8b2615aae9a"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration dispatch",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-dispatch-show",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration dispatch-show에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration dispatch-show",
+          "fingerprint": "7381491ee0d45637b3f46e497743dd97c9d571382ac53ffd02ccafa1aae4a607"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration dispatch-show",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-reset",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration reset에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration reset",
+          "fingerprint": "0e0770a9460256453a35d9ee355f73e9d72c28fa9f0bac1af0609df9052cb084"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration reset",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-worker-list",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-list에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-list",
+          "fingerprint": "714e5245db9ee2a9aecc90e40550909b238da232d4d6bcf33aff93304b01da3b"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-list",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-request-show",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_COMMAND_SPECS: orchestration request-show에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration.ts:ORCHESTRATION_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration request-show",
+          "fingerprint": "843666b8534209e59378dbffffba9390b5aefd8797538cd9ac170a922b5c40ce"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration request-show",
+      "evidencePaths": [],
+      "limitations": "기존 CLI/RPC/service를 재사용한 검증입니다. CLI main→mock RuntimeClient transport→실제 dispatcher/SQLite ledger를 검증했으며, 실제 socket compatibility handshake·SSH/paired·OS process·renderer 효과는 증명하지 않습니다. Mutation RED는 잘못된 RPC 연결 이름을 주입한 감도 검사이고 신규 기능의 미등록 RED가 아닙니다."
+    },
+    {
+      "id": "command.orchestration-worker-start",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-start에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-start",
+          "fingerprint": "72361c7d4ff8b93ffd98d8b3e4df6d7637fd3b0ddc101fd5874929ba5e5d64f4"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-start",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-show",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-show에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-show",
+          "fingerprint": "c217000efd154c4bd6e7e0568861f3cffeb77151b1a3b6b2fb1075ee23bee092"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-show",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-read",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-read에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-read",
+          "fingerprint": "64b867d1af0b1ae9cef562f1a3ffea62c76caa98da8a4439be65ef1cce214300"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-read",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-stop",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-stop에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-stop",
+          "fingerprint": "002f402eda38e47c18bc3f6328aec4d378968f730cc91ab4da89531b8f23de22"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-stop",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-abandon",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-abandon에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-abandon",
+          "fingerprint": "83415d7bcee5d614e7faddab9073edfbae2934a04cec977fed400738c0d62f67"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-abandon",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-retain",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-retain에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-retain",
+          "fingerprint": "c706d7a48c29535b2b2858839ee9c8f4f957419cda4935433f9f1ea7411bd8de"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-retain",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "command.orchestration-worker-release",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "ORCHESTRATION_WORKER_COMMAND_SPECS: orchestration worker-release에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/orchestration-worker-specs.ts:ORCHESTRATION_WORKER_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:orchestration worker-release",
+          "fingerprint": "d952e0cf16a6b7ebf75f404cb21b6ecd3604e65d974d8e3aa4decdf837024694"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "orchestration worker-release",
+      "evidencePaths": [],
+      "limitations": "기존 CLI main/handler→mock client transport→actual dispatcher/service/SQLite의 lifecycle 증거입니다. 생성/관측/close provider는 기존 fixture이며 실제 process나 terminal/SSH/paired/rendered UI를 시작·종료하지 않았습니다. stop_unknown exit mutation RED 감도 확인입니다."
+    },
+    {
+      "id": "api.pty.listSessions",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "pty-api: pty.listSessions에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/pty-api.ts:pty-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A24 공유 등록과 W provider-sessions-host-owner patch가 필요합니다. Canonical IPC listing/admission/ownership helper, 실제 runtime/dispatcher, fake local/SSH provider 증거입니다. 실제 SSH/paired/OS/renderer는 미실증입니다. 선택 provider 실패는 error이며 명시 diagnostic census는 기존 SSH 실패 생략 경로가 있어 항상 complete:false입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:pty.listSessions",
+          "fingerprint": "9ff635f0c0a33c2eec6381d0c50b84c2a4fd5824f3af90c428518ddab1d7b565"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal provider-sessions",
+      "evidencePaths": [],
+      "limitations": "A24 공유 등록과 W provider-sessions-host-owner patch가 필요합니다. Canonical IPC listing/admission/ownership helper, 실제 runtime/dispatcher, fake local/SSH provider 증거입니다. 실제 SSH/paired/OS/renderer는 미실증입니다. 선택 provider 실패는 error이며 명시 diagnostic census는 기존 SSH 실패 생략 경로가 있어 항상 complete:false입니다."
+    },
+    {
+      "id": "api.app.prepareTerminalStartupRestoration",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "app-api: app.prepareTerminalStartupRestoration에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/app-api.ts:app-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A25 공유 등록과 X startup-preparation-host-owner patch가 필요합니다. CLI/dispatcher/helper의 fake startup state와 실제 기존 structured startup/legacy regression 증거입니다. 준비 완료는 모든 session 복원/host 허용/renderer 반영을 보장하지 않습니다. 실제 SSH/paired/WSL/renderer 미실증이며 legacy renderer recovery는 별도입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:app.prepareTerminalStartupRestoration",
+          "fingerprint": "5dfdaf83156e93cfd6f4d3ed2673cc90168ddc58b20da5030fe972038604f049"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "terminal prepare-startup",
+      "evidencePaths": [],
+      "limitations": "A25 공유 등록과 X startup-preparation-host-owner patch가 필요합니다. CLI/dispatcher/helper의 fake startup state와 실제 기존 structured startup/legacy regression 증거입니다. 준비 완료는 모든 session 복원/host 허용/renderer 반영을 보장하지 않습니다. 실제 SSH/paired/WSL/renderer 미실증이며 legacy renderer recovery는 별도입니다."
+    },
+    {
+      "id": "api.cache.setGitHub",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "workspace-session-api: cache.setGitHub에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/preload/api/workspace-session-api.ts:workspace-session-api",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "A26 registration 및 Y review-cache-write-host-owner patch가 필요합니다. 실제 frozen Store의 memory-only setter 적용·CAS 거부 및 격리 UDS 증거입니다. durable:false이며 sidecar persistence, provider truth, renderer 반영, 실제 SSH/paired 및 Linux/Windows를 증명하지 않습니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "api:cache.setGitHub",
+          "fingerprint": "639c8b6bbeb07f45ef2d983543c22bd315a72aee3673df606559303f37b00101"
+        }
+      ],
+      "rule": "api",
+      "rationale": "Contract member ID identifies the operation; onX subscriptions remain internal to the same surface effect.",
+      "command": "agent workspace-cache set-github",
+      "evidencePaths": [],
+      "limitations": "A26 registration 및 Y review-cache-write-host-owner patch가 필요합니다. 실제 frozen Store의 memory-only setter 적용·CAS 거부 및 격리 UDS 증거입니다. durable:false이며 sidecar persistence, provider truth, renderer 반영, 실제 SSH/paired 및 Linux/Windows를 증명하지 않습니다."
+    },
+    {
+      "id": "command.terminal-switch",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "CORE_COMMAND_SPECS: terminal switch에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/cli/specs/core.ts:CORE_COMMAND_SPECS",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "실제 canonical runtime/dispatcher의 fake notifier와 격리 UDS 증거입니다. host navigated:true가 없는 경우 exit 1이며 기존 negative receipt를 보존합니다. 실제 renderer 적용/OS focus 및 live SSH/paired, Linux/Windows를 증명하지 않습니다. 공통 등록 A26+B~Y 25개 patch가 통합 의존성입니다.",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "implemented",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "command:terminal switch",
+          "fingerprint": "809bebe7adb2b1a8f7f3cf2b392897c54b3d07d5d965aa7c04e13c5439f5dedb"
+        }
+      ],
+      "rule": "command",
+      "rationale": "The declared CLI path identifies the public operation; execution evidence remains separate.",
+      "command": "terminal switch",
+      "evidencePaths": [],
+      "limitations": "실제 canonical runtime/dispatcher의 fake notifier와 격리 UDS 증거입니다. host navigated:true가 없는 경우 exit 1이며 기존 negative receipt를 보존합니다. 실제 renderer 적용/OS focus 및 live SSH/paired, Linux/Windows를 증명하지 않습니다. 공통 등록 A26+B~Y 25개 patch가 통합 의존성입니다.",
+      "commandUsage": "terminal switch (alias: terminal focus)"
+    },
+    {
+      "id": "surface.viewer-ui.src-renderer-src-components-activity-activity-scope-filter-controls.ActivityScopeFilterMenuItems.control.setAgentsVisibleHostIds",
+      "phase": 2,
+      "bundle": "viewer-ui",
+      "effect": "ActivityScopeFilterMenuItems: setAgentsVisibleHostIds에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "renderer component/store action and runtime viewer notifier; source boundary src/renderer/src/components/activity/activity-scope-filter-controls.tsx:ActivityScopeFilterMenuItems",
+      "host": "explicit viewer and its active runtime; preserve durable shared UI projection",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "Rule-classified behavior; CLI equivalence and actual effect are not yet verified",
+      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
+      "support": "gap",
+      "evidence": "unverified",
+      "sources": [],
+      "rule": "control",
+      "rationale": "Original Activity scope-reset action is preserved through resetActivityScope, which calls the same host and project setters. Support and evidence remain unchanged.",
+      "originalSources": [
+        {
+          "id": "control:src/renderer/src/components/activity/activity-scope-filter-controls.tsx:475c997cc01fa3deb183",
+          "fingerprint": "475c997cc01fa3deb183a2916eef0e421a62072d4f8e71abecdf3b454445a172"
+        }
+      ],
+      "derivedFrom": [
+        "control:src/renderer/src/components/activity/activity-scope-filter-controls.tsx:754f15464cb371280ee4"
+      ]
     }
   ]
 }

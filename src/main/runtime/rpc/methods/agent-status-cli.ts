@@ -1,15 +1,74 @@
+import { paneCacheKeyMatchesTab } from '../../../agent-hooks/server/server-status-identity'
+import { structuredAgentSessionsHeld } from '../../../native-chat/agent-session-wire/structured-agent-session-registry'
 import { defineMethod } from '../core'
 import { agentHookServer } from '../../../agent-hooks/server'
 import {
   clearMigrationUnsupportedPtysForPaneKey,
+  clearMigrationUnsupportedPtysByTabPrefix,
   getMigrationUnsupportedPtySnapshot
 } from '../../../agent-hooks/migration-unsupported-pty-state'
 import {
   AgentStatusDismissParams,
+  AgentStatusRetireTabParams,
+  AgentStatusQuestionAnsweredParams,
+  AgentStatusInterruptParams,
   AgentStatusListParams
 } from '../../../../shared/rpc-contract/agent-status-cli-params'
 
 export const AGENT_STATUS_CLI_METHODS = [
+  defineMethod({
+    name: 'agentStatus.retireTab',
+    params: AgentStatusRetireTabParams,
+    handler: ({ tabId, observedRows }) => {
+      const current = agentHookServer
+        .getStatusSnapshot()
+        .filter((row) => paneCacheKeyMatchesTab(row.paneKey, tabId))
+      const observedByPane = new Map(observedRows.map((row) => [row.paneKey, row]))
+      if (
+        current.length !== observedRows.length ||
+        current.length !== observedByPane.size ||
+        !current.every((row) => {
+          const observed = observedByPane.get(row.paneKey)
+          return (
+            observed?.receivedAt === row.receivedAt &&
+            observed.stateStartedAt === row.stateStartedAt
+          )
+        })
+      ) {
+        throw Object.assign(new Error('The tab status changed; read it again before retiring.'), {
+          code: 'agent_status_changed'
+        })
+      }
+      agentHookServer.dropStatusEntriesByTabPrefix(tabId)
+      clearMigrationUnsupportedPtysByTabPrefix(tabId)
+      return { retired: true }
+    }
+  }),
+  defineMethod({
+    name: 'agentStatus.inferInterrupt',
+    params: AgentStatusInterruptParams,
+    handler: (request) => ({
+      inferred: agentHookServer.inferInterrupt({
+        ...request,
+        baselineAgentType: request.baselineAgentType
+      })
+    })
+  }),
+  defineMethod({
+    name: 'agentStatus.inferQuestionAnswered',
+    params: AgentStatusQuestionAnsweredParams,
+    handler: (request) => ({
+      inferred: agentHookServer.inferQuestionAnswered({
+        ...request,
+        baselineAgentType: request.baselineAgentType
+      })
+    })
+  }),
+  defineMethod({
+    name: 'agentSession.held',
+    params: AgentStatusListParams,
+    handler: () => ({ held: structuredAgentSessionsHeld() })
+  }),
   defineMethod({
     name: 'agentAwake.status',
     params: AgentStatusListParams,
@@ -40,6 +99,13 @@ export const AGENT_STATUS_CLI_METHODS = [
         agentType: row.agentType,
         state: row.state,
         mainAgent: row.mainAgent,
+        observation: row.observation
+          ? {
+              authorityId: row.observation.authorityId,
+              incarnation: row.observation.incarnation,
+              revision: row.observation.revision
+            }
+          : undefined,
         receivedAt: row.receivedAt,
         evidenceObservedAt: row.evidenceObservedAt,
         stateStartedAt: row.stateStartedAt,

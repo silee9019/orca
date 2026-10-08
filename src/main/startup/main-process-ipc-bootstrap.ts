@@ -1,4 +1,5 @@
 import { setGitEnvironmentStartupBarrierForRpc } from '../runtime/rpc/methods/workspace-git-startup'
+import { prepareTerminalStartupRestoration } from './terminal-startup-restoration'
 import { ipcMain } from 'electron'
 import { recoverLegacyWorkerTerminalsForRendererStartup } from './legacy-worker-renderer-recovery'
 import { logStartupMilestone } from './startup-diagnostics'
@@ -26,11 +27,7 @@ export function registerMainProcessIpcHandlers(): void {
   setGitEnvironmentStartupBarrierForRpc(awaitGitEnvironmentStartupBarrier)
   ipcMain.handle('app:awaitGitEnvironmentStartupBarrier', awaitGitEnvironmentStartupBarrier)
   ipcMain.handle('app:prepareTerminalStartupRestoration', async () => {
-    await Promise.all([
-      state.firstWindowStartupServicesReady,
-      state.managedWslCliStartupBarrierReady
-    ])
-    await state.runtime?.prepareStructuredAgentSessionStartupRestoration()
+    await prepareTerminalStartupRestoration(state.runtime)
   })
   // Whether this runtime holds a structured chat (a saved record or one a client created here), which
   // is when the renderer has chats of this machine's to mirror. Many non-chat paths build the host.

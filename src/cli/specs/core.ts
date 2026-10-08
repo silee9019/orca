@@ -229,6 +229,9 @@ export const CORE_COMMAND_SPECS: CommandSpec[] = [
     aliases: [['terminal', 'focus']],
     summary: 'Switch to a terminal tab in the UI',
     usage: 'orca terminal switch [--terminal <handle>] [--json]',
+    notes: [
+      'Requests navigation on the execution host. Exits nonzero when host navigation is skipped, superseded or not confirmed by an older host; no local viewer fallback. The host receipt does not prove a rendered frame or OS focus.'
+    ],
     allowedFlags: [...GLOBAL_FLAGS, 'terminal'],
     examples: ['orca terminal switch --terminal term_abc123']
   },

@@ -1,3 +1,5 @@
+import { AGENT_STATUS_COMMAND_SPECS } from './agent-status'
+import { TERMINAL_HOST_DETAILS_COMMAND_SPECS } from './terminal-host-details'
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 import { STRUCTURED_AGENT_SESSION_COMMAND_SPECS } from './structured-agent-sessions'
@@ -18,6 +20,18 @@ const HISTORY_REQUEST_NOTES = [
 ]
 
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
+  ...AGENT_STATUS_COMMAND_SPECS,
+  ...TERMINAL_HOST_DETAILS_COMMAND_SPECS,
+  {
+    path: ['terminal', 'signal'],
+    summary: 'Send an explicit signal through the addressed execution provider',
+    usage: 'orca terminal signal --request-file <path|-> [--json]',
+    allowedFlags: REQUEST_FLAGS,
+    destructive: true,
+    notes: [
+      'Requires {terminal, signal, expectedIncarnationId?}. Delivery acceptance does not confirm process exit; inspect the target before retrying an uncertain result.'
+    ]
+  },
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
   {
     path: ['terminal', 'workspace-hosts'],
@@ -134,27 +148,7 @@ export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
     allowedFlags: REQUEST_FLAGS,
     notes: AGENT_LAUNCH_NOTES
   },
-  {
-    path: ['agent', 'status', 'list'],
-    summary: 'Read canonical agent status metadata without prompts or launch credentials',
-    usage: 'orca agent status list [--json]',
-    allowedFlags: [...GLOBAL_FLAGS]
-  },
-  {
-    path: ['agent', 'status', 'migration'],
-    summary: 'Read panes whose legacy identity could not be migrated',
-    usage: 'orca agent status migration [--json]',
-    allowedFlags: [...GLOBAL_FLAGS]
-  },
-  {
-    path: ['agent', 'status', 'dismiss'],
-    summary: 'Dismiss one observed status row without ending its process',
-    usage: 'orca agent status dismiss --request-file <path|-> [--json]',
-    allowedFlags: REQUEST_FLAGS,
-    notes: [
-      'Requires paneKey, receivedAt and stateStartedAt from agent status list. A changed row is refused; this action never infers process exit.'
-    ]
-  },
+
   {
     path: ['terminal', 'clear'],
     summary: 'Clear retained terminal output',

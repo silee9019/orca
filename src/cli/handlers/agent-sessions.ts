@@ -1,9 +1,22 @@
+import { agentSessionQuestionReceipt } from './agent-session-question-receipt'
+import { TerminalSignalParams } from '../../shared/rpc-contract/terminal-signal-params'
+import {
+  TerminalMainBufferParams,
+  FloatingTerminalCwdParams,
+  SavedTerminalScrollbackParams,
+  TerminalHostDetailsParams
+} from '../../shared/rpc-contract/terminal-host-details-params'
 import { TerminalSideEffectSnapshotParams } from '../../shared/rpc-contract/terminal-side-effect-snapshot-params'
 import {
   CreateAgentSessionParams,
   EnsureAgentSessionParams
 } from '../../shared/rpc-contract/agent-session-params'
-import { AgentStatusDismissParams } from '../../shared/rpc-contract/agent-status-cli-params'
+import {
+  AgentStatusDismissParams,
+  AgentStatusRetireTabParams,
+  AgentStatusQuestionAnsweredParams,
+  AgentStatusInterruptParams
+} from '../../shared/rpc-contract/agent-status-cli-params'
 import { RepoSelector } from '../../shared/rpc-contract/github-repo-target-params'
 import { RepoIssueCommandWrite } from '../../shared/rpc-contract/repo-params'
 import {
@@ -128,7 +141,11 @@ async function call(ctx: HandlerContext, method: string, params: unknown): Promi
   if (denied.success) {
     throw new RuntimeClientError(denied.data.refusal.code, denied.data.refusal.message)
   }
-  printResult(response, ctx.json, (value) => JSON.stringify(value, null, 2))
+  const output =
+    method === 'agentSession.respondToQuestion'
+      ? { ...response, result: agentSessionQuestionReceipt(response.result) }
+      : response
+  printResult(output, ctx.json, (value) => JSON.stringify(value, null, 2))
 }
 
 function request<T>(method: string, schema: z.ZodType<T>): CommandHandler {
@@ -172,10 +189,30 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent terminal ensure': request('terminal.ensureAgentSession', EnsureAgentSessionParams),
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
+  'terminal main-buffer': request('terminal.mainBufferSnapshot', TerminalMainBufferParams),
+  'terminal signal': request('terminal.signal', TerminalSignalParams),
+  'terminal confirm-foreground': request(
+    'terminal.confirmForegroundProcess',
+    TerminalHostDetailsParams
+  ),
+  'terminal presence': request('terminal.presence', TerminalHostDetailsParams),
+  'terminal size': request('terminal.size', TerminalHostDetailsParams),
+  'terminal saved-scrollback': request(
+    'session.readTerminalScrollback',
+    SavedTerminalScrollbackParams
+  ),
+  'terminal floating-cwd': request('terminal.floatingCwd', FloatingTerminalCwdParams),
+  'terminal cwd': request('terminal.cwd', TerminalHostDetailsParams),
   'terminal workspace-hosts': async (ctx) => call(ctx, 'session.listHostIds', {}),
   'terminal fit-overrides': async (ctx) => call(ctx, 'terminal.fitOverrides', {}),
   'terminal drivers': async (ctx) => call(ctx, 'terminal.drivers', {}),
   'agent awake status': async (ctx) => call(ctx, 'agentAwake.status', {}),
+  'agent status infer-interrupt': request('agentStatus.inferInterrupt', AgentStatusInterruptParams),
+  'agent status infer-question-answered': request(
+    'agentStatus.inferQuestionAnswered',
+    AgentStatusQuestionAnsweredParams
+  ),
+  'agent status retire-tab': request('agentStatus.retireTab', AgentStatusRetireTabParams),
   'agent status list': async (ctx) => call(ctx, 'agentStatus.list', {}),
   'agent status dismiss': request('agentStatus.dismiss', AgentStatusDismissParams),
   'agent status migration': async (ctx) => call(ctx, 'agentStatus.migration', {}),
@@ -188,6 +225,7 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
     AiVaultPrepareSessionResumeParams
   ),
   'agent history read': request('nativeChat.readSession', NativeChatSession),
+  'agent session held': async (ctx) => call(ctx, 'agentSession.held', {}),
   'agent session agents': async (ctx) => call(ctx, 'agentSession.agents', AgentsParams.parse({})),
   'agent session create-support': async (ctx) => {
     const parsed = CreateSupportParams.safeParse({

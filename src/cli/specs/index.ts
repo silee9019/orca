@@ -81,6 +81,16 @@ import { CARD_VIEWER_COMMAND_SPECS } from './card-viewer'
 import { STATUS_BAR_VIEWER_COMMAND_SPECS } from './status-bar-viewer'
 import { WORKSPACE_LIST_VIEWER_COMMAND_SPECS } from './workspace-list-viewer'
 import { WORKSPACE_FILTER_COMMAND_SPECS } from './workspace-filter'
+import { TERMINAL_STARTUP_RESTORATION_COMMAND_SPECS } from './terminal-startup-restoration'
+import { PTY_PROVIDER_SESSION_COMMAND_SPECS } from './pty-provider-sessions'
+import { WORKSPACE_REVIEW_CACHE_COMMAND_SPECS } from './workspace-review-cache'
+import { WORKSPACE_REVIEW_CACHE_WRITE_COMMAND_SPECS } from './workspace-review-cache-write'
+import { REMOTE_WORKSPACE_READ_COMMAND_SPECS } from './remote-workspace-read'
+import { ISSUE_COMMAND_RUNNER_COMMAND_SPECS } from './issue-command-runner'
+import { WORKSPACE_SESSION_STATE_COMMAND_SPECS } from './workspace-session-state'
+import { TERMINAL_DELIVERY_DEBUG_COMMAND_SPECS } from './terminal-delivery-debug'
+import { REMOTE_TERMINAL_CAPABILITIES_COMMAND_SPECS } from './remote-terminal-capabilities'
+import { CODEX_PANE_SHARED_SERVER_COMMAND_SPECS } from './codex-pane-shared-server'
 import type { CommandSpec } from '../args'
 import { BROWSER_SESSION_COMMAND_SPECS } from './browser-session'
 import { BROWSER_VIEWER_COMMAND_SPECS } from './browser-viewer'
@@ -197,6 +207,16 @@ export const COMMAND_SPECS: CommandSpec[] = [
   ...ACTIVITY_VIEWER_COMMAND_SPECS,
   ...WORKSPACE_LIST_VIEWER_COMMAND_SPECS,
   ...WORKSPACE_FILTER_COMMAND_SPECS,
+  ...TERMINAL_STARTUP_RESTORATION_COMMAND_SPECS,
+  ...PTY_PROVIDER_SESSION_COMMAND_SPECS,
+  ...WORKSPACE_REVIEW_CACHE_COMMAND_SPECS,
+  ...WORKSPACE_REVIEW_CACHE_WRITE_COMMAND_SPECS,
+  ...REMOTE_WORKSPACE_READ_COMMAND_SPECS,
+  ...ISSUE_COMMAND_RUNNER_COMMAND_SPECS,
+  ...WORKSPACE_SESSION_STATE_COMMAND_SPECS,
+  ...TERMINAL_DELIVERY_DEBUG_COMMAND_SPECS,
+  ...REMOTE_TERMINAL_CAPABILITIES_COMMAND_SPECS,
+  ...CODEX_PANE_SHARED_SERVER_COMMAND_SPECS,
   ...CORE_COMMAND_SPECS,
   ...AGENT_SESSION_COMMAND_SPECS,
   ...ARTIFACT_COMMAND_SPECS,

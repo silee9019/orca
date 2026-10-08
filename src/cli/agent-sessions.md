@@ -73,3 +73,33 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 `terminal side-effects --request-file <path|->`는 `{terminal}` 대상의 현재 제목 snapshot을 실행 호스트에서 읽습니다. 과거 벨·알림은 재생하지 않으며 종료가 확인된 대상은 거부합니다.
 
 `terminal workspace-hosts`는 지정한 실행 호스트의 영속화 Store에서 workspace session partition의 host ID를 읽습니다. Git 저장소가 없는 SSH folder partition도 포함하며 연결 상태를 뜻하지 않습니다. Store가 없는 호스트는 오류로 응답합니다.
+
+`terminal size`와 `terminal cwd`는 `--request-file <path|->`의 `{terminal, expectedIncarnationId?}` 대상으로 실행 provider의 크기·현재 디렉터리를 읽습니다. 조회할 수 없는 값은 null이며 로컬 호스트 값으로 대체하지 않습니다. 종료·incarnation 불일치 및 디렉터리 조회 중 대상 변경은 거부합니다.
+
+크기는 기존 UI와 같이 provider의 적용값을 우선합니다. provider가 없거나 조회에 실패하면 실행 호스트의 요청 크기 캐시를 사용하며, provider가 명시한 null은 보존합니다. 크기 응답은 프로세스 생존의 증거로 쓰지 않습니다.
+
+`orca agent session held` reads whether the execution host holds saved structured chat records or an outstanding legacy import. The query uses the same registry as desktop startup and returns only a boolean, without restoring sessions or launching an agent.
+
+`orca terminal presence --request-file <path|->` reads the addressed execution provider’s true/false/null PTY presence. A lost host connection remains null. A terminal whose exit was already observed returns false without querying a replacement process. The request may include expectedIncarnationId.
+
+`orca terminal signal --request-file <path|->` sends a named signal through the existing execution provider. The host requires a stable runtime terminal handle and checks its process generation, observed exit and optional expectedIncarnationId before dispatch. The signal name is validated; the execution provider decides which names its OS supports. An unavailable provider or rejected delivery fails. Acceptance confirms that the provider call completed; inspect or wait for actual process effects before retrying an uncertain result. Existing SSH signal transport has no remote incarnation field.
+
+`orca terminal confirm-foreground --request-file <path|->` requests fresh process identity through the existing execution provider confirmation callback. A provider without that callback returns null. Cached foreground identity is not substituted. The same terminal generation is checked before and after the asynchronous confirmation.
+
+`terminal floating-cwd --request-file <path|->` accepts `{path?, requireTrusted?}` and uses the execution host’s existing floating workspace trust policy. It can create the host’s default floating workspace directory; unavailable host policy is an error. Request files are local to the CLI, while `path` addresses the execution host.
+
+`orca terminal saved-scrollback --request-file <path|->` reads `{ref}` from the execution host’s existing profile snapshot store, including its legacy fallback. References must have the `v1-` snapshot format. The result contains private terminal text, bounded by the existing replay byte limit, or null when absent. No client disk fallback is used.
+
+`orca agent status infer-interrupt` and `infer-question-answered` accept a private request file or stdin containing the exact observed pane/status timestamps, prompt and agent type baseline. They reuse canonical hook-server inference, including stale-row, agent-specific interrupt and interactive-question gates. They return only whether status inference was applied. They do not send keyboard input, stop a process or answer a prompt.
+
+`orca agent status retire-tab --request-file <path|->` requires an explicit tab ID, `confirm:true` and its complete observed status row set (paneKey/receivedAt/stateStartedAt). The host rejects a changed set before invoking the existing tab teardown, which clears canonical rows, pane authority, aliases, caches and migration warnings and suppresses late status for the retired tab. This does not close a UI tab or stop a process.
+
+`terminal main-buffer --request-file <path|->`는 `{terminal, expectedIncarnationId?, scrollbackRows?}`를 받아 실행 호스트의 복원 snapshot과 미전달 데이터 시작 번호를 읽습니다. ANSI·scrollback은 비공개 터미널 내용을 포함합니다. provider 데이터 누락으로 authoritative snapshot을 얻지 못하거나 callback이 없으면 null을 반환하며, 종료한 대상과 조회 중 바뀐 실행 세대는 거부합니다. scrollbackRows는 기존 IPC와 같이 정수로 내림하고 0~50,000 범위로 제한합니다. 일반 terminal read의 tail과 구분됩니다.
+
+`agent session respond-question`의 성공 출력은 itemId·revision·resolution.state와 실행 fence·cursor·replay 여부만 담습니다. 자유 입력과 packed option ID는 재출력하지 않습니다. 제출한 답변을 읽으려면 명시적으로 history를 조회합니다. 호스트의 비정상 receipt도 원문을 출력하지 않고 실패합니다.
+
+`agent codex-server status --request-file <path|->`는 `{terminal, expectedIncarnationId?}`로 기존 local non-WSL pane의 공유 서버 참여 여부를 조회합니다. `joined:false`는 서버 부재의 증거가 아닙니다. `disable-auto-start`와 `stop`에는 `confirm:true`가 추가로 필요하며 그 pane의 CODEX_HOME을 공유하는 모든 클라이언트에 영향을 줍니다. 자동 시작 해제는 기존 설정 읽기 확인 뒤 성공하고, 중지는 기존 probe가 absent를 확인한 경우만 성공합니다. 접촉 불명은 실패로 반환하므로 재시도 전에 상태를 확인합니다. SSH·WSL pane은 기존 local 경계에서 거부하며 다른 호스트나 사용자의 default home으로 대체하지 않습니다.
+
+`terminal remote-capabilities --request-file <path|->`는 `{connectionId}`로 실행 호스트에 이미 연결된 SSH multiplexer의 Windows terminal capability를 조회합니다. 연결 ID는 CLI를 실행하는 컴퓨터가 아니라 지정한 Orca 실행 호스트의 것입니다. 연결을 새로 열거나 설치하지 않습니다. `hostPlatform:null`은 플랫폼 증거가 없다는 뜻이므로 함께 반환된 false를 기능 부재로 해석하지 않습니다.
+
+`terminal delivery-debug --json`은 실행 호스트 전체의 canonical renderer delivery counter와 진단 정보를 읽습니다. pending text는 포함하지 않습니다. `terminal reset-delivery-debug --request-file <path|->`는 `{confirm:true}`를 요구하며 counter를 초기화한 뒤 현재 queue로 peak를 다시 잡습니다. pending output을 버리거나 프로세스를 중지하지 않습니다. debug bridge가 설치되지 않은 호스트는 성공으로 응답하지 않습니다.

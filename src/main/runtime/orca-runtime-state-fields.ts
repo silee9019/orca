@@ -1,4 +1,5 @@
 // @ts-nocheck -- mechanically split from OrcaRuntimeService; behavior is covered by AST equivalence and characterization tests.
+import type { FloatingTerminalCwdRequest } from '../../shared/ui-chrome-types'
 import { OrcaRuntimeWithLinearCommands } from './orca-runtime-linear-commands'
 import type { ExecutionHostScope } from '../../shared/execution-host'
 import type { RuntimeStore } from './runtime-store-contract'
@@ -58,6 +59,10 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     () => this.store?.getSettings?.().machineName
   )
 
+  readonly resolveFloatingTerminalCwd:
+    | ((args?: FloatingTerminalCwdRequest) => Promise<string>)
+    | null
+
   constructor(
     store: RuntimeStore | null = null,
     stats?: StatsCollector,
@@ -66,6 +71,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
       getLocalProvider?: () => IPtyProvider
       getSshProvider?: (connectionId: string) => IPtyProvider | undefined
       prepareClaudeAuth?: PrepareClaudeAuth
+      resolveFloatingTerminalCwd?: (args?: FloatingTerminalCwdRequest) => Promise<string>
       onPtyStopped?: (ptyId: string) => void
       onTerminalAgentStatus?: (event: RuntimeTerminalAgentStatusEvent) => void
       onTerminalSideEffects?: (batch: TerminalSideEffectBatch) => void
@@ -134,6 +140,7 @@ export class OrcaRuntimeWithStateFields extends OrcaRuntimeWithLinearCommands {
     super()
     this.store = store
     this.machineName.start()
+    this.resolveFloatingTerminalCwd = deps?.resolveFloatingTerminalCwd ?? null
     this.prepareClaudeAuth = deps?.prepareClaudeAuth
     const runtime = this as RuntimeCommandSurfaceHost<this>
     installRuntimeFileCommandSurface(runtime, this.fileCommands)

@@ -1,6 +1,8 @@
+import { readMainTerminalBufferSnapshot } from '../../../runtime/terminal-main-buffer-snapshot'
 import { makePaneKey } from '../../../../shared/stable-pane-id'
 import { claimRuntimePaneCreate, makePaneSpawnReservationKey } from '../pane/spawn-reservation'
 import type { PtyRuntimeControllerDeps } from './controller-deps'
+import { listPtyProviderSessions } from '../listed-sessions'
 import { spawnPtyFromRuntimeController } from './spawn'
 import {
   killPtyFromRuntimeController,
@@ -11,12 +13,14 @@ import {
   attachPtyFromRuntimeController,
   clearBufferFromRuntimeController,
   resetInputModesFromRuntimeController,
+  sendSignalFromRuntimeController,
   confirmForegroundProcessFromRuntimeController,
   confirmShellForegroundFromRuntimeController,
   getCwdFromRuntimeController,
   getForegroundProcessFromRuntimeController,
   getRendererSerializerGenerationFromRuntimeController,
   getSizeFromRuntimeController,
+  getAppliedSizeFromRuntimeController,
   hasChildProcessesFromRuntimeController,
   hasPtyFromRuntimeController,
   hasRendererSerializerFromRuntimeController,
@@ -34,16 +38,21 @@ import {
   listProcessesWithHostScopeFromRuntimeController
 } from './inventory-operations'
 
+import { createCodexPaneSharedServerCommands } from '../../../codex/codex-pane-shared-server-commands'
+
 export function installPtyRuntimeController(deps: PtyRuntimeControllerDeps): void {
   const { runtime, adoptStablePane, requestSerializedBuffer } = deps
 
   runtime?.setPtyController({
+    codexSharedServer: createCodexPaneSharedServerCommands(deps),
     claimStablePaneCreate: (args) => {
       const paneKey = makePaneKey(args.tabId, args.leafId)
       const ownerKey = makePaneSpawnReservationKey(args.worktreeId, args.connectionId, paneKey)
       return ownerKey ? claimRuntimePaneCreate(ownerKey) : () => {}
     },
     adoptStablePane,
+    listSessions: (scope) =>
+      listPtyProviderSessions(() => deps.getLocalPtyProviderStartupPromise(), scope),
     spawn: async (args) => spawnPtyFromRuntimeController(deps, args),
     write: (ptyId, data, inputKind) => writePtyFromRuntimeController(deps, ptyId, data, inputKind),
     writeWithSettlement: (ptyId, data, inputKind) =>
@@ -55,6 +64,7 @@ export function installPtyRuntimeController(deps: PtyRuntimeControllerDeps): voi
     // attach. Attach-only and false-on-doubt: never creates or resizes.
     attach: (ptyId) => attachPtyFromRuntimeController(deps, ptyId),
     kill: (ptyId) => killPtyFromRuntimeController(deps, ptyId),
+    sendSignal: (ptyId, signal) => sendSignalFromRuntimeController(ptyId, signal),
     retireRejectedPty: (ptyId, stopConfirmed) =>
       retireRejectedPtyFromRuntimeController(deps, ptyId, stopConfirmed),
     stopAndWait: (ptyId, opts) => stopAndWaitPtyFromRuntimeController(deps, ptyId, opts),
@@ -79,6 +89,10 @@ export function installPtyRuntimeController(deps: PtyRuntimeControllerDeps): voi
       listProcessesWithHostScopeFromRuntimeController(deps, opts),
     supportsForegroundProcessEvidence: (connectionId) =>
       supportsForegroundProcessEvidenceFromRuntimeController(connectionId),
+    getMainBufferSnapshot: (ptyId, opts) =>
+      deps.pendingData
+        ? readMainTerminalBufferSnapshot(runtime, deps.pendingData, { id: ptyId, opts })
+        : Promise.resolve(null),
     serializeBuffer: (ptyId, opts) => {
       // Why: mobile xterm must start from the desktop's exact screen state/dimensions before live TUI chunks render correctly.
       return requestSerializedBuffer(ptyId, opts)
@@ -91,6 +105,7 @@ export function installPtyRuntimeController(deps: PtyRuntimeControllerDeps): voi
     waitForRendererSerializer: (ptyId, afterGeneration, timeoutMs, signal) =>
       waitForRendererSerializerFromRuntimeController(ptyId, afterGeneration, timeoutMs, signal),
     getSize: (ptyId) => getSizeFromRuntimeController(ptyId),
+    getAppliedSize: (ptyId) => getAppliedSizeFromRuntimeController(ptyId),
     resize: (ptyId, cols, rows) => resizePtyFromRuntimeController(ptyId, cols, rows)
   })
 }

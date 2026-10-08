@@ -70,7 +70,14 @@ import { PrepareCodexForWslPaneParams } from './agent-hooks-params'
 import { AgentLaunch, AgentLaunchReplay } from './agent-launch-params'
 import { AgentPermissionModeParams } from './agent-permission-mode-params'
 import { CreateAgentSessionParams, EnsureAgentSessionParams } from './agent-session-params'
-import { AgentStatusDismissParams, AgentStatusListParams } from './agent-status-cli-params'
+import {
+  AgentStatusDismissParams,
+  AgentStatusInterruptParams,
+  AgentStatusListParams,
+  AgentStatusQuestionAnsweredParams,
+  AgentStatusRetireTabParams
+} from './agent-status-cli-params'
+import { AgentStatusReconcileParams } from './agent-status-reconcile-params'
 import {
   AiVaultListSessionsParams,
   AiVaultPrepareSessionResumeParams,
@@ -202,6 +209,10 @@ import {
   SaveImageAsTempFile,
   StartImageUpload
 } from './clipboard-params'
+import {
+  CodexPaneSharedServerMutationParams,
+  CodexPaneSharedServerStatusParams
+} from './codex-pane-shared-server-params'
 import { ComputerCapabilitiesParams, ComputerPermissionsStatusParams } from './computer-params'
 import {
   Click,
@@ -398,6 +409,7 @@ import {
   HostedReviewCreationEligibility,
   HostedReviewForBranch
 } from './hosted-review-params'
+import { IssueCommandRunnerParams } from './issue-command-runner-params'
 import {
   AssignableUsers,
   Connect,
@@ -578,6 +590,12 @@ import {
   ProjectHostSetupUpdate,
   ProjectUpdate
 } from './project-runtime-params'
+import { PtyProviderSessionsParams } from './pty-provider-sessions-params'
+import {
+  RemoteWorkspaceClientsParams,
+  RemoteWorkspaceInventoryParams,
+  RemoteWorkspaceReadParams
+} from './remote-workspace-read-params'
 import {
   ProjectGroupCreate,
   ProjectGroupImportNested,
@@ -685,10 +703,21 @@ import {
   ThreadGoalParams,
   UnsubscribeParams
 } from './structured-agent-session-params'
+import {
+  TerminalDeliveryDebugReadParams,
+  TerminalDeliveryDebugResetParams
+} from './terminal-delivery-debug-params'
+import {
+  FloatingTerminalCwdParams,
+  SavedTerminalScrollbackParams,
+  TerminalMainBufferParams
+} from './terminal-host-details-params'
 import { TerminalHostInventoryParams } from './terminal-host-inventory-params'
 import { TerminalAdoptOrphans } from './terminal-orphan-params'
 import { TerminalQuickCommandsUpdate } from './terminal-quick-command-params'
 import { TerminalSideEffectSnapshotParams } from './terminal-side-effect-snapshot-params'
+import { TerminalSignalParams } from './terminal-signal-params'
+import { TerminalStartupRestorationParams } from './terminal-startup-restoration-params'
 import {
   TerminalMultiplex,
   TerminalResizeForClient,
@@ -742,6 +771,7 @@ import {
 } from './workspace-crash-report-params'
 import { WorkspaceFilterParams } from './workspace-filter-params'
 import { GitHubAccountDiagnostic, GitHubStarRequest } from './workspace-github-account-params'
+import { WorkspaceGitHubCacheWriteParams } from './workspace-github-cache'
 import {
   GitLabBranchMergeRequestLookup,
   GitLabIssueLookup,
@@ -752,6 +782,11 @@ import { JiraProjectAssignableUsers } from './workspace-jira-project-users-param
 import { WorkspaceListViewerParams } from './workspace-list-viewer-params'
 import { WorkspacePortKillParams, WorkspacePortScanParams } from './workspace-ports-params'
 import { RepoHostRefSearch, RepoHostRemoval, RepoHostReorder } from './workspace-repo-host-params'
+import { WorkspaceReviewCacheReadParams } from './workspace-review-cache-params'
+import {
+  WorkspaceSessionStateFlushParams,
+  WorkspaceSessionStateReadParams
+} from './workspace-session-state-params'
 import { DesktopVisibleWorktrees } from './workspace-visible-worktree-params'
 import { WorktreeCreate, WorktreePrefetchCreateBase } from './worktree-create-params'
 import {
@@ -838,6 +873,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentSession.createSupport': CreateSupportParams,
   'agentSession.ensure': AttachParams,
   'agentSession.handoffStatus': HandoffStatusParams,
+  'agentSession.held': AgentStatusListParams,
   'agentSession.history': HistoryParams,
   'agentSession.hold': HoldParams,
   'agentSession.modelCatalog': ModelCatalogParams,
@@ -862,8 +898,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'agentSession.threadGoal': ThreadGoalParams,
   'agentSession.unsubscribe': UnsubscribeParams,
   'agentStatus.dismiss': AgentStatusDismissParams,
+  'agentStatus.inferInterrupt': AgentStatusInterruptParams,
+  'agentStatus.inferQuestionAnswered': AgentStatusQuestionAnsweredParams,
   'agentStatus.list': AgentStatusListParams,
   'agentStatus.migration': AgentStatusListParams,
+  'agentStatus.reconcileEndedProcess': AgentStatusReconcileParams,
+  'agentStatus.retireTab': AgentStatusRetireTabParams,
   'agentTeams.prepareLaunch': AgentTeamsPrepareLaunch,
   'agentTeams.tmuxCompat': AgentTeamsTmuxCompat,
   'aiVault.deleteSession': AiVaultDeleteSessionParams,
@@ -1007,6 +1047,8 @@ export const RPC_PARAMS_BY_METHOD = {
   'browser.upload': Upload,
   'browser.viewport': Viewport,
   'browser.wait': Wait,
+  'cache.getGitHub': WorkspaceReviewCacheReadParams,
+  'cache.setGitHub': WorkspaceGitHubCacheWriteParams,
   'clipboard.abortImageUpload': AbortImageUpload,
   'clipboard.appendImageUploadChunk': AppendImageUploadChunk,
   'clipboard.commitImageUpload': CommitImageUpload,
@@ -1280,6 +1322,7 @@ export const RPC_PARAMS_BY_METHOD = {
   'gitlab.viewer': null,
   'gitlab.workItemByPath': WorkItemByPath,
   'gitlab.workItemDetails': WorkItemDetails,
+  'hooks.createIssueCommandRunner': IssueCommandRunnerParams,
   'host.gitBash.isAvailable': null,
   'host.platform': null,
   'host.pwsh.isAvailable': null,
@@ -1527,6 +1570,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'rateLimits.refreshMiniMax': null,
   'rateLimits.setPollingInterval': RateLimitPollingParams,
   'rateLimits.subscribe': null,
+  'remoteWorkspace.clientId': RemoteWorkspaceInventoryParams,
+  'remoteWorkspace.get': RemoteWorkspaceReadParams,
+  'remoteWorkspace.listConnectedClients': RemoteWorkspaceClientsParams,
+  'remoteWorkspace.listEnabledConnectedTargets': RemoteWorkspaceInventoryParams,
   'repo.add': RepoPath,
   'repo.baseRefDefault': RepoSelector,
   'repo.clone': RepoClone,
@@ -1558,7 +1605,11 @@ export const RPC_PARAMS_BY_METHOD = {
   'runtime.clientEvents.unsubscribe': ClientEventsUnsubscribeParams,
   'runtime.clientHostedBrowserRows': null,
   'search.viewer': SearchSettingsViewerParams,
+  'session.flush': WorkspaceSessionStateFlushParams,
   'session.listHostIds': TerminalHostInventoryParams,
+  'session.prepareTerminalStartupRestoration': TerminalStartupRestorationParams,
+  'session.readState': WorkspaceSessionStateReadParams,
+  'session.readTerminalScrollback': SavedTerminalScrollbackParams,
   'session.tabs.activate': ActivateTab,
   'session.tabs.close': CloseTab,
   'session.tabs.closeLifecycle': CloseLifecycleTab,
@@ -1671,21 +1722,31 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.close': TerminalHandle,
   'terminal.closeAll': TerminalCloseAll,
   'terminal.closeTab': TerminalHandle,
+  'terminal.codexSharedServerStatus': CodexPaneSharedServerStatusParams,
+  'terminal.confirmForegroundProcess': CodexPaneSharedServerStatusParams,
   'terminal.create': TerminalCreateParams,
   'terminal.createAgentSession': CreateAgentSessionParams,
+  'terminal.cwd': CodexPaneSharedServerStatusParams,
+  'terminal.deliveryDebug': TerminalDeliveryDebugReadParams,
+  'terminal.disableCodexSharedServerAutoStart': CodexPaneSharedServerMutationParams,
   'terminal.drivers': TerminalHostInventoryParams,
   'terminal.ensureAgentSession': EnsureAgentSessionParams,
   'terminal.fitOverrides': TerminalHostInventoryParams,
+  'terminal.floatingCwd': FloatingTerminalCwdParams,
   'terminal.focus': TerminalFocus,
   'terminal.getAutoRestoreFit': TerminalGetAutoRestoreFitParams,
   'terminal.getDisplayMode': TerminalHandle,
   'terminal.inspectProcess': TerminalInspectProcess,
   'terminal.isRunningAgent': TerminalHandle,
   'terminal.list': TerminalListParams,
+  'terminal.listProviderSessions': PtyProviderSessionsParams,
+  'terminal.mainBufferSnapshot': TerminalMainBufferParams,
   'terminal.multiplex': TerminalMultiplex,
+  'terminal.presence': CodexPaneSharedServerStatusParams,
   'terminal.read': TerminalRead,
   'terminal.recoverPane': TerminalRecoverPane,
   'terminal.rename': TerminalRename,
+  'terminal.resetDeliveryDebug': TerminalDeliveryDebugResetParams,
   'terminal.resetInputModes': TerminalHandle,
   'terminal.resizeForClient': TerminalResizeForClient,
   'terminal.resolveActive': TerminalResolveActive,
@@ -1698,9 +1759,12 @@ export const RPC_PARAMS_BY_METHOD = {
   'terminal.setViewerColors': TerminalSetViewerColors,
   'terminal.show': TerminalHandle,
   'terminal.sideEffectSnapshot': TerminalSideEffectSnapshotParams,
+  'terminal.signal': TerminalSignalParams,
+  'terminal.size': CodexPaneSharedServerStatusParams,
   'terminal.sleep': TerminalCloseAll,
   'terminal.split': TerminalSplit,
   'terminal.stop': TerminalCloseAll,
+  'terminal.stopCodexSharedServer': CodexPaneSharedServerMutationParams,
   'terminal.stopExact': TerminalStopExact,
   'terminal.subscribe': TerminalSubscribe,
   'terminal.unsubscribe': TerminalUnsubscribe,

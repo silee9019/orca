@@ -1,3 +1,4 @@
+import { resolveFloatingTerminalCwd } from '../ipc/floating-workspace-directory'
 import { previewGhosttyImport } from '../ghostty/index'
 import { previewWarpThemeImport } from '../warp-themes'
 import {
@@ -203,6 +204,7 @@ export function initializeMainProcessRuntime(): OrcaRuntimeService {
     // Why the same function the settings IPC handler calls: a paired client's write and a
     // local one must reconcile the scanner child through one path, or they can disagree.
     applySessionSearchSettings: applySessionSearchSettingsChange,
+    resolveFloatingTerminalCwd: (args) => resolveFloatingTerminalCwd(store, args),
     skillTransactionRecovery: state.skillTransactionRecovery
   })
   // Both desktop and headless serve own a host-local search service.

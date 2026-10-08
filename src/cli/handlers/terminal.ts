@@ -55,6 +55,9 @@ const terminalFocusHandler: CommandHandler = async ({ flags, client, cwd, json }
     terminal: await getTerminalHandle(flags, cwd, client),
     navigation: 'host'
   })
+  if (result.result.focus.navigated !== true) {
+    process.exitCode = 1
+  }
   printResult(result, json, formatTerminalFocus)
 }
 

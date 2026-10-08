@@ -1,9 +1,11 @@
+import type { MainTerminalBufferSnapshot } from './terminal-main-buffer-snapshot'
 import type {
   AgentSessionClaimedSpawnResult,
   AgentSessionExecutionClaim,
   AgentSessionSurfaceBinding
 } from '../../shared/agent-session-host-authority'
 import type { AgentProviderSessionMetadata } from '../../shared/agent-session-resume'
+import type { PtyListedSession, PtySessionListScope } from '../../shared/pty-listed-session'
 import type { TuiAgent } from '../../shared/tui-agent'
 import type { WorktreeStartupLaunch } from '../../shared/worktree/launch-types'
 import type { PtyIncarnationId } from '../../shared/pty-incarnation'
@@ -13,6 +15,7 @@ import type { PtyProviderBufferSnapshot, PtyProcessInfo, PtySpawnResult } from '
 import type { PtyProcessInspection } from '../providers/pty-process-inspection'
 import type { WriteSettlement } from '../../shared/pty-write-settlement'
 import type { TerminalInputKind } from '../../shared/terminal-input-kind'
+import type { CodexPaneSharedServerCommands } from '../codex/codex-pane-shared-server-commands'
 
 export type PtyInventoryRefreshOptions = {
   includeForegroundProcessEvidence?: boolean
@@ -20,12 +23,17 @@ export type PtyInventoryRefreshOptions = {
 }
 
 export type RuntimePtyController = {
+  getMainBufferSnapshot?(
+    ptyId: string,
+    opts?: { scrollbackRows?: number }
+  ): Promise<MainTerminalBufferSnapshot | null>
   claimStablePaneCreate?(args: {
     worktreeId: string
     connectionId: string | null
     tabId: string
     leafId: string
   }): () => void
+  codexSharedServer?: CodexPaneSharedServerCommands
   adoptStablePane?(opts: {
     cols: number
     rows: number
@@ -99,6 +107,7 @@ export type RuntimePtyController = {
     stablePaneOwner?: { handle: string; tabId: string; leafId: string }
     agentSessionEnsure?: AgentSessionClaimedSpawnResult
   }>
+  listSessions?(scope?: PtySessionListScope): Promise<PtyListedSession[]>
   write(ptyId: string, data: string, inputKind: TerminalInputKind): boolean
   /** Three-valued settlement; local providers settle synchronously. */
   writeWithSettlement?(
@@ -111,6 +120,7 @@ export type RuntimePtyController = {
    *  False on doubt (absent session, SSH-scoped id, non-daemon provider). */
   attach?(ptyId: string): Promise<boolean>
   kill(ptyId: string): boolean
+  sendSignal?(ptyId: string, signal: string): Promise<void>
   retireRejectedPty?(ptyId: string, stopConfirmed: boolean): void
   stopAndWait?(
     ptyId: string,
@@ -173,6 +183,7 @@ export type RuntimePtyController = {
     signal?: AbortSignal
   ): Promise<boolean>
   getSize?(ptyId: string): { cols: number; rows: number } | null
+  getAppliedSize?(ptyId: string): Promise<{ cols: number; rows: number } | null>
   /** False only when the owning provider proved the PTY absent; null = unknown (never a denial). */
   probePtyLiveness?(ptyId: string): Promise<boolean | null>
 }

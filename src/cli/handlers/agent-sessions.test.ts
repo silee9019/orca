@@ -1,3 +1,4 @@
+import { AGENT_STATUS_RECONCILE_HANDLERS } from './agent-status-reconcile'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -30,7 +31,23 @@ async function run(command: string, flags: Map<string, string | boolean>) {
   const call = vi.spyOn(client, 'call').mockResolvedValue({
     id: 'fixture',
     ok: true,
-    result: command === 'agent history delete' ? { outcome: 'deleted' } : { accepted: true },
+    result:
+      command === 'agent session respond-question'
+        ? {
+            ok: true,
+            value: {
+              itemId: 'prompt-1',
+              revision: 2,
+              resolution: {
+                state: 'resolved',
+                answers: [{ other: 'private fixture answer' }],
+                selectedOptionId: 'private fixture packed answer'
+              }
+            }
+          }
+        : command === 'agent history delete'
+          ? { outcome: 'deleted' }
+          : { accepted: true },
     _meta: { runtimeId: 'fixture-host' }
   })
   const handler = AGENT_SESSION_HANDLERS[command]
@@ -44,7 +61,7 @@ async function run(command: string, flags: Map<string, string | boolean>) {
 describe('agent session CLI', () => {
   it('exposes each named handler through its spec', () => {
     expect(AGENT_SESSION_COMMAND_SPECS.map((spec) => spec.path.join(' ')).sort()).toEqual(
-      Object.keys(AGENT_SESSION_HANDLERS).sort()
+      Object.keys({ ...AGENT_SESSION_HANDLERS, ...AGENT_STATUS_RECONCILE_HANDLERS }).sort()
     )
     for (const spec of AGENT_SESSION_COMMAND_SPECS) {
       const parsed = parseArgs([...spec.path, '--json'], [], AGENT_SESSION_COMMAND_SPECS)
@@ -388,3 +405,27 @@ it.each(['file', 'stdin'] as const)(
     expect(call).not.toHaveBeenCalled()
   }
 )
+
+it('rejects an invalid question receipt without printing the host response', async () => {
+  const client = new RuntimeClient(directory)
+  vi.spyOn(client, 'call').mockResolvedValue({
+    id: 'fixture',
+    ok: true,
+    result: { ok: true, value: { privateAnswer: 'private invalid receipt canary' } },
+    _meta: { runtimeId: 'fixture-host' }
+  })
+  const path = join(directory, 'question.json')
+  await writeFile(
+    path,
+    JSON.stringify({ envelope, itemId: 'prompt-1', expectedRevision: 1, optionId: 'allow' })
+  )
+  await expect(
+    AGENT_SESSION_HANDLERS['agent session respond-question']({
+      client,
+      flags: new Map([['request-file', path]]),
+      cwd: directory,
+      json: true
+    })
+  ).rejects.toMatchObject({ code: 'invalid_question_receipt' })
+  expect(console.log).not.toHaveBeenCalled()
+})

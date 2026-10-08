@@ -12,12 +12,28 @@ import {
   parseExecutionHostId,
   toSshExecutionHostId
 } from '../../shared/execution-host'
+import type { PersistedState } from '../../shared/persisted-state-types'
 import type { RuntimeTerminalSummary } from '../../shared/runtime-types'
+import type { PtyListedSession, PtySessionListScope } from '../../shared/pty-listed-session'
 import type { ResolvedWorktree } from './runtime-worktree-path-identity'
+import {
+  applyWorkspaceGitHubCache,
+  type WorkspaceGitHubCacheSnapshot
+} from './workspace-github-cache-write'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../shared/constants'
+import type { CodexPaneSharedServerCommands } from '../codex/codex-pane-shared-server-commands'
 import type { WorkspaceSessionState } from '../../shared/workspace-session-state-types'
 
+import { createWorkspaceIssueCommandRunner } from './runtime-issue-command-runner'
+import { getLocalProjectWorktreeGitOptions } from '../project-runtime-git-options'
+import { resolveSetupRunnerShell } from '../worktree-runner-script'
+import type { WorktreeSetupLaunch } from '../../shared/worktree/launch-types'
+
 export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersistedTerminalSurfaceIdentity {
+  getCodexPaneSharedServerCommands(): CodexPaneSharedServerCommands | null {
+    return this.ptyController?.codexSharedServer ?? null
+  }
+
   getRuntimeId(): string {
     return this.runtimeId
   }
@@ -51,6 +67,23 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     )
   }
 
+  async createWorkspaceIssueCommandRunner(
+    selector: string,
+    command: string
+  ): Promise<WorktreeSetupLaunch> {
+    const store = this.requireStore()
+    return createWorkspaceIssueCommandRunner(
+      {
+        resolveWorktree: (target) => this.resolveWorktreeSelector(target),
+        getRepo: (repoId) => store.getRepo(repoId),
+        getRuntimeOptions: (repo) => getLocalProjectWorktreeGitOptions(store, repo),
+        getSetupShell: () => resolveSetupRunnerShell(store.getSettings())
+      },
+      selector,
+      command
+    )
+  }
+
   syncOrchestrationFederation(runId?: string): Promise<void> {
     return this.orchestrationFederation.sync(runId)
   }
@@ -63,12 +96,33 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     return this.orchestrationFederation.syncDispatchAfterCurrent(dispatchId)
   }
 
+  readWorkspaceSessionState(hostId?: string | null): WorkspaceSessionState {
+    if (!this.store?.getWorkspaceSession) {
+      throw new Error('workspace_session_store_unavailable')
+    }
+    return this.store.getWorkspaceSession(hostId)
+  }
+
+  async flushWorkspaceSessionState(signal?: AbortSignal): Promise<void> {
+    if (!this.store?.flushPendingOrThrowAsync) {
+      throw new Error('workspace_session_flush_unavailable')
+    }
+    await this.store.flushPendingOrThrowAsync({ signal })
+  }
+
   ensureOrchestrationFederationRelay(runId?: string): void {
     this.orchestrationFederation.ensureRelay(runId)
   }
 
   stopOrchestrationFederationRelay(): void {
     this.orchestrationFederation.stopRelay()
+  }
+
+  readSavedTerminalScrollback(ref: string): string | null {
+    if (!this.store?.readTerminalScrollbackSnapshot) {
+      throw new Error('runtime_unavailable')
+    }
+    return this.store.readTerminalScrollbackSnapshot(ref)
   }
 
   getStartedAt(): number {
@@ -183,8 +237,22 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     return this.workspaceSessions.getHostId(worktreeId)
   }
 
+  applyWorkspaceGitHubCache(
+    expected: WorkspaceGitHubCacheSnapshot,
+    next: WorkspaceGitHubCacheSnapshot
+  ): { appliedInMemory: true; durable: false } {
+    return applyWorkspaceGitHubCache(this.requireStore(), expected, next)
+  }
+
   protected getWorkspaceSessionForWorktree(worktreeId: string): WorkspaceSessionState | null {
     return this.workspaceSessions.get(worktreeId)
+  }
+
+  listProviderSessions(scope?: PtySessionListScope): Promise<PtyListedSession[]> {
+    if (!this.ptyController?.listSessions) {
+      throw new Error('pty_provider_session_inventory_unavailable')
+    }
+    return this.ptyController.listSessions(scope)
   }
 
   protected getOwnWorkspaceSessionForWorktree(worktreeId: string): WorkspaceSessionState | null {
@@ -196,6 +264,13 @@ export class OrcaRuntimeWithGetRuntimeId extends OrcaRuntimeWithHasExactPersiste
     session: WorkspaceSessionState
   ): void {
     this.workspaceSessions.setForWorktree(worktreeId, session)
+  }
+
+  readWorkspaceGitHubCache(): PersistedState['githubCache'] {
+    if (!this.store?.getGitHubCache) {
+      throw new Error('workspace_review_cache_store_unavailable')
+    }
+    return this.store.getGitHubCache()
   }
 
   protected getKnownWorkspaceSessionWorktreeIds(): Set<string> {

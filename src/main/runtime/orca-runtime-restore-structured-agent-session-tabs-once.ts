@@ -224,6 +224,14 @@ export class OrcaRuntimeWithRestoreStructuredAgentSessionTabsOnce extends OrcaRu
     }
   }
 
+  async sendTerminalSignal(ptyId: string, signal: string): Promise<boolean> {
+    if (!this.ptyController?.sendSignal) {
+      return false
+    }
+    await this.ptyController.sendSignal(ptyId, signal)
+    return true
+  }
+
   async inspectTerminalProcess(
     terminalSelector: string,
     options?: { expectedIncarnationId?: string; scanChildProcesses?: boolean }

@@ -4,7 +4,7 @@ import { parseAppSshPtyId } from '../../../providers/ssh-pty-id'
 import { ptyOwnership } from '../provider/ownership-state'
 import { ptySizes } from '../delivery/visibility-state'
 import { rendererSerializerReadiness } from '../pane/serializer-state'
-import { getProviderForPty, localProvider } from '../provider/registry'
+import { getProviderForPty, localProvider, tryGetProviderForPty } from '../provider/registry'
 import { inspectPtyProviderProcess } from '../../../providers/pty-process-inspection'
 import type { PtyRuntimeControllerDeps } from './controller-deps'
 import {
@@ -126,6 +126,13 @@ export async function attachPtyFromRuntimeController(
   } catch {
     return false
   }
+}
+
+export async function sendSignalFromRuntimeController(
+  ptyId: string,
+  signal: string
+): Promise<void> {
+  await getProviderForPty(ptyId).sendSignal(ptyId, signal)
 }
 
 export async function getForegroundProcessFromRuntimeController(ptyId: string) {
@@ -273,6 +280,19 @@ export function waitForRendererSerializerFromRuntimeController(
 
 export function getSizeFromRuntimeController(ptyId: string) {
   return ptySizes.get(ptyId) ?? null
+}
+
+export async function getAppliedSizeFromRuntimeController(ptyId: string) {
+  const provider = tryGetProviderForPty(ptyId)
+  try {
+    // Provider-owned null must not become a requested size that the provider never confirmed.
+    if (provider?.getAppliedSize) {
+      return await provider.getAppliedSize(ptyId)
+    }
+  } catch {
+    // Preserve the renderer's existing fallback when a daemon or relay cannot answer.
+  }
+  return getSizeFromRuntimeController(ptyId)
 }
 
 export async function serializeProviderBufferFromRuntimeController(

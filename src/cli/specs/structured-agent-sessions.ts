@@ -13,6 +13,15 @@ const SESSION_MUTATION_NOTES = [
 
 export const STRUCTURED_AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['agent', 'session', 'held'],
+    summary: 'Check whether the execution host holds saved structured chats',
+    usage: 'orca agent session held [--json]',
+    allowedFlags: [...GLOBAL_FLAGS],
+    notes: [
+      'Reads the existing host registry, including pending legacy import, without restoring sessions or launching an agent.'
+    ]
+  },
+  {
     path: ['agent', 'session', 'agents'],
     summary: 'List agents registered on the execution host',
     usage: 'orca agent session agents [--json]',

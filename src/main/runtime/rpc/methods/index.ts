@@ -3,6 +3,18 @@ import { USAGE_METHODS } from './usage'
 import { RATE_LIMIT_METHODS } from './rate-limits'
 import { BROWSER_PROFILE_FILE_METHODS } from './browser-profile-file'
 import { BROWSER_VIEWER_METHODS } from './browser-viewer'
+import { TERMINAL_STARTUP_RESTORATION_METHODS } from './terminal-startup-restoration'
+import { PTY_PROVIDER_SESSION_METHODS } from './pty-provider-sessions'
+import { WORKSPACE_REVIEW_CACHE_METHODS } from './workspace-review-cache'
+import { WORKSPACE_REVIEW_CACHE_WRITE_METHODS } from './workspace-review-cache-write'
+import { AGENT_STATUS_RECONCILE_METHODS } from './agent-status-reconcile'
+import { REMOTE_WORKSPACE_READ_METHODS } from './remote-workspace-read'
+import { ISSUE_COMMAND_RUNNER_METHODS } from './issue-command-runner'
+import { WORKSPACE_SESSION_STATE_METHODS } from './workspace-session-state'
+import { TERMINAL_DELIVERY_DEBUG_METHODS } from './terminal-delivery-debug'
+import { CODEX_PANE_SHARED_SERVER_METHODS } from './codex-pane-shared-server'
+import { TERMINAL_SIGNAL_METHODS } from './terminal-signal'
+import { TERMINAL_HOST_DETAILS_METHODS } from './terminal-host-details'
 import { DAEMON_MANAGEMENT_METHODS } from './daemon-management'
 import { AI_VAULT_SESSION_ACTION_METHODS } from './ai-vault-session-actions'
 import { AI_VAULT_METHODS } from './ai-vault'
@@ -65,6 +77,18 @@ import { AGENT_LAUNCH_METHODS } from './agent-launch'
 // grep-point for "what methods does the RPC server expose?" — useful when
 // auditing the security boundary or wiring new CLI commands.
 const CORE_RPC_METHODS = [
+  ...TERMINAL_STARTUP_RESTORATION_METHODS,
+  ...PTY_PROVIDER_SESSION_METHODS,
+  ...WORKSPACE_REVIEW_CACHE_METHODS,
+  ...WORKSPACE_REVIEW_CACHE_WRITE_METHODS,
+  ...AGENT_STATUS_RECONCILE_METHODS,
+  ...REMOTE_WORKSPACE_READ_METHODS,
+  ...ISSUE_COMMAND_RUNNER_METHODS,
+  ...WORKSPACE_SESSION_STATE_METHODS,
+  ...TERMINAL_DELIVERY_DEBUG_METHODS,
+  ...CODEX_PANE_SHARED_SERVER_METHODS,
+  ...TERMINAL_HOST_DETAILS_METHODS,
+  ...TERMINAL_SIGNAL_METHODS,
   ...DAEMON_MANAGEMENT_METHODS,
   ...AGENT_HOOK_METHODS,
   ...AI_VAULT_METHODS,
@@ -131,4 +155,6 @@ const CORE_RPC_METHODS = [
 export const ALL_RPC_METHODS: (
   | (typeof DESKTOP_CONTROL_RPC_METHODS)[number]
   | (typeof CORE_RPC_METHODS)[number]
-)[] = [...DESKTOP_CONTROL_RPC_METHODS, ...CORE_RPC_METHODS]
+)[] = []
+ALL_RPC_METHODS.push(...DESKTOP_CONTROL_RPC_METHODS)
+ALL_RPC_METHODS.push(...CORE_RPC_METHODS)
