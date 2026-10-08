@@ -17,7 +17,8 @@ export async function dispatchLocalNativeChatStream(
       request.method !== 'agentAwake.subscribe' &&
       request.method !== 'remoteWorkspace.subscribe' &&
       request.method !== 'structuredHeld.subscribe' &&
-      request.method !== 'agentStatus.subscribe') ||
+      request.method !== 'agentStatus.subscribe' &&
+      request.method !== 'agentStatus.migrationSubscribe') ||
     !context?.stream
   ) {
     return errorResponse(

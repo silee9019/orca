@@ -2,6 +2,12 @@ import type { HandlerGroup } from './handler-group-manifest'
 
 export const AGENT_SESSION_HANDLER_GROUPS: readonly HandlerGroup[] = [
   {
+    name: 'agent-migration-watch',
+    keys: ['agent status watch-migration'],
+    load: async () =>
+      (await import('./handlers/agent-migration-watch.js')).AGENT_MIGRATION_WATCH_HANDLERS
+  },
+  {
     name: 'agent-status-watch',
     keys: ['agent status watch'],
     load: async () => (await import('./handlers/agent-status-watch.js')).AGENT_STATUS_WATCH_HANDLERS

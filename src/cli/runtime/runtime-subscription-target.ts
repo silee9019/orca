@@ -1,3 +1,4 @@
+import type { AgentMigrationSubscriptionParams } from '../../shared/rpc-contract/agent-migration-watch-params'
 import type { AgentStatusSubscriptionParams } from '../../shared/rpc-contract/agent-status-watch-params'
 import type { StructuredHeldSubscriptionParams } from '../../shared/rpc-contract/structured-held-watch-params'
 import type { RemoteWorkspaceSubscriptionParams } from '../../shared/rpc-contract/remote-workspace-watch-params'
@@ -11,6 +12,7 @@ export type StreamArgs<Params> = [
   signal: AbortSignal
 ]
 export type SubscriptionParams =
+  | AgentMigrationSubscriptionParams
   | AgentStatusSubscriptionParams
   | StructuredHeldSubscriptionParams
   | NativeChatSubscriptionParams
@@ -46,20 +48,23 @@ export function createCliRuntimeSubscriptionOptions(
 }
 
 export function resolveRuntimeEventCapability(method: RuntimeEventMethod) {
-  return method === 'agentStatus.subscribe'
-    ? 'agentStatusStreaming'
-    : method === 'structuredHeld.subscribe'
-      ? 'structuredHeldStreaming'
-      : method === 'nativeChat.subscribe'
-        ? 'nativeChatStreaming'
-        : method === 'agentAwake.subscribe'
-          ? 'agentAwakeStreaming'
-          : method === 'remoteWorkspace.subscribe'
-            ? 'remoteWorkspaceStreaming'
-            : 'terminalPresentationStreaming'
+  return method === 'agentStatus.migrationSubscribe'
+    ? 'agentStatusMigrationStreaming'
+    : method === 'agentStatus.subscribe'
+      ? 'agentStatusStreaming'
+      : method === 'structuredHeld.subscribe'
+        ? 'structuredHeldStreaming'
+        : method === 'nativeChat.subscribe'
+          ? 'nativeChatStreaming'
+          : method === 'agentAwake.subscribe'
+            ? 'agentAwakeStreaming'
+            : method === 'remoteWorkspace.subscribe'
+              ? 'remoteWorkspaceStreaming'
+              : 'terminalPresentationStreaming'
 }
 
 export type RuntimeEventMethod =
+  | 'agentStatus.migrationSubscribe'
   | 'agentStatus.subscribe'
   | 'structuredHeld.subscribe'
   | 'nativeChat.subscribe'
