@@ -1,3 +1,4 @@
+import type { StructuredAgentSessionAdapter } from '../../src/main/native-chat/agent-session-wire/structured-agent-session-adapter'
 import { AGENT_JOURNAL_THREAD_SCOPE } from '../../src/shared/agent-session-journal-types'
 import { agentJournalItemKey } from '../../src/shared/agent-session-journal-item-key'
 import { encodeAgentSessionQuestionAnswers } from '../../src/shared/agent-session-question-answer'
@@ -175,4 +176,44 @@ it('cancels only the observed prompt revision and never interrupts twice on repl
   await command('cancel', request)
   expect(process.exitCode).toBeUndefined()
   expect(hostTestState().cancelTurn).toHaveBeenCalledTimes(1)
+})
+
+it('applies set, status and clear goals once and preserves the objective in the real journal', async () => {
+  const changeGoal = vi.fn<NonNullable<StructuredAgentSessionAdapter['changeThreadGoal']>>(
+    async () => ({ ok: true })
+  )
+  hostTestState().host.deps.adapter.changeThreadGoal = changeGoal
+  const changes = [
+    { kind: 'set', objective: 'private 목표 canary' },
+    { kind: 'status', status: 'paused' },
+    { kind: 'clear' }
+  ] as const
+  for (const change of changes) {
+    const fields = { change }
+    const request = { envelope: envelope('agentSession.threadGoal', fields), ...fields }
+    vi.mocked(console.log).mockClear()
+    await command('thread-goal', request)
+    expect(process.exitCode, JSON.stringify(vi.mocked(console.log).mock.calls)).toBeUndefined()
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain('private 목표 canary')
+    await command('thread-goal', request)
+    expect(process.exitCode).toBeUndefined()
+  }
+  expect(changeGoal.mock.calls.map(([args]) => args.change)).toEqual(changes)
+  const page = await hostTestState().host.history({
+    sessionId: HOST_TEST_SESSION,
+    direction: 'tail'
+  })
+  expect(
+    page.ok &&
+      page.page.items
+        .filter((item) => item.body.kind === 'message' && item.body.sentAs === 'goal')
+        .map((item) => item.body)
+  ).toEqual([
+    {
+      kind: 'message',
+      role: 'user',
+      blocks: [{ type: 'text', text: 'private 목표 canary' }],
+      sentAs: 'goal'
+    }
+  ])
 })
