@@ -8,6 +8,7 @@ import type {
   WorkspaceListViewerResult,
   WorkspaceListViewerResponse
 } from '../../../shared/workspace-list-viewer-command'
+import { pollPersistedUi } from './persisted-ui-readback'
 import {
   readWorkspaceListCollapseControl,
   readWorkspaceListViewerView
@@ -114,22 +115,13 @@ export async function applyWorkspaceListViewerRequest(
   let ui: PersistedUIState | null = null
   let uiRead = false
   if (command.operation === 'group-toggle') {
-    // Why: the original toggle writes without an acknowledgement, so poll the host until it shows the toggled set.
-    while (stillExpected() && Date.now() < persistenceDeadline) {
-      ui = await withTimeout<PersistedUIState | null>(
-        window.api.ui.get(),
-        Math.max(0, persistenceDeadline - Date.now()),
-        null
-      )
-      uiRead = ui !== null
-      if (ui !== null && sameCollapsed(ui.collapsedGroups ?? [])) {
-        break
-      }
-      await new Promise<void>((resolve) => setTimeout(resolve, 25))
-    }
-    if (!sameRuntime()) {
-      ui = null
-    }
+    const polled = await pollPersistedUi({
+      matches: (state) => sameCollapsed(state.collapsedGroups ?? []),
+      keepWaiting: stillExpected,
+      deadline: persistenceDeadline
+    })
+    ui = sameRuntime() ? polled.ui : null
+    uiRead = polled.read
   }
   if (sameRuntime() && !uiRead) {
     ui = await withTimeout<PersistedUIState | null>(

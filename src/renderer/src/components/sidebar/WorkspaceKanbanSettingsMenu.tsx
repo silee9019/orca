@@ -122,6 +122,8 @@ export default function WorkspaceKanbanSettingsMenu({
                 <div className="flex items-center gap-1">
                   <meta.icon className={cn('size-3.5 shrink-0', meta.tone)} />
                   <ImeInput
+                    // Why: an uncontrolled field keeps its old text, and its blur would write that back over an external rename.
+                    key={status.label}
                     defaultValue={status.label}
                     onBlur={(event) => onRenameStatus(status.id, event.target.value)}
                     onKeyDown={(event) => {

@@ -21,6 +21,7 @@ export function requestRendererCommand<T extends { viewerId: number }>(
     | 'cardViewer'
     | 'statusBarViewer'
     | 'workspaceListViewer'
+    | 'workspaceBoardViewer'
     | 'activityViewer'
     | 'featureTourViewer'
     | 'setupGuideViewer'
