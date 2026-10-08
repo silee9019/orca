@@ -79,3 +79,5 @@ send·reply의 성공 응답은 메시지 ID를 포함한 영수증이며 본문
 크기는 기존 UI와 같이 provider의 적용값을 우선합니다. provider가 없거나 조회에 실패하면 실행 호스트의 요청 크기 캐시를 사용하며, provider가 명시한 null은 보존합니다. 크기 응답은 프로세스 생존의 증거로 쓰지 않습니다.
 
 `orca agent session held` reads whether the execution host holds saved structured chat records or an outstanding legacy import. The query uses the same registry as desktop startup and returns only a boolean, without restoring sessions or launching an agent.
+
+`orca terminal presence --request-file <path|->` reads the addressed execution provider’s true/false/null PTY presence. A lost host connection remains null. A terminal whose exit was already observed returns false without querying a replacement process. The request may include expectedIncarnationId.

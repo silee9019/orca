@@ -1,3 +1,4 @@
+import { TERMINAL_HOST_DETAILS_COMMAND_SPECS } from './terminal-host-details'
 import type { CommandSpec } from '../args'
 import { GLOBAL_FLAGS } from '../args'
 import { STRUCTURED_AGENT_SESSION_COMMAND_SPECS } from './structured-agent-sessions'
@@ -18,21 +19,8 @@ const HISTORY_REQUEST_NOTES = [
 ]
 
 export const AGENT_SESSION_COMMAND_SPECS: CommandSpec[] = [
+  ...TERMINAL_HOST_DETAILS_COMMAND_SPECS,
   ...STRUCTURED_AGENT_SESSION_COMMAND_SPECS,
-  {
-    path: ['terminal', 'size'],
-    summary: 'Read the addressed terminal’s current provider dimensions',
-    usage: 'orca terminal size --request-file <path|-> [--json]',
-    allowedFlags: REQUEST_FLAGS,
-    notes: ['Requires {terminal, expectedIncarnationId?}. Unknown dimensions are null.']
-  },
-  {
-    path: ['terminal', 'cwd'],
-    summary: 'Read the addressed terminal’s current execution directory',
-    usage: 'orca terminal cwd --request-file <path|-> [--json]',
-    allowedFlags: REQUEST_FLAGS,
-    notes: ['Requires {terminal, expectedIncarnationId?}. Reads the execution provider.']
-  },
   {
     path: ['terminal', 'workspace-hosts'],
     summary: 'List execution host IDs with persisted workspace session partitions',

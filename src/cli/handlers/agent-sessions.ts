@@ -173,6 +173,7 @@ export const AGENT_SESSION_HANDLERS: Record<string, CommandHandler> = {
   'agent terminal ensure': request('terminal.ensureAgentSession', EnsureAgentSessionParams),
   'agent session close': sessionRead('agentSession.close'),
   'agent session reveal': sessionRead('agentSession.reveal'),
+  'terminal presence': request('terminal.presence', TerminalHostDetailsParams),
   'terminal size': request('terminal.size', TerminalHostDetailsParams),
   'terminal cwd': request('terminal.cwd', TerminalHostDetailsParams),
   'terminal workspace-hosts': async (ctx) => call(ctx, 'session.listHostIds', {}),

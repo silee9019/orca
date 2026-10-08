@@ -124,7 +124,7 @@ it('fails against an older host without changing fit or control state', async ()
     expect(state.call).toHaveBeenCalledTimes(1)
   }
   await writeFile(join(root, 'old-host.json'), JSON.stringify({ terminal: 'fixture' }))
-  for (const name of ['side-effects', 'size', 'cwd']) {
+  for (const name of ['side-effects', 'size', 'cwd', 'presence']) {
     state.call.mockClear()
     vi.mocked(console.log).mockClear()
     await main(['terminal', name, '--request-file', join(root, 'old-host.json'), '--json'], root)
@@ -249,7 +249,8 @@ it('rejects mismatched incarnations before reading provider metadata', async () 
   )
   const sizeGetter = vi.spyOn(runtime, 'getAppliedTerminalSize')
   const cwdGetter = vi.spyOn(runtime, 'getTerminalCwd')
-  for (const name of ['size', 'cwd']) {
+  const presenceGetter = vi.spyOn(runtime, 'getTerminalPresence')
+  for (const name of ['size', 'cwd', 'presence']) {
     await main(['terminal', name, '--request-file', path, '--json'], root)
     expect(process.exitCode).toBe(1)
     expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({
@@ -259,6 +260,7 @@ it('rejects mismatched incarnations before reading provider metadata', async () 
   }
   expect(sizeGetter).not.toHaveBeenCalled()
   expect(cwdGetter).not.toHaveBeenCalled()
+  expect(presenceGetter).not.toHaveBeenCalled()
 })
 
 it('reports missing provider dimensions and CWD as unknown without using client values', async () => {
@@ -272,6 +274,7 @@ it('reports missing provider dimensions and CWD as unknown without using client 
   await writeFile(path, JSON.stringify({ terminal: handle }))
   expect(await command('size', '--request-file', path)).toEqual({ size: null })
   expect(await command('cwd', '--request-file', path)).toEqual({ cwd: null })
+  expect(await command('presence', '--request-file', path)).toEqual({ presence: null })
 })
 
 it('prefers provider-applied dimensions and preserves a provider-owned unknown', async () => {
@@ -293,4 +296,42 @@ it('prefers provider-applied dimensions and preserves a provider-owned unknown',
   expect(applied).toHaveBeenCalledWith('pty-1')
   applied.mockResolvedValueOnce(null)
   expect(await command('size', '--request-file', path)).toEqual({ size: null })
+})
+
+it('reads three-valued host PTY presence and preserves unknown contact', async () => {
+  const handle = (await runtime.listTerminals()).terminals[0].handle
+  let present: boolean | null = true
+  const hasPty = vi.fn(() => present)
+  runtime.setPtyController({
+    write: () => true,
+    kill: () => {
+      throw new Error('Unexpected kill')
+    },
+    getForegroundProcess: async () => null,
+    getSize: () => null,
+    hasPty
+  })
+  const path = join(root, 'presence.json')
+  await writeFile(path, JSON.stringify({ terminal: handle }))
+  for (const observation of [true, null, false]) {
+    present = observation
+    expect(await command('presence', '--request-file', path)).toEqual({ presence: observation })
+    expect(hasPty).toHaveBeenLastCalledWith('pty-1')
+  }
+  hasPty.mockImplementationOnce(() => {
+    throw new Error('private provider error canary')
+  })
+  expect(await command('presence', '--request-file', path)).toEqual({ presence: null })
+  expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain(
+    'private provider error canary'
+  )
+  runtime.markPtyLivenessUnverifiable('pty-1', 'Fixture SSH contact lost')
+  present = null
+  expect(await command('presence', '--request-file', path)).toEqual({ presence: null })
+  expect(runtime.getPtyLivenessVerdict('pty-1')?.status).toBe('unverifiable')
+  await runtime.onPtyExit('pty-1', 0)
+  hasPty.mockClear()
+  present = true
+  expect(await command('presence', '--request-file', path)).toEqual({ presence: false })
+  expect(hasPty).not.toHaveBeenCalled()
 })

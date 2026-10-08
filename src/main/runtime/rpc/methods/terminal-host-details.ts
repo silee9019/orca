@@ -20,6 +20,26 @@ async function resolveLiveTerminalDetailsTarget(
 
 export const TERMINAL_HOST_DETAILS_METHODS = [
   defineMethod({
+    name: 'terminal.presence',
+    params: TerminalHostDetailsParams,
+    handler: async (params, { runtime }) => {
+      const target = await runtime.showTerminal(params.terminal)
+      if (
+        !target.ptyId ||
+        (params.expectedIncarnationId !== undefined &&
+          params.expectedIncarnationId !== target.incarnationId)
+      ) {
+        throw new Error('terminal_gone')
+      }
+      return {
+        presence:
+          runtime.getPtyLivenessVerdict(target.ptyId)?.status === 'exited'
+            ? false
+            : runtime.getTerminalPresence(target.ptyId)
+      }
+    }
+  }),
+  defineMethod({
     name: 'terminal.size',
     params: TerminalHostDetailsParams,
     handler: async (params, { runtime }) => {
