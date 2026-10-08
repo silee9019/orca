@@ -8,7 +8,12 @@ export const WORKSPACE_VIEWER_GROUPS: readonly HandlerGroup[] = [
   },
   {
     name: 'setup-guide-viewer',
-    keys: ['ui setup-guide open', 'ui setup-guide select-step', 'ui setup-guide hide-sidebar'],
+    keys: [
+      'ui setup-guide open',
+      'ui setup-guide select-step',
+      'ui setup-guide hide-sidebar',
+      'ui setup-guide hide-sidebar-entry'
+    ],
     load: async () => (await import('./handlers/setup-guide-viewer.js')).SETUP_GUIDE_HANDLERS
   },
   {

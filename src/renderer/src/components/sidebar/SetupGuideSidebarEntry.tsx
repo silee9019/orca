@@ -39,6 +39,7 @@ function isSetupGuideSidebarComplete(progress: FeatureWallSetupProgress): boolea
 }
 
 export function SetupGuideSidebarEntry(): React.JSX.Element | null {
+  const menuOwner = React.useId()
   const openModal = useAppStore((s) => s.openModal)
   const activeModal = useAppStore((s) => s.activeModal)
   const persistedUIReady = useAppStore((s) => s.persistedUIReady)
@@ -81,6 +82,7 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
         <button
           type="button"
           data-contextual-tour-target="setup-guide-entry"
+          data-setup-guide-sidebar-owner={menuOwner}
           onClick={() =>
             openModal('setup-guide', {
               setupStepId: firstUnfinishedSetupStepId,
@@ -110,8 +112,8 @@ export function SetupGuideSidebarEntry(): React.JSX.Element | null {
           </span>
         </button>
       </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={handleHideSetupGuide}>
+      <ContextMenuContent data-setup-guide-sidebar-menu-owner={menuOwner}>
+        <ContextMenuItem data-setup-guide-sidebar-hide="true" onSelect={handleHideSetupGuide}>
           <EyeOff className="size-3.5" />
           {translate(
             'auto.components.sidebar.SetupGuideSidebarEntry.b0a7bfc34c',

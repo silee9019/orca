@@ -1,6 +1,15 @@
 import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const SETUP_GUIDE_COMMAND_SPECS: CommandSpec[] = [
   {
+    path: ['ui', 'setup-guide', 'hide-sidebar-entry'],
+    summary: 'Hide the sidebar checklist through its original context menu',
+    usage: 'orca ui setup-guide hide-sidebar-entry --viewer host [--json]',
+    allowedFlags: [...GLOBAL_FLAGS, 'viewer'],
+    notes: [
+      'Requires the visible sidebar checklist and no existing overlay. Opens its original context menu and selects Hide once. Already hidden entries are unavailable. Completion reports entry/menu removal and optimistic dismissal; storage remains unverified. A superseded result can follow an already executed selection, so check sidebarDismissed before retrying.'
+    ]
+  },
+  {
     path: ['ui', 'setup-guide', 'hide-sidebar'],
     summary: 'Use the open Help guide to hide its sidebar checklist',
     usage: 'orca ui setup-guide hide-sidebar --viewer host [--json]',

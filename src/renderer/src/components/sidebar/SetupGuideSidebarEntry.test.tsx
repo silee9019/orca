@@ -35,8 +35,21 @@ vi.mock('../setup-guide/use-setup-guide-progress', () => ({
 
 vi.mock('@/components/ui/context-menu', () => ({
   ContextMenu: ({ children }: { children: ReactNode }) => <>{children}</>,
-  ContextMenuContent: ({ children }: { children: ReactNode }) => <>{children}</>,
-  ContextMenuItem: ({ children }: { children: ReactNode }) => <>{children}</>,
+  ContextMenuContent: ({ children, ...props }: { children: ReactNode }) => (
+    <div {...props}>{children}</div>
+  ),
+  ContextMenuItem: ({
+    children,
+    onSelect,
+    ...props
+  }: {
+    children: ReactNode
+    onSelect?: () => void
+  }) => (
+    <div role="menuitem" onClick={onSelect} {...props}>
+      {children}
+    </div>
+  ),
   ContextMenuTrigger: ({ children }: { children: ReactNode }) => <>{children}</>
 }))
 
@@ -181,5 +194,24 @@ describe('SetupGuideSidebarEntry', () => {
     await rerender()
 
     expect(container.textContent).not.toContain('Onboarding checklist')
+  })
+
+  it('binds the trigger, menu, and hide item to one owner and hides once on select', async () => {
+    const { container } = await renderSetupGuideSidebarEntry()
+    const trigger = container.querySelector('[data-contextual-tour-target="setup-guide-entry"]')
+    const menu = container.querySelector('[data-setup-guide-sidebar-menu-owner]')
+    const item = container.querySelector<HTMLElement>('[data-setup-guide-sidebar-hide="true"]')
+
+    expect(trigger?.getAttribute('data-setup-guide-sidebar-owner')).toBeTruthy()
+    expect(menu?.getAttribute('data-setup-guide-sidebar-menu-owner')).toBe(
+      trigger?.getAttribute('data-setup-guide-sidebar-owner')
+    )
+    expect(menu?.contains(item ?? null)).toBe(true)
+
+    await act(async () => item?.click())
+
+    expect(mocks.setSetupGuideSidebarDismissed).toHaveBeenCalledTimes(1)
+    expect(mocks.setSetupGuideSidebarDismissed).toHaveBeenCalledWith(true)
+    expect(mocks.openModal).not.toHaveBeenCalled()
   })
 })
