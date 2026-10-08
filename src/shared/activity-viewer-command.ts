@@ -56,6 +56,15 @@ export const ActivityViewerResultSchema = z
     applied: z.boolean(),
     persisted: z.boolean().nullable(),
     persistedScope: ActivityViewerScopeSchema.nullable().optional(),
+    copyAction: z
+      .object({
+        paneKey: z.string(),
+        kind: openEnum(['title', 'path', 'unknown'], 'unknown'),
+        writeAcknowledged: z.boolean(),
+        verified: z.boolean()
+      })
+      .strip()
+      .optional(),
     scrollAction: z
       .object({
         requestedTop: z.number(),

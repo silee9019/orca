@@ -1,10 +1,6 @@
-import { applyActivityListScrollRequest } from './activity-list-scroll-command'
-import { applyActivityThreadListResizeRequest } from './activity-thread-list-resize-command'
-import { applyActivityPageCloseRequest } from './activity-page-close-command'
+import { applyActivityViewerDirectRequest } from './activity-viewer-direct-command'
 import { readActivityViewerCommandContext } from './activity-viewer-command-context'
-import { applyActivityGroupCollapseRequest } from './activity-group-collapse-command'
 import { applyActivityListPreferenceCommand } from './activity-list-preference-command'
-import { applyActivityNavigationRequest } from './activity-navigation-command'
 import {
   readActivityViewerPersistence,
   readActivityPersistenceWriteOutcome
@@ -53,20 +49,9 @@ export async function applyActivityViewerRequest(
 ): Promise<Omit<ActivityViewerResult, 'viewerId'>> {
   const { command, initial, localSearch, markAllRead, threadRead, completed } =
     readActivityViewerCommandContext(request)
-  if (command.operation === 'scroll') {
-    return applyActivityListScrollRequest(request, command)
-  }
-  if (command.operation === 'resize') {
-    return applyActivityThreadListResizeRequest(request, command)
-  }
-  if (command.operation === 'close') {
-    return applyActivityPageCloseRequest(request)
-  }
-  if (command.operation === 'group-toggle') {
-    return applyActivityGroupCollapseRequest(request, command)
-  }
-  if (command.operation === 'jump' || command.operation === 'select') {
-    return applyActivityNavigationRequest(request, command)
+  const direct = applyActivityViewerDirectRequest(request, command)
+  if (direct) {
+    return direct
   }
   const localOnly = localSearch || markAllRead || threadRead || completed
   if (command.operation !== 'get' && !localOnly && !window.api.ui.setWithAck) {

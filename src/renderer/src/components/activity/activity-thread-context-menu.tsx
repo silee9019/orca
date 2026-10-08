@@ -16,32 +16,9 @@ import {
   clearCompletedActivity,
   isClearableActivityThread
 } from './activity-clear-completed'
-import { activityThreadRowCopy } from './activity-thread-presentation'
+import { getActivityThreadCopyTargets, writeActivityThreadCopyTarget } from './activity-thread-copy'
+export { getActivityThreadCopyTargets } from './activity-thread-copy'
 import type { AgentPaneThread } from './activity-thread-types'
-
-type CopyTarget = { key: string; label: string; value: string }
-
-export function getActivityThreadCopyTargets(
-  thread: AgentPaneThread,
-  hasWorkspace: boolean
-): CopyTarget[] {
-  const title: CopyTarget = {
-    key: 'title',
-    label: translate('auto.components.activity.ActivityThreadContextMenu.copyTitle', 'Copy Title'),
-    value: activityThreadRowCopy(thread).taskTitle
-  }
-  // Why gated: synthetic floating/standalone worktrees have no path.
-  if (!hasWorkspace || !thread.worktree.path) {
-    return [title]
-  }
-  const path: CopyTarget = {
-    key: 'path',
-    label: translate('auto.components.activity.ActivityThreadContextMenu.copyPath', 'Copy Path'),
-    value: thread.worktree.path
-  }
-  // Same order as the workspace menu: Copy Path, then the name.
-  return [path, title]
-}
 
 /** Right-click actions for an activity row; mirrors the row's own click and hover actions. */
 export function ActivityThreadContextMenu({
@@ -159,7 +136,8 @@ function ActivityThreadSingleMenuItems({
       {getActivityThreadCopyTargets(thread, canJump).map((target) => (
         <ContextMenuItem
           key={target.key}
-          onSelect={() => void window.api.ui.writeClipboardText(target.value)}
+          data-activity-copy-kind={target.key}
+          onSelect={() => void writeActivityThreadCopyTarget(target)}
         >
           <Copy className="size-3.5" />
           {target.label}

@@ -8,6 +8,14 @@ const target = { viewer: z.literal('host'), surface: ActivityViewerSurfaceSchema
 export const ActivityViewerParams = z.discriminatedUnion('operation', [
   z.object({ ...target, operation: z.literal('get') }).strict(),
   z
+    .object({
+      ...target,
+      operation: z.literal('copy'),
+      paneKey: z.string().min(1),
+      kind: z.enum(['title', 'path'])
+    })
+    .strict(),
+  z
     .object({ ...target, operation: z.literal('scroll'), top: z.number().finite().nonnegative() })
     .strict(),
   z

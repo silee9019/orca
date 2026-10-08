@@ -43,7 +43,8 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
       viewer: getRequiredStringFlag(flags, 'viewer'),
       surface: getRequiredStringFlag(flags, 'surface'),
       operation,
-      ...(operation === 'read-toggle' ||
+      ...(operation === 'copy' ||
+      operation === 'read-toggle' ||
       operation === 'clear-thread' ||
       operation === 'jump' ||
       operation === 'select'
@@ -51,6 +52,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
         : {}),
       ...(operation === 'read-toggle-many' || operation === 'clear-threads' ? { paneKeys } : {}),
       ...(operation === 'search' ? { query } : {}),
+      ...(operation === 'copy' ? { kind: getRequiredStringFlag(flags, 'kind') } : {}),
       ...(operation === 'scroll' ? { top: Number(getRequiredStringFlag(flags, 'top')) } : {}),
       ...(operation === 'resize' ? { width: Number(getRequiredStringFlag(flags, 'width')) } : {}),
       ...(operation === 'group-toggle'
@@ -90,6 +92,7 @@ function handler(operation: ActivityViewerCommand['operation']): CommandHandler 
 }
 export const ACTIVITY_VIEWER_HANDLERS: Record<string, CommandHandler> = {
   'ui activity get': handler('get'),
+  'ui activity copy': handler('copy'),
   'ui activity close': handler('close'),
   'ui activity resize': handler('resize'),
   'ui activity scroll': handler('scroll'),
