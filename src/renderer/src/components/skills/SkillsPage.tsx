@@ -346,7 +346,7 @@ export default function SkillsPage(): React.JSX.Element {
                     setSelectedSkillIds((current) => addSelected(current, results))
                   }
                   onShare={(skill) => setShareSkills([skill])}
-                  onDelete={(skill) => void deleteFlow.requestDelete([skill])}
+                  onDelete={(skill) => deleteFlow.requestDelete([skill])}
                 />
               ) : skills.length > 0 ? (
                 <SkillsNoMatchesState onClearFilters={() => setFilters(NO_FILTERS)} />

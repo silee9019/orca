@@ -1,7 +1,7 @@
 import { useSkillsViewerDialog } from '@/runtime/skills-viewer-dialog'
 import { useSkillListViewerController } from '@/runtime/skill-list-viewer-controller'
 import type { RuntimeClientTarget } from '@/runtime/runtime-client-target'
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { translate } from '@/i18n/i18n'
 import type { DiscoveredSkill } from '../../../../shared/skills'
 import { SkillRow } from './SkillRow'
@@ -59,13 +59,20 @@ export function SkillsList({
   onSelectedChange: (skillId: string, selected: boolean) => void
   onSelectResults: (results: readonly DiscoveredSkill[]) => void
   onShare: (skill: DiscoveredSkill) => void
-  onDelete: (skill: DiscoveredSkill) => void
+  onDelete: (skill: DiscoveredSkill) => Promise<boolean> | void
 }): React.JSX.Element {
   const listRef = useRef<HTMLDivElement>(null)
   // Why: an id survives filtering; an index would silently anchor a shift-click
   // range to whatever row later landed in that slot.
   const anchorIdRef = useRef<string | null>(null)
   const [detailSkill, setDetailSkill] = useState<DiscoveredSkill | null>(null)
+  const detailTarget = useRef(target)
+  useLayoutEffect(() => {
+    if (detailTarget.current !== target) {
+      detailTarget.current = target
+      setDetailSkill(null)
+    }
+  }, [target])
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const selectedNames = selectedShareSkillNameKeys(allSkills, selectedIds)
   const focusTargetId = skills.some((skill) => skill.id === focusedId) ? focusedId : skills[0]?.id
@@ -111,6 +118,13 @@ export function SkillsList({
     }
   }
 
+  const requestDelete = (skill: DiscoveredSkill, fromDetail: boolean): Promise<boolean> | void => {
+    const operation = onDelete(skill)
+    if (fromDetail) {
+      setDetailSkill(null)
+    }
+    return operation
+  }
   useSkillsViewerDialog('detail', detailSkill !== null, false, () => setDetailSkill(null))
   useSkillListViewerController({
     target,
@@ -124,6 +138,8 @@ export function SkillsList({
     setDetailSkill,
     focusedId,
     handleSelection,
+    deleteSupported,
+    requestDelete,
     canSelect: (skill) =>
       selectionMode === 'delete'
         ? deleteSupported && isSkillDeleteEligible(skill)
@@ -171,8 +187,7 @@ export function SkillsList({
         }}
         onDelete={() => {
           if (detailSkill) {
-            onDelete(detailSkill)
-            setDetailSkill(null)
+            void requestDelete(detailSkill, true)
           }
         }}
       />
@@ -219,7 +234,7 @@ export function SkillsList({
               onOpenDetail={() => setDetailSkill(skill)}
               onSelectionChange={(selected, range) => handleSelection(index, selected, range)}
               onShare={() => onShare(skill)}
-              onDelete={() => onDelete(skill)}
+              onDelete={() => void requestDelete(skill, false)}
               onKeyDown={onListKeyDown}
             />
           )

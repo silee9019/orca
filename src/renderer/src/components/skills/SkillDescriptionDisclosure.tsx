@@ -10,12 +10,24 @@ import { isLongSkillDescription } from './skill-description-length'
  */
 export function SkillDescriptionDisclosure({
   description,
-  className
+  className,
+  expanded: controlledExpanded,
+  onExpandedChange
 }: {
   description: string | null | undefined
   className?: string
+  expanded?: boolean
+  onExpandedChange?: (value: boolean) => void
 }): React.JSX.Element | null {
-  const [expanded, setExpanded] = useState(false)
+  const [localExpanded, setLocalExpanded] = useState(false)
+  const expanded = controlledExpanded ?? localExpanded
+  const changeExpanded = (value: boolean): void => {
+    if (onExpandedChange) {
+      onExpandedChange(value)
+    } else {
+      setLocalExpanded(value)
+    }
+  }
   if (!description) {
     return null
   }
@@ -36,7 +48,7 @@ export function SkillDescriptionDisclosure({
           variant="link"
           className="h-auto p-0 text-xs font-normal text-muted-foreground no-underline hover:text-foreground hover:no-underline"
           aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
+          onClick={() => changeExpanded(!expanded)}
         >
           {expanded
             ? translate('auto.components.skills.description.showLess', 'Show less')

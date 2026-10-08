@@ -1,3 +1,4 @@
+import { setAutomationGraceDraft } from './automation-editor-field-draft'
 import { Info } from 'lucide-react'
 import {
   Select,
@@ -60,7 +61,7 @@ export function AutomationMissedRunGraceField({
         value={draft.missedRunGraceMinutes}
         disabled={disabled}
         onValueChange={(missedRunGraceMinutes) =>
-          onDraftChange((current) => ({ ...current, missedRunGraceMinutes }))
+          onDraftChange((current) => setAutomationGraceDraft(current, missedRunGraceMinutes))
         }
       >
         <SelectTrigger className={`w-full ${pickerTriggerClassName}`}>

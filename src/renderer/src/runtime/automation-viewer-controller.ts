@@ -1,65 +1,17 @@
+import {
+  automationViewerSnapshot as snapshot,
+  type AutomationViewerPage as Page,
+  type AutomationViewerState as ViewerState
+} from './automation-page-viewer-state'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { AutomationViewerAction } from '../../../shared/automation-viewer-command'
 import { AutomationViewerActionSchema } from '../../../shared/automation-viewer-command'
-import type { AutomationsPageLocalState } from '../components/automations/use-automations-page-local-state'
-import type { AutomationsPageListState } from '../components/automations/use-automations-page-list-state'
+import { applyAutomationEditorViewerAction } from './automation-editor-viewer-controller'
 import {
   EMPTY_AUTOMATION_LIST_FILTER,
   nextAutomationListSort
 } from '../components/automations/automation-list-view'
 
-type Page = {
-  local: Pick<
-    AutomationsPageLocalState,
-    | 'listSearchQuery'
-    | 'setListSearchQuery'
-    | 'listFilter'
-    | 'listSort'
-    | 'setListSort'
-    | 'selectedExternalKey'
-    | 'selectExternalKey'
-    | 'isDetailOpen'
-    | 'setIsDetailOpen'
-    | 'activePaneTab'
-    | 'setActivePaneTab'
-    | 'pageView'
-    | 'setPageView'
-    | 'showAutomationsList'
-    | 'showRunsDashboard'
-    | 'showAutomationDetails'
-  >
-  list: Pick<
-    AutomationsPageListState,
-    | 'hostCatalog'
-    | 'searchSettled'
-    | 'searchCounts'
-    | 'selectedRow'
-    | 'selectedExternal'
-    | 'filteredRows'
-    | 'filteredExternalAutomationEntries'
-    | 'sortedListItems'
-    | 'selectAutomationRow'
-    | 'changeListFilter'
-  >
-}
-function snapshot({ local, list }: Page) {
-  return {
-    viewer: 'desktop' as const,
-    committed: true as const,
-    query: local.listSearchQuery,
-    filter: local.listFilter,
-    sort: local.listSort,
-    searchSettled: list.searchSettled,
-    visibleRowKeys: list.sortedListItems.map((item) => item.id),
-    selectedRowKey: list.selectedRow?.key ?? null,
-    selectedExternalKey: list.selectedExternal?.key ?? null,
-    detailOpen: local.isDetailOpen,
-    tab: local.activePaneTab,
-    view: local.pageView,
-    hostKeys: list.hostCatalog.entries.map((entry) => entry.stableKey)
-  }
-}
-type ViewerState = ReturnType<typeof snapshot>
 type Control = (action: AutomationViewerAction) => Promise<ViewerState>
 const mountedViewers = new Set<Control>()
 
@@ -85,12 +37,13 @@ export function useAutomationViewerController(page: Page): void {
   })
   const pending = useRef<{
     action: AutomationViewerAction
+    ready: boolean
     resolve: (state: ViewerState) => void
     reject: (error: Error) => void
   } | null>(null)
   useEffect(() => {
     const request = pending.current
-    if (!request || !page.list.searchSettled) {
+    if (!request || !request.ready || !page.list.searchSettled) {
       return
     }
     const state = snapshot(page)
@@ -104,6 +57,19 @@ export function useAutomationViewerController(page: Page): void {
     pending.current = null
     const action = request.action
     if (
+      ((action.kind === 'editor-create' || action.kind === 'editor-edit') && !state.editor.open) ||
+      (action.kind === 'editor-edit' &&
+        action.source === 'local' &&
+        state.editor.rowKey !== action.rowKey) ||
+      (action.kind === 'editor-edit' &&
+        action.source === 'external' &&
+        !page.list.filteredExternalAutomationEntries.some(
+          (entry) =>
+            entry.key === action.rowKey &&
+            entry.job === page.local.editingExternalTarget?.job &&
+            entry.manager === page.local.editingExternalTarget?.manager &&
+            entry.scope === page.local.editingExternalTarget?.scope
+        )) ||
       (action.kind === 'query' && state.query !== action.value) ||
       (action.kind === 'select' &&
         (action.source === 'local' ? state.selectedRowKey : state.selectedExternalKey) !==
@@ -116,12 +82,31 @@ export function useAutomationViewerController(page: Page): void {
   })
   useEffect(() => {
     const control: Control = async (action) => {
-      const { local, list } = latest.current
+      const { local, list, listNavigation, editorActions, destination } = latest.current
       if (action.kind === 'get') {
         return snapshot(latest.current)
       }
+      if (action.kind === 'editor-form') {
+        if (pending.current) {
+          throw new Error('viewer_busy')
+        }
+        if (!local.createOpen || local.deleteTarget || local.externalDeleteTarget) {
+          throw new Error('viewer_unavailable')
+        }
+        const editorForm = await applyAutomationEditorViewerAction(action.action)
+        return { ...snapshot(latest.current), editorForm }
+      }
+      if (local.createOpen || local.deleteTarget || local.externalDeleteTarget) {
+        throw new Error('viewer_modal_open')
+      }
       if (pending.current) {
         throw new Error('viewer_busy')
+      }
+      if (action.kind === 'list-navigation' && !listNavigation.current) {
+        throw new Error('viewer_unavailable')
+      }
+      if (action.kind === 'editor-create' && !destination.canCreateAutomation) {
+        throw new Error('automation_create_unavailable')
       }
       if (
         action.kind === 'filter' &&
@@ -132,16 +117,74 @@ export function useAutomationViewerController(page: Page): void {
         throw new Error('automation_host_not_loaded')
       }
       if (
-        action.kind === 'select' &&
+        (action.kind === 'select' || action.kind === 'editor-edit') &&
         !(action.source === 'local'
           ? list.filteredRows.some((row) => row.key === action.rowKey)
           : list.filteredExternalAutomationEntries.some((entry) => entry.key === action.rowKey))
       ) {
         throw new Error('automation_row_not_visible')
       }
+      const editRow =
+        action.kind === 'editor-edit' && action.source === 'local'
+          ? list.filteredRows.find((row) => row.key === action.rowKey)
+          : null
+      if (editRow && !destination.isAutomationRowActionEnabled(editRow, 'edit')) {
+        throw new Error('automation_edit_unavailable')
+      }
+      const editExternal =
+        action.kind === 'editor-edit' && action.source === 'external'
+          ? list.filteredExternalAutomationEntries.find((entry) => entry.key === action.rowKey)
+          : null
+      if (
+        editExternal &&
+        (editExternal.manager.provider !== 'hermes' ||
+          !editExternal.manager.canManage ||
+          local.externalActionKey !== null)
+      ) {
+        throw new Error('automation_edit_unavailable')
+      }
       return new Promise((resolve, reject) => {
-        pending.current = { action, resolve, reject }
+        const request = { action, resolve, reject, ready: action.kind !== 'editor-edit' }
+        pending.current = request
         switch (action.kind) {
+          case 'editor-create':
+            editorActions.openCreateDialog()
+            break
+          case 'editor-edit': {
+            const operation = editRow
+              ? editorActions.openEditDialog(editRow)
+              : editExternal
+                ? editorActions.openEditExternalDialog(
+                    editExternal.manager,
+                    editExternal.job,
+                    editExternal.scope
+                  )
+                : undefined
+            void Promise.resolve(operation).then(
+              () => {
+                if (pending.current !== request) {
+                  return
+                }
+                request.ready = true
+                setRevision((value) => value + 1)
+              },
+              (error: unknown) => {
+                if (pending.current !== request) {
+                  return
+                }
+                pending.current = null
+                reject(error instanceof Error ? error : new Error('automation_editor_open_failed'))
+              }
+            )
+            break
+          }
+          case 'list-navigation':
+            if (action.action === 'activate') {
+              listNavigation.current?.activate()
+            } else {
+              listNavigation.current?.move(action.action === 'next' ? 'ArrowDown' : 'ArrowUp')
+            }
+            break
           case 'navigate':
             if (action.value === 'list') {
               local.showAutomationsList()

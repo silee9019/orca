@@ -7,12 +7,16 @@ import {
   SelectValue
 } from '@/components/ui/select'
 import type { AutomationSchedulePreset } from '../../../../shared/automations-types'
-import { buildAutomationCronSchedule } from '../../../../shared/automation-schedule-occurrences'
 import { isValidAutomationSchedule } from '../../../../shared/automation-schedule-parsing'
 import type { AutomationDraft } from './AutomationEditorDialog'
 import { AutomationCustomCronPanel } from './AutomationCustomCronPanel'
 import { acceptsAutomationDraftSchedule } from './automation-schedule-input-gate'
-import { AutomationTimeField, parseAutomationTime } from './AutomationTimeField'
+import { AutomationTimeField } from './AutomationTimeField'
+import {
+  setAutomationSchedulePresetDraft,
+  setAutomationScheduleWeekdayDraft
+} from './automation-schedule-draft'
+export { getSchedulePresetDraft } from './automation-schedule-draft'
 import { Field } from './automation-page-parts'
 import { translate } from '@/i18n/i18n'
 import { getUiWeekdayNames } from '@/i18n/weekday-names'
@@ -34,34 +38,6 @@ export function getAutomationSchedulePresetLabel([, fallbackLabel, labelKey]: re
   string
 ]): string {
   return translate(labelKey, fallbackLabel)
-}
-
-function buildCustomScheduleSeed(draft: AutomationDraft): string {
-  const existing = draft.customSchedule.trim()
-  if (existing) {
-    return draft.customSchedule
-  }
-  if (draft.preset === 'custom') {
-    return ''
-  }
-  const { hour, minute } = parseAutomationTime(draft.time)
-  return buildAutomationCronSchedule({
-    preset: draft.preset,
-    hour,
-    minute,
-    dayOfWeek: Number(draft.dayOfWeek)
-  })
-}
-
-export function getSchedulePresetDraft(
-  current: AutomationDraft,
-  preset: AutomationSchedulePreset
-): Pick<AutomationDraft, 'preset' | 'customSchedule' | 'scheduleWarning'> {
-  return {
-    preset,
-    customSchedule: preset === 'custom' ? buildCustomScheduleSeed(current) : current.customSchedule,
-    scheduleWarning: null
-  }
 }
 
 export function AutomationSchedulePicker({
@@ -98,11 +74,13 @@ export function AutomationSchedulePicker({
     <div className="grid gap-3">
       <Select
         value={draft.preset}
-        onValueChange={(preset) =>
-          onDraftChange((current) => ({
-            ...current,
-            ...getSchedulePresetDraft(current, preset as AutomationSchedulePreset)
-          }))
+        onValueChange={(value) =>
+          onDraftChange((current) => {
+            const preset = AUTOMATION_SCHEDULE_PRESET_OPTIONS.find(
+              ([preset]) => preset === value
+            )?.[0]
+            return preset ? setAutomationSchedulePresetDraft(current, preset) : current
+          })
         }
       >
         <SelectTrigger
@@ -141,7 +119,7 @@ export function AutomationSchedulePicker({
               <Select
                 value={draft.dayOfWeek}
                 onValueChange={(dayOfWeek) =>
-                  onDraftChange((current) => ({ ...current, dayOfWeek, scheduleWarning: null }))
+                  onDraftChange((current) => setAutomationScheduleWeekdayDraft(current, dayOfWeek))
                 }
               >
                 <SelectTrigger className={cn('w-full min-w-0', FIELD_CONTROL_CLASS)}>

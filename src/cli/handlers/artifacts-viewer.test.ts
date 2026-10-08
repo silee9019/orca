@@ -50,6 +50,89 @@ it.each([
         action
       })
       call.mockClear()
+      if (command === 'automations') {
+        for (const leaf of [
+          {
+            kind: 'project',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            projectId: 'repo-2'
+          },
+          { kind: 'agent', reviewedTarget: '00000000-0000-4000-8000-000000000001', value: 'codex' },
+          {
+            kind: 'setup-form',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            action: {
+              kind: 'decision',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              value: 'skip'
+            }
+          }
+        ]) {
+          const action = { kind: 'editor-form', action: leaf }
+          await writeFile(file, JSON.stringify(action))
+          await expect(
+            dispatch(parsed.commandPath, { ...context, flags: parsed.flags })
+          ).rejects.toThrow('unknown method')
+          expect(call).toHaveBeenCalledExactlyOnceWith(method, { viewer: 'desktop', action })
+          call.mockClear()
+        }
+        for (const leaf of [
+          {
+            kind: 'project',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            projectId: ''
+          },
+          {
+            kind: 'agent',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            value: 'arbitrary-provider'
+          },
+          {
+            kind: 'setup-form',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            action: {
+              kind: 'decision',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              value: 'ask'
+            }
+          }
+        ]) {
+          await writeFile(file, JSON.stringify({ kind: 'editor-form', action: leaf }))
+          await expect(handlers[`${command} viewer`]!(context)).rejects.toMatchObject({
+            code: 'invalid_argument'
+          })
+          expect(call).not.toHaveBeenCalled()
+        }
+        const action = {
+          kind: 'editor-form',
+          action: {
+            kind: 'workspace-form',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            action: {
+              kind: 'mode',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              value: 'new_per_run'
+            }
+          }
+        }
+        await writeFile(file, JSON.stringify(action))
+        await expect(
+          dispatch(parsed.commandPath, { ...context, flags: parsed.flags })
+        ).rejects.toThrow('unknown method')
+        expect(call).toHaveBeenCalledExactlyOnceWith(method, { viewer: 'desktop', action })
+        call.mockClear()
+        await writeFile(
+          file,
+          JSON.stringify({
+            ...action,
+            action: { ...action.action, action: { ...action.action.action, value: 'unknown' } }
+          })
+        )
+        await expect(handlers[`${command} viewer`]!(context)).rejects.toMatchObject({
+          code: 'invalid_argument'
+        })
+        expect(call).not.toHaveBeenCalled()
+      }
       if (command === 'skills') {
         for (const action of [
           { kind: 'close' },
@@ -327,6 +410,171 @@ it.each([
           expect(call).not.toHaveBeenCalled()
         }
       }
+      if (command === 'automations') {
+        for (const action of [
+          ...['next', 'previous', 'activate'].map((value) => ({
+            kind: 'list-navigation',
+            action: value
+          })),
+          { kind: 'editor-create' },
+          { kind: 'editor-form', action: { kind: 'get' } },
+          ...[
+            { kind: 'get' },
+            {
+              kind: 'input',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'hour',
+              value: '9x9'
+            },
+            {
+              kind: 'step',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'minute',
+              delta: -1
+            },
+            {
+              kind: 'commit',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'minute'
+            },
+            { kind: 'period', reviewedTarget: '00000000-0000-4000-8000-000000000002' }
+          ].map((action) => ({
+            kind: 'editor-form',
+            action: {
+              kind: 'time-form',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              action
+            }
+          })),
+          ...[
+            { kind: 'schedule-preset', value: 'custom' },
+            { kind: 'schedule-weekday', value: '6' },
+            { kind: 'schedule-cron', value: '*' },
+            { kind: 'session', value: 'reuse' },
+            { kind: 'session', value: 'fresh' },
+            { kind: 'missed-run-grace', value: '1440' },
+            { kind: 'precheck-command', value: 'git status --short' },
+            { kind: 'precheck-timeout', value: '600' },
+            { kind: 'template-open', value: true },
+            { kind: 'template-open', value: false },
+            { kind: 'template-apply', templateId: 'daily-review' },
+            { kind: 'create-target', value: 'orca' },
+            { kind: 'create-target', value: 'hermes' }
+          ].map((action) => ({
+            kind: 'editor-form',
+            action: { ...action, reviewedTarget: '00000000-0000-4000-8000-000000000001' }
+          })),
+          {
+            kind: 'editor-form',
+            action: {
+              kind: 'name',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              value: '새 이름'
+            }
+          },
+          {
+            kind: 'editor-form',
+            action: {
+              kind: 'prompt',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              value: '기존 프롬프트'
+            }
+          },
+          {
+            kind: 'editor-form',
+            action: { kind: 'close', reviewedTarget: '00000000-0000-4000-8000-000000000001' }
+          },
+          { kind: 'editor-edit', source: 'local', rowKey: 'row|host%3Adesktop%3Aself|a-1' },
+          { kind: 'editor-edit', source: 'external', rowKey: 'external|owner|hermes|job' }
+        ]) {
+          await writeFile(file, JSON.stringify(action))
+          await expect(
+            dispatch(parsed.commandPath, { ...context, flags: parsed.flags })
+          ).rejects.toThrow('unknown method')
+          expect(call).toHaveBeenCalledExactlyOnceWith(method, { viewer: 'desktop', action })
+          call.mockClear()
+        }
+        for (const action of [
+          { kind: 'editor-create', force: true },
+          ...[
+            { kind: 'get', eval: true },
+            {
+              kind: 'input',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'second',
+              value: '15'
+            },
+            {
+              kind: 'input',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'minute',
+              value: 'x'.repeat(129)
+            },
+            {
+              kind: 'step',
+              reviewedTarget: '00000000-0000-4000-8000-000000000002',
+              field: 'minute',
+              delta: 0
+            },
+            { kind: 'period', reviewedTarget: 'bad' }
+          ].map((action) => ({
+            kind: 'editor-form',
+            action: {
+              kind: 'time-form',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              action
+            }
+          })),
+          ...[
+            { kind: 'schedule-preset', value: 'eval' },
+            { kind: 'schedule-weekday', value: '7' },
+            { kind: 'schedule-cron', value: 'x'.repeat(4097) },
+            { kind: 'session', value: 'eval' },
+            { kind: 'missed-run-grace', value: '15' },
+            { kind: 'precheck-command', value: 'x'.repeat(100_001) },
+            { kind: 'precheck-timeout', value: '15' },
+            { kind: 'template-open', value: 'true' },
+            { kind: 'template-apply', templateId: '' },
+            { kind: 'template-apply', templateId: 'x'.repeat(257) },
+            { kind: 'create-target', value: 'eval' },
+            { kind: 'create-target', value: 'orca', force: true }
+          ].map((action) => ({
+            kind: 'editor-form',
+            action: { ...action, reviewedTarget: '00000000-0000-4000-8000-000000000001' }
+          })),
+          {
+            kind: 'editor-form',
+            action: { kind: 'name', reviewedTarget: 'not-a-uuid', value: 'x' }
+          },
+          {
+            kind: 'editor-form',
+            action: {
+              kind: 'name',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              value: 'x'.repeat(4097)
+            }
+          },
+          {
+            kind: 'editor-form',
+            action: {
+              kind: 'close',
+              reviewedTarget: '00000000-0000-4000-8000-000000000001',
+              force: true
+            }
+          },
+          { kind: 'editor-edit', source: 'eval', rowKey: 'row' },
+          { kind: 'editor-edit', source: 'local', rowKey: '' },
+          { kind: 'editor-edit', source: 'local', rowKey: 'x'.repeat(4097) },
+          { kind: 'list-navigation', action: 'eval' },
+          { kind: 'list-navigation', action: 'next', script: 'untrusted' }
+        ]) {
+          await writeFile(file, JSON.stringify(action))
+          await expect(handlers[`${command} viewer`]!(context)).rejects.toMatchObject({
+            code: 'invalid_argument'
+          })
+          expect(call).not.toHaveBeenCalled()
+        }
+      }
       if (command === 'skills') {
         const action = { kind: 'install-form', action: { kind: 'providers', value: ['codex'] } }
         await writeFile(file, JSON.stringify(action))
@@ -403,6 +651,23 @@ it.each([
           action: listAction
         })
         call.mockClear()
+        for (const action of [
+          { kind: 'delete', id: 'home:fixture' },
+          { kind: 'copy-path', id: 'home:fixture' },
+          { kind: 'reveal', id: 'home:fixture' },
+          { kind: 'detail-action', action: 'delete' }
+        ]) {
+          const deletion = { kind: 'list-form', action }
+          await writeFile(file, JSON.stringify(deletion))
+          await expect(
+            dispatch(parsed.commandPath, { ...context, flags: parsed.flags })
+          ).rejects.toThrow('unknown method')
+          expect(call).toHaveBeenCalledExactlyOnceWith(method, {
+            viewer: 'desktop',
+            action: deletion
+          })
+          call.mockClear()
+        }
         await writeFile(
           file,
           JSON.stringify({ kind: 'list-form', action: { kind: 'detail-action', action: 'eval' } })
@@ -414,6 +679,27 @@ it.each([
         const shareAction = {
           kind: 'share-form',
           action: { kind: 'release-notes', value: '공유 기록' }
+        }
+        for (const action of [
+          { kind: 'get' },
+          {
+            kind: 'description',
+            reviewedTarget: '00000000-0000-4000-8000-000000000001',
+            expanded: true
+          },
+          { kind: 'files', reviewedTarget: '00000000-0000-4000-8000-000000000001', open: true },
+          { kind: 'skills', reviewedTarget: '00000000-0000-4000-8000-000000000001', open: false }
+        ]) {
+          const review = { kind: 'share-form', action: { kind: 'review', action } }
+          await writeFile(file, JSON.stringify(review))
+          await expect(
+            dispatch(parsed.commandPath, { ...context, flags: parsed.flags })
+          ).rejects.toThrow('unknown method')
+          expect(call).toHaveBeenCalledExactlyOnceWith(method, {
+            viewer: 'desktop',
+            action: review
+          })
+          call.mockClear()
         }
         await writeFile(file, JSON.stringify(shareAction))
         await expect(

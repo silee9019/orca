@@ -1,4 +1,5 @@
 import { applySkillDeletionConfirmation } from './skill-delete-viewer-confirmation'
+import { useSkillListDeleteRequest } from './use-skill-list-delete-request'
 import { dialogClose, isSkillsViewerDialogOpen } from './skills-viewer-dialog'
 export { useSkillsViewerDialog } from './skills-viewer-dialog'
 import {
@@ -32,6 +33,7 @@ export async function applySkillsViewerAction(action: SkillsViewerAction): Promi
   return control(parsed)
 }
 export function useSkillsViewerController(page: Page): void {
+  const listDeletion = useSkillListDeleteRequest(page)
   const latest = useRef(page)
   useLayoutEffect(() => {
     latest.current = page
@@ -72,7 +74,7 @@ export function useSkillsViewerController(page: Page): void {
         const confirmation = await applySkillDeletionConfirmation(action)
         return { ...snapshot(latest.current), ...confirmation }
       }
-      if (current.deleteRunning) {
+      if (current.deleteRunning || listDeletion.pending.current) {
         throw new Error('viewer_busy')
       }
       if (
@@ -84,7 +86,7 @@ export function useSkillsViewerController(page: Page): void {
       }
       if (isSkillsChildViewerAction(action)) {
         requireSkillsChildViewerAvailable(action, current)
-        const dialog = await applySkillsChildViewerAction(action)
+        const dialog = await listDeletion.apply(action)
         return { ...snapshot(latest.current), ...dialog }
       }
       if (isSkillsViewerDialogOpen('detail')) {
@@ -292,5 +294,5 @@ export function useSkillsViewerController(page: Page): void {
       }
       pending.current = null
     }
-  }, [])
+  }, [listDeletion])
 }

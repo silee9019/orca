@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { TuiAgent } from './tui-agent'
 import { isTuiAgent } from './tui-agent-config'
 import { isAutomationListSearchQueryTooLarge } from './automation-list-search-query'
+import { AutomationEditorViewerActionSchema } from './automation-editor-viewer-command'
 
 export const AutomationViewerFilterSchema = z
   .object({
@@ -14,6 +15,21 @@ export const AutomationViewerFilterSchema = z
 const sortField = z.enum(['name', 'lastRun'])
 export const AutomationViewerActionSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('get') }).strict(),
+  z.object({ kind: z.literal('editor-form'), action: AutomationEditorViewerActionSchema }).strict(),
+  z.object({ kind: z.literal('editor-create') }).strict(),
+  z
+    .object({
+      kind: z.literal('editor-edit'),
+      source: z.enum(['local', 'external']),
+      rowKey: z.string().min(1).max(4096)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('list-navigation'),
+      action: z.enum(['next', 'previous', 'activate'])
+    })
+    .strict(),
   z
     .object({ kind: z.literal('navigate'), value: z.enum(['list', 'runs', 'detail-runs']) })
     .strict(),

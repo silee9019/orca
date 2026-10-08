@@ -165,3 +165,80 @@ it('selects an external owner-qualified row and resets its tab without executing
   expect(api.automations.runNow).not.toHaveBeenCalled()
   expect(api.automations.update).not.toHaveBeenCalled()
 })
+
+it('blocks page navigation behind the existing editor', async () => {
+  await renderPage()
+  await act(async () => mocks.listPanel?.openCreateDialog())
+  expect(mocks.editorDialog?.open).toBe(true)
+  await expect(
+    applyAutomationViewerAction({ kind: 'query', value: 'hidden edit' })
+  ).rejects.toThrow('viewer_modal_open')
+  await expect(applyAutomationViewerAction({ kind: 'navigate', value: 'runs' })).rejects.toThrow(
+    'viewer_modal_open'
+  )
+})
+it('cycles table sorting through the existing sort-next action', async () => {
+  scopedList([
+    makeAutomation({ id: 'a-1', name: 'Zulu' }),
+    makeAutomation({ id: 'a-2', name: 'Alpha' })
+  ])
+  const { container } = await renderPage()
+  let request: ReturnType<typeof applyAutomationViewerAction> | undefined
+  for (const sort of [
+    { field: 'name', direction: 'asc' },
+    { field: 'name', direction: 'desc' },
+    { field: 'name', direction: 'asc' }
+  ]) {
+    await act(async () => {
+      request = applyAutomationViewerAction({ kind: 'sort-next', field: 'name' })
+    })
+    await expect(request).resolves.toMatchObject({ sort })
+    if (sort) {
+      expect(rows(container, 'automation-row')).toEqual(
+        sort.direction === 'asc' ? ['Alpha', 'Zulu'] : ['Zulu', 'Alpha']
+      )
+    }
+  }
+})
+it('preserves the local delete confirmation while page commands are blocked', async () => {
+  await renderPage()
+  const item = mocks.listPanel?.sortedListItems.find((entry) => entry.kind === 'local')
+  if (!item || item.kind !== 'local') {
+    throw new Error('missing local row')
+  }
+  await act(async () => mocks.listPanel?.requestDeleteAutomation(item.row))
+  expect(mocks.deleteDialog?.deleteTarget?.id).toBe(item.row.automation.id)
+  await expect(applyAutomationViewerAction({ kind: 'filter-clear' })).rejects.toThrow(
+    'viewer_modal_open'
+  )
+  expect(api.automations.delete).not.toHaveBeenCalled()
+})
+it('preserves the external owner delete dialog without executing its job', async () => {
+  api.automations.listExternalManagerForOwner.mockImplementation(
+    async ({ provider }: { provider: string }) =>
+      provider === 'hermes'
+        ? { manager: makeExternalManager(), error: null, updatedAt: 1 }
+        : { manager: null, error: null, updatedAt: 1 }
+  )
+  await renderPage()
+  await settleHostQueries()
+  const item = mocks.listPanel?.sortedListItems.find((entry) => entry.kind === 'external')
+  if (!item || item.kind !== 'external') {
+    throw new Error('missing external row')
+  }
+  await act(async () =>
+    mocks.listPanel?.requestExternalAction(
+      item.entry.manager,
+      item.entry.job,
+      'delete',
+      item.entry.scope
+    )
+  )
+  await expect(applyAutomationViewerAction({ kind: 'get' })).resolves.toMatchObject({
+    modalOpen: true
+  })
+  await expect(applyAutomationViewerAction({ kind: 'navigate', value: 'list' })).rejects.toThrow(
+    'viewer_modal_open'
+  )
+  expect(api.automations.runExternalActionForOwner).not.toHaveBeenCalled()
+})

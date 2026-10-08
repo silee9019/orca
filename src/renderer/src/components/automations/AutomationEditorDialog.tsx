@@ -1,4 +1,5 @@
 import React from 'react'
+import { useAutomationEditorViewerController } from '../../runtime/automation-editor-viewer-controller'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { getAgentCatalog } from '@/lib/agent-catalog'
 import { filterEnabledTuiAgents } from '../../../../shared/tui-agent-selection'
@@ -120,7 +121,7 @@ export function AutomationEditorDialog({
   onOpenChange,
   onDraftChange,
   onSetupDecisionTouched,
-  onApplyTemplate,
+  onApplyTemplate: applyTemplateDraft,
   onSave
 }: AutomationEditorDialogProps): React.JSX.Element {
   const [templateOpen, setTemplateOpen] = React.useState(false)
@@ -128,6 +129,12 @@ export function AutomationEditorDialog({
   const isHermesTarget = createTarget === 'hermes'
   const isCreateMode = !isEditing && !isEditingExternal
   const isHermesCreate = isCreateMode && isHermesTarget
+  const templates = getAutomationTemplates()
+  const onApplyTemplate = (template: AutomationTemplate): void => {
+    applyTemplateDraft(template)
+    setTemplateOpen(false)
+  }
+
   const destination = isCreateMode ? createDestination : editDestination
   const visibleAgents = React.useMemo(() => {
     const enabledIds = new Set(
@@ -140,6 +147,23 @@ export function AutomationEditorDialog({
       (agent) => enabledIds.has(agent.id) || agent.id === draft.agentId
     )
   }, [draft.agentId, settings?.disabledTuiAgents])
+  useAutomationEditorViewerController({
+    open,
+    isSaving,
+    draft,
+    onDraftChange,
+    onOpenChange,
+    isCreateMode,
+    createTarget,
+    templateOpen,
+    templates,
+    onTemplateOpenChange: setTemplateOpen,
+    onApplyTemplate,
+    agentIds: visibleAgents.map((agent) => agent.id),
+    projectIds: repos.map((repo) => repo.id),
+    onProjectChange,
+    onCreateTargetChange
+  })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,15 +199,12 @@ export function AutomationEditorDialog({
           isCreateMode={isCreateMode}
           createTarget={createTarget}
           templateOpen={templateOpen}
-          templates={getAutomationTemplates()}
+          templates={templates}
           segmentedGroupClassName={AUTOMATION_EDITOR_SEGMENTED_GROUP_CLASS}
           segmentedItemClassName={AUTOMATION_EDITOR_SEGMENTED_ITEM_CLASS}
           onCreateTargetChange={onCreateTargetChange}
           onTemplateOpenChange={setTemplateOpen}
-          onApplyTemplate={(template) => {
-            onApplyTemplate(template)
-            setTemplateOpen(false)
-          }}
+          onApplyTemplate={onApplyTemplate}
         />
 
         <div className="flex min-h-0 flex-1 flex-row">

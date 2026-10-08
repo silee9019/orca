@@ -11,6 +11,7 @@ export function AutomationsPageListPanel({
   onOpenDetail: () => void
 }): React.JSX.Element {
   const {
+    listNavigation,
     store,
     local,
     list,
@@ -52,6 +53,7 @@ export function AutomationsPageListPanel({
   const onListFilterChange = list.changeListFilter
   return (
     <AutomationsListPanel
+      viewerRef={listNavigation}
       hasListItems={hasListItems}
       hasFilteredListItems={hasFilteredListItems}
       listSearchQuery={listSearchQuery}

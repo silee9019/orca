@@ -1,3 +1,4 @@
+import { useAutomationSetupViewerController } from '../../runtime/automation-setup-viewer-controller'
 import React from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,6 +16,7 @@ type AutomationSetupDecisionFieldProps = {
   repos: readonly Repo[]
   projectHostSetups: readonly ProjectHostSetup[]
   yamlHooks?: OrcaHooks | null
+  ownerKey?: string
   onDraftChange: (updater: (current: AutomationDraft) => AutomationDraft) => void
   onSetupDecisionTouched: () => void
 }
@@ -25,6 +27,7 @@ export function AutomationSetupDecisionField({
   repos,
   projectHostSetups,
   yamlHooks,
+  ownerKey,
   onDraftChange,
   onSetupDecisionTouched
 }: AutomationSetupDecisionFieldProps): React.JSX.Element | null {
@@ -36,6 +39,27 @@ export function AutomationSetupDecisionField({
     repos,
     projectHostSetups,
     yamlHooks
+  })
+  const selectSetupDecision = (checked: boolean): void => {
+    onSetupDecisionTouched()
+    onDraftChange((current) => ({ ...current, setupDecision: checked ? 'run' : 'skip' }))
+  }
+  useAutomationSetupViewerController({
+    scope: JSON.stringify([
+      draft.projectId,
+      createTarget,
+      draft.workspaceMode,
+      defaultDecision,
+      ownerKey,
+      yamlHooks,
+      repos.find((repo) => repo.id === draft.projectId)?.hookSettings,
+      projectHostSetups.filter((setup) => setup.repoId === draft.projectId)
+    ]),
+    open: advancedOpen,
+    defaultDecision,
+    override: draft.setupDecision,
+    onOpenChange: setAdvancedOpen,
+    selectSetupDecision
   })
   if (!defaultDecision) {
     return null
@@ -94,13 +118,7 @@ export function AutomationSetupDecisionField({
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={(event) => {
-                  onSetupDecisionTouched()
-                  onDraftChange((current) => ({
-                    ...current,
-                    setupDecision: event.target.checked ? 'run' : 'skip'
-                  }))
-                }}
+                onChange={(event) => selectSetupDecision(event.target.checked)}
                 className="sr-only"
               />
               <span>{label}</span>

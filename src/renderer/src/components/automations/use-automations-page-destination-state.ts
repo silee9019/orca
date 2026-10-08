@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react'
+import { getAutomationEditorWorktrees } from './automation-editor-worktrees'
 import type {
   AutomationAuthorityRef,
   StableAutomationCatalogRef
@@ -196,8 +197,14 @@ export function useAutomationsPageDestinationState({
     const fallbackRepo = eligibleActiveRepo ?? editorProjects[0] ?? null
     const fallbackWorktrees = fallbackRepo ? (worktreesByRepo[fallbackRepo.id] ?? []) : []
     const targetWorktree =
-      getDefaultWorktree(fallbackWorktrees) ??
-      (activeWorktree && activeWorktree.repoId === fallbackRepo?.id ? activeWorktree : null)
+      getDefaultWorktree(
+        getAutomationEditorWorktrees(fallbackRepo ?? undefined, fallbackWorktrees)
+      ) ??
+      (activeWorktree &&
+      activeWorktree.repoId === fallbackRepo?.id &&
+      getAutomationEditorWorktrees(fallbackRepo ?? undefined, [activeWorktree]).length > 0
+        ? activeWorktree
+        : null)
     return {
       projectId: fallbackRepo?.id ?? targetWorktree?.repoId ?? '',
       workspaceId: targetWorktree?.id ?? ''

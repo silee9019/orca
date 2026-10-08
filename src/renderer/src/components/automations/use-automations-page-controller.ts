@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import type { AutomationListViewerNavigation } from './AutomationsListPanel'
 import { useAutomationViewerController } from '../../runtime/automation-viewer-controller'
 import { createAutomationManagementActions } from './automation-management-actions'
 import { createAutomationRunActions } from './automation-run-actions'
@@ -20,10 +22,10 @@ import { useExternalAutomationActions } from './use-external-automation-actions'
 import { useAutomationRunsDashboard } from './use-automation-runs-dashboard'
 
 export function useAutomationsPageController() {
+  const listNavigation = useRef<AutomationListViewerNavigation | null>(null)
   const store = useAutomationsPageStoreState()
   const local = useAutomationsPageLocalState(store)
   const list = useAutomationsPageListState({ store, local })
-  useAutomationViewerController({ local, list })
   const destination = useAutomationsPageDestinationState({ store, local, list })
   const runsDashboard = useAutomationRunsDashboard({
     enabled: local.pageView === 'runs',
@@ -67,9 +69,11 @@ export function useAutomationsPageController() {
   const editorActions = useAutomationEditorActions({
     store,
     local,
+    visibleRows: list.visibleRows,
     destination,
     destinationForm
   })
+  useAutomationViewerController({ local, list, listNavigation, editorActions, destination })
   const saveAutomation = createAutomationSaveAction({
     store,
     local,
@@ -97,6 +101,7 @@ export function useAutomationsPageController() {
   useAutomationsPageEscape({ store, local })
 
   return {
+    listNavigation,
     store,
     local,
     list,

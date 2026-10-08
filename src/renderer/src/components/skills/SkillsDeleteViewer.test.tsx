@@ -37,12 +37,28 @@ async function apply(action: unknown) {
   })
   return request
 }
-async function beginDelete() {
-  await apply({ kind: 'mode', value: 'delete' })
-  await apply({ kind: 'select-visible' })
+async function beginDelete(source: 'selected' | 'row' | 'detail') {
+  if (source === 'selected') {
+    await apply({ kind: 'mode', value: 'delete' })
+    await apply({ kind: 'select-visible' })
+  } else if (source === 'detail') {
+    await apply({ kind: 'list-form', action: { kind: 'detail', id: skill.id } })
+  }
   let request: ReturnType<typeof applySkillsViewerAction> | undefined
   await act(async () => {
-    request = applySkillsViewerAction(SkillsViewerActionSchema.parse({ kind: 'delete-selected' }))
+    request = applySkillsViewerAction(
+      SkillsViewerActionSchema.parse(
+        source === 'selected'
+          ? { kind: 'delete-selected' }
+          : {
+              kind: 'list-form',
+              action:
+                source === 'row'
+                  ? { kind: 'delete', id: skill.id }
+                  : { kind: 'detail-action', action: 'delete' }
+            }
+      )
+    )
     void request.catch(() => undefined)
   })
   return { request }
@@ -108,87 +124,133 @@ afterEach(async () => {
   Reflect.deleteProperty(window, 'api')
   vi.restoreAllMocks()
 })
-it('reviews the actual delete plan, cancels without deleting and commits the result band', async () => {
-  const cancelled = await beginDelete()
-  const first = await reviewedOperation()
-  expect(document.querySelector('[role="dialog"]')?.textContent).toContain(skill.directoryPath)
-  await expect(
-    apply({
-      kind: 'delete-confirmation',
-      operationId: '00000000-0000-4000-8000-000000000001',
-      confirmed: true
-    })
-  ).rejects.toThrow('viewer_target_changed')
-  await apply({ kind: 'delete-confirmation', operationId: first, confirmed: false })
-  await expect(cancelled.request).rejects.toThrow('skills_delete_not_completed')
-  expect(deleteSkills).not.toHaveBeenCalled()
-  const approved = await beginDelete()
-  const second = await reviewedOperation()
-  expect(second).not.toBe(first)
-  await expect(
-    apply({ kind: 'delete-confirmation', operationId: first, confirmed: true })
-  ).rejects.toThrow('viewer_target_changed')
-  await apply({ kind: 'delete-confirmation', operationId: second, confirmed: true })
-  await expect(approved.request).resolves.toMatchObject({ deleteResult: { operationId: second } })
-  expect(deleteSkills).toHaveBeenCalledExactlyOnceWith(
-    expect.objectContaining({ operationId: second })
-  )
-  expect(container.querySelector('div[role="status"]')).not.toBeNull()
-  await expect(apply({ kind: 'delete-result-dismiss' })).resolves.toMatchObject({
-    deleteResult: null
-  })
-  expect(container.querySelector('div[role="status"]')).toBeNull()
-})
-it('aborts the old confirmation when the owner becomes unresolved or the page unmounts', async () => {
-  const pending = await beginDelete()
-  const operationId = await reviewedOperation()
-  await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: false }))
-  await expect(pending.request).rejects.toThrow('viewer_target_changed')
-  await expect(
-    apply({ kind: 'delete-confirmation', operationId, confirmed: true })
-  ).rejects.toThrow('viewer_unavailable')
-  expect(deleteSkills).not.toHaveBeenCalled()
-  await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: true }))
-  const unmounted = await beginDelete()
-  await reviewedOperation()
-  await act(async () => root?.unmount())
-  root = undefined
-  await expect(unmounted.request).rejects.toThrow('viewer_unmounted')
-  expect(deleteSkills).not.toHaveBeenCalled()
-})
-
-it('ignores a late preview after owner loss and a late delete result after unmount', async () => {
-  let releasePreview: (() => void) | undefined
-  const previewWait = new Promise<void>((resolve) => {
-    releasePreview = resolve
-  })
-  const originalPreview = previewDelete.getMockImplementation()
-  previewDelete.mockImplementationOnce(async (request: SkillDeleteRequest) => {
-    await previewWait
-    return originalPreview?.(request)
-  })
-  const previewing = await beginDelete()
-  await expect(apply({ kind: 'delete-selected' })).rejects.toThrow('viewer_busy')
-  await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: false }))
-  await expect(previewing.request).rejects.toThrow('viewer_target_changed')
-  await act(async () => releasePreview?.())
-  expect(document.querySelector('[role="dialog"]')).toBeNull()
-  expect(deleteSkills).not.toHaveBeenCalled()
-  await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: true }))
-  let releaseDelete: ((value: unknown) => void) | undefined
-  deleteSkills.mockImplementationOnce(
-    () =>
-      new Promise((resolve) => {
-        releaseDelete = resolve
+it.each(['selected', 'row', 'detail'] as const)(
+  'reviews the actual delete plan, cancels without deleting and commits the result band (%s)',
+  async (source) => {
+    const cancelled = await beginDelete(source)
+    const first = await reviewedOperation()
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(skill.directoryPath)
+    await expect(
+      apply({
+        kind: 'delete-confirmation',
+        operationId: '00000000-0000-4000-8000-000000000001',
+        confirmed: true
       })
-  )
-  const deleting = await beginDelete()
-  const operationId = await reviewedOperation()
-  await apply({ kind: 'delete-confirmation', operationId, confirmed: true })
-  expect(deleteSkills).toHaveBeenCalledOnce()
-  await act(async () => root?.unmount())
-  root = undefined
-  await expect(deleting.request).rejects.toThrow('viewer_unmounted')
-  await act(async () => releaseDelete?.({ operationId, skills: [] }))
-  expect(container.children).toHaveLength(0)
-})
+    ).rejects.toThrow('viewer_target_changed')
+    await apply({ kind: 'delete-confirmation', operationId: first, confirmed: false })
+    await expect(cancelled.request).rejects.toThrow('skills_delete_not_completed')
+    expect(deleteSkills).not.toHaveBeenCalled()
+    const approved = await beginDelete(source)
+    const second = await reviewedOperation()
+    expect(second).not.toBe(first)
+    await expect(
+      apply({ kind: 'delete-confirmation', operationId: first, confirmed: true })
+    ).rejects.toThrow('viewer_target_changed')
+    await apply({ kind: 'delete-confirmation', operationId: second, confirmed: true })
+    await expect(approved.request).resolves.toMatchObject({ deleteResult: { operationId: second } })
+    expect(deleteSkills).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ operationId: second })
+    )
+    expect(container.querySelector('div[role="status"]')).not.toBeNull()
+    await expect(apply({ kind: 'delete-result-dismiss' })).resolves.toMatchObject({
+      deleteResult: null
+    })
+    expect(container.querySelector('div[role="status"]')).toBeNull()
+  }
+)
+it.each(['selected', 'row', 'detail'] as const)(
+  'aborts the old confirmation when the owner becomes unresolved or the page unmounts (%s)',
+  async (source) => {
+    const pending = await beginDelete(source)
+    const operationId = await reviewedOperation()
+    await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: false }))
+    await expect(pending.request).rejects.toThrow('viewer_target_changed')
+    await expect(
+      apply({ kind: 'delete-confirmation', operationId, confirmed: true })
+    ).rejects.toThrow('viewer_unavailable')
+    expect(deleteSkills).not.toHaveBeenCalled()
+    await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: true }))
+    const unmounted = await beginDelete(source)
+    await reviewedOperation()
+    await act(async () => root?.unmount())
+    root = undefined
+    await expect(unmounted.request).rejects.toThrow('viewer_unmounted')
+    expect(deleteSkills).not.toHaveBeenCalled()
+  }
+)
+
+it.each(['selected', 'row', 'detail'] as const)(
+  'ignores a late preview after owner loss and a late delete result after unmount (%s)',
+  async (source) => {
+    let releasePreview: (() => void) | undefined
+    const previewWait = new Promise<void>((resolve) => {
+      releasePreview = resolve
+    })
+    const originalPreview = previewDelete.getMockImplementation()
+    previewDelete.mockImplementationOnce(async (request: SkillDeleteRequest) => {
+      await previewWait
+      return originalPreview?.(request)
+    })
+    const previewing = await beginDelete(source)
+    await expect(apply({ kind: 'delete-selected' })).rejects.toThrow('viewer_busy')
+    await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: false }))
+    await expect(previewing.request).rejects.toThrow('viewer_target_changed')
+    await act(async () => releasePreview?.())
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(deleteSkills).not.toHaveBeenCalled()
+    await act(async () => useAppStore.setState({ runtimeEnvironmentCatalogSettled: true }))
+    let releaseDelete: ((value: unknown) => void) | undefined
+    deleteSkills.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          releaseDelete = resolve
+        })
+    )
+    const deleting = await beginDelete(source)
+    const operationId = await reviewedOperation()
+    await apply({ kind: 'delete-confirmation', operationId, confirmed: true })
+    expect(deleteSkills).toHaveBeenCalledOnce()
+    await act(async () => root?.unmount())
+    root = undefined
+    await expect(deleting.request).rejects.toThrow('viewer_unmounted')
+    await act(async () => releaseDelete?.({ operationId, skills: [] }))
+    expect(container.children).toHaveLength(0)
+  }
+)
+
+it.each(['row', 'detail'] as const)(
+  'keeps the parent deletion result after the last %s skill list unmounts',
+  async (source) => {
+    if (source === 'detail') {
+      await apply({ kind: 'list-form', action: { kind: 'detail', id: skill.id } })
+    }
+    let request: ReturnType<typeof applySkillsViewerAction> | undefined
+    await act(async () => {
+      request = applySkillsViewerAction(
+        SkillsViewerActionSchema.parse({
+          kind: 'list-form',
+          action:
+            source === 'row'
+              ? { kind: 'delete', id: skill.id }
+              : { kind: 'detail-action', action: 'delete' }
+        })
+      )
+      void request.catch(() => undefined)
+    })
+    const operationId = await reviewedOperation()
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(skill.directoryPath)
+    vi.spyOn(window.api.skills, 'discover').mockResolvedValue({
+      skills: [],
+      sources: [],
+      scannedAt: 2
+    })
+    await apply({ kind: 'delete-confirmation', operationId, confirmed: true })
+    await expect(request).resolves.toMatchObject({
+      deleteResult: { operationId },
+      visibleSkillIds: [],
+      detailOpen: false
+    })
+    expect(deleteSkills).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ operationId }))
+    expect(container.querySelector('[role="listbox"]')).toBeNull()
+  }
+)

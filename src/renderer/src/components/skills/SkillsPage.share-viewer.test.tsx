@@ -35,7 +35,9 @@ it('opens the selected eligible skills and routes notes publication and link man
         deleteSupported: async () => true,
         listOwnedShares: async () => ({ status: 'ok', value: [] }),
         listManagedInstalls: async () => ({ status: 'ok', value: [] }),
-        prepareShare: vi.fn().mockResolvedValue(preview),
+        prepareShare: vi
+          .fn()
+          .mockResolvedValue({ ...preview, description: '공유 설명 '.repeat(100) }),
         publishShare,
         releaseShare: vi.fn().mockResolvedValue(undefined),
         cancelShare: vi.fn().mockResolvedValue(undefined),
@@ -91,6 +93,24 @@ it('opens the selected eligible skills and routes notes publication and link man
   await expect(applySkillsViewerAction({ kind: 'filter-clear' })).rejects.toThrow(
     'viewer_modal_open'
   )
+  const review = (await applySkillsViewerAction({ kind: 'share-form', action: { kind: 'get' } }))
+    .share?.review
+  if (!review) {
+    throw new Error('review fixture not mounted')
+  }
+  await act(async () => {
+    request = applySkillsViewerAction({
+      kind: 'share-form',
+      action: {
+        kind: 'review',
+        action: { kind: 'description', reviewedTarget: review.reviewedTarget, expanded: true }
+      }
+    })
+  })
+  await expect(request).resolves.toMatchObject({
+    share: { review: { description: { expanded: true } } }
+  })
+  expect(publishShare).not.toHaveBeenCalled()
   await act(async () => {
     request = applySkillsViewerAction({
       kind: 'share-form',
@@ -111,6 +131,15 @@ it('opens the selected eligible skills and routes notes publication and link man
   await expect(applySkillsViewerAction({ kind: 'share', open: false })).rejects.toThrow(
     'viewer_busy'
   )
+  await expect(
+    applySkillsViewerAction({
+      kind: 'share-form',
+      action: {
+        kind: 'review',
+        action: { kind: 'get' }
+      }
+    })
+  ).rejects.toThrow('viewer_busy')
   await act(async () => {
     finishPublish({
       status: 'ok',
@@ -125,6 +154,15 @@ it('opens the selected eligible skills and routes notes publication and link man
     preparationId: preview.preparationId,
     releaseNotes: 'fixture notes'
   })
+  await expect(
+    applySkillsViewerAction({
+      kind: 'share-form',
+      action: {
+        kind: 'review',
+        action: { kind: 'get' }
+      }
+    })
+  ).rejects.toThrow('skill_share_preparation_unavailable')
   await act(async () => {
     request = applySkillsViewerAction({ kind: 'share-form', action: { kind: 'manage-links' } })
   })

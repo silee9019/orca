@@ -83,6 +83,13 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
     }
     setIsSaving(true)
     try {
+      if (!isHermesSave && editingAutomationId === null) {
+        const checked = destination.createDestination.check(draft.projectId)
+        if (!checked.ok) {
+          setEditorNotice(checked.notice)
+          return
+        }
+      }
       const selectedWorkspaceExists =
         draft.workspaceMode !== 'existing' ||
         destinationForm.dialogWorktrees.some((worktree) => worktree.id === draft.workspaceId)
@@ -94,13 +101,6 @@ export function createAutomationSaveAction(context: AutomationSaveContext) {
           )
         )
         return
-      }
-      if (!isHermesSave && editingAutomationId === null) {
-        const checked = destination.createDestination.check(draft.projectId)
-        if (!checked.ok) {
-          setEditorNotice(checked.notice)
-          return
-        }
       }
       await (isHermesSave
         ? saveHermesAutomation(context)

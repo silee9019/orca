@@ -7,7 +7,7 @@ export const SkillListViewerActionSchema = z.discriminatedUnion('kind', [
   z
     .object({
       kind: z.literal('detail-action'),
-      action: z.enum(['close', 'copy-path', 'reveal', 'share'])
+      action: z.enum(['close', 'copy-path', 'reveal', 'share', 'delete'])
     })
     .strict(),
   z
@@ -18,6 +18,9 @@ export const SkillListViewerActionSchema = z.discriminatedUnion('kind', [
   z
     .object({ kind: z.literal('select'), id: SkillId, selected: z.boolean(), range: z.boolean() })
     .strict(),
-  z.object({ kind: z.literal('share'), id: SkillId }).strict()
+  z.object({ kind: z.literal('share'), id: SkillId }).strict(),
+  z.object({ kind: z.literal('copy-path'), id: SkillId }).strict(),
+  z.object({ kind: z.literal('reveal'), id: SkillId }).strict(),
+  z.object({ kind: z.literal('delete'), id: SkillId }).strict()
 ])
 export type SkillListViewerAction = z.infer<typeof SkillListViewerActionSchema>

@@ -1,5 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
+  applySkillShareReviewViewerAction,
+  skillShareReviewViewerSnapshot
+} from './skill-share-review-viewer-controller'
+import {
   SkillShareViewerActionSchema,
   type SkillShareViewerAction
 } from '../../../shared/skill-share-viewer-command'
@@ -38,7 +42,11 @@ function snapshot(form: Form, closed = !form.open) {
     cancelling: form.cancelling,
     progress: form.progress,
     shareUrl: form.shareUrl,
-    error: form.error
+    error: form.error,
+    review:
+      form.open && !form.preparing && !form.shareUrl
+        ? skillShareReviewViewerSnapshot(form.preview?.preparationId)
+        : null
   }
 }
 export type SkillShareViewerState = ReturnType<typeof snapshot>
@@ -74,6 +82,7 @@ export function useSkillShareViewerController(form: Form): void {
   }
   const pending = useRef<Request | null>(null)
   const cancellation = useRef<Request | null>(null)
+  const reviewPending = useRef(false)
   useEffect(() => {
     for (const slot of [pending, cancellation]) {
       const request = slot.current
@@ -116,17 +125,47 @@ export function useSkillShareViewerController(form: Form): void {
         if (!current.publishing || !current.preview) {
           throw new Error('skill_share_upload_not_active')
         }
-      } else if (pending.current || cancellation.current || current.publishing) {
+      } else if (
+        pending.current ||
+        cancellation.current ||
+        current.publishing ||
+        reviewPending.current
+      ) {
         throw new Error('viewer_busy')
       }
       if (
-        (action.kind === 'publish' || action.kind === 'release-notes') &&
+        (action.kind === 'publish' ||
+          action.kind === 'release-notes' ||
+          action.kind === 'review') &&
         (!current.preview || current.preparing || current.shareUrl)
       ) {
         throw new Error('skill_share_preparation_unavailable')
       }
       if ((action.kind === 'copy-link' || action.kind === 'manage-links') && !current.shareUrl) {
         throw new Error('skill_share_link_unavailable')
+      }
+      if (action.kind === 'review') {
+        reviewPending.current = true
+        try {
+          const review = await applySkillShareReviewViewerAction(action.action)
+          const committed = latest.current
+          if (!mounted.current) {
+            throw new Error('viewer_unmounted')
+          }
+          if (
+            !committed.open ||
+            committed.preview?.preparationId !== current.preview?.preparationId ||
+            JSON.stringify(committed.skillIds) !== JSON.stringify(current.skillIds)
+          ) {
+            throw new Error('viewer_target_changed')
+          }
+          if (committed.publishing) {
+            throw new Error('viewer_busy')
+          }
+          return { ...snapshot(committed), review }
+        } finally {
+          reviewPending.current = false
+        }
       }
       return new Promise((resolve, reject) => {
         const slot = cancelling ? cancellation : pending

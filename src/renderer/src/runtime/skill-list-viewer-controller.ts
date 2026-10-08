@@ -6,6 +6,7 @@ import {
 import type { DiscoveredSkill } from '../../../shared/skills'
 import type { RuntimeClientTarget } from './runtime-client-target'
 import { isSkillShareEligible } from '../components/skills/skill-share-selection'
+import { isSkillDeleteEligible } from '../components/skills/skill-delete-selection'
 import { copySkillPath, revealSkillFile } from '../components/skills/skill-file-actions'
 
 type Form = {
@@ -22,6 +23,8 @@ type Form = {
   canSelect: (skill: DiscoveredSkill) => boolean
   handleSelection: (index: number, selected: boolean, range: boolean) => void
   share: (skill: DiscoveredSkill) => void
+  deleteSupported: boolean
+  requestDelete: (skill: DiscoveredSkill, fromDetail: boolean) => Promise<boolean> | void
   focus: (value: 'next' | 'previous' | 'first' | 'last' | 'id', id?: string) => void
 }
 function snapshot(form: Form) {
@@ -129,8 +132,34 @@ export function useSkillListViewerController(form: Form): void {
       ) {
         throw new Error('skill_selection_ineligible')
       }
-      if (action.kind === 'detail-action' && action.action === 'reveal' && !current.local) {
+      if (
+        (action.kind === 'reveal' ||
+          (action.kind === 'detail-action' && action.action === 'reveal')) &&
+        !current.local
+      ) {
         throw new Error('skill_reveal_remote_unsupported')
+      }
+      if (
+        action.kind === 'delete' ||
+        (action.kind === 'detail-action' && action.action === 'delete')
+      ) {
+        if (!current.target) {
+          throw new Error('skill_owner_unavailable')
+        }
+        if (!current.deleteSupported) {
+          throw new Error('skill_delete_unsupported')
+        }
+        if (!skill || !current.skills.some((visible) => visible.id === skill.id)) {
+          throw new Error('skill_not_visible')
+        }
+        if (!isSkillDeleteEligible(skill)) {
+          throw new Error('skill_selection_ineligible')
+        }
+        const completed = await current.requestDelete(skill, action.kind === 'detail-action')
+        if (!completed) {
+          throw new Error('skills_delete_not_completed')
+        }
+        return snapshot(current)
       }
       return new Promise((resolve, reject) => {
         const request: Request = { target: current.target, ready: false, resolve, reject }
@@ -152,6 +181,12 @@ export function useSkillListViewerController(form: Form): void {
           }
         } else if (action.kind === 'share' && skill) {
           current.share(skill)
+        } else if (action.kind === 'copy-path' && skill) {
+          operation = copySkillPath(skill.skillFilePath)
+        } else if (action.kind === 'reveal' && skill) {
+          operation = revealSkillFile(skill.skillFilePath).then((result) => {
+            request.revealResult = result
+          })
         } else if (action.kind === 'detail-action' && skill) {
           if (action.action === 'close') {
             current.setDetailSkill(null)
