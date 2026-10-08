@@ -35,6 +35,8 @@ const hoisted = vi.hoisted(() => {
     applyClosedTerminalLeafNotice: vi.fn(),
     persistWorkspaceSession: vi.fn(async () => {}),
     focusRuntimeTerminalSurface: vi.fn(() => true),
+    hasRegisteredTab: vi.fn(() => false),
+    mountBackground: vi.fn(),
     store
   }
 })
@@ -63,7 +65,7 @@ vi.mock('../../src/renderer/src/store', () => ({
 }))
 vi.mock('../../src/renderer/src/runtime/sync-runtime-graph', () => ({
   focusRuntimeTerminalSurface: hoisted.focusRuntimeTerminalSurface,
-  hasRegisteredRuntimeTerminalTab: vi.fn(() => false)
+  hasRegisteredRuntimeTerminalTab: hoisted.hasRegisteredTab
 }))
 vi.mock('../../src/renderer/src/lib/focus-terminal-tab-surface', () => ({
   focusTerminalTabSurface: vi.fn()
@@ -83,12 +85,18 @@ vi.mock('../../src/renderer/src/lib/workspace-session-host-persistence', () => (
 vi.mock('../../src/renderer/src/components/sidebar/sleep-worktree-flow', () => ({
   runSleepWorktree: vi.fn()
 }))
+vi.mock('../../src/renderer/src/components/terminal/background-terminal-worktree-mount', () => ({
+  requestBackgroundTerminalWorktreeMount: hoisted.mountBackground
+}))
 
 import { registerRuntimeWindowLifecycle } from '../../src/main/window/runtime-window-lifecycle'
 import { uiClipboardAndWindowControlsApi } from '../../src/preload/api/ui-bridge-clipboard-and-window-controls'
 import { uiTerminalAndSessionTabsApi } from '../../src/preload/api/ui-bridge-terminal-and-session-tabs'
 import { registerMobileAndTerminalCloseIpcBridge } from '../../src/renderer/src/hooks/ipc-events/mobile-terminal-close-ipc-bridge'
+import { registerTerminalPresentationIpcBridge } from '../../src/renderer/src/hooks/ipc-events/terminal-presentation-ipc-bridge'
 import { registerTerminalUiRoutingIpcBridge } from '../../src/renderer/src/hooks/ipc-events/terminal-ui-routing-ipc-bridge'
+import { SPLIT_TERMINAL_PANE_EVENT } from '../../src/renderer/src/constants/terminal'
+import { takeQueuedTerminalPaneSplitRequests } from '../../src/renderer/src/components/terminal-pane/terminal-pane-split-request-routing'
 
 type Sent = [channel: string, payload: unknown]
 let notifier: RuntimeNotifier
@@ -136,6 +144,8 @@ beforeEach(() => {
   hoisted.applyClosedTerminalLeafNotice.mockReset()
   hoisted.persistWorkspaceSession.mockReset().mockResolvedValue(undefined)
   hoisted.focusRuntimeTerminalSurface.mockClear()
+  hoisted.hasRegisteredTab.mockReset().mockReturnValue(false)
+  hoisted.mountBackground.mockReset()
   store = {
     setTabCustomTitle: vi.fn(),
     setActiveView: vi.fn(),
@@ -145,9 +155,15 @@ beforeEach(() => {
     setActiveTab: vi.fn(),
     revealWorktreeInSidebar: vi.fn()
   }
-  hoisted.store.current = { ...store, isNavigatingHistory: false }
+  hoisted.store.current = {
+    ...store,
+    isNavigatingHistory: false,
+    tabsByWorktree: { 'wt-1': [{ id: 'tab-1' }], 'wt-2': [{ id: 'tab-2' }] },
+    unifiedTabsByWorktree: {}
+  }
   const preload = { ...uiTerminalAndSessionTabsApi, ...uiClipboardAndWindowControlsApi }
   vi.stubGlobal('window', {
+    dispatchEvent: vi.fn(),
     api: {
       ui: new Proxy(preload, {
         get: (target, name: string) => (name in target ? target[name] : () => () => {})
@@ -300,6 +316,49 @@ describe('notifier → preload → renderer handler', () => {
     expect(hoisted.persistWorkspaceSession).not.toHaveBeenCalled()
   })
 
+  it('queues a CLI split for the owning worktree until its tab mounts, then asks for the mount', () => {
+    notifier.splitTerminal('tab-1', 7, {
+      direction: 'vertical',
+      command: 'tail -f log',
+      sourceLeafId: 'leaf-a',
+      telemetrySource: 'command',
+      newLeafId: 'leaf-b'
+    })
+    expect(hoisted.mountBackground).toHaveBeenCalledExactlyOnceWith({
+      worktreeId: 'wt-1',
+      tabIds: ['tab-1']
+    })
+    expect(takeQueuedTerminalPaneSplitRequests('tab-1', 'wt-1')).toEqual([
+      {
+        tabId: 'tab-1',
+        worktreeId: 'wt-1',
+        paneRuntimeId: 7,
+        direction: 'vertical',
+        command: 'tail -f log',
+        sourceLeafId: 'leaf-a',
+        telemetrySource: 'command',
+        newLeafId: 'leaf-b'
+      }
+    ])
+  })
+
+  it('dispatches a CLI split straight to a mounted tab and never to another worktree', () => {
+    hoisted.hasRegisteredTab.mockReturnValue(true)
+    notifier.splitTerminal('tab-1', 7, { direction: 'horizontal', newLeafId: 'leaf-b' })
+    const [event] = vi.mocked(window.dispatchEvent).mock.calls[0] ?? []
+    expect(event?.type).toBe(SPLIT_TERMINAL_PANE_EVENT)
+    expect(event).toMatchObject({
+      detail: { tabId: 'tab-1', worktreeId: 'wt-1', direction: 'horizontal', newLeafId: 'leaf-b' }
+    })
+    expect(hoisted.mountBackground).not.toHaveBeenCalled()
+
+    vi.mocked(window.dispatchEvent).mockClear()
+    notifier.splitTerminal('tab-2', 8, { direction: 'horizontal', worktreeId: 'wt-1' })
+    expect(window.dispatchEvent).not.toHaveBeenCalled()
+    expect(hoisted.mountBackground).not.toHaveBeenCalled()
+    expect(takeQueuedTerminalPaneSplitRequests('tab-2')).toEqual([])
+  })
+
   it('stops delivering after the renderer unsubscribes', () => {
     for (const unsubscribe of unsubs) {
       unsubscribe()
@@ -308,5 +367,102 @@ describe('notifier → preload → renderer handler', () => {
     notifier.closeTerminal('tab-1')
     expect(store.setTabCustomTitle).not.toHaveBeenCalled()
     expect(hoisted.closeTerminalTab).not.toHaveBeenCalled()
+  })
+})
+
+describe('CLI terminal create (reveal) closed loop', () => {
+  type Tab = { id: string; ptyId?: string | null; title?: string }
+  let state: {
+    tabsByWorktree: Record<string, Tab[]>
+    terminalLayoutsByTabId: Record<string, unknown>
+    ptyIdsByTabId: Record<string, string[]>
+    createTab: ReturnType<typeof vi.fn>
+    setTabLayout: ReturnType<typeof vi.fn>
+    setTabCustomTitle: ReturnType<typeof vi.fn>
+  }
+  const reveal = {
+    ptyId: 'pty-1',
+    tabId: 'tab-1',
+    leafId: 'leaf-1',
+    title: 'cli shell',
+    presentation: 'background' as const,
+    activate: false,
+    expectedProcessIdentity: { terminalHandle: 'handle-1', incarnationId: 'incarnation-1' }
+  }
+
+  beforeEach(() => {
+    state = {
+      tabsByWorktree: {},
+      terminalLayoutsByTabId: {},
+      ptyIdsByTabId: {},
+      createTab: vi.fn((worktreeId: string, _group, _type, options?: { id?: string }) => {
+        const tab = { id: options?.id ?? 'tab-new', ptyId: null, title: 'Terminal 1' }
+        state.tabsByWorktree[worktreeId] = [...(state.tabsByWorktree[worktreeId] ?? []), tab]
+        return tab
+      }),
+      setTabLayout: vi.fn((tabId: string, layout: unknown) => {
+        state.terminalLayoutsByTabId[tabId] = layout
+      }),
+      setTabCustomTitle: vi.fn()
+    }
+    hoisted.store.current = new Proxy(state, {
+      get: (target, name: string) => (name in target ? target[name] : vi.fn())
+    })
+    registerTerminalPresentationIpcBridge([])
+  })
+
+  it('hands the CLI the identity the renderer actually bound for the revealed terminal', async () => {
+    await expect(notifier.revealTerminalSession?.('wt-1', reveal)).resolves.toEqual({
+      tabId: 'tab-1',
+      title: 'cli shell',
+      identity: { worktreeId: 'wt-1', tabId: 'tab-1', leafId: 'leaf-1', ptyId: 'pty-1' }
+    })
+    expect(sent[0]).toEqual([
+      'ui:createTerminal',
+      expect.objectContaining({
+        requestId: expect.any(String),
+        worktreeId: 'wt-1',
+        ptyId: 'pty-1',
+        tabId: 'tab-1',
+        leafId: 'leaf-1',
+        presentation: 'background',
+        activate: false
+      })
+    ])
+    expect(state.createTab).toHaveBeenCalledWith(
+      'wt-1',
+      undefined,
+      undefined,
+      expect.objectContaining({ id: 'tab-1', initialPtyId: 'pty-1', activate: false })
+    )
+    expect(state.terminalLayoutsByTabId['tab-1']).toMatchObject({
+      ptyIdsByLeafId: { 'leaf-1': 'pty-1' }
+    })
+    expect(state.setTabCustomTitle).toHaveBeenCalledWith('tab-1', 'cli shell', {
+      recordInteraction: false
+    })
+    expect(hoisted.mountBackground).toHaveBeenCalledExactlyOnceWith({
+      worktreeId: 'wt-1',
+      tabIds: ['tab-1']
+    })
+  })
+
+  it('refuses a reveal whose renderer tab differs from the pre-minted identity', async () => {
+    state.createTab.mockImplementation((worktreeId: string) => {
+      state.tabsByWorktree[worktreeId] = [{ id: 'other-tab' }]
+      return { id: 'other-tab' }
+    })
+    await expect(notifier.revealTerminalSession?.('wt-1', reveal)).rejects.toThrow(
+      'terminal_reveal_identity_mismatch'
+    )
+  })
+
+  it('surfaces a renderer failure to the CLI instead of timing out', async () => {
+    state.createTab.mockImplementation(() => {
+      throw new Error('Terminal tab could not be created')
+    })
+    await expect(notifier.revealTerminalSession?.('wt-1', reveal)).rejects.toThrow(
+      'Terminal tab could not be created'
+    )
   })
 })
