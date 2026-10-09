@@ -51,6 +51,7 @@ describe('orca search command spec', () => {
     // Why: a viewer command declares a flag repeatable to read a repeat as an input to refuse, not as the last value.
     const viewerRepeatable: Record<string, string[]> = {
       'ui feature-tip skip': ['tip'],
+      'ui orca-yaml-trust skip': ['repo', 'script-kind'],
       'ui workspace-board assign': ['workspace', 'status']
     }
     for (const spec of COMMAND_SPECS) {

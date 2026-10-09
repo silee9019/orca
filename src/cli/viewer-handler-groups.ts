@@ -108,6 +108,12 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
     load: async () => (await import('./handlers/feature-tip-viewer.js')).FEATURE_TIP_VIEWER_HANDLERS
   },
   {
+    name: 'orca-yaml-trust-viewer',
+    keys: ['ui orca-yaml-trust get', 'ui orca-yaml-trust skip'],
+    load: async () =>
+      (await import('./handlers/orca-yaml-trust-viewer.js')).ORCA_YAML_TRUST_VIEWER_HANDLERS
+  },
+  {
     name: 'sidebar-viewer',
     keys: ['ui sidebar get', 'ui sidebar toggle', 'ui panel open'],
     load: async () => (await import('./handlers/sidebar-viewer.js')).SIDEBAR_VIEWER_HANDLERS

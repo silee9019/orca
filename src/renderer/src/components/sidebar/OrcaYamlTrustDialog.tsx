@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useAppStore } from '@/store'
 import type { OrcaHookScriptKind } from '@/lib/orca-hook-trust'
 import { translate } from '@/i18n/i18n'
+import { useOrcaYamlTrustViewerPublication } from '@/runtime/use-orca-yaml-trust-viewer-publication'
 
 type ScriptKind = OrcaHookScriptKind
 
@@ -101,6 +102,14 @@ const OrcaYamlTrustDialog = React.memo(function OrcaYamlTrustDialog() {
     },
     [resolveAndClose]
   )
+
+  useOrcaYamlTrustViewerPublication({
+    open: isOpen,
+    prompt: { repoId, repoName, scriptKind, previouslyApproved, contentHash },
+    // Why: the CLI declines through the same handler Escape and a click outside use.
+    skip: () => handleOpenChange(false),
+    token: modalData.onResolve
+  })
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
