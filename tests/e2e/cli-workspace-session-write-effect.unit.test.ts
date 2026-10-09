@@ -215,6 +215,20 @@ it('patches only the requested slice through the canonical partial setter and pe
     value: { activeWorktreeId: 'folder:patched' }
   })
 })
+it('accepts the JSON snapshot session-state returns when the Store keeps undefined-valued keys', async () => {
+  store.patchWorkspaceSession({ activeConnectionIdsAtShutdown: undefined })
+  const live = store.getWorkspaceSession()
+  expect(Object.hasOwn(live, 'activeConnectionIdsAtShutdown')).toBe(true)
+  expect(
+    await command('patch-session', {
+      hostId: 'local',
+      expected: JSON.parse(JSON.stringify(live)),
+      patch: { activeWorktreeId: 'folder:patched' },
+      confirm: true
+    })
+  ).toMatchObject({ ok: true, result: { applied: true, durable: true, normalized: false } })
+  expect(store.getWorkspaceSession().activeWorktreeId).toBe('folder:patched')
+})
 it('refuses a stale partial write while preserving unrelated newer fields', async () => {
   const baseline = request()
   store.patchWorkspaceSession({ activeTabId: 'newer-tab' })

@@ -10,6 +10,10 @@ import { rollbackWorkspaceSessionAfterFailedAsyncWrite } from '../persistence/re
 type Receipt =
   | { applied: true; durable: true; normalized: boolean }
   | { applied: false; reason: 'changed' | 'cancelled' }
+// Why: callers snapshot the session over JSON, which drops the undefined-valued keys the live Store keeps.
+function toWireForm(session: WorkspaceSessionState): unknown {
+  return JSON.parse(JSON.stringify(session))
+}
 function commitWorkspaceSessionMutation(
   store: RuntimeStore,
   hostId: string,
@@ -27,13 +31,17 @@ function commitWorkspaceSessionMutation(
       return { persist: false, value: { applied: false, reason: 'cancelled' } }
     }
     const before = structuredClone(getWorkspaceSession.call(store, hostId))
-    if (!isDeepStrictEqual(before, expected)) {
+    if (!isDeepStrictEqual(toWireForm(before), expected)) {
       return { persist: false, value: { applied: false, reason: 'changed' } }
     }
     apply()
     const staged = structuredClone(getWorkspaceSession.call(store, hostId))
     return {
-      value: { applied: true, durable: true, normalized: !isDeepStrictEqual(staged, next) },
+      value: {
+        applied: true,
+        durable: true,
+        normalized: !isDeepStrictEqual(toWireForm(staged), next)
+      },
       rollback: () =>
         setWorkspaceSession.call(
           store,
