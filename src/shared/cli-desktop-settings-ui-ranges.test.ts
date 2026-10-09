@@ -85,6 +85,8 @@ describe('desktop settings update keeps the Settings UI value ranges', () => {
 
   it.each([
     { aiVaultSearch: { enabled: true } },
+    { computerAwakeMode: 'on' },
+    { keepComputerAwakeWhileAgentsRun: true },
     { nestedWorkerMaxDepth: 2 },
     { skipCloseTerminalWithRunningProcessConfirm: true }
   ])('keeps protected consent and fence settings out of the generic writer', (input) => {

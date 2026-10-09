@@ -1,3 +1,4 @@
+import { COMPUTER_AWAKE_MODES } from './computer-awake-mode'
 import { openEnum } from './zod-salvage'
 import { z } from 'zod'
 import { CliDesktopSettingsFields } from './cli-desktop-settings-update'
@@ -110,10 +111,9 @@ const CliDesktopSettingsRead = CliDesktopSettingsFields.omit({
       CliDesktopSettingsFields.shape.zcodePlanSite.unwrap().options,
       undefined
     ).optional(),
-    computerAwakeMode: openEnum(
-      CliDesktopSettingsFields.shape.computerAwakeMode.unwrap().options,
-      undefined
-    ).optional(),
+    // Read-only: the power keys are not in the write schema.
+    keepComputerAwakeWhileAgentsRun: z.boolean().optional(),
+    computerAwakeMode: openEnum(COMPUTER_AWAKE_MODES, undefined).optional(),
     terminalMacOptionAsAlt: openEnum(
       CliDesktopSettingsFields.shape.terminalMacOptionAsAlt.unwrap().options,
       undefined

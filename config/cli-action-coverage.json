@@ -16781,10 +16781,10 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "권한·동의·확인 생략·계정 또는 내부 상태입니다. 기존 전용 서비스/정책 및 정당한 internal 부모 매핑을 감독과 연결해야 하며 bulk writer로 확대하지 않습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 검색 색인 동의는 사용자가 Settings 창의 세션 기록 또는 안내 대화상자에서 직접 켜고 끕니다.",
+      "verification": "app vault status 가 aiVault.searchStatus 로 동의 상태(enabled)를 읽습니다. settings desktop update 는 aiVaultSearch 키를 거부합니다(허용 목록 거부 단위 테스트). 실제 설정 창 조작은 실행하지 않았습니다. paired 호스트 한정 search consent 명령은 이 행이 아니라 api.aiVault.setSearchEnabled 행이 소유합니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
       "sources": [
         {
           "id": "setting:aiVaultSearch",
@@ -16792,7 +16792,10 @@
         }
       ],
       "rule": "setting",
-      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal."
+      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
+      "command": "app vault status",
+      "invocation": "command:app vault status",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"]
     },
     {
       "id": "setting.androidSdkPath",
@@ -17298,9 +17301,9 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "독립 구현 및 fixture 검증 완료. 공유 등록과 행동별 viewer/플랫폼 최종 증거는 감독 통합 후 필요합니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "implemented",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 절전 설정은 사용자가 Settings 창에서 직접 바꿉니다.",
+      "verification": "settings desktop get 이 이 키의 현재 값을 읽습니다(투영 단위 테스트). settings desktop update 와 settings.desktop.update RPC 는 이 키를 거부합니다(허용 목록 거부 단위 테스트). 실제 설정 창 조작과 실행 호스트의 절전 동작은 실행하지 않았습니다.",
+      "support": "human-procedure",
       "evidence": "partial",
       "sources": [
         {
@@ -17310,8 +17313,12 @@
       ],
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
-      "command": "settings desktop update",
-      "evidencePaths": ["settings-tests.log", "settings-built-cli-fixture.log"]
+      "command": "settings desktop get",
+      "evidencePaths": [
+        "src/shared/cli-desktop-settings.test.ts",
+        "src/shared/cli-desktop-settings-ui-ranges.test.ts"
+      ],
+      "invocation": "command:settings desktop get"
     },
     {
       "id": "setting.confirmClosePinnedTab",
@@ -18346,9 +18353,9 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "독립 구현 및 fixture 검증 완료. 공유 등록과 행동별 viewer/플랫폼 최종 증거는 감독 통합 후 필요합니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "implemented",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 절전 설정은 사용자가 Settings 창에서 직접 바꿉니다.",
+      "verification": "settings desktop get 이 이 키의 현재 값을 읽습니다(투영 단위 테스트). settings desktop update 와 settings.desktop.update RPC 는 이 키를 거부합니다(허용 목록 거부 단위 테스트). 실제 설정 창 조작과 실행 호스트의 절전 동작은 실행하지 않았습니다.",
+      "support": "human-procedure",
       "evidence": "partial",
       "sources": [
         {
@@ -18358,8 +18365,12 @@
       ],
       "rule": "setting",
       "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
-      "command": "settings desktop update",
-      "evidencePaths": ["settings-tests.log", "settings-built-cli-fixture.log"]
+      "command": "settings desktop get",
+      "evidencePaths": [
+        "src/shared/cli-desktop-settings.test.ts",
+        "src/shared/cli-desktop-settings-ui-ranges.test.ts"
+      ],
+      "invocation": "command:settings desktop get"
     },
     {
       "id": "setting.keybindings",
@@ -19038,10 +19049,10 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "권한·동의·확인 생략·계정 또는 내부 상태입니다. 기존 전용 서비스/정책 및 정당한 internal 부모 매핑을 감독과 연결해야 하며 bulk writer로 확대하지 않습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "gap": "root 결정(Q125-1)과 감독 처분으로 CLI 쓰기를 만들지 않습니다. 권한 울타리·확인 생략 키라 사용자가 Settings 창에서 직접 바꿉니다.",
+      "verification": "settings desktop update 와 settings update 는 이 키를 거부합니다(허용 목록 거부 단위 테스트). settings desktop get 은 이 키를 표시하지 않아 현재 값은 CLI 로 읽을 수 없습니다. 실제 설정 창 조작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
       "sources": [
         {
           "id": "setting:nestedWorkerMaxDepth",
@@ -19049,7 +19060,13 @@
         }
       ],
       "rule": "setting",
-      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal."
+      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
+      "command": "settings desktop get",
+      "invocation": "command:settings desktop get",
+      "evidencePaths": [
+        "src/shared/cli-desktop-settings.test.ts",
+        "src/shared/cli-desktop-settings-ui-ranges.test.ts"
+      ]
     },
     {
       "id": "setting.nestWorkspaces",
@@ -19674,10 +19691,10 @@
       "owner": "settings normalizer / persistence / runtime-client-settings services; source boundary src/shared/global-settings-types.ts:global-settings-types",
       "host": "selected settings runtime; local-only fields remain local",
       "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
-      "gap": "권한·동의·확인 생략·계정 또는 내부 상태입니다. 기존 전용 서비스/정책 및 정당한 internal 부모 매핑을 감독과 연결해야 하며 bulk writer로 확대하지 않습니다.",
-      "verification": "Compare existing service and CLI effects, target host/viewer, persisted/applied acknowledgements, native/SSH/peer/folder, OS/flags, permissions, secrets and mixed versions; internal plumbing must preserve its parent effect",
-      "support": "gap",
-      "evidence": "unverified",
+      "gap": "root 결정(Q125-1)과 감독 처분으로 CLI 쓰기를 만들지 않습니다. 권한 울타리·확인 생략 키라 사용자가 Settings 창에서 직접 바꿉니다.",
+      "verification": "settings desktop update 와 settings update 는 이 키를 거부합니다(허용 목록 거부 단위 테스트). settings desktop get 은 이 키를 표시하지 않아 현재 값은 CLI 로 읽을 수 없습니다. 실제 설정 창 조작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
       "sources": [
         {
           "id": "setting:skipCloseTerminalWithRunningProcessConfirm",
@@ -19685,7 +19702,10 @@
         }
       ],
       "rule": "setting",
-      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal."
+      "rationale": "Persisted key identifies setting behavior; migration and private markers stay internal.",
+      "command": "settings desktop get",
+      "invocation": "command:settings desktop get",
+      "evidencePaths": ["src/shared/cli-desktop-settings-ui-ranges.test.ts"]
     },
     {
       "id": "setting.skipCodexRateLimitResetConfirm",
@@ -174980,6 +175000,102 @@
       },
       "evidenceRationale": "원장 verified는 evidencePaths 필요(config/cli-action-coverage.mjs:315)이지만 행 verification 문구가 SSH·peer·폴더·OS·혼합 버전 비교를 요구하고 그 기준이 verified 문턱인지 불명확해 partial로 둡니다.",
       "invocation": "command:ui workspace-board column-width"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-AgentAwakeSetting.AgentAwakeSetting.control.setMode",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "AgentAwakeSetting: setMode에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/AgentAwakeSetting.tsx:AgentAwakeSetting",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 절전 설정은 사용자가 Settings 창에서 직접 바꿉니다.",
+      "verification": "settings desktop get 이 이 키의 현재 값을 읽습니다(투영 단위 테스트). settings desktop update 와 settings.desktop.update RPC 는 이 키를 거부합니다(허용 목록 거부 단위 테스트). 실제 설정 창 조작과 실행 호스트의 절전 동작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "partial",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/AgentAwakeSetting.tsx:2d2b5a57bde1abe73683",
+          "fingerprint": "2d2b5a57bde1abe73683ea06b46a00da85183aeb2b4d876678f7e42d36850bfb"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "settings desktop get",
+      "invocation": "command:settings desktop get",
+      "evidencePaths": [
+        "src/shared/cli-desktop-settings.test.ts",
+        "src/shared/cli-desktop-settings-ui-ranges.test.ts"
+      ]
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-feature-tips-SessionSearchTipDialog.SessionSearchTipDialog.control.onPrimaryAction",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "SessionSearchTipDialog: onPrimaryAction에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx:SessionSearchTipDialog",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 검색 색인 동의는 사용자가 Settings 창의 세션 기록 또는 안내 대화상자에서 직접 켜고 끕니다.",
+      "verification": "app vault status 가 동의 상태를 읽습니다. 이 대화상자의 기본 동작은 검색 색인 동의를 켜는 쓰기라 CLI 쓰기를 만들지 않으며, 대화상자 표시 기록(api.ui.set)은 이 행의 범위 밖입니다. 실제 대화상자 조작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/feature-tips/SessionSearchTipDialog.tsx:d3b9962787add7ff93a5",
+          "fingerprint": "d3b9962787add7ff93a5fe09e04e594620a32709481f7ec168a6bad0e2d1a9a1"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "app vault status",
+      "invocation": "command:app vault status"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-SessionHistorySettingsPane.SessionHistorySettingsPane.control.toggleEnabled",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "SessionHistorySettingsPane: toggleEnabled에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/SessionHistorySettingsPane.tsx:SessionHistorySettingsPane",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 검색 색인 동의는 사용자가 Settings 창의 세션 기록 또는 안내 대화상자에서 직접 켜고 끕니다.",
+      "verification": "app vault status 가 동의 상태를 읽습니다. 동의 토글은 CLI 쓰기를 만들지 않으며 사용자가 Settings 창에서 직접 바꿉니다. 실제 설정 창 조작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/SessionHistorySettingsPane.tsx:09af8ea1c3e3a26c7c46",
+          "fingerprint": "09af8ea1c3e3a26c7c46b49a0b4b0658ebcc8c465a6f658ac4e4118f1967a662"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "app vault status",
+      "invocation": "command:app vault status"
+    },
+    {
+      "id": "surface.agent-sessions.src-renderer-src-components-settings-SessionSearchAdvancedSection.SessionSearchAdvancedSection.control.clearIndex",
+      "phase": 6,
+      "bundle": "agent-sessions",
+      "effect": "SessionSearchAdvancedSection: clearIndex에 연결된 사용자 효과를 CLI에서 같은 대상으로 수행합니다.",
+      "owner": "execution-host hook status / PTY / agent session services; source boundary src/renderer/src/components/settings/SessionSearchAdvancedSection.tsx:SessionSearchAdvancedSection",
+      "host": "execution host owns process and canonical agent status",
+      "viewer": "UI effects target an explicit viewer; headless and unavailable viewers return explicit errors",
+      "gap": "root 결정(Q125-1)으로 CLI 쓰기를 만들지 않습니다. 이 컨트롤이 속한 검색 색인 동의는 사용자가 Settings 창에서 직접 켭니다.",
+      "verification": "색인 삭제 효과는 app vault clear-index 가 수행합니다(api.aiVault.clearSearchIndex 행). 이 컨트롤을 쓰려면 사람이 먼저 동의를 켜야 하며 그 동의는 CLI 로 쓰지 않습니다. 실제 설정 창 조작은 실행하지 않았습니다.",
+      "support": "human-procedure",
+      "evidence": "unverified",
+      "sources": [
+        {
+          "id": "control:src/renderer/src/components/settings/SessionSearchAdvancedSection.tsx:e5582deb1e21273a29ec",
+          "fingerprint": "e5582deb1e21273a29eca6087f27eca0601b705657dbc193fe6c1b9b6b1ae453"
+        }
+      ],
+      "rule": "control",
+      "rationale": "Owning component and named callback/call target identify the operation; native event plumbing is internal.",
+      "command": "app vault clear-index",
+      "invocation": "command:app vault clear-index"
     }
   ]
 }

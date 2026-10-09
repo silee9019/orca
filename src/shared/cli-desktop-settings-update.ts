@@ -169,8 +169,6 @@ export const CliDesktopSettingsFields = z
     tabAutoGenerateTitle: z.boolean().optional(),
     confirmClosePinnedTab: z.boolean().optional(),
     editorPreviewTabsEnabled: z.boolean().optional(),
-    keepComputerAwakeWhileAgentsRun: z.boolean().optional(),
-    computerAwakeMode: z.enum(['auto', 'on', 'off']).optional(),
     terminalMacOptionAsAlt: z.enum(['auto', 'true', 'false', 'left', 'right']).optional(),
     terminalJISYenToBackslash: z.boolean().optional(),
     experimentalMobile: z.boolean().optional(),

@@ -39,6 +39,15 @@ describe('desktop settings CLI boundary', () => {
     expect(() => projectCliDesktopSettings({ theme: 7 })).toThrow()
   })
 
+  it('still reads the power keys that the writer rejects', () => {
+    const power = { computerAwakeMode: 'on', keepComputerAwakeWhileAgentsRun: true }
+    expect(projectCliDesktopSettings(power)).toEqual(power)
+    expect(projectCliDesktopSettings({ computerAwakeMode: 'future-mode' })).toEqual({
+      computerAwakeMode: undefined
+    })
+    expect(CliDesktopSettingsUpdate.safeParse(power).success).toBe(false)
+  })
+
   it('reads newer theme metadata without exposing unknown fields', () => {
     const result = SettingsWarpPreviewOutput.parse({
       found: true,
