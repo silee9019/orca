@@ -18,6 +18,7 @@ import {
   trackOrcaCliFeatureTipSetupResult
 } from './feature-tip-telemetry'
 import { useMountedRef } from '@/hooks/useMountedRef'
+import { useFeatureTipViewerPublication } from '@/runtime/use-feature-tip-viewer-publication'
 import { isWebClientLocation } from '@/lib/web-client-location'
 import { translate } from '@/i18n/i18n'
 import { SessionSearchTipDialog } from './SessionSearchTipDialog'
@@ -81,6 +82,14 @@ export default function FeatureTipsModal(): JSX.Element | null {
     setPrimaryBusy(false)
     closeModal()
   }
+
+  useFeatureTipViewerPublication({
+    open: isOpen && currentTip !== null,
+    tipId: isOpen ? (currentTip?.id ?? null) : null,
+    action: isOpen ? (currentTip?.action ?? null) : null,
+    // Why: the CLI closes the dialog through the same handler its close button and Escape use.
+    skip: () => handleOpenChange(false)
+  })
 
   const openCliSettings = (): void => {
     openSettingsTarget({ pane: 'general', repoId: null, sectionId: 'cli' })

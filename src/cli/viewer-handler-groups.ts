@@ -103,6 +103,11 @@ export const VIEWER_HANDLER_GROUPS: readonly HandlerGroup[] = [
       (await import('./handlers/workspace-board-viewer.js')).WORKSPACE_BOARD_VIEWER_HANDLERS
   },
   {
+    name: 'feature-tip-viewer',
+    keys: ['ui feature-tip get', 'ui feature-tip skip'],
+    load: async () => (await import('./handlers/feature-tip-viewer.js')).FEATURE_TIP_VIEWER_HANDLERS
+  },
+  {
     name: 'sidebar-viewer',
     keys: ['ui sidebar get', 'ui sidebar toggle', 'ui panel open'],
     load: async () => (await import('./handlers/sidebar-viewer.js')).SIDEBAR_VIEWER_HANDLERS
