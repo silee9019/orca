@@ -122,6 +122,8 @@ test.describe('viewer-owned activation: UI controls and CLI converge on one pers
     await expectActivePane(current.leafId)
     switchTerminal(userDataDir, other.handle)
     await expectActivePane(other.leafId)
+    await orcaPage.keyboard.press('ControlOrMeta+BracketLeft')
+    await expectActivePane(current.leafId)
   })
 
   test('sidebar worktree click and terminal switch persist the same active worktree', async ({
