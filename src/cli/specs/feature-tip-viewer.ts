@@ -4,6 +4,7 @@ import { FEATURE_TIP_IDS } from '../../shared/feature-tips'
 export const FEATURE_TIP_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'feature-tip', 'get'],
+    aliases: [['ui', 'feature-tip', 'show']],
     summary: 'Read which feature tip dialog is open in the host viewer',
     usage: 'orca ui feature-tip get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer'],

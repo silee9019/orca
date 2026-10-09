@@ -2,6 +2,7 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const SIDEBAR_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'sidebar', 'get'],
+    aliases: [['ui', 'sidebar', 'show']],
     summary: 'Read the host viewer sidebar layout',
     usage: 'orca ui sidebar get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer']

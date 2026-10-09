@@ -2,6 +2,7 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const STATUS_BAR_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'status-bar', 'get'],
+    aliases: [['ui', 'status-bar', 'show']],
     summary: 'Read host status bar preferences and rendered configuration',
     usage: 'orca ui status-bar get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer']

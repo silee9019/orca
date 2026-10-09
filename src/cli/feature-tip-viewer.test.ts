@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { parseArgs } from './args'
+import { normalizeCommandPositionals, parseArgs } from './args'
 import { dispatch } from './dispatch'
 import { COMMAND_SPECS } from './specs'
 import { RuntimeClient, RuntimeClientError } from './runtime-client'
@@ -25,7 +25,9 @@ const run = (args: string[]) => {
     COMMAND_SPECS.map((s) => s.path),
     COMMAND_SPECS
   )
-  return dispatch(parsed.commandPath, { client, flags: parsed.flags, cwd: '/unused', json: true })
+  // Why: the entry point canonicalizes aliases before dispatch.
+  const { commandPath, flags } = normalizeCommandPositionals(COMMAND_SPECS, parsed)
+  return dispatch(commandPath, { client, flags, cwd: '/unused', json: true })
 }
 afterEach(() => {
   call.mockReset()
@@ -36,6 +38,7 @@ it('routes get and skip through the public parser with explicit options', async 
   call.mockResolvedValue({ id: 'r', ok: true, _meta: { runtimeId: 'host' }, result })
   const cases: [string[], Record<string, unknown>][] = [
     [['get'], { operation: 'get' }],
+    [['show'], { operation: 'get' }],
     [['skip'], { operation: 'skip' }],
     [['skip', '--tip', 'cmd-j-palette'], { operation: 'skip', tipId: 'cmd-j-palette' }]
   ]

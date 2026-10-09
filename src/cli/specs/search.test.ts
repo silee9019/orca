@@ -46,11 +46,16 @@ describe('orca search command spec', () => {
     ])
   })
 
-  it('declares --agent and --path repeatable for this command only', () => {
+  it('declares --agent and --path repeatable for this command only, besides the viewer commands that opt in', () => {
     expect(searchSpec.repeatableFlags).toEqual(['agent', 'path'])
+    // Why: a viewer command declares a flag repeatable to read a repeat as an input to refuse, not as the last value.
+    const viewerRepeatable: Record<string, string[]> = {
+      'ui feature-tip skip': ['tip'],
+      'ui workspace-board assign': ['workspace', 'status']
+    }
     for (const spec of COMMAND_SPECS) {
       if (spec !== searchSpec) {
-        expect(spec.repeatableFlags).toBeUndefined()
+        expect(spec.repeatableFlags).toEqual(viewerRepeatable[spec.path.join(' ')])
       }
     }
   })

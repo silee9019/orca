@@ -83,6 +83,7 @@ export const ACTIVITY_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   'search-visible'
 ].map((operation) => ({
   path: ['ui', 'activity', operation],
+  aliases: operation === 'get' ? [['ui', 'activity', 'show']] : undefined,
   summary: 'Read or apply an existing Activity list control',
   usage: `orca ui activity ${operation} --viewer host --surface ${operation === 'search-visible' ? 'sidebar-agents' : operation === 'search-clear' || operation === 'close' || operation === 'resize' ? 'activity-page' : '<sidebar-agents|activity-page>'}${options(operation).usage} [--json]`,
   allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'surface', ...options(operation).flags],

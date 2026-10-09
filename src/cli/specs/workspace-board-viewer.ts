@@ -10,6 +10,7 @@ const STATUS_NOTE =
 export const WORKSPACE_BOARD_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'workspace-board', 'get'],
+    aliases: [['ui', 'workspace-board', 'show']],
     summary: 'Read the workspace board status columns and whether the board is open',
     usage: 'orca ui workspace-board get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer'],

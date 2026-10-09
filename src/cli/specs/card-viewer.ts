@@ -2,6 +2,7 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const CARD_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'card', 'get'],
+    aliases: [['ui', 'card', 'show']],
     summary: 'Read card preferences and rendered host viewer cards',
     usage: 'orca ui card get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer']

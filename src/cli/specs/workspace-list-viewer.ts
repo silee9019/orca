@@ -2,6 +2,7 @@ import { GLOBAL_FLAGS, type CommandSpec } from '../args'
 export const WORKSPACE_LIST_VIEWER_COMMAND_SPECS: CommandSpec[] = [
   {
     path: ['ui', 'workspace-list', 'get'],
+    aliases: [['ui', 'workspace-list', 'show']],
     summary: 'Read workspace list preferences and committed rows',
     usage: 'orca ui workspace-list get --viewer host [--json]',
     allowedFlags: [...GLOBAL_FLAGS, 'viewer']

@@ -35,6 +35,7 @@ export const WORKSPACE_FILTER_COMMAND_SPECS: CommandSpec[] = [
   })),
   ...['get', 'set', 'reset'].map((operation) => ({
     path: ['ui', 'workspace-filter', operation],
+    aliases: operation === 'get' ? [['ui', 'workspace-filter', 'show']] : undefined,
     summary: `${operation === 'get' ? 'Read' : operation === 'set' ? 'Set' : 'Reset'} the host viewer workspace filters`,
     usage: `orca ui workspace-filter ${operation} --viewer host${operation === 'set' ? ' --filters <json>' : ''} [--json]`,
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', ...(operation === 'set' ? ['filters'] : [])],
@@ -47,6 +48,7 @@ export const WORKSPACE_FILTER_COMMAND_SPECS: CommandSpec[] = [
   })),
   ...['remove', 'toggle'].map((operation) => ({
     path: ['ui', 'project-filter', operation],
+    aliases: operation === 'remove' ? [['ui', 'project-filter', 'rm']] : undefined,
     summary: `${operation === 'remove' ? 'Remove' : 'Toggle'} one project in the host viewer filter`,
     usage: `orca ui project-filter ${operation} --viewer host --repo <id> [--json]`,
     allowedFlags: [...GLOBAL_FLAGS, 'viewer', 'repo'],
