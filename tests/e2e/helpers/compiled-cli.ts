@@ -7,11 +7,19 @@ const cliEntry = path.join(process.cwd(), 'out', 'cli', 'index.js')
 
 export type CliTerminalRow = { handle: string; tabId: string; leafId: string; worktreeId: string }
 
+export type PersistedTerminalLayout = {
+  activeLeafId?: string | null
+  expandedLeafId?: string | null
+  titlesByLeafId?: Record<string, string>
+}
+
 export type PersistedWorkspaceSession = {
   activeWorktreeId: string | null
   activeTabIdByWorktree: Record<string, string>
-  terminalLayoutsByTabId: Record<string, { activeLeafId?: string | null }>
+  terminalLayoutsByTabId: Record<string, PersistedTerminalLayout>
 }
+
+export type SessionWriteReceipt = { applied: boolean; durable: boolean; normalized: boolean }
 
 export function runCompiledCliJson<T>(userDataDir: string, args: string[]): T {
   const result = spawnSync(process.execPath, [cliEntry, ...args, '--json'], {
@@ -50,4 +58,16 @@ export function readFlushedWorkspaceSession(userDataDir: string): PersistedWorks
     ['terminal', 'session-state'],
     {}
   ).session
+}
+
+export function patchWorkspaceSession(
+  userDataDir: string,
+  patch: Partial<PersistedWorkspaceSession>
+): SessionWriteReceipt {
+  return runWithRequestFile<SessionWriteReceipt>(userDataDir, ['terminal', 'patch-session'], {
+    hostId: 'local',
+    expected: readFlushedWorkspaceSession(userDataDir),
+    patch,
+    confirm: true
+  })
 }
